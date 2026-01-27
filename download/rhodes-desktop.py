@@ -1,19 +1,36 @@
 #!/usr/bin/env python3
 """
-RHODES DESKTOP - Full Rhodes experience locally.
+RHODES_CODE - Full Rhodes experience locally.
 Local agent + native window web UI. Single file, minimal dependencies.
 
 Usage:
-    rhodes                    # Agent only (background)
-    rhodes --ui               # Full UI in native window + agent
+    rhodes                    # Full UI + agent (default)
+    rhodes --ui               # Same as above
+    rhodes --no-ui            # Agent only (background)
     rhodes --token YOUR_TOKEN # First time setup
     rhodes --login            # Interactive login
     rhodes --version          # Show version
+    rhodes --uninstall        # Remove all RHODES_CODE data
+    rhodes --stop             # Stop background instance
 """
 
-VERSION = "2.0.0"  # Full UI + unified agent
+VERSION = "2.9.3"  # pywebview for all platforms + Python version check
 UPDATE_URL = "https://rhodesagi.com/api/desktop/version"
 DOWNLOAD_URL = "https://rhodesagi.com/desktop/rhodes-desktop-linux-x64.tar.gz"
+
+import sys
+
+# Check Python version - pywebview dependencies don't support 3.14+ yet
+if sys.version_info >= (3, 14):
+    print()
+    print("  [ERROR] Python 3.14+ is not yet supported!")
+    print()
+    print("  The UI framework (pywebview) requires Python 3.13 or earlier.")
+    print("  Please install Python 3.12 or 3.13 from python.org")
+    print()
+    print("  Your version:", sys.version.split()[0])
+    print()
+    sys.exit(1)
 
 import asyncio
 import base64
@@ -23,11 +40,243 @@ import shlex
 import subprocess
 import sys
 import tempfile
+import time
 import platform
 import shutil
 import signal
 import urllib.request
 from pathlib import Path
+
+# Admin user check for debug mode
+ADMIN_USER_IDS = {2}  # User IDs that get debug mode
+
+def is_admin_user(token: str) -> bool:
+    """Check if token belongs to an admin user."""
+    if not token:
+        return False
+    try:
+        import base64
+        parts = token.split(".")
+        if len(parts) != 3:
+            return False
+        # Decode payload (add padding if needed)
+        payload = parts[1]
+        payload += "=" * (4 - len(payload) % 4)
+        decoded = base64.urlsafe_b64decode(payload)
+        import json
+        data = json.loads(decoded)
+        return data.get("user_id") in ADMIN_USER_IDS
+    except:
+        return False
+
+# Global debug flag (set during launch)
+_DEBUG_MODE = False
+
+# Sandbox configuration
+# "none" - no restrictions
+# "actions" - read anywhere, write/execute only in sandbox_dir
+# "full" - read and write only in sandbox_dir
+SANDBOX_MODE = "none"
+SANDBOX_DIR = None
+
+def set_sandbox(mode: str, directory: str = None):
+    """Configure sandbox mode."""
+    global SANDBOX_MODE, SANDBOX_DIR
+    if mode not in ("none", "actions", "full"):
+        raise ValueError("Sandbox mode must be 'none', 'actions', or 'full'")
+    SANDBOX_MODE = mode
+    if directory:
+        SANDBOX_DIR = str(Path(directory).resolve())
+    print(f"  [SANDBOX] Mode: {mode}, Directory: {SANDBOX_DIR or 'N/A'}")
+
+def is_path_allowed(path: str, operation: str = "read") -> bool:
+    """Check if path is allowed under current sandbox settings."""
+    if SANDBOX_MODE == "none":
+        return True
+
+    if not SANDBOX_DIR:
+        return True  # No sandbox dir set, allow all
+
+    try:
+        resolved = str(Path(path).resolve())
+    except:
+        return False
+
+    # Always allow access to ~/.rhodes for config
+    rhodes_dir = str(Path.home() / ".rhodes")
+    if resolved.startswith(rhodes_dir):
+        return True
+
+    if SANDBOX_MODE == "actions":
+        # Read anywhere, write only in sandbox
+        if operation == "read":
+            return True
+        return resolved.startswith(SANDBOX_DIR)
+
+    elif SANDBOX_MODE == "full":
+        # Everything restricted to sandbox
+        return resolved.startswith(SANDBOX_DIR)
+
+    return True
+
+def sandbox_check(path: str, operation: str = "write"):
+    """Raise error if path not allowed."""
+    if not is_path_allowed(path, operation):
+        raise PermissionError(f"Sandbox: {operation} not allowed outside {SANDBOX_DIR}")
+
+# Settings file for persistent config
+SETTINGS_FILE = CONFIG_DIR / "settings.json"
+
+def load_settings():
+    """Load settings from file."""
+    global SANDBOX_MODE, SANDBOX_DIR
+    try:
+        if SETTINGS_FILE.exists():
+            import json
+            settings = json.loads(SETTINGS_FILE.read_text())
+            SANDBOX_MODE = settings.get("sandbox_mode", "none")
+            SANDBOX_DIR = settings.get("sandbox_dir", None)
+            if _DEBUG_MODE:
+                debug_log(f"Loaded settings: sandbox={SANDBOX_MODE}, dir={SANDBOX_DIR}")
+    except Exception as e:
+        if _DEBUG_MODE:
+            debug_log(f"Failed to load settings: {e}", "WARN")
+
+def save_settings():
+    """Save current settings to file."""
+    try:
+        import json
+        settings = {
+            "sandbox_mode": SANDBOX_MODE,
+            "sandbox_dir": SANDBOX_DIR,
+        }
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        SETTINGS_FILE.write_text(json.dumps(settings, indent=2))
+        if _DEBUG_MODE:
+            debug_log("Settings saved")
+    except Exception as e:
+        if _DEBUG_MODE:
+            debug_log(f"Failed to save settings: {e}", "ERROR")
+
+def get_settings_dict():
+    """Get current settings as dict for UI."""
+    return {
+        "sandbox_mode": SANDBOX_MODE,
+        "sandbox_dir": SANDBOX_DIR,
+    }
+
+def update_settings(new_settings: dict):
+    """Update settings from UI."""
+    global SANDBOX_MODE, SANDBOX_DIR
+    if "sandbox_mode" in new_settings:
+        mode = new_settings["sandbox_mode"]
+        if mode in ("none", "actions", "full"):
+            SANDBOX_MODE = mode
+    if "sandbox_dir" in new_settings:
+        SANDBOX_DIR = new_settings["sandbox_dir"] if new_settings["sandbox_dir"] else None
+    save_settings()
+    return get_settings_dict()
+
+
+
+# Debug telemetry - sends logs to server for admin debugging
+_DEBUG_LOG = []
+_MAX_DEBUG_LOG = 100
+
+def debug_log(msg: str, level: str = "INFO"):
+    """Log debug message and send to server if admin."""
+    import time
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    entry = {"ts": timestamp, "level": level, "msg": msg}
+    _DEBUG_LOG.append(entry)
+    if len(_DEBUG_LOG) > _MAX_DEBUG_LOG:
+        _DEBUG_LOG.pop(0)
+    if _DEBUG_MODE:
+        print(f"  [{level}] {msg}")
+
+
+# Push notification support
+PUSH_POLL_INTERVAL = 300  # Check every 5 minutes
+_last_push_check = 0
+
+def check_push_notifications():
+    """Check server for push notifications (update alerts, announcements)."""
+    global _last_push_check
+    import time
+    now = time.time()
+    if now - _last_push_check < PUSH_POLL_INTERVAL:
+        return None
+    _last_push_check = now
+
+    try:
+        req = urllib.request.Request(
+            "https://rhodesagi.com/api/desktop/notifications",
+            headers={'User-Agent': f'RhodesDesktop/{VERSION}'}
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode())
+            return data.get("notifications", [])
+    except:
+        return None
+
+def show_desktop_notification(title: str, message: str):
+    """Show a desktop notification."""
+    import subprocess
+    import sys
+    try:
+        if sys.platform == "linux":
+            subprocess.run(['notify-send', '-i', 'dialog-information', title, message],
+                          capture_output=True, timeout=5)
+        elif sys.platform == "darwin":
+            subprocess.run(['osascript', '-e',
+                          f'display notification "{message}" with title "{title}"'],
+                          capture_output=True, timeout=5)
+        # Windows notifications would need win10toast or similar
+    except:
+        pass
+
+
+def send_debug_report(error: str = None):
+    """Send debug report to server (admin only)."""
+    if not _DEBUG_MODE:
+        return
+    try:
+        import json
+        import urllib.request
+        import platform
+        import sys
+
+        # Get token
+        token = ""
+        try:
+            cfg_file = Path.home() / ".rhodes" / "config.json"
+            if cfg_file.exists():
+                token = json.loads(cfg_file.read_text()).get("token", "")
+        except:
+            pass
+
+        report = {
+            "version": VERSION,
+            "platform": platform.system(),
+            "python": sys.version,
+            "error": error,
+            "log": _DEBUG_LOG[-50:],  # Last 50 entries
+        }
+
+        req = urllib.request.Request(
+            "https://rhodesagi.com/api/debug/report",
+            data=json.dumps(report).encode(),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {token}"
+            }
+        )
+        urllib.request.urlopen(req, timeout=5)
+        debug_log("Debug report sent to server", "DEBUG")
+    except Exception as e:
+        pass  # Silent fail
+
+
 
 # Autostart management
 AUTOSTART_DIR = Path.home() / ".config" / "autostart"
@@ -41,7 +290,7 @@ def enable_autostart():
     """Enable autostart on login (runs in background)."""
     AUTOSTART_DIR.mkdir(parents=True, exist_ok=True)
     desktop_entry = """[Desktop Entry]
-Name=RHODES DESKTOP
+Name=RHODES_CODE
 Comment=RHODES AI Local Agent - Autostart
 Exec=bash -c "sleep 5 && cd ~/.local/share/rhodes-desktop && python3 rhodes_agent.py -b"
 Icon=utilities-terminal
@@ -68,15 +317,90 @@ def toggle_autostart():
     else:
         enable_autostart()
 
-# Try websockets, fall back to raw socket if needed
+def uninstall():
+    """Completely remove RHODES_CODE from the system."""
+    print("\n  RHODES_CODE Uninstaller")
+    print("  " + "=" * 30)
+
+    removed = []
+
+    # Remove config directory (~/.rhodes)
+    if CONFIG_DIR.exists():
+        shutil.rmtree(CONFIG_DIR, ignore_errors=True)
+        removed.append(str(CONFIG_DIR))
+
+    # Remove local share directory (~/.local/share/rhodes-desktop)
+    local_share = Path.home() / ".local" / "share" / "rhodes-desktop"
+    if local_share.exists():
+        shutil.rmtree(local_share, ignore_errors=True)
+        removed.append(str(local_share))
+
+    # Remove autostart entry
+    if AUTOSTART_FILE.exists():
+        AUTOSTART_FILE.unlink()
+        removed.append(str(AUTOSTART_FILE))
+
+    # Remove cached assets
+    if ASSETS_DIR.exists():
+        shutil.rmtree(ASSETS_DIR, ignore_errors=True)
+        removed.append(str(ASSETS_DIR))
+
+    # Try to stop any running instance
+    try:
+        import subprocess
+        subprocess.run(["pkill", "-f", "rhodes_agent.py"], capture_output=True, timeout=5)
+        subprocess.run(["pkill", "-f", "rhodes-linux.py"], capture_output=True, timeout=5)
+    except:
+        pass
+
+    if removed:
+        print("\n  Removed:")
+        for path in removed:
+            print(f"    - {path}")
+    else:
+        print("\n  Nothing to remove (already clean)")
+
+    print("\n  [✓] RHODES_CODE uninstalled")
+    print("  To reinstall: curl -O https://rhodesagi.com/download/rhodes-linux.py && python3 rhodes-linux.py")
+    print()
+
+# Try websockets, install if missing with robust fallbacks
 try:
     import websockets
     HAS_WEBSOCKETS = True
 except ImportError:
     HAS_WEBSOCKETS = False
     print("Installing websockets...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "websockets", "-q"])
-    import websockets
+    # Try with --user first (most likely to succeed on macOS/Linux)
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "websockets", "-q"])
+    except subprocess.CalledProcessError:
+        # Try without --user (may require sudo, but we try anyway)
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "websockets", "-q"])
+        except subprocess.CalledProcessError:
+            # Try with --break-system-packages for newer pip where user install is restricted
+            try:
+                subprocess.check_call([sys.executable, "-m", "pip", "install", "--break-system-packages", "websockets", "-q"])
+            except subprocess.CalledProcessError as e:
+                print("Failed to install websockets. Please install manually:")
+                print("  python3 -m pip install --user websockets")
+                sys.exit(1)
+    # After installation, attempt import again
+    try:
+        import websockets
+        HAS_WEBSOCKETS = True
+    except ImportError:
+        # If still failing, maybe the module is installed in a different location
+        # Add user site-packages to sys.path
+        import site
+        site.addsitedir(site.getusersitepackages())
+        try:
+            import websockets
+            HAS_WEBSOCKETS = True
+        except ImportError:
+            print("Websockets installed but cannot be imported. Please check your Python environment.")
+            sys.exit(1)
 
 # ============================================================
 # WEB UI COMPONENTS
@@ -89,9 +413,9 @@ UI_PORT = 8800
 REQUIRED_ASSETS = ['index.html', 'rhodes.js', 'rhodes.css', 'credentials-popup.js']
 
 FALLBACK_HTML = '''<!DOCTYPE html>
-<html><head><title>Rhodes Desktop</title>
+<html><head><title>RHODES_CODE</title>
 <style>body{font-family:system-ui;background:#0a0a12;color:#e0e0e0;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}a{color:#60a5fa}</style>
-</head><body><div style="text-align:center"><h1>Rhodes Desktop</h1><p>Could not load assets. Visit <a href="https://rhodesagi.com">rhodesagi.com</a></p></div></body></html>'''
+</head><body><div style="text-align:center"><h1>RHODES_CODE</h1><p>Could not load assets. Visit <a href="https://rhodesagi.com">rhodesagi.com</a></p></div></body></html>'''
 
 def ensure_ui_assets():
     """Download web UI assets from VPS if not cached."""
@@ -142,13 +466,21 @@ def run_ui_server(port, ready_event):
                     html_path = ASSETS_DIR / "index.html"
                     html = html_path.read_text()
                     token = ""
-                    if CONFIG_FILE.exists():
+                    # Check config.json first (where installer saves token)
+                    config_json = CONFIG_DIR / "config.json"
+                    if config_json.exists():
+                        try:
+                            cfg = json.loads(config_json.read_text())
+                            token = cfg.get("token", "")
+                        except: pass
+                    # Fallback to agent.json (legacy)
+                    if not token and CONFIG_FILE.exists():
                         try:
                             cfg = json.loads(CONFIG_FILE.read_text())
                             token = cfg.get("token", "")
                         except: pass
                     if token and "<head>" in html:
-                        script = "<head>\n<script>window.__RHODES_DESKTOP_TOKEN__=\"" + token + "\";try{localStorage.setItem(\"rhodes_user_token\",\"" + token + "\");localStorage.setItem(\"rhodes_token\",\"" + token + "\");}catch(e){}</script>"
+                        script = "<head>\n<script>window.__RHODES_DESKTOP_TOKEN__=\"" + token + "\";window.__RHODES_DESKTOP_MODE__=true;try{localStorage.clear();localStorage.setItem(\"rhodes_user_token\",\"" + token + "\");localStorage.setItem(\"rhodes_token\",\"" + token + "\");}catch(e){}</script>"
                         html = html.replace("<head>", script, 1)
                     self.send_response(200)
                     self.send_header("Content-type", "text/html")
@@ -168,20 +500,32 @@ def make_sticky():
     """Make Rhodes window sticky (visible on all desktops) after brief delay."""
     import subprocess
     import time
+    import shutil
     time.sleep(2)  # Wait for window to be created
+
+    # Check if wmctrl is available
+    if not shutil.which("wmctrl"):
+        # wmctrl not installed - silently skip
+        return
+
     try:
-        result = subprocess.run(["wmctrl", "-l"], capture_output=True, text=True)
+        result = subprocess.run(["wmctrl", "-l"], capture_output=True, text=True, timeout=5)
         for line in result.stdout.strip().split("\n"):
-            if "Rhodes" in line:
+            if "RHODES_CODE" in line or "Rhodes" in line:
                 wid = line.split()[0]
-                subprocess.run(["wmctrl", "-i", "-r", wid, "-b", "add,sticky"])
-                print(f"Made window {wid} sticky")
+                subprocess.run(["wmctrl", "-i", "-r", wid, "-b", "add,sticky"], timeout=5)
                 break
-    except Exception as e:
-        print(f"Could not make window sticky: {e}")
+    except Exception:
+        pass  # Silently ignore - sticky is just a nice-to-have
 
 
 def launch_ui(token, port=UI_PORT):
+    global _DEBUG_MODE
+    _DEBUG_MODE = is_admin_user(token)
+    if _DEBUG_MODE:
+        print("  [DEBUG] Admin mode enabled - debug panel available (Right-click > Inspect)")
+    debug_log(f"App launched - version {VERSION}", "INFO")
+
     """Launch native window with web UI + run agent in background."""
     import threading
 
@@ -191,6 +535,11 @@ def launch_ui(token, port=UI_PORT):
     import sys
     import warnings
     warnings.filterwarnings("ignore")
+
+    # Force software rendering to avoid GLX/GPU errors on VMs
+    os.environ["LIBGL_ALWAYS_SOFTWARE"] = "1"
+    os.environ["WEBKIT_DISABLE_COMPOSITING_MODE"] = "1"
+    os.environ["MESA_GL_VERSION_OVERRIDE"] = "3.3"
 
     # Unset GTK_DEBUG to prevent "GTK_DEBUG set but ignored" warnings
     os.environ.pop("GTK_DEBUG", None)
@@ -212,20 +561,45 @@ def launch_ui(token, port=UI_PORT):
     class QuietStderr:
         def write(self, msg):
             msg_str = str(msg)
-            # Filter out all GTK/WebKit/GLib warnings
-            if any(x in msg_str for x in ["pywebview", "WebKit", "GLib", "Traceback", "gi.repository", "Gtk-WARNING", "GTK_DEBUG", "G_DEBUG", "WARNING **"]):
+            # Filter out all GTK/WebKit/GLib/GLX warnings
+            if any(x in msg_str for x in [
+                "pywebview", "WebKit", "GLib", "gi.repository", "Gtk-WARNING",
+                "GTK_DEBUG", "G_DEBUG", "WARNING **", "glx:", "failed to load driver",
+                "virtio_gpu", "dri3", "MESA", "libGL", "EGL", "Could not make window sticky"
+            ]):
                 return
             _original_stderr.write(msg)
         def flush(self):
             _original_stderr.flush()
     sys.stderr = QuietStderr()
 
+    # Use pywebview on all platforms
+    # - Mac: WebKit (built-in)
+    # - Windows 10+: EdgeChromium (built-in, no extras needed)
+    # - Linux: GTK WebKit
     try:
         import webview
     except ImportError:
-        print("  Installing pywebview...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "pywebview", "-q"])
-        import webview
+        print("  Installing UI framework (pywebview)...")
+        # Plain pywebview - no extras, uses system webview
+        result = subprocess.run(
+            [sys.executable, "-m", "pip", "install", "--user", "pywebview"],
+            timeout=120
+        )
+        if result.returncode != 0:
+            # Try without --user
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", "pywebview"],
+                timeout=120
+            )
+        try:
+            import webview
+        except ImportError:
+            print("\n  [ERROR] pywebview installation failed!")
+            print("  Please run manually:")
+            print("    pip install pywebview")
+            print("  Then try again: python rhodes.py --ui")
+            sys.exit(1)
 
     print("  Downloading UI assets...")
     ensure_ui_assets()
@@ -250,10 +624,11 @@ def launch_ui(token, port=UI_PORT):
     threading.Thread(target=agent_thread, daemon=True).start()
 
     # Create native window
-    print("  Opening Rhodes Desktop...")
+    print("  Opening RHODES_CODE...")
+
     api = RhodesAPI()
     window = webview.create_window(
-        'Rhodes',
+        'RHODES_CODE',
         f'http://localhost:{port}',
         width=1200,
         height=800,
@@ -261,7 +636,7 @@ def launch_ui(token, port=UI_PORT):
         min_size=(800, 600),
         js_api=api
     )
-    import sys, os
+
     # Suppress pywebview internal warnings
     class SuppressWebviewErrors:
         def write(self, msg):
@@ -270,13 +645,14 @@ def launch_ui(token, port=UI_PORT):
         def flush(self):
             sys.__stderr__.flush()
     sys.stderr = SuppressWebviewErrors()
-    # Start sticky thread in background
-    import threading
-    sticky_thread = threading.Thread(target=make_sticky, daemon=True)
-    sticky_thread.start()
 
-    webview.start(debug=False)
-    print("  Rhodes Desktop closed.")
+    # Start sticky thread in background (Linux only)
+    if sys.platform == "linux":
+        sticky_thread = threading.Thread(target=make_sticky, daemon=True)
+        sticky_thread.start()
+
+    webview.start(debug=_DEBUG_MODE)
+    print("  RHODES_CODE closed.")
 
 CONFIG_DIR = Path.home() / ".rhodes"
 CONFIG_FILE = CONFIG_DIR / "agent.json"
@@ -285,6 +661,29 @@ RHODES_WS = "wss://rhodesagi.com/ws"
 
 # Custom slash commands support
 COMMANDS_DIR = CONFIG_DIR / "commands"
+
+
+def request_macos_permissions():
+    """Request file system permissions upfront on macOS."""
+    if platform.system() != "Darwin":
+        return
+    print("  Requesting file system access...")
+    protected_dirs = [
+        Path.home() / "Desktop",
+        Path.home() / "Documents",
+        Path.home() / "Downloads",
+    ]
+    accessed = 0
+    for d in protected_dirs:
+        try:
+            if d.exists():
+                list(d.iterdir())
+                accessed += 1
+        except:
+            pass
+    if accessed > 0:
+        print(f"  ✓ File access requested for {accessed} directories")
+
 
 def execute_custom_command(command_name, args=""):
     """Execute a custom slash command from ~/.rhodes/commands/"""
@@ -388,7 +787,48 @@ class RhodesAPI:
         except:
             pass
 
+    def open_url(self, url):
+        """Open URL in the system's default browser."""
+        import webbrowser
+        import subprocess
+        try:
+            # Try webbrowser module first (cross-platform)
+            webbrowser.open(url)
+            return {"success": True, "url": url}
+        except Exception as e:
+            # Fallback to xdg-open on Linux
+            try:
+                subprocess.Popen(['xdg-open', url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                return {"success": True, "url": url}
+            except:
+                return {"success": False, "error": str(e)}
+
+    def create_window(self, url, title="Rhodes"):
+        """Create a new pywebview window - enables popups in desktop app."""
+        try:
+            import webview
+            webview.create_window(title, url, width=1200, height=800)
+            return {"success": True, "url": url}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def clear_cache(self):
+        """Clear cached assets."""
+        cleared = []
+        try:
+            assets_dir = Path.home() / ".rhodes" / "assets"
+            if assets_dir.exists():
+                for f in assets_dir.iterdir():
+                    if f.is_file() and f.suffix in [".html", ".js", ".css", ".png"]:
+                        f.unlink()
+                        cleared.append(f.name)
+            return {"success": True, "cleared": cleared, "message": f"Cleared {len(cleared)} files. Restart to reload."}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
     def execute_command(self, cmd, args=""):
+        if cmd in ["clear-cache", "clearcache", "refresh-assets"]:
+            return self.clear_cache()
         return execute_custom_command(cmd, args)
 
     def list_commands(self):
@@ -604,12 +1044,12 @@ class RhodesAgent:
         print("  ██║  ██║██║  ██║╚██████╔╝██████╔╝███████╗███████║")
         print("  ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝╚══════╝")
         print()
-        print("  ██████╗ ███████╗███████╗██╗  ██╗████████╗ ██████╗ ██████╗ ")
-        print("  ██╔══██╗██╔════╝██╔════╝██║ ██╔╝╚══██╔══╝██╔═══██╗██╔══██╗")
-        print("  ██║  ██║█████╗  ███████╗█████╔╝    ██║   ██║   ██║██████╔╝")
-        print("  ██║  ██║██╔══╝  ╚════██║██╔═██╗    ██║   ██║   ██║██╔═══╝ ")
-        print("  ██████╔╝███████╗███████║██║  ██╗   ██║   ╚██████╔╝██║     ")
-        print("  ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝     ")
+        print("   ██████╗ ██████╗ ██████╗ ███████╗")
+        print("  ██╔════╝██╔═══██╗██╔══██╗██╔════╝")
+        print("  ██║     ██║   ██║██║  ██║█████╗  ")
+        print("  ██║     ██║   ██║██║  ██║██╔══╝  ")
+        print("  ╚██████╗╚██████╔╝██████╔╝███████╗")
+        print("   ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝")
         print()
         self.ws = await websockets.connect(RHODES_WS, ping_interval=30)
 
@@ -1434,7 +1874,7 @@ class RhodesAgent:
             except KeyboardInterrupt:
                 print("\n")
                 try:
-                    confirm = input("  Exit Rhodes Desktop? [y/N]: ").strip().lower()
+                    confirm = input("  Exit RHODES_CODE? [y/N]: ").strip().lower()
                     if confirm in ('y', 'yes'):
                         print("  Disconnecting...")
                         self.running = False
@@ -1463,7 +1903,7 @@ class RhodesAgent:
 
 
 def get_token() -> str:
-    """Get token from config. Checks local config.json first, then ~/.rhodes."""
+    """Get token from config. Checks multiple locations."""
     # Check for config.json in same directory as executable (for bundled downloads)
     local_config = get_script_dir() / "config.json"
     if local_config.exists():
@@ -1475,7 +1915,18 @@ def get_token() -> str:
         except:
             pass
 
-    # Fall back to ~/.rhodes/agent.json
+    # Check ~/.rhodes/config.json (installer saves here)
+    rhodes_config = CONFIG_DIR / "config.json"
+    if rhodes_config.exists():
+        try:
+            config = json.loads(rhodes_config.read_text())
+            if config.get("token"):
+                print(f"Using token from {rhodes_config}")
+                return config["token"]
+        except:
+            pass
+
+    # Fall back to ~/.rhodes/agent.json (legacy)
     if CONFIG_FILE.exists():
         try:
             config = json.loads(CONFIG_FILE.read_text())
@@ -1563,27 +2014,185 @@ def do_update(new_version: str) -> bool:
         return False
 
 
+
+# === Installation Functions ===
+
+def create_desktop_shortcut():
+    """Create desktop shortcut for RHODES_CODE."""
+    import platform
+    system = platform.system()
+    script_path = Path(__file__).resolve()
+    
+    try:
+        if system == "Linux":
+            applications_dir = Path.home() / ".local" / "share" / "applications"
+            applications_dir.mkdir(parents=True, exist_ok=True)
+            
+            icon_path = Path.home() / ".rhodes" / "assets" / "Rhodes-R-Icon-180.png"
+            icon_str = str(icon_path) if icon_path.exists() else "utilities-terminal"
+            
+            lines = [
+                "[Desktop Entry]",
+                "Name=RHODES_CODE", 
+                "Comment=Rhodes AGI Desktop Client",
+                "Exec=python3 " + str(script_path),
+                "Icon=" + icon_str,
+                "Terminal=false",
+                "Type=Application",
+                "Categories=Network;Chat;Development;",
+                "Keywords=rhodes;agi;ai;chat;code;",
+                "StartupNotify=true"
+            ]
+            desktop_entry = "\n".join(lines) + "\n"
+            
+            app_file = applications_dir / "rhodes-code.desktop"
+            app_file.write_text(desktop_entry)
+            app_file.chmod(0o755)
+            
+            desktop_dir = Path.home() / "Desktop"
+            if desktop_dir.exists():
+                desktop_file = desktop_dir / "RHODES_CODE.desktop"
+                desktop_file.write_text(desktop_entry)
+                desktop_file.chmod(0o755)
+            
+            print("  [✓] Desktop shortcut created")
+            
+        elif system == "Darwin":
+            applications_dir = Path.home() / "Applications"
+            applications_dir.mkdir(exist_ok=True)
+            
+            app_path = applications_dir / "RHODES_CODE.app"
+            contents_dir = app_path / "Contents" / "MacOS"
+            contents_dir.mkdir(parents=True, exist_ok=True)
+            
+            launcher = contents_dir / "RHODES_CODE"
+            launcher.write_text("#!/bin/bash\ncd ~\npython3 \"" + str(script_path) + "\"\n")
+            launcher.chmod(0o755)
+            
+            plist = app_path / "Contents" / "Info.plist"
+            plist.write_text("""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key><string>RHODES_CODE</string>
+    <key>CFBundleName</key><string>RHODES_CODE</string>
+    <key>CFBundleIdentifier</key><string>com.rhodesagi.code</string>
+</dict>
+</plist>""")
+            print("  [✓] macOS app created")
+            
+        elif system == "Windows":
+            desktop = Path.home() / "Desktop"
+            shortcut_path = desktop / "RHODES_CODE.lnk"
+            ps = "$s = (New-Object -COM WScript.Shell).CreateShortcut( + str(shortcut_path) + );"
+            ps += "$s.TargetPath=pythonw.exe;"
+            ps += "$s.Arguments=" + str(script_path) + ";"
+            ps += "$s.Save()"
+            subprocess.run(["powershell", "-Command", ps], capture_output=True)
+            print("  [✓] Desktop shortcut created")
+            
+    except Exception as e:
+        print(f"  [!] Shortcut error: {e}")
+
+
+def add_to_path():
+    """Add rhodes command to PATH."""
+    import platform
+    system = platform.system()
+    script_path = Path(__file__).resolve()
+
+    try:
+        if system in ("Linux", "Darwin"):
+            # Copy script to stable location
+            install_dir = Path.home() / ".rhodes"
+            install_dir.mkdir(parents=True, exist_ok=True)
+            installed_script = install_dir / "rhodes_agent.py"
+
+            # Copy current script to stable location
+            if script_path != installed_script:
+                shutil.copy2(script_path, installed_script)
+                installed_script.chmod(0o755)
+
+            # Create command wrapper pointing to stable location
+            bin_dir = Path.home() / ".local" / "bin"
+            bin_dir.mkdir(parents=True, exist_ok=True)
+
+            link_path = bin_dir / "rhodes"
+            if link_path.exists() or link_path.is_symlink():
+                link_path.unlink()
+
+            wrapper = "#!/usr/bin/env python3\nimport subprocess, sys\n"
+            wrapper += "subprocess.call([sys.executable, \"" + str(installed_script) + "\"] + sys.argv[1:])\n"
+            link_path.write_text(wrapper)
+            link_path.chmod(0o755)
+
+            print("  [✓] Installed to ~/.rhodes/")
+            print("  [✓] Command 'rhodes' added to ~/.local/bin/")
+
+            # Check if ~/.local/bin is in PATH
+            if str(bin_dir) not in os.environ.get("PATH", ""):
+                print("  [!] Add to PATH: export PATH=\"$HOME/.local/bin:$PATH\"")
+            
+        elif system == "Windows":
+            bin_dir = Path.home() / ".rhodes" / "bin"
+            bin_dir.mkdir(parents=True, exist_ok=True)
+            
+            bat_path = bin_dir / "rhodes.bat"
+            bat_path.write_text("@echo off\npythonw \"" + str(script_path) + "\" %*\n")
+            
+            ps = "$p=[Environment]::GetEnvironmentVariable(PATH,User);"
+            ps += "if($p-notlike* + str(bin_dir) + *){"
+            ps += "[Environment]::SetEnvironmentVariable(PATH,\"$p;" + str(bin_dir) + "\",User)}"
+            subprocess.run(["powershell", "-Command", ps], capture_output=True)
+            print("  [✓] Command rhodes added to PATH")
+            
+    except Exception as e:
+        print(f"  [!] PATH error: {e}")
+
+
+def first_run_setup():
+    """Run first-time setup."""
+    marker = Path.home() / ".rhodes" / ".installed"
+    if not marker.exists():
+        print("\n  RHODES_CODE - First Run Setup")
+        print("  " + "="*30)
+        create_desktop_shortcut()
+        add_to_path()
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text("installed")
+        print("  " + "="*30 + "\n")
+
+
 def main():
     global RHODES_WS
     import argparse
-    parser = argparse.ArgumentParser(description="RHODES DESKTOP - Full UI + Agent")
+    parser = argparse.ArgumentParser(description="RHODES_CODE - Full UI + Agent")
     parser.add_argument("-t", "--token", help="User token from Rhodes Web")
-    parser.add_argument("--ui", action="store_true", help="Launch full web UI in native window")
+    parser.add_argument("--ui", action="store_true", help="(default, kept for compatibility)")
+    parser.add_argument("--no-ui", action="store_true", help="Run without UI (agent only)")
     parser.add_argument("--login", action="store_true", help="Interactive login")
     parser.add_argument("--server", default=RHODES_WS, help="WebSocket server URL")
     parser.add_argument("--version", action="store_true", help="Show version")
+    parser.add_argument("--sandbox", type=str, metavar="DIR", help="Sandbox mode: write/execute only in DIR, read anywhere")
+    parser.add_argument("--sandbox-full", type=str, metavar="DIR", help="Full sandbox: read and write only in DIR")
     parser.add_argument("--update", action="store_true", help="Force update check")
     parser.add_argument("--no-update", action="store_true", help="Skip auto-update check")
     parser.add_argument("--autostart-on", action="store_true", help="Enable autostart on login")
     parser.add_argument("--autostart-off", action="store_true", help="Disable autostart on login")
     parser.add_argument("--background", "-b", action="store_true", help="Run in background (daemonize)")
-    parser.add_argument("--stop", action="store_true", help="Stop background Rhodes Desktop")
+    parser.add_argument("--stop", action="store_true", help="Stop background RHODES_CODE")
+    parser.add_argument("--uninstall", action="store_true", help="Completely remove RHODES_CODE")
     parser.add_argument("--port", type=int, default=UI_PORT, help="UI server port")
     args = parser.parse_args()
 
+    # Uninstall
+    if args.uninstall:
+        uninstall()
+        sys.exit(0)
+
     # Version flag
     if args.version:
-        print(f"RHODES DESKTOP v{VERSION}")
+        print(f"RHODES_CODE v{VERSION}")
         sys.exit(0)
 
     # Autostart management
@@ -1599,9 +2208,9 @@ def main():
         import subprocess
         result = subprocess.run(['pkill', '-f', 'rhodes_agent.py'], capture_output=True)
         if result.returncode == 0:
-            print("  [✓] Rhodes Desktop stopped")
+            print("  [✓] RHODES_CODE stopped")
         else:
-            print("  [!] No background Rhodes Desktop found")
+            print("  [!] No background RHODES_CODE found")
         sys.exit(0)
 
     # Update check
@@ -1609,6 +2218,9 @@ def main():
         check_for_updates(force=True)
         sys.exit(0)
 
+    # First run setup (desktop shortcut, PATH)
+    first_run_setup()
+    
     # Enable autostart by default on first run
     if not AUTOSTART_FILE.exists() and not args.background:
         enable_autostart()
@@ -1638,7 +2250,7 @@ def main():
         # Send notification
         try:
             subprocess.run(['notify-send', '-i', 'utilities-terminal',
-                          'RHODES DESKTOP',
+                          'RHODES_CODE',
                           'Running in background.'],
                          capture_output=True)
         except:
@@ -1651,6 +2263,12 @@ def main():
     RHODES_WS = args.server
 
     # Get token
+    # Initialize sandbox if requested
+    if args.sandbox:
+        set_sandbox("actions", args.sandbox)
+    elif args.sandbox_full:
+        set_sandbox("full", args.sandbox_full)
+
     token = args.token or get_token()
     
     # Save token if provided via command line
@@ -1660,21 +2278,36 @@ def main():
     if args.login or not token:
         print("Rhodes Local Agent Setup")
         print("=" * 40)
-        print("To get your token:")
-        print("1. Go to rhodesagi.com and log in")
-        print("2. Open browser console (F12)")
-        print("3. Type: localStorage.getItem('rhodes_user_token')")
-        print("4. Copy the token (without quotes)")
         print()
-        token = input("Paste your token: ").strip()
-        if token:
-            save_token(token)
-        else:
-            print("No token provided.")
+        import urllib.request, urllib.error, json as _json, getpass
+        username = input("Username or email: ").strip()
+        password = getpass.getpass("Password: ")
+        if not username or not password:
+            print("Username and password required.")
+            sys.exit(1)
+        try:
+            req = urllib.request.Request(
+                "https://rhodesagi.com/api/user/login",
+                data=_json.dumps({"username": username, "password": password}).encode(),
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                token = _json.loads(resp.read().decode()).get("token")
+                if token:
+                    save_token(token)
+                    print("[OK] Logged in!")
+                else:
+                    print("Login failed.")
+                    sys.exit(1)
+        except urllib.error.HTTPError as e:
+            print(f"Login failed: {e.reason}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"Login failed: {e}")
             sys.exit(1)
 
     # UI mode: launch native window with web UI + agent
-    if args.ui:
+    if not getattr(args, "no_ui", False) and not args.background:
         launch_ui(token, port=args.port)
         sys.exit(0)
 
@@ -1686,5 +2319,13 @@ def main():
         pass
 
 
+def _global_exception_handler(exc_type, exc_value, exc_tb):
+    import traceback
+    error = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
+    debug_log(f"Uncaught exception: {exc_value}", "CRITICAL")
+    send_debug_report(error)
+    sys.__excepthook__(exc_type, exc_value, exc_tb)
+
 if __name__ == "__main__":
+    sys.excepthook = _global_exception_handler
     main()
