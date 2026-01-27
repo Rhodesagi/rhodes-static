@@ -125,6 +125,8 @@ def sandbox_check(path: str, operation: str = "write"):
         raise PermissionError(f"Sandbox: {operation} not allowed outside {SANDBOX_DIR}")
 
 # Settings file for persistent config
+# Config directory - defined early for settings
+CONFIG_DIR = Path.home() / ".rhodes"
 SETTINGS_FILE = CONFIG_DIR / "settings.json"
 
 def load_settings():
@@ -654,7 +656,7 @@ def launch_ui(token, port=UI_PORT):
     webview.start(debug=_DEBUG_MODE)
     print("  RHODES_CODE closed.")
 
-CONFIG_DIR = Path.home() / ".rhodes"
+# CONFIG_DIR already defined above
 CONFIG_FILE = CONFIG_DIR / "agent.json"
 CREDENTIALS_FILE = CONFIG_DIR / "credentials.json"
 RHODES_WS = "wss://rhodesagi.com/ws"
