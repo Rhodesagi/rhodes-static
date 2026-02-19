@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Tokens - Rhodes AI</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #0d0d0d;
+            --surface-2: #1a1a1a;
+            --green: #00ff66;
+            --green-dim: #009933;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --success: #00ff00;
+            --border: #1a1a1a;
+            --cyan: #00ffcc;
+            --dim: #404040;
+            --stripe-purple: #635bff;
+            --stripe-purple-dim: #4b44c9;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; border: 1px solid var(--border); padding: 30px; border-radius: 2px; }
+        h1 { color: var(--cyan); margin-bottom: 10px; text-align: center; text-shadow: 0 0 5px rgba(0,255,204,0.3); }
+        .subtitle { color: var(--text-dim); margin-bottom: 30px; text-align: center; }
+
+        .rate-card {
+            background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+            border: 2px solid var(--cyan);
+            border-radius: 3px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .rate-card h2 { color: var(--cyan); font-size: 2em; margin-bottom: 10px; }
+        .rate-card .rate { font-size: 3em; color: var(--cyan); }
+        .rate-card .rate span { font-size: 0.4em; color: var(--text-dim); }
+        .rate-card p { color: var(--text-dim); margin-top: 15px; }
+
+        .packages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .package-card {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 3px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .package-card:hover { border-color: var(--cyan); transform: translateY(-2px); }
+        .package-card.selected { border-color: var(--cyan); background: rgba(0,255,102,0.1); }
+        .package-tokens { font-size: 1.8em; font-weight: bold; color: var(--cyan); }
+        .package-tokens span { font-size: 0.5em; color: var(--text-dim); }
+        .package-price { font-size: 1.4em; color: var(--green); margin-top: 10px; }
+
+        .custom-section {
+            background: var(--surface);
+            border-radius: 3px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        .custom-section h3 { margin-bottom: 15px; }
+        .custom-input {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .custom-input input {
+            flex: 1;
+            padding: 15px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            color: var(--text);
+            font-size: 1.2em;
+            text-align: center;
+        }
+        .custom-input .equals { color: var(--text-dim); font-size: 1.5em; }
+        .custom-input .price { font-size: 1.5em; color: var(--green); min-width: 100px; }
+
+        .crypto-section {
+            background: var(--surface);
+            border-radius: 3px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .crypto-section h3 { margin-bottom: 15px; }
+        .crypto-selector { display: flex; gap: 15px; }
+        .crypto-btn {
+            flex: 1;
+            padding: 20px;
+            background: var(--surface-2);
+            border: 2px solid var(--border);
+            border-radius: 2px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .crypto-btn:hover { border-color: var(--cyan); }
+        .crypto-btn.selected { border-color: var(--cyan); }
+        .crypto-btn.stripe-selected { border-color: var(--stripe-purple); }
+        .crypto-btn .symbol { font-size: 1.8em; }
+        .crypto-btn .name { font-weight: bold; margin-top: 5px; }
+        .crypto-btn .price { font-size: 0.85em; color: var(--text-dim); margin-top: 5px; }
+
+        .action-btn {
+            width: 100%;
+            padding: 18px;
+            background: var(--cyan);
+            color: #000;
+            border: none;
+            border-radius: 2px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .action-btn:hover { background: #009988; }
+        .action-btn:disabled { background: var(--surface-2); color: var(--text-dim); cursor: not-allowed; }
+        .action-btn.stripe-btn { background: var(--stripe-purple); color: #fff; }
+        .action-btn.stripe-btn:hover { background: var(--stripe-purple-dim); }
+
+        .payment-section {
+            background: var(--surface);
+            border-radius: 3px;
+            padding: 30px;
+            text-align: center;
+            display: none;
+        }
+        .payment-section.active { display: block; }
+        .qr-code { background: #fff; padding: 20px; border-radius: 2px; display: inline-block; margin: 20px 0; }
+        .qr-code img { width: 200px; height: 200px; }
+        .payment-address {
+            background: var(--bg);
+            padding: 15px;
+            border-radius: 2px;
+            font-family: monospace;
+            word-break: break-all;
+            margin: 15px 0;
+        }
+        .payment-amount { font-size: 1.8em; color: var(--cyan); margin: 15px 0; }
+        .copy-btn {
+            background: var(--cyan);
+            color: #000;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        .timer { color: var(--text-dim); margin-top: 15px; }
+        .status { margin-top: 15px; font-size: 1.1em; }
+
+        .back-link {
+            display: inline-block;
+            color: var(--cyan);
+            text-decoration: none;
+            margin-bottom: 20px;
+        }
+        .back-link:hover { text-decoration: underline; }
+
+        .info-box {
+            background: var(--surface);
+            border-left: 4px solid var(--cyan);
+            padding: 20px;
+            margin-top: 30px;
+            border-radius: 0 2px 2px 0;
+        }
+        .info-box h4 { color: var(--cyan); margin-bottom: 10px; }
+        .info-box p { color: var(--text-dim); font-size: 0.95em; line-height: 1.6; }
+
+        .domain-section {
+            background: var(--surface);
+            border: 2px solid var(--dim);
+            border-radius: 3px;
+            padding: 25px;
+            margin-top: 30px;
+            text-align: center;
+        }
+        .domain-section h3 { color: var(--green); margin-bottom: 10px; }
+        .domain-section p { color: var(--text-dim); margin-bottom: 15px; }
+        .domain-btn {
+            padding: 12px 30px;
+            background: var(--green);
+            color: #000;
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+        }
+        .domain-btn:hover { background: var(--green-dim); color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">< Back to Rhodes</a>
+
+        <h1>API Tokens</h1>
+        <p class="subtitle">Pay-as-you-go access to the Rhodes API</p>
+
+        <!-- Form Section -->
+        <div id="form-section">
+            <!-- Rate Card -->
+            <div class="rate-card">
+                <h2>Simple Pricing</h2>
+                <div class="rate">$10<span> / million tokens</span></div>
+                <p>No subscriptions. No expiry. Use tokens whenever you need them.</p>
+            </div>
+
+            <!-- Package Selection -->
+            <div class="packages-grid" id="packages-container">
+                <div class="package-card" onclick="selectPackage('api_1m', 1, 10, this)">
+                    <div class="package-tokens">1<span>M tokens</span></div>
+                    <div class="package-price">$10</div>
+                </div>
+                <div class="package-card" onclick="selectPackage('api_5m', 5, 50, this)">
+                    <div class="package-tokens">5<span>M tokens</span></div>
+                    <div class="package-price">$50</div>
+                </div>
+                <div class="package-card selected" onclick="selectPackage('api_10m', 10, 100, this)">
+                    <div class="package-tokens">10<span>M tokens</span></div>
+                    <div class="package-price">$100</div>
+                </div>
+                <div class="package-card" onclick="selectPackage('api_50m', 50, 500, this)">
+                    <div class="package-tokens">50<span>M tokens</span></div>
+                    <div class="package-price">$500</div>
+                </div>
+                <div class="package-card" onclick="selectPackage('api_100m', 100, 1000, this)">
+                    <div class="package-tokens">100<span>M tokens</span></div>
+                    <div class="package-price">$1,000</div>
+                </div>
+            </div>
+
+            <!-- Custom Amount -->
+            <div class="custom-section">
+                <h3>Or enter custom amount</h3>
+                <div class="custom-input">
+                    <input type="number" id="custom-tokens" placeholder="Millions of tokens" min="1" oninput="updateCustomPrice()">
+                    <span class="equals">=</span>
+                    <span class="price" id="custom-price">$0</span>
+                </div>
+            </div>
+
+            <!-- Payment Method Selector -->
+            <div class="crypto-section">
+                <h3>Pay with</h3>
+                <div class="crypto-selector">
+                    <div class="crypto-btn selected" onclick="selectPayMethod('btc', this)">
+                        <div class="symbol">&#8383;</div>
+                        <div class="name">Bitcoin</div>
+                        <div class="price" id="btc-price">Loading...</div>
+                    </div>
+                    <div class="crypto-btn" onclick="selectPayMethod('xmr', this)">
+                        <div class="symbol">&#x0271;</div>
+                        <div class="name">Monero</div>
+                        <div class="price" id="xmr-price">Loading...</div>
+                    </div>
+                    <div class="crypto-btn" onclick="selectPayMethod('stripe', this)">
+                        <div class="symbol">&#128179;</div>
+                        <div class="name">Card</div>
+                        <div class="price">Visa / MC / Amex</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="action-btn" id="purchase-btn" onclick="createPurchase()">
+                Buy 10M Tokens - $100
+            </button>
+
+            <!-- Domain Registration -->
+            <div class="domain-section">
+                <h3>Custom Domain Registration</h3>
+                <p>Get your own domain for Rhodes projects. Registered at cost, no markup.</p>
+                <button class="domain-btn" onclick="purchaseDomain()">Register a Domain - $15/year</button>
+            </div>
+
+            <div class="info-box">
+                <h4>How it works</h4>
+                <p>
+                    After payment confirms, tokens are added to your account immediately.
+                    Use them via the API with your API key. Tokens never expire.
+                    <br><br>
+                    <strong>API Endpoint:</strong> <code>api.rhodesagi.com</code>
+                </p>
+            </div>
+        </div>
+
+        <!-- Payment Section -->
+        <div id="payment-section" class="payment-section">
+            <h2>Complete Your Payment</h2>
+            <p>Send exactly:</p>
+            <div class="payment-amount" id="payment-amount"></div>
+            <p>to this address:</p>
+            <div class="qr-code"><img id="qr-img" src="" alt="QR Code"></div>
+            <div class="payment-address" id="payment-address"></div>
+            <button class="copy-btn" onclick="copyAddress()">Copy Address</button>
+            <button class="copy-btn" onclick="copyAmount()">Copy Amount</button>
+            <div class="timer" id="timer"></div>
+            <div class="status" id="status"></div>
+            <br><br>
+            <button class="copy-btn" style="background:var(--surface-2);color:var(--text);" onclick="cancelPayment()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedPackage = { id: 'api_10m', tokens: 10, price: 100 };
+        let selectedPayMethod = 'btc';
+        let currentPaymentId = null;
+        let statusInterval = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPrices();
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('payment') === 'success') {
+                alert('Payment successful! Tokens have been added to your account.');
+                window.history.replaceState({}, '', '/api-tokens.html');
+            }
+        });
+
+        async function loadPrices() {
+            try {
+                const [btc, xmr] = await Promise.all([
+                    fetch('/api/payments/price/btc').then(r => r.json()),
+                    fetch('/api/payments/price/xmr').then(r => r.json())
+                ]);
+                document.getElementById('btc-price').textContent = btc.formatted;
+                document.getElementById('xmr-price').textContent = xmr.formatted;
+            } catch (e) { console.error(e); }
+        }
+
+        function selectPackage(id, tokens, price, card) {
+            document.querySelectorAll('.package-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            selectedPackage = { id, tokens, price };
+            document.getElementById('custom-tokens').value = '';
+            document.getElementById('custom-price').textContent = '$0';
+            updateButton();
+        }
+
+        function updateCustomPrice() {
+            const tokens = parseInt(document.getElementById('custom-tokens').value) || 0;
+            const price = tokens * 10;
+            document.getElementById('custom-price').textContent = '$' + price.toLocaleString();
+
+            document.querySelectorAll('.package-card').forEach(c => c.classList.remove('selected'));
+
+            if (tokens > 0) {
+                selectedPackage = { id: 'custom', tokens, price };
+                updateButton();
+            }
+        }
+
+        function updateButton() {
+            const btn = document.getElementById('purchase-btn');
+            if (selectedPayMethod === 'stripe') {
+                btn.textContent = `Buy ${selectedPackage.tokens}M Tokens - $${selectedPackage.price.toLocaleString()} (Card)`;
+                btn.className = 'action-btn stripe-btn';
+            } else {
+                btn.textContent = `Buy ${selectedPackage.tokens}M Tokens - $${selectedPackage.price.toLocaleString()}`;
+                btn.className = 'action-btn';
+            }
+        }
+
+        function selectPayMethod(method, btn) {
+            document.querySelectorAll('.crypto-btn').forEach(b => {
+                b.classList.remove('selected');
+                b.classList.remove('stripe-selected');
+            });
+            if (method === 'stripe') {
+                btn.classList.add('stripe-selected');
+            } else {
+                btn.classList.add('selected');
+            }
+            selectedPayMethod = method;
+            updateButton();
+        }
+
+        async function getUserId() {
+            const token = localStorage.getItem("rhodes_user_token");
+            if (!token) return null;
+            try {
+                const resp = await fetch("/api/user/me", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data.authenticated && data.user) return data.user.id;
+                }
+            } catch(e) {}
+            return null;
+        }
+
+        async function createPurchase() {
+            const userId = await getUserId();
+            if (!userId) {
+                alert("Please log in first to purchase API tokens.");
+                window.location.href = "/?login=1";
+                return;
+            }
+
+            if (selectedPayMethod === 'stripe') {
+                return createStripePurchase(userId);
+            }
+
+            try {
+                let endpoint, body;
+
+                if (selectedPackage.id === 'custom') {
+                    endpoint = '/api/payments/donate';
+                    body = {
+                        amount_usd: selectedPackage.price,
+                        crypto_type: selectedPayMethod,
+                        user_id: userId,
+                        message: `API tokens: ${selectedPackage.tokens}M`
+                    };
+                } else {
+                    endpoint = '/api/payments/purchase';
+                    body = {
+                        user_id: userId,
+                        product_id: selectedPackage.id,
+                        crypto_type: selectedPayMethod
+                    };
+                }
+
+                const resp = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await resp.json();
+                if (data.error) throw new Error(data.error);
+                showPayment(data);
+            } catch (e) { alert('Error: ' + e.message); }
+        }
+
+        async function createStripePurchase(userId) {
+            try {
+                const productKey = selectedPackage.id === 'custom'
+                    ? 'api_' + selectedPackage.tokens + 'm'
+                    : selectedPackage.id;
+
+                const resp = await fetch('/api/payments/stripe/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        items: [{ product_key: productKey }],
+                        payment_type: 'payment',
+                        success_url: window.location.origin + '/api-tokens.html?payment=success',
+                        cancel_url: window.location.origin + '/api-tokens.html?payment=cancelled',
+                    })
+                });
+                const data = await resp.json();
+                if (data.error) throw new Error(data.error);
+                window.location.href = data.checkout_url;
+            } catch (e) { alert('Error: ' + e.message); }
+        }
+
+        async function purchaseDomain() {
+            const userId = await getUserId();
+            if (!userId) {
+                alert("Please log in first.");
+                window.location.href = "/?login=1";
+                return;
+            }
+
+            const domain = prompt("Enter the domain you want to register (e.g., example.com):");
+            if (!domain) return;
+
+            if (selectedPayMethod === 'stripe') {
+                try {
+                    const resp = await fetch('/api/payments/stripe/checkout', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user_id: userId,
+                            items: [{ product_key: 'domain_yearly' }],
+                            payment_type: 'payment',
+                            success_url: window.location.origin + '/api-tokens.html?payment=success&domain=' + encodeURIComponent(domain),
+                            cancel_url: window.location.origin + '/api-tokens.html',
+                        })
+                    });
+                    const data = await resp.json();
+                    if (data.error) throw new Error(data.error);
+                    window.location.href = data.checkout_url;
+                } catch (e) { alert('Error: ' + e.message); }
+            } else {
+                try {
+                    const resp = await fetch('/api/payments/purchase', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user_id: userId,
+                            product_id: 'domain_yearly',
+                            crypto_type: selectedPayMethod
+                        })
+                    });
+                    const data = await resp.json();
+                    if (data.error) throw new Error(data.error);
+                    showPayment(data);
+                } catch (e) { alert('Error: ' + e.message); }
+            }
+        }
+
+        function showPayment(data) {
+            currentPaymentId = data.payment_id;
+            document.getElementById('form-section').style.display = 'none';
+            document.getElementById('payment-section').classList.add('active');
+
+            const symbol = data.crypto_type === 'BTC' ? '\u20BF' : '\u0271';
+            document.getElementById('payment-amount').textContent = `${symbol} ${data.amount_crypto} ${data.crypto_type}`;
+            document.getElementById('payment-address').textContent = data.address;
+
+            const qrData = data.crypto_type === 'BTC' ? `bitcoin:${data.address}?amount=${data.amount_crypto}` : data.address;
+            document.getElementById('qr-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
+
+            startStatusPolling();
+            updateTimer(new Date(data.expires_at));
+        }
+
+        function startStatusPolling() {
+            if (statusInterval) clearInterval(statusInterval);
+            document.getElementById('status').innerHTML = '<span style="color:var(--green)">Waiting for payment...</span>';
+
+            statusInterval = setInterval(async () => {
+                try {
+                    const resp = await fetch(`/api/payments/status/${currentPaymentId}`);
+                    const data = await resp.json();
+                    const statusEl = document.getElementById('status');
+
+                    if (data.status === 'confirmed') {
+                        statusEl.innerHTML = '<span style="color:var(--success)">Payment Confirmed! Tokens added.</span>';
+                        clearInterval(statusInterval);
+                    } else if (data.status === 'confirming') {
+                        statusEl.innerHTML = `<span style="color:#00aaff">Confirming... (${data.confirmations}/${data.required_confirmations})</span>`;
+                    }
+                } catch (e) { console.error(e); }
+            }, 10000);
+        }
+
+        function updateTimer(expiresAt) {
+            const update = () => {
+                const diff = expiresAt - new Date();
+                if (diff <= 0) { document.getElementById('timer').textContent = 'Expired'; return; }
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                document.getElementById('timer').textContent = `Expires in: ${h}h ${m}m ${s}s`;
+            };
+            update();
+            setInterval(update, 1000);
+        }
+
+        function copyAddress() {
+            navigator.clipboard.writeText(document.getElementById('payment-address').textContent);
+            event.target.textContent = 'Copied!';
+            setTimeout(() => event.target.textContent = 'Copy Address', 2000);
+        }
+
+        function copyAmount() {
+            const amt = document.getElementById('payment-amount').textContent.split(' ')[1];
+            navigator.clipboard.writeText(amt);
+            event.target.textContent = 'Copied!';
+            setTimeout(() => event.target.textContent = 'Copy Amount', 2000);
+        }
+
+        function cancelPayment() {
+            if (statusInterval) clearInterval(statusInterval);
+            document.getElementById('payment-section').classList.remove('active');
+            document.getElementById('form-section').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

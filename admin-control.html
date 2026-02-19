@@ -1,0 +1,2424 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RHODES Admin – Control Panel</title>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel: #121a33;
+        --text: #e7ecff;
+        --muted: #aab4e6;
+        --border: #27325c;
+        --ok: #4ade80;
+        --bad: #ff5a6b;
+        --warn: #fbbf24;
+        --btn: #1d2a5a;
+        --btn2: #25336a;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+        background: var(--bg);
+        color: var(--text);
+      }
+      header {
+        padding: 14px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(11, 16, 32, 0.9);
+        position: sticky;
+        top: 0;
+        backdrop-filter: blur(8px);
+        z-index: 10;
+      }
+      h1 {
+        margin: 0;
+        font-size: 16px;
+      }
+      main {
+        padding: 14px;
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .grow {
+        flex: 1 1 auto;
+        min-width: 240px;
+      }
+      label {
+        font-size: 12px;
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      input,
+      select,
+      textarea {
+        background: #0f1730;
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-family: inherit;
+      }
+      textarea {
+        width: 100%;
+        min-height: 96px;
+        font-family: var(--mono);
+        font-size: 12px;
+        white-space: pre-wrap;
+      }
+      textarea#promptText {
+        min-height: 500px;
+        max-height: 80vh;
+        resize: vertical;
+        line-height: 1.4;
+        font-size: 13px;
+      }
+      textarea#promptText:not([readonly]) {
+        border-color: var(--green);
+        background: #0a1020;
+      }
+      button {
+        background: var(--btn);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px 12px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: var(--btn2);
+      }
+      button.danger {
+        border-color: rgba(255, 90, 107, 0.5);
+      }
+      .pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .mono {
+        font-family: var(--mono);
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 12px;
+        margin: 0;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .ok {
+        color: var(--ok);
+      }
+      .bad {
+        color: var(--bad);
+      }
+      .warn {
+        color: var(--warn);
+      }
+      .tools {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .tool {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px 10px;
+        background: rgba(0, 0, 0, 0.15);
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+      }
+      .tool input {
+        margin-top: 2px;
+      }
+      .tool .name {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--text);
+        line-height: 1.25;
+      }
+      .tool .meta {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .tool.active {
+        border-color: var(--ok);
+        background: rgba(74, 222, 128, 0.08);
+      }
+      .tool.active .name {
+        color: var(--ok);
+      }
+      .tool.inactive {
+        opacity: 0.5;
+      }
+      .tool.pending {
+        border-color: var(--warn);
+        background: rgba(251, 191, 36, 0.1);
+      }
+      .tool.pending .meta {
+        color: var(--warn);
+      }
+      .split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 900px) {
+        .split { grid-template-columns: 1fr; }
+      }
+      .hr {
+        border-top: 1px solid rgba(39, 50, 92, 0.8);
+        margin: 12px 0;
+      }
+      .results {
+        background: #0f1730;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 6px;
+        max-height: 320px;
+        overflow: auto;
+      }
+      .cd-panel {
+        background: #0f1730;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 6px;
+        max-height: 420px;
+        overflow: auto;
+      }
+      table.cd-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      }
+      table.cd-table th,
+      table.cd-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid rgba(39, 50, 92, 0.65);
+        vertical-align: top;
+      }
+      table.cd-table th {
+        position: sticky;
+        top: 0;
+        background: #0f1730;
+        z-index: 2;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      tr.cd-row {
+        cursor: pointer;
+      }
+      tr.cd-row:hover td {
+        background: rgba(255, 255, 255, 0.06);
+      }
+      tr.cd-detail td {
+        background: rgba(0, 0, 0, 0.12);
+      }
+      .cd-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        font-size: 11px;
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+      .cd-badge.ok { color: var(--ok); border-color: rgba(74, 222, 128, 0.45); }
+      .cd-badge.warn { color: var(--warn); border-color: rgba(251, 191, 36, 0.45); }
+      .cd-badge.bad { color: var(--bad); border-color: rgba(255, 90, 107, 0.45); }
+      details.cd-group > summary {
+        cursor: pointer;
+        user-select: none;
+        padding: 8px 10px;
+        border: 1px solid rgba(39, 50, 92, 0.55);
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.10);
+        margin-bottom: 8px;
+        color: var(--text);
+      }
+      details.cd-group[open] > summary {
+        border-color: rgba(74, 222, 128, 0.35);
+      }
+      .resultItem {
+        border: 1px solid rgba(39, 50, 92, 0.5);
+        border-radius: 10px;
+        padding: 8px 10px;
+        margin-bottom: 6px;
+        cursor: pointer;
+        background: rgba(0, 0, 0, 0.12);
+      }
+      .resultItem:hover {
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .resultItem.active {
+        border-color: rgba(74, 222, 128, 0.7);
+        background: rgba(74, 222, 128, 0.08);
+      }
+      .kv {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 6px 10px;
+        font-size: 12px;
+      }
+      .kv .k {
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+      .kv .v {
+        font-family: var(--mono);
+        word-break: break-word;
+      }
+      mark {
+        background: rgba(251, 191, 36, 0.25);
+        color: var(--text);
+        padding: 0 2px;
+        border-radius: 4px;
+      }
+      .spinner { display:inline-block;width:14px;height:14px;border:2px solid var(--warn);border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;margin-right:8px; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>RHODES Admin – Control Panel</h1>
+      <div class="muted">
+        Auth: <code class="mono">/api/admin/login</code> → <code class="mono">X-Rhodes-Admin-Token</code>.
+        Runtime control: <code class="mono">/api/admin/runtime/*</code>.
+      </div>
+      <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="/polivisual/" style="color: #4ade80; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">📊 Polivisual</a>
+        <a href="/rhodes-french/" style="color: #4ade80; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">🇫🇷 French Course</a>
+        <a href="/admin-alliance.html" style="color: #4ade80; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">🤝 Alliance</a>
+        <a href="/admin-townhall.html" style="color: #60a5fa; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">🏛️ Town Hall</a>
+      </div>
+    </header>
+    <main>
+      <div class="card">
+        <div class="row">
+          <label class="grow">Admin password
+            <input id="pw" type="password" placeholder="Admin password" />
+          </label>
+          <button id="loginBtn">Login</button>
+          <button id="logoutBtn">Logout</button>
+          <span class="pill" id="authState">not logged in</span>
+        </div>
+        <div class="muted" style="margin-top: 8px;">
+          Token stored locally as <code class="mono">rhodes_admin_token</code>.
+        </div>
+      </div>
+
+      <!-- User Format Management -->
+      <div class="card" id="userFormatCard">
+        <div style="font-weight:600;margin-bottom:10px;color:var(--ok);">👤 User Format Control</div>
+        <div class="row">
+          <label class="grow">
+            Select User
+            <select id="userSelect" style="width:100%;">
+              <option value="">-- Select a user --</option>
+            </select>
+          </label>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <label>
+            Default Format (on login)
+            <select id="formatSelect">
+              <option value="">None (Standard)</option>
+              <option value="rhodes-delta-format-2">Format 2 (English)</option>
+              <option value="rhodes-delta-format-3">Format 3 (Russian)</option>
+              <option value="rhodes-delta-format-4">Format 4 (French)</option>
+              <option value="rhodes-delta-format-5">Format 5 (Latin)</option>
+              <option value="rhodes-delta-format-6">Format 6 (German)</option>
+              <option value="rhodes-delta-format-7">Format 7 (German-English)</option>
+              <option value="rhodes-delta-format-8">Format 8 (Latin-French)</option>
+            </select>
+          </label>
+          <button id="setFormatBtn">Set Default</button>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <label>
+            🔴 Live Override (instant, no notification)
+            <select id="liveFormatSelect">
+              <option value="">None (use default)</option>
+              <option value="rhodes-delta-format-2">Format 2 (English)</option>
+              <option value="rhodes-delta-format-3">Format 3 (Russian)</option>
+              <option value="rhodes-delta-format-4">Format 4 (French)</option>
+              <option value="rhodes-delta-format-5">Format 5 (Latin)</option>
+              <option value="rhodes-delta-format-6">Format 6 (German)</option>
+              <option value="rhodes-delta-format-7">Format 7 (German-English)</option>
+              <option value="rhodes-delta-format-8">Format 8 (Latin-French)</option>
+            </select>
+          </label>
+          <button id="setLiveFormatBtn" style="background:var(--bad);">Apply Live</button>
+        </div>
+        <div id="userInfo" style="margin-top:10px;color:var(--muted);font-size:12px;padding:8px;background:#0a1020;border-radius:6px;"></div>
+      </div>
+
+
+      <div class="card">
+        <div class="row">
+          <label>Service
+            <select id="service">
+              <option value="rhodes-server-v2">rhodes-server-v2 (version2)</option>
+            </select>
+          </label>
+          <label>Model
+            <select id="model">
+              <option value="deepseek">deepseek (Delta)</option>
+              <option value="opus">opus (Alpha)</option>
+              <option value="sonnet">sonnet (Beta)</option>
+              <option value="haiku">haiku (Ada)</option>
+            </select>
+          </label>
+          <label>Bridge
+            <select id="bridge">
+              <option value="claude_code">claude_code</option>
+              <option value="direct_api">direct_api</option>
+            </select>
+          </label>
+          <label>DeepSeek reasoner
+            <select id="reasoning">
+              <option value="true">ON</option>
+              <option value="false">OFF</option>
+            </select>
+          </label>
+          <label>Max tokens
+            <input id="maxTokens" type="number" min="1024" max="64000" step="256" value="16384" />
+          </label>
+          <label>MCP tools
+            <select id="mcpTools">
+              <option value="true">ON</option>
+              <option value="false">OFF</option>
+            </select>
+          </label>
+          <button id="applyBtn">Apply</button>
+          <button id="refreshBtn">Refresh</button>
+          <button id="clearBtn" class="danger">Clear Admin Override</button>
+        </div>
+        <div class="muted" style="margin-top: 8px;">
+          Notes:
+          <span class="warn">deepseek forces bridge=claude_code</span>.
+          Changes are applied by writing a systemd drop-in and restarting the chosen service.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted">Per-tool toggles (denylist)</div>
+          <div class="muted">
+            Filter: <input id="toolFilter" type="text" placeholder="type to filter…" style="padding:6px 10px; border-radius:8px;" />
+          </div>
+        </div>
+        <div class="muted" style="margin-top: 6px;">
+          Checked = active. Unchecked = inactive. Changes highlighted until applied. Tools <code class="mono">message</code> and <code class="mono">respond</code> are always enabled.
+        </div>
+        <div class="tools" id="toolsGrid">(loading tools…)</div>
+        <div class="hr"></div>
+        <div class="row">
+          <label class="grow">Raw denylist (comma-separated)
+            <input id="denylistRaw" type="text" placeholder="e.g. file_write,shell_exec" />
+          </label>
+          <button id="syncDenylistBtn">Sync from checkboxes</button>
+          <button id="applyDenylistBtn">Apply denylist only</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted">Guest accounts</div>
+          <div class="muted">Search + continue guests (message limit)</div>
+        </div>
+        <div class="row" style="margin-top: 8px;">
+          <label class="grow">Search client_id substring
+            <input id="guestQ" type="text" placeholder="e.g. web_ or 1line_ or a suffix…" />
+          </label>
+          <label>Limit
+            <input id="guestLimit" type="number" min="1" max="500" step="1" value="50" />
+          </label>
+          <button id="guestSearchBtn">Search</button>
+          <button id="guestClearBtn" class="danger">Clear</button>
+        </div>
+        <div class="split" style="margin-top: 10px;">
+          <div>
+            <div class="muted">Results</div>
+            <div class="results" id="guestResults">(not loaded)</div>
+          </div>
+          <div>
+            <div class="muted">Selected guest</div>
+            <div class="results" style="max-height: 220px;">
+              <div class="kv" id="guestKV">
+                <div class="k">client_id</div><div class="v" id="guestClientId">(none)</div>
+                <div class="k">messages_sent</div><div class="v" id="guestSent">(none)</div>
+                <div class="k">remaining</div><div class="v" id="guestRemain">(none)</div>
+                <div class="k">last_seen</div><div class="v" id="guestLast">(none)</div>
+                <div class="k">latest_session</div><div class="v" id="guestLatestSession">(none)</div>
+              </div>
+            </div>
+            <div class="hr"></div>
+            <div class="row">
+              <label class="grow">Set messages_sent
+                <input id="guestMessagesSent" type="number" step="1" placeholder="e.g. 0" />
+              </label>
+              <button id="guestSetBtn">Set</button>
+              <button id="guestResetBtn">Reset to 0</button>
+            </div>
+            <div class="row">
+              <label>Grant extra messages
+                <select id="guestGrantN">
+                  <option value="1">+1</option>
+                  <option value="3">+3</option>
+                  <option value="5">+5</option>
+                  <option value="10" selected>+10</option>
+                  <option value="25">+25</option>
+                </select>
+              </label>
+              <button id="guestGrantBtn">Grant</button>
+              <button id="guestOpenLatestSessionBtn">Open latest session</button>
+            </div>
+            <div class="muted" style="margin-top: 8px;">
+              Note: granting extra messages works by setting a lower (possibly negative) <code class="mono">messages_sent</code>.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted">Session search</div>
+          <div class="muted">Leave query blank to browse latest sessions</div>
+        </div>
+        <div class="row" style="margin-top: 8px; flex-wrap: wrap; gap: 8px;">
+          <label class="grow">Query (optional)
+            <input id="sessQ" type="text" placeholder="Leave blank for latest sessions" />
+          </label>
+          <label>Limit
+            <input id="sessLimit" type="number" min="1" max="200" step="1" value="60" />
+          </label>
+          <label>Min messages
+            <input id="sessMinMessages" type="number" min="0" max="1000" step="1" value="0" />
+          </label>
+          <label>Sort by
+            <select id="sessSort">
+              <option value="latest">Latest</option>
+              <option value="oldest">Oldest</option>
+              <option value="messages">Most messages</option>
+            </select>
+          </label>
+        </div>
+        <div class="row" style="margin-top: 8px; flex-wrap: wrap; gap: 8px;">
+          <label>Session ID
+            <input id="sessFilterSession" type="text" placeholder="optional" />
+          </label>
+          <label>Client ID
+            <input id="sessFilterClient" type="text" placeholder="optional" />
+          </label>
+          <label>Username
+            <input id="sessFilterUsername" type="text" placeholder="optional" />
+          </label>
+          <label>IP Address
+            <input id="sessFilterIP" type="text" placeholder="optional" />
+          </label>
+          <label>Date from
+            <input id="sessDateFrom" type="date" />
+          </label>
+          <label>Date to
+            <input id="sessDateTo" type="date" />
+          </label>
+          <label>Min messages: <span id="minMsgVal">0</span>
+            <input id="sessMinMsgs" type="range" min="0" max="100" value="0" oninput="$('minMsgVal').textContent=this.value" />
+          </label>
+          <button id="sessSearchBtn" onclick="console.log('Button clicked'); sessionSearch().then(() => console.log('Search done')).catch(e => { console.error(e); document.getElementById('actionOut').textContent = e.message; })">Search / Browse</button>
+          <button id="sessClearBtn" class="danger">Clear</button>
+        </div>
+        <div class="split" style="margin-top: 10px;">
+          <div>
+            <div class="muted">Results</div>
+            <div class="results" id="sessResults">(not loaded)</div>
+          </div>
+          <div>
+            <div class="row" style="justify-content: space-between;">
+              <div class="muted">Session viewer</div>
+              <div class="muted" id="sessOpenLabel" style="display:inline;"></div> <button id="sessShareBtn" style="margin-left:10px;padding:4px 10px;" onclick="shareSession()">Share</button> <span id="sessShareResult" style="margin-left:10px;color:#0af;"></span>
+            </div>
+            <pre class="mono" id="sessOut">(none)</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted">System prompt</div>
+          <div class="muted">Current + historical (by sha256)</div>
+        </div>
+        <div class="row" style="margin-top: 8px;">
+          <label>Source
+            <select id="promptSource">
+              <optgroup label="=== DEEPSEEK COMBINED (what users see) ===">
+                <option value="deepseek_format_2">DeepSeek Format-2 (English) COMBINED</option>
+                <option value="deepseek_format_3">DeepSeek Format-3 (Russian) COMBINED</option>
+                <option value="deepseek_format_4">DeepSeek Format-4 (French) COMBINED</option>
+                <option value="deepseek_format_5">DeepSeek Format-5 (Latin) COMBINED</option>
+                <option value="deepseek_format_6">DeepSeek Format-6 (German) COMBINED</option>
+                <option value="deepseek_format_7">DeepSeek Format-7 (German-English) COMBINED</option>
+                <option value="deepseek_format_8">DeepSeek Format-8 (Latin-French) COMBINED</option>
+              </optgroup>
+              <optgroup label="=== CLAUDE COMBINED (what users see) ===">
+                <option value="claude_format_2">Claude Format-2 (English) COMBINED</option>
+                <option value="claude_format_3">Claude Format-3 (Russian) COMBINED</option>
+                <option value="claude_format_4">Claude Format-4 (French) COMBINED</option>
+                <option value="claude_format_5">Claude Format-5 (Latin) COMBINED</option>
+                <option value="claude_format_6">Claude Format-6 (German) COMBINED</option>
+                <option value="claude_format_7">Claude Format-7 (German-English) COMBINED</option>
+                <option value="claude_format_8">Claude Format-8 (Latin-French) COMBINED</option>
+              </optgroup>
+              <optgroup label="=== BASE PROMPTS (individual files) ===">
+                <option value="delta_public">DeepSeek base — public</option>
+                <option value="delta_private">DeepSeek base — admin</option>
+                <option value="delta_base_2">DeepSeek base 2 (format modes, think_code)</option>
+                <option value="claude">Claude base</option>
+              </optgroup>
+              <optgroup label="=== FORMAT PROMPTS ONLY ===">
+                <option value="format_2">Format 2 only (English)</option>
+                <option value="format_3">Format 3 only (Russian)</option>
+                <option value="format_4">Format 4 only (French)</option>
+                <option value="format_5">Format 5 only (Latin)</option>
+                <option value="format_6">Format 6 only (German)</option>
+                <option value="format_7">Format 7 only (German-English)</option>
+                <option value="format_8">Format 8 only (Latin-French)</option>
+              </optgroup>
+            </select>
+          </label>
+          <label class="grow">Historical sha256 (optional)
+            <input id="promptSha" type="text" placeholder="64-hex sha256 (from sessions.db rounds)" />
+          </label>
+          <label>Max chars
+            <input id="promptMaxChars" type="number" min="1000" max="500000" step="1000" value="80000" />
+          </label>
+          <button id="promptLoadBtn">Load</button>
+          <button id="promptVersionsBtn">Versions</button>
+          <button id="promptClearBtn" class="danger">Clear</button>
+          <span class="pill" id="promptState">(not loaded)</span>
+        </div>
+        <div class="hr"></div>
+        <div class="muted" id="promptMeta"></div>
+        <textarea id="promptText" readonly placeholder="(prompt will appear here)" style="min-height:500px;"></textarea>
+        <div class="row" style="margin-top: 8px; align-items: center;">
+          <label class="muted" style="flex-direction: row; align-items: center; gap: 8px;">
+            <input id="promptEditMode" type="checkbox" />
+            Edit mode
+          </label>
+          <button id="promptSaveBtn">Save to source</button>
+          <span class="muted" id="promptEditHint"></span>
+        </div>
+        <div class="hr"></div>
+        <div class="split">
+          <div>
+            <div class="row" style="justify-content: space-between;">
+              <div class="muted">Version history</div>
+              <div class="muted">Click to load; pick A/B to diff</div>
+            </div>
+            <div class="results" id="promptVersions">(not loaded)</div>
+          </div>
+          <div>
+            <div class="row">
+              <label class="grow">A sha256
+                <input id="promptDiffA" type="text" placeholder="select from versions" />
+              </label>
+              <label class="grow">B sha256
+                <input id="promptDiffB" type="text" placeholder="select from versions" />
+              </label>
+            </div>
+            <div class="row" style="margin-top:8px;">
+              <button id="promptDiffBtn">Diff A ↔ B</button>
+              <button id="promptDiffClearBtn" class="danger">Clear diff</button>
+            </div>
+            <pre class="mono" id="promptDiffOut">(no diff)</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="criticalDecisionsCard">
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted">Critical Decisions</div>
+          <div class="muted" id="cdMeta">(not loaded)</div>
+        </div>
+        <div class="row" style="margin-top: 8px; gap: 8px;">
+          <label class="grow">Filter
+            <input id="cdFilter" type="text" placeholder="type to filter title/status…" />
+          </label>
+          <button id="cdLoadBtn">Load</button>
+          <button id="cdCopyBtn">Copy CSV</button>
+          <span class="pill" id="cdState">(idle)</span>
+        </div>
+        <div class="muted" style="margin-top: 8px;">
+          Tree view groups by status. Click a row to expand the full markdown section.
+        </div>
+        <div style="margin-top: 10px;" id="cdTree">(not loaded)</div>
+      </div>
+
+      <div class="split">
+        <div class="card">
+          <div class="row" style="justify-content: space-between;">
+            <div class="muted">Status</div>
+            <div class="muted" id="statusTime"></div>
+          </div>
+          <pre class="mono" id="statusOut">(not loaded)</pre>
+        </div>
+        <div class="card">
+          <div class="muted">Last action output</div>
+          <pre class="mono" id="actionOut">(none)</pre>
+        </div>
+      </div>
+
+      <!-- Context Compaction Settings -->
+      <div class="card">
+        <div class="row" style="justify-content: space-between; margin-bottom: 10px;">
+          <div class="muted" style="font-weight: bold;">Context Compaction</div>
+          <div id="compactionStatus" class="muted">Loading...</div>
+        </div>
+
+        <!-- Trigger Slider -->
+        <div style="margin-bottom: 15px;">
+          <div class="row" style="justify-content: space-between; margin-bottom: 5px;">
+            <span class="muted">Trigger at context usage:</span>
+            <span style="font-weight: bold; color: var(--ok);" id="compactionTriggerDisplay">65%</span>
+          </div>
+          <div class="row" style="gap: 10px; align-items: center;">
+            <span class="muted" style="font-size: 11px;">30%</span>
+            <input type="range" id="compactionTriggerSlider" min="30" max="95" step="5" style="flex: 1; accent-color: var(--ok);" />
+            <span class="muted" style="font-size: 11px;">95%</span>
+            <input type="number" id="compactionTrigger" min="30" max="95" step="5" style="width: 60px; text-align: center;" />
+          </div>
+        </div>
+
+        <div class="row" style="gap: 15px; flex-wrap: wrap;">
+          <label style="flex: 1; min-width: 120px;">
+            Or after N turns
+            <input type="number" id="compactionTurns" min="10" max="200" step="10" style="width: 100%;" />
+          </label>
+          <label style="flex: 1; min-width: 120px;">
+            Keep recent msgs
+            <input type="number" id="compactionKeep" min="2" max="20" step="1" style="width: 100%;" />
+          </label>
+          <label style="flex: 1; min-width: 120px;">
+            Cooldown (sec)
+            <input type="number" id="compactionCooldown" min="5" max="300" step="5" style="width: 100%;" />
+          </label>
+        </div>
+        <div class="row" style="margin-top: 12px;">
+          <button id="compactionSaveBtn" style="background: var(--ok); color: #000;">Save Settings</button>
+          <button id="compactionRefreshBtn" style="background: transparent;">↻ Refresh</button>
+        </div>
+        <div id="compactionStats" class="muted" style="margin-top: 8px; font-size: 11px;"></div>
+      </div>
+
+
+      <!-- Bug Registry -->
+      <div class="card" id="bugRegistryCard">
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted" style="font-weight: bold;">Bug Registry</div>
+          <div class="muted" id="bugMeta">(not loaded)</div>
+        </div>
+        <div class="row" style="margin-top: 8px; gap: 8px;">
+          <label>Status
+            <select id="bugFilterStatus" style="width: 110px;">
+              <option value="">all</option>
+              <option value="open" selected>open</option>
+              <option value="fixed">fixed</option>
+              <option value="wontfix">wontfix</option>
+            </select>
+          </label>
+          <label>Severity
+            <select id="bugFilterSeverity" style="width: 110px;">
+              <option value="" selected>all</option>
+              <option value="critical">critical</option>
+              <option value="high">high</option>
+              <option value="medium">medium</option>
+              <option value="low">low</option>
+            </select>
+          </label>
+          <div style="display: flex; align-items: flex-end; gap: 8px;">
+            <button id="bugLoadBtn">Load</button>
+            <button id="bugAddToggle">+ Add Bug</button>
+          </div>
+        </div>
+
+        <!-- Add Bug Form (hidden by default) -->
+        <div id="bugAddForm" style="display: none; margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #0f1730;">
+          <div class="row" style="gap: 8px; margin-bottom: 8px;">
+            <label class="grow">Title
+              <input id="bugNewTitle" type="text" placeholder="Short bug description" />
+            </label>
+            <label>Severity
+              <select id="bugNewSeverity" style="width: 110px;">
+                <option value="critical">critical</option>
+                <option value="high">high</option>
+                <option value="medium" selected>medium</option>
+                <option value="low">low</option>
+              </select>
+            </label>
+            <label>Status
+              <select id="bugNewStatus" style="width: 110px;">
+                <option value="open" selected>open</option>
+                <option value="fixed">fixed</option>
+                <option value="wontfix">wontfix</option>
+              </select>
+            </label>
+          </div>
+          <div class="row" style="gap: 8px; margin-bottom: 8px;">
+            <label class="grow">Symptoms
+              <textarea id="bugNewSymptoms" rows="2" placeholder="What goes wrong?"></textarea>
+            </label>
+          </div>
+          <div class="row" style="gap: 8px; margin-bottom: 8px;">
+            <label class="grow">Root Cause
+              <textarea id="bugNewRootCause" rows="2" placeholder="Why it happens"></textarea>
+            </label>
+          </div>
+          <div class="row" style="gap: 8px; margin-bottom: 8px;">
+            <label class="grow">Fix Description
+              <textarea id="bugNewFix" rows="2" placeholder="How it was fixed (if applicable)"></textarea>
+            </label>
+          </div>
+          <div class="row" style="gap: 8px; margin-bottom: 8px;">
+            <label>Session
+              <input id="bugNewSession" type="text" placeholder="e.g. 48" style="width: 80px;" />
+            </label>
+            <label class="grow">Affected Files (comma-separated)
+              <input id="bugNewFiles" type="text" placeholder="server/foo.py, web/bar.html" />
+            </label>
+          </div>
+          <div class="row" style="gap: 8px;">
+            <button id="bugSubmitBtn" style="background: var(--ok); color: #000;">Save Bug</button>
+            <button id="bugCancelBtn">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Bug table -->
+        <div style="margin-top: 10px; overflow-x: auto;">
+          <table id="bugTable" style="width: 100%; border-collapse: collapse; font-size: 12px; display: none;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+                <th style="padding: 6px; color: var(--muted);">ID</th>
+                <th style="padding: 6px; color: var(--muted);">Title</th>
+                <th style="padding: 6px; color: var(--muted);">Severity</th>
+                <th style="padding: 6px; color: var(--muted);">Status</th>
+                <th style="padding: 6px; color: var(--muted);">Test</th>
+                <th style="padding: 6px; color: var(--muted);">Session</th>
+                <th style="padding: 6px; color: var(--muted);">Created</th>
+              </tr>
+            </thead>
+            <tbody id="bugTableBody"></tbody>
+          </table>
+          <div id="bugEmpty" class="muted" style="padding: 8px;">(click Load to fetch bugs)</div>
+        </div>
+
+        <!-- Expanded bug detail -->
+        <div id="bugDetail" style="display: none; margin-top: 10px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: #0f1730;">
+          <div class="row" style="justify-content: space-between; margin-bottom: 8px;">
+            <span class="mono" id="bugDetailId" style="color: var(--warn);"></span>
+            <button id="bugDetailClose" style="padding: 4px 10px; font-size: 11px;">Close</button>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+            <div><span class="muted">Symptoms:</span><pre class="mono" id="bugDetailSymptoms" style="margin-top: 4px;"></pre></div>
+            <div><span class="muted">Root Cause:</span><pre class="mono" id="bugDetailRootCause" style="margin-top: 4px;"></pre></div>
+            <div style="grid-column: 1 / -1;"><span class="muted">Fix:</span><pre class="mono" id="bugDetailFix" style="margin-top: 4px;"></pre></div>
+            <div style="grid-column: 1 / -1;"><span class="muted">Affected Files:</span><pre class="mono" id="bugDetailFiles" style="margin-top: 4px;"></pre></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+        <!-- Operational Notes Section -->
+        <!-- Insight Memories Section -->
+        <div class="card" style="margin-top:20px;" id="insightsSection">
+          <h3 style="margin-bottom:12px;color:var(--warn);">💡 Insight Memories</h3>
+          <div style="margin-bottom:12px;display:flex;gap:10px;">
+            <input type="text" id="insightFilter" placeholder="Filter by topic..." style="flex:1;">
+            <button id="loadInsightsBtn">🔄 Load</button>
+          </div>
+          <div id="insightsList" style="max-height:500px;overflow-y:auto;">
+            <div class="muted" style="text-align:center;padding:20px;">Click Load to fetch insights</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:20px;">
+          <h3 style="margin-bottom:12px;color:var(--ok);">📝 Operational Notes</h3>
+          
+          <!-- Voice Recorder -->
+          <div style="margin-bottom:15px;padding:12px;background:rgba(0,0,0,0.2);border-radius:8px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+              <button id="voiceRecordBtn" style="background:var(--bad);border:none;color:#fff;padding:12px 20px;border-radius:50%;font-size:20px;cursor:pointer;transition:all 0.2s;">🎤</button>
+              <span id="voiceRecordStatus" style="color:var(--muted);">Click to record voice note</span>
+              <span id="voiceRecordTimer" style="color:var(--warn);font-family:var(--mono);display:none;">00:00</span>
+            </div>
+            <div id="voiceTranscribing" style="display:none;color:var(--warn);">
+              <span class="spinner"></span> Transcribing...
+            </div>
+          </div>
+          
+          <!-- Notes Input -->
+          <div style="margin-bottom:12px;">
+            <textarea id="notesInput" placeholder="Add operational note..." style="width:100%;min-height:80px;resize:vertical;"></textarea>
+          </div>
+          <div style="display:flex;gap:10px;margin-bottom:15px;">
+            <button id="addNoteBtn" style="flex:1;">Add Note</button>
+            <button id="clearNotesBtn" class="danger">Clear All</button>
+          </div>
+          
+          <!-- Notes List -->
+          <div id="notesList" style="max-height:400px;overflow-y:auto;">
+            <div class="muted" style="text-align:center;padding:20px;">No notes yet</div>
+          </div>
+        </div>
+
+    <script>
+      console.log('Admin panel script starting...');
+      const $ = (id) => document.getElementById(id);
+      const TOKEN_KEY = 'rhodes_admin_token';
+      const USER_TOKEN_KEY = 'rhodes_user_token';
+
+      function token() { 
+        // Prefer user token (logged-in admin), fallback to admin token
+        return localStorage.getItem(USER_TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || ''; 
+      }
+      function setToken(t) { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY); }
+      function setAuthState() { 
+        const userToken = localStorage.getItem('rhodes_user_token');
+        const adminToken = localStorage.getItem('rhodes_admin_token');
+        if (userToken) {
+          $('authState').textContent = 'logged in (user)';
+          $('authState').style.background = '#22c55e';
+        } else if (adminToken) {
+          $('authState').textContent = 'logged in (admin)';
+          $('authState').style.background = '#3b82f6';
+        } else {
+          $('authState').textContent = 'not logged in';
+          $('authState').style.background = '';
+        }
+      }
+
+      function esc(s) { return String(s || '').replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+      function safeSnippet(snippet) {
+        // Sessions are user-generated; escape everything and only re-allow <mark> tags inserted by backend.
+        return esc(snippet || '')
+          .replaceAll('&lt;mark&gt;', '<mark>')
+          .replaceAll('&lt;/mark&gt;', '</mark>');
+      }
+      function fmtEpoch(ts) {
+        if (!ts) return '';
+        // Handle ISO string format (e.g. "2026-01-17T22:35:44Z")
+        if (typeof ts === 'string' && ts.includes('T')) {
+          try { return new Date(ts).toLocaleString(); } catch { return ts; }
+        }
+        // Handle Unix timestamp
+        try {
+          const n = Number(ts);
+          if (!Number.isFinite(n) || n <= 0) return '';
+          return new Date(n * 1000).toLocaleString();
+        } catch { return ''; }
+      }
+
+      async function api(path, opts = {}) {
+        const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+        const t = token();
+        if (t) {
+          // If it looks like a user token (from rhodes_user_token), use Bearer auth
+          // Otherwise use the legacy admin token header
+          if (localStorage.getItem('rhodes_user_token')) {
+            headers['Authorization'] = 'Bearer ' + t;
+          } else {
+            headers['X-Rhodes-Admin-Token'] = t;
+          }
+        }
+        const res = await fetch(path, Object.assign({}, opts, { headers }));
+        const text = await res.text();
+        let data = null;
+        try { data = JSON.parse(text); } catch { data = { raw: text }; }
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${JSON.stringify(data)}`);
+        return data;
+      }
+
+      let CD_DECISIONS = [];
+
+      function cdGroupFromStatus(status) {
+        const s = String(status || '').toUpperCase();
+        if (s.includes('IMPLEMENTED')) return 'Implemented';
+        if (s.includes('APPROVED')) return 'Approved (Not Implemented)';
+        if (s.includes('RESEARCH') || s.includes('INFORMATIONAL')) return 'Research / Informational';
+        if (s.includes('REJECT')) return 'Rejected';
+        return 'Other';
+      }
+
+      function cdBadgeClass(status) {
+        const s = String(status || '').toUpperCase();
+        if (s.includes('IMPLEMENTED')) return 'ok';
+        if (s.includes('APPROVED')) return 'warn';
+        if (s.includes('REJECT')) return 'bad';
+        return '';
+      }
+
+      function cdFiltered() {
+        const q = String($('cdFilter')?.value || '').trim().toLowerCase();
+        if (!q) return CD_DECISIONS.slice();
+        return CD_DECISIONS.filter((d) => {
+          const hay = [
+            d?.id,
+            d?.title,
+            d?.status,
+            d?.decided_date,
+            d?.implemented_date,
+            d?.decided_context,
+          ].map((x) => String(x || '').toLowerCase()).join(' | ');
+          return hay.includes(q);
+        });
+      }
+
+      function cdRenderTree() {
+        const tree = $('cdTree');
+        if (!tree) return;
+
+        const arr = cdFiltered();
+        const groups = new Map();
+        for (const d of arr) {
+          const g = cdGroupFromStatus(d?.status);
+          if (!groups.has(g)) groups.set(g, []);
+          groups.get(g).push(d);
+        }
+
+        const order = ['Approved (Not Implemented)', 'Implemented', 'Research / Informational', 'Rejected', 'Other'];
+        const keys = Array.from(groups.keys()).sort((a, b) => {
+          const ia = order.indexOf(a);
+          const ib = order.indexOf(b);
+          return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+        });
+
+        tree.innerHTML = '';
+        if (!CD_DECISIONS.length) {
+          tree.textContent = '(not loaded)';
+          return;
+        }
+        if (!arr.length) {
+          tree.textContent = '(no matches)';
+          return;
+        }
+
+        for (const k of keys) {
+          const items = groups.get(k) || [];
+          items.sort((a, b) => Number(a?.id || 0) - Number(b?.id || 0));
+
+          const details = document.createElement('details');
+          details.className = 'cd-group';
+          details.open = (k === 'Approved (Not Implemented)' || k === 'Other');
+
+          const summary = document.createElement('summary');
+          summary.textContent = `${k} (${items.length})`;
+          details.appendChild(summary);
+
+          const panel = document.createElement('div');
+          panel.className = 'cd-panel';
+
+          const table = document.createElement('table');
+          table.className = 'cd-table';
+          table.innerHTML = `
+            <thead>
+              <tr>
+                <th style="width: 54px;">ID</th>
+                <th>Title</th>
+                <th style="width: 280px;">Status</th>
+                <th style="width: 120px;">Decided</th>
+                <th style="width: 120px;">Implemented</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          `;
+          const tbody = table.querySelector('tbody');
+
+          for (const d of items) {
+            const tr = document.createElement('tr');
+            tr.className = 'cd-row';
+
+            const badgeCls = cdBadgeClass(d?.status);
+            const statusHtml = `<span class="cd-badge ${badgeCls}">${esc(d?.status || '')}</span>`;
+
+            tr.innerHTML = `
+              <td class="mono">${esc(d?.id)}</td>
+              <td>${esc(d?.title || '')}</td>
+              <td>${statusHtml}</td>
+              <td class="mono">${esc(d?.decided_date || '')}</td>
+              <td class="mono">${esc(d?.implemented_date || '')}</td>
+            `;
+
+            const detail = document.createElement('tr');
+            detail.className = 'cd-detail';
+            detail.style.display = 'none';
+            const td = document.createElement('td');
+            td.colSpan = 5;
+            const pre = document.createElement('pre');
+            pre.className = 'mono';
+            pre.style.margin = '0';
+            pre.textContent = String(d?.markdown || '').trim();
+            td.appendChild(pre);
+            detail.appendChild(td);
+
+            tr.addEventListener('click', () => {
+              detail.style.display = (detail.style.display === 'none') ? '' : 'none';
+            });
+
+            tbody.appendChild(tr);
+            tbody.appendChild(detail);
+          }
+
+          panel.appendChild(table);
+          details.appendChild(panel);
+          tree.appendChild(details);
+        }
+      }
+
+      async function cdLoad() {
+        $('cdState').textContent = 'loading…';
+        try {
+          const data = await api('/api/admin/critical-decisions');
+          CD_DECISIONS = Array.isArray(data.decisions) ? data.decisions : [];
+          const when = data.mtime ? new Date(Number(data.mtime) * 1000).toLocaleString() : '';
+          $('cdMeta').textContent = `source: ${data.path || '(unknown)'}${when ? ' | mtime: ' + when : ''} | decisions: ${CD_DECISIONS.length}`;
+          $('cdState').textContent = 'loaded';
+          cdRenderTree();
+        } catch (e) {
+          $('cdState').textContent = 'error';
+          $('cdMeta').textContent = e.message;
+          $('cdTree').textContent = '(error)';
+        }
+      }
+
+      function cdCsvCell(s) {
+        const v = String(s ?? '');
+        if (/[",\n]/.test(v)) return '"' + v.replaceAll('"', '""') + '"';
+        return v;
+      }
+
+      async function cdCopyCsv() {
+        const rows = cdFiltered();
+        const lines = [
+          ['id', 'title', 'status', 'decided_date', 'implemented_date', 'decided_context'].join(','),
+          ...rows.map((d) => [
+            cdCsvCell(d?.id),
+            cdCsvCell(d?.title || ''),
+            cdCsvCell(d?.status || ''),
+            cdCsvCell(d?.decided_date || ''),
+            cdCsvCell(d?.implemented_date || ''),
+            cdCsvCell(d?.decided_context || ''),
+          ].join(',')),
+        ].join('\n');
+
+        try {
+          await navigator.clipboard.writeText(lines);
+          $('cdState').textContent = `copied ${rows.length}`;
+          setTimeout(() => { if ($('cdState').textContent.startsWith('copied')) $('cdState').textContent = 'loaded'; }, 1000);
+        } catch {
+          const ta = document.createElement('textarea');
+          ta.value = lines;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          $('cdState').textContent = `copied ${rows.length}`;
+          setTimeout(() => { if ($('cdState').textContent.startsWith('copied')) $('cdState').textContent = 'loaded'; }, 1000);
+        }
+      }
+
+      async function login() {
+        const password = $('pw').value;
+        const data = await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ password }), headers: {} });
+        if (!data.token) throw new Error('login failed');
+        setToken(data.token);
+        $('pw').value = '';
+        setAuthState();
+      }
+
+      function parseCsv(s) {
+        return String(s || '')
+          .split(',')
+          .map((p) => p.trim())
+          .filter(Boolean);
+      }
+
+      function toCsv(arr) {
+        return Array.from(new Set(arr.map((x) => String(x || '').trim()).filter(Boolean))).sort().join(',');
+      }
+
+      let ALL_TOOLS = [];
+      let ALWAYS_ENABLED = new Set(['message', 'respond']);
+
+      let PROMPT_LOADED = {
+        mode: null, // 'file' | 'history'
+        source: null,
+        sha256: null,
+        truncated: false,
+        path: null,
+        originalText: '',
+      };
+
+      function promptLoadedIsFileMode() {
+        return PROMPT_LOADED.mode === 'file' && !!PROMPT_LOADED.sha256 && !PROMPT_LOADED.truncated;
+      }
+
+      function updatePromptEditUI() {
+        const editOn = !!$('promptEditMode')?.checked;
+        const inHistoryMode = /^[0-9a-f]{64}$/.test(String($('promptSha').value || '').trim().toLowerCase());
+
+        const txt = $('promptText').value || '';
+        const dirty = txt !== (PROMPT_LOADED.originalText || '');
+
+        const canEdit = editOn && PROMPT_LOADED.mode === 'file' && !PROMPT_LOADED.truncated;
+        $('promptText').readOnly = !canEdit;
+
+        const canSave =
+          editOn &&
+          !inHistoryMode &&
+          promptLoadedIsFileMode() &&
+          dirty;
+
+        $('promptSaveBtn').disabled = !canSave;
+
+        const hints = [];
+        if (!PROMPT_LOADED.mode) hints.push('Load a prompt first.');
+        if (PROMPT_LOADED.mode === 'history') hints.push('History snapshots are read-only (clear sha256 to edit current).');
+        if (PROMPT_LOADED.truncated) hints.push('Loaded prompt is truncated — increase max chars before editing.');
+        if (editOn && PROMPT_LOADED.mode === 'file' && !dirty) hints.push('No changes yet.');
+        $('promptEditHint').textContent = hints.join(' ');
+      }
+
+      function toolIsVisible(name) {
+        const q = ($('toolFilter').value || '').trim().toLowerCase();
+        if (!q) return true;
+        return name.toLowerCase().includes(q);
+      }
+
+      function renderToolsGrid(disabledSet) {
+        const grid = $('toolsGrid');
+        grid.innerHTML = '';
+        for (const name of ALL_TOOLS) {
+          if (!toolIsVisible(name)) continue;
+          const wrap = document.createElement('div');
+          wrap.className = 'tool';
+
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.dataset.tool = name;
+          cb.checked = !disabledSet.has(name);  // Checked = active (NOT in denylist)
+          if (ALWAYS_ENABLED.has(name)) {
+            cb.checked = true;  // Always enabled = always checked
+            cb.disabled = true;
+          }
+          // Set initial visual state
+          wrap.classList.add(cb.checked ? 'active' : 'inactive');
+
+          const box = document.createElement('div');
+          box.style.flex = '1 1 auto';
+
+          const title = document.createElement('div');
+          title.className = 'name';
+          title.textContent = name;
+
+          const meta = document.createElement('div');
+          meta.className = 'meta';
+          meta.textContent = ALWAYS_ENABLED.has(name) ? 'always enabled' : (cb.checked ? 'active' : 'inactive');
+
+          cb.addEventListener('change', () => {
+            meta.textContent = cb.checked ? 'active' : 'inactive';
+            // Mark as pending (changed but not yet applied)
+            wrap.classList.remove('active', 'inactive');
+            wrap.classList.add('pending');
+          });
+
+          box.appendChild(title);
+          box.appendChild(meta);
+
+          wrap.appendChild(cb);
+          wrap.appendChild(box);
+          grid.appendChild(wrap);
+        }
+      }
+
+      function currentDenylistFromCheckboxes() {
+        const disabled = [];
+        document.querySelectorAll('input[type=\"checkbox\"][data-tool]').forEach((cb) => {
+          if (cb.disabled) return;
+          if (!cb.checked) disabled.push(cb.dataset.tool);  // Unchecked = in denylist
+        });
+        return disabled;
+      }
+
+      function applyModelBridgeRules() {
+        const model = $('model').value;
+        if (model === 'deepseek') {
+          $('bridge').value = 'claude_code';
+          $('bridge').disabled = true;
+        } else {
+          $('bridge').disabled = false;
+        }
+      }
+
+      // Guests + sessions
+      let SELECTED_GUEST = null;
+
+      function setGuestSelected(guest) {
+        SELECTED_GUEST = guest || null;
+        $('guestClientId').textContent = guest?.client_id || '(none)';
+        $('guestSent').textContent = (guest && guest.messages_sent !== undefined) ? String(guest.messages_sent) : '(none)';
+        $('guestRemain').textContent = (guest && guest.messages_remaining !== undefined) ? String(guest.messages_remaining) : '(none)';
+        $('guestLast').textContent = guest?.last_message_at ? fmtEpoch(guest.last_message_at) : '';
+        $('guestLatestSession').textContent = guest?.latest_session_id || '';
+        $('guestMessagesSent').value = (guest && guest.messages_sent !== undefined) ? String(guest.messages_sent) : '';
+      }
+
+      function renderGuestResults(guests) {
+        const wrap = $('guestResults');
+        wrap.innerHTML = '';
+        if (!guests || !guests.length) {
+          wrap.textContent = '(no results)';
+          return;
+        }
+        for (const g of guests) {
+          const item = document.createElement('div');
+          item.className = 'resultItem';
+          if (SELECTED_GUEST && SELECTED_GUEST.client_id === g.client_id) item.classList.add('active');
+          item.innerHTML = `
+            <div class="kv">
+              <div class="k">client_id</div><div class="v">${esc(g.client_id)}</div>
+              <div class="k">sent/remaining</div><div class="v">${esc(String(g.messages_sent))} / ${esc(String(g.messages_remaining))}</div>
+              <div class="k">last_seen</div><div class="v">${esc(fmtEpoch(g.last_message_at))}</div>
+              <div class="k">latest_session</div><div class="v">${esc(g.latest_session_id || '')}</div>
+            </div>
+          `;
+          item.addEventListener('click', () => {
+            setGuestSelected(g);
+            renderGuestResults(guests);
+          });
+          wrap.appendChild(item);
+        }
+      }
+
+      async function guestSearch() {
+        const q = ($('guestQ').value || '').trim();
+        const limit = Number($('guestLimit').value || 50) || 50;
+        const url = `/api/admin/guests/search?q=${encodeURIComponent(q)}&limit=${encodeURIComponent(String(limit))}`;
+        const data = await api(url, { method: 'GET' });
+        renderGuestResults(data.guests || []);
+        $('actionOut').textContent = JSON.stringify({ ok: true, guests: (data.guests || []).length }, null, 2);
+      }
+
+      async function guestSetMessages(messagesSent) {
+        if (!SELECTED_GUEST?.client_id) throw new Error('Select a guest first');
+        const payload = { client_id: SELECTED_GUEST.client_id, messages_sent: Number(messagesSent) };
+        const data = await api('/api/admin/guests/set_messages', { method: 'POST', body: JSON.stringify(payload) });
+        await guestSearch();
+        const updated = (data && data.client_id) ? data : null;
+        if (updated) setGuestSelected(Object.assign({}, SELECTED_GUEST, updated));
+        $('actionOut').textContent = JSON.stringify(data, null, 2);
+      }
+
+      async function sessionSearch() {
+        console.log('sessionSearch called');
+        const q = ($('sessQ').value || '').trim();
+        const limit = Number($('sessLimit').value || 60) || 60;
+        const sid = ($('sessFilterSession').value || '').trim();
+        const cid = ($('sessFilterClient').value || '').trim();
+        const username = ($('sessFilterUsername')?.value || '').trim();
+        const ip = ($('sessFilterIP')?.value || '').trim();
+        const dateFrom = ($('sessDateFrom')?.value || '').trim();
+        const dateTo = ($('sessDateTo')?.value || '').trim();
+        const minMessages = Number($('sessMinMsgs')?.value) || 0;
+        const sort = ($('sessSort')?.value || 'latest');
+
+        let url = `/api/admin/session/search?limit=${encodeURIComponent(String(limit))}&sort=${encodeURIComponent(sort)}`;
+        if (q) url += `&q=${encodeURIComponent(q)}`;
+        if (sid) url += `&session_id=${encodeURIComponent(sid)}`;
+        if (cid) url += `&client_id=${encodeURIComponent(cid)}`;
+        if (username) url += `&username=${encodeURIComponent(username)}`;
+        if (ip) url += `&ip=${encodeURIComponent(ip)}`;
+        if (dateFrom) url += `&date_from=${encodeURIComponent(dateFrom)}`;
+        if (dateTo) url += `&date_to=${encodeURIComponent(dateTo)}`;
+        if (minMessages > 0) url += `&min_messages=${encodeURIComponent(String(minMessages))}`;
+
+        const data = await api(url, { method: 'GET' });
+        renderSessionResults(data.results || [], data.mode);
+        $('actionOut').textContent = JSON.stringify({ ok: true, results: (data.results || []).length, mode: data.mode }, null, 2);
+      }
+
+      function renderSessionResults(results, mode) {
+        const wrap = $('sessResults');
+        wrap.innerHTML = '';
+        if (!results || !results.length) {
+          wrap.textContent = '(no results - try leaving query blank to browse)';
+          return;
+        }
+        for (const r of results) {
+          const item = document.createElement('div');
+          item.className = 'resultItem';
+          const whoLabel = r.username ? `user:${r.username}` : (r.client_id ? `guest:${r.client_id}` : 'unknown');
+          const whoFilter = r.username || r.client_id || '';
+          const whoType = r.username ? 'username' : 'client';
+          const when = fmtEpoch(r.created_at);
+          const locStr = r.location ? ` (${r.location})` : '';
+          const ipStr = r.ip_address ? ` · IP:${r.ip_address}${locStr}` : '';
+          const msgStr = r.message_count ? ` · ${r.message_count} msgs` : '';
+          const modelStr = r.model ? ` · model:${r.model}` : '';
+          const headerPre = mode === "browse"
+            ? `${when} · ${r.session_id} · `
+            : `${when} · ${r.session_id} · round ${r.round_num} · `;
+          const headerPost = `${modelStr}${ipStr}${msgStr}`;
+          item.innerHTML = `
+            <div class="mono" style="font-size:12px; margin-bottom:6px;">${esc(headerPre)}<a href="#" class="user-link" style="color:#4ade80;text-decoration:underline;cursor:pointer;">${esc(whoLabel)}</a>${esc(headerPost)}</div>
+            <div class="mono">${safeSnippet(r.snippet || '')}</div>
+            <div style="margin-top:8px;">
+              <button data-open="1" style="padding:6px 10px;">Open session</button>
+            </div>
+          `;
+          item.querySelector('.user-link').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (whoType === 'username') {
+              $('sessFilterUsername').value = whoFilter;
+              $('sessFilterClient').value = '';
+            } else {
+              $('sessFilterClient').value = whoFilter;
+              $('sessFilterUsername').value = '';
+            }
+            sessionSearch();
+          });
+          item.querySelector('button[data-open="1"]').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openSession(r.session_id).catch(err => $('actionOut').textContent = err.message);
+          });
+          item.addEventListener('click', () => openSession(r.session_id).catch(err => $('actionOut').textContent = err.message));
+          wrap.appendChild(item);
+        }
+      }
+
+      async function shareSession() {
+        const sessionId = $("sessOpenLabel").textContent.trim();
+        if (!sessionId) { $("sessShareResult").textContent = "No session open"; return; }
+        try {
+          const resp = await fetch("/api/share-session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: sessionId })
+          });
+          const data = await resp.json();
+          if (data.success) {
+            const url = "https://rhodesagi.com/qa/" + data.id;
+            $("sessShareResult").innerHTML = "<a href='" + url + "' target='_blank'>" + url + "</a>";
+            navigator.clipboard.writeText(url).catch(() => {});
+          } else {
+            $("sessShareResult").textContent = "Error: " + (data.error || "Unknown");
+          }
+        } catch (e) {
+          $("sessShareResult").textContent = "Error: " + e.message;
+        }
+      }
+
+      async function openSession(sessionId) {
+        if (!sessionId) throw new Error('Missing session_id');
+        const data = await api(`/api/admin/session/${encodeURIComponent(sessionId)}`, { method: 'GET' });
+        const rounds = data.rounds || [];
+        $('sessOpenLabel').textContent = sessionId;
+        const sessionDate = rounds.length > 0 && rounds[0].created_at ? fmtEpoch(rounds[0].created_at) : 'unknown';
+        const out = [];
+        out.push('=== Session: ' + sessionId + ' ===');
+        out.push('Date: ' + sessionDate);
+        // Summarize model switches (based on per-round metadata.model when present)
+        try {
+          const modelByRound = rounds.map(r => {
+            let m = '';
+            try {
+              const meta = typeof r.metadata === 'string' ? JSON.parse(r.metadata) : (r.metadata || null);
+              if (meta && meta.model) m = String(meta.model);
+            } catch (e) {}
+            return m || '';
+          });
+          const switches = [];
+          let prev = '';
+          for (let i = 0; i < modelByRound.length; i++) {
+            const cur = modelByRound[i];
+            if (!cur) continue;
+            if (prev && cur !== prev) switches.push({ from: prev, to: cur, round: rounds[i]?.round_num, at: rounds[i]?.created_at });
+            prev = cur;
+          }
+          if (prev) out.push('Last model: ' + prev);
+          if (switches.length) {
+            out.push('Switches: ' + switches.map(s => `${s.from}->${s.to} (round ${s.round || '?'})`).join(', '));
+          }
+        } catch (e) {}
+        out.push('');
+        for (const r of rounds) {
+          const who = r.username ? `user:${r.username}` : (r.client_id ? `guest:${r.client_id}` : 'unknown');
+          const when = fmtEpoch(r.created_at);
+          let model = 'unknown';
+          try {
+            const meta = typeof r.metadata === 'string' ? JSON.parse(r.metadata) : (r.metadata || null);
+            if (meta && meta.model) model = String(meta.model);
+          } catch (e) {}
+          const ps = r.prompt_source ? ` · ${r.prompt_source}` : '';
+          out.push(`== Round ${r.round_num} · ${who} · ${when} · model:${model}${ps} ==`);
+          out.push('');
+          out.push('USER:');
+          out.push(String(r.user_message || '').trimEnd());
+          // Show injection if present in metadata (collapsible)
+          if (r.metadata) {
+            try {
+              const meta = typeof r.metadata === 'string' ? JSON.parse(r.metadata) : r.metadata;
+              if (meta.injected_content && meta.injected_content !== r.user_message) {
+                const inj = String(meta.injected_content || '');
+                const lines = inj.split("\n");
+                const preview = lines.slice(0, 4).join("\n");
+                const hasMore = lines.length > 4;
+                out.push('');
+                out.push('<details style="cursor:pointer"><summary style="color:#0ff">INJECTION [' + lines.length + ' lines] click to expand</summary>');
+                out.push('<pre style="color:#888;white-space:pre-wrap;max-height:300px;overflow:auto">' + inj.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre></details>');
+              }
+            } catch(e) {}
+          }
+          out.push('');
+          out.push('AI:');
+          out.push(String(r.response || '').trimEnd());
+          if (r.thinking) {
+            out.push('');
+            out.push('THINKING:');
+            out.push(String(r.thinking || '').trimEnd());
+          }
+          out.push('');
+        }
+        $('sessOut').innerHTML = out.join('\n');
+        $('actionOut').textContent = JSON.stringify({ ok: true, session_id: sessionId, rounds: rounds.length }, null, 2);
+      }
+
+      async function loadPrompt() {
+        const source = ($('promptSource').value || '').trim();
+        const sha = ($('promptSha').value || '').trim().toLowerCase();
+        const maxChars = Number($('promptMaxChars').value || 80000) || 80000;
+        const isSha = /^[0-9a-f]{64}$/.test(sha);
+        const url = isSha
+          ? `/api/admin/prompt/history?sha256=${encodeURIComponent(sha)}&max_chars=${encodeURIComponent(String(maxChars))}`
+          : `/api/admin/prompt?source=${encodeURIComponent(source)}&max_chars=${encodeURIComponent(String(maxChars))}`;
+        const data = await api(url, { method: 'GET' });
+
+        $('promptText').value = data.text || '';
+        $('promptState').textContent = data.exists ? (data.truncated ? 'loaded (truncated)' : 'loaded') : 'missing';
+
+        PROMPT_LOADED = {
+          mode: isSha ? 'history' : 'file',
+          source: data.source || source || null,
+          sha256: data.sha256 || (isSha ? sha : null),
+          truncated: !!data.truncated,
+          path: data.path || null,
+          originalText: data.text || '',
+        };
+        $('promptEditMode').checked = false;
+        $('promptText').readOnly = true;
+        updatePromptEditUI();
+
+        const bits = [];
+        if (data.path) bits.push(`path: ${data.path}`);
+        if (data.sha256) bits.push(`sha256: ${data.sha256}`);
+        if (data.source) bits.push(`source: ${data.source}`);
+        if (data.created_at) bits.push(`created_at: ${data.created_at}`);
+        if (data.chars !== undefined) bits.push(`chars: ${data.chars}`);
+        if (data.max_chars !== undefined) bits.push(`max_chars: ${data.max_chars}`);
+        $('promptMeta').textContent = bits.join(' · ');
+        $('actionOut').textContent = JSON.stringify({ ok: true, mode: isSha ? 'history' : 'file', truncated: !!data.truncated }, null, 2);
+      }
+
+      async function savePrompt() {
+        const source = ($('promptSource').value || '').trim();
+        const shaInput = ($('promptSha').value || '').trim().toLowerCase();
+        const inHistoryMode = /^[0-9a-f]{64}$/.test(shaInput);
+        if (inHistoryMode) throw new Error('Clear "Historical sha256" before saving (only current file can be edited).');
+        if (!PROMPT_LOADED || PROMPT_LOADED.mode !== 'file') throw new Error('Load the current file prompt before saving.');
+        if (PROMPT_LOADED.truncated) throw new Error('Loaded prompt is truncated — increase max chars before saving.');
+        if (!$('promptEditMode').checked) throw new Error('Enable Edit mode first.');
+
+        const text = $('promptText').value || '';
+        if (text === (PROMPT_LOADED.originalText || '')) throw new Error('No changes to save.');
+
+        const ok = confirm(`Overwrite prompt source "${source}"? This updates the live prompt file immediately.`);
+        if (!ok) return;
+
+        const payload = {
+          source,
+          expected_sha256: PROMPT_LOADED.sha256 || '',
+          text,
+        };
+        const data = await api('/api/admin/prompt', { method: 'POST', body: JSON.stringify(payload) });
+
+        $('promptSha').value = '';
+        $('promptState').textContent = 'saved';
+        const bits = [];
+        if (data.path) bits.push(`path: ${data.path}`);
+        if (data.sha256) bits.push(`sha256: ${data.sha256}`);
+        if (data.source) bits.push(`source: ${data.source}`);
+        if (data.chars !== undefined) bits.push(`chars: ${data.chars}`);
+        bits.push(`snapshotted: ${data.snapshotted ? 'yes' : 'no'}`);
+        $('promptMeta').textContent = bits.join(' · ');
+
+        PROMPT_LOADED = {
+          mode: 'file',
+          source: data.source || source || null,
+          sha256: data.sha256 || null,
+          truncated: false,
+          path: data.path || null,
+          originalText: text,
+        };
+        $('promptEditMode').checked = false;
+        $('promptText').readOnly = true;
+        updatePromptEditUI();
+
+        try { await loadPromptVersions(); } catch {}
+        $('actionOut').textContent = JSON.stringify(data, null, 2);
+      }
+
+      function renderPromptVersions(versions) {
+        const wrap = $('promptVersions');
+        wrap.innerHTML = '';
+        if (!versions || !versions.length) {
+          wrap.textContent = '(no versions)';
+          return;
+        }
+        for (const v of versions) {
+          const sha = v.sha256 || '';
+          const title = `${(v.created_at || '')} · ${sha.slice(0,12)}… · ${v.chars || '?'} chars · uses ${v.uses || 0}`;
+          const item = document.createElement('div');
+          item.className = 'resultItem';
+          item.innerHTML = `
+            <div class="mono" style="font-size:12px;margin-bottom:6px;">${esc(title)}</div>
+            <div class="mono" style="font-size:11px;color:var(--muted);">
+              first_seen=${esc(v.first_seen || '')} · last_seen=${esc(v.last_seen || '')} · source=${esc(v.source || '')}
+            </div>
+            <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+              <button data-load="1" style="padding:6px 10px;">Load</button>
+              <button data-a="1" style="padding:6px 10px;">Set A</button>
+              <button data-b="1" style="padding:6px 10px;">Set B</button>
+            </div>
+          `;
+          item.querySelector('button[data-load="1"]').addEventListener('click', (e) => {
+            e.stopPropagation();
+            $('promptSha').value = sha;
+            loadPrompt().catch(err => $('actionOut').textContent = err.message);
+          });
+          item.querySelector('button[data-a="1"]').addEventListener('click', (e) => {
+            e.stopPropagation();
+            $('promptDiffA').value = sha;
+          });
+          item.querySelector('button[data-b="1"]').addEventListener('click', (e) => {
+            e.stopPropagation();
+            $('promptDiffB').value = sha;
+          });
+          item.addEventListener('click', () => {
+            $('promptSha').value = sha;
+            loadPrompt().catch(err => $('actionOut').textContent = err.message);
+          });
+          wrap.appendChild(item);
+        }
+      }
+
+      async function loadPromptVersions() {
+        const source = ($('promptSource').value || '').trim();
+        const limit = 100;
+        const url = `/api/admin/prompt/versions?source=${encodeURIComponent(source)}&limit=${encodeURIComponent(String(limit))}`;
+        const data = await api(url, { method: 'GET' });
+        renderPromptVersions(data.versions || []);
+        $('actionOut').textContent = JSON.stringify({ ok: true, versions: (data.versions || []).length }, null, 2);
+      }
+
+      async function loadPromptDiff() {
+        const a = ($('promptDiffA').value || '').trim().toLowerCase();
+        const b = ($('promptDiffB').value || '').trim().toLowerCase();
+        const maxChars = Number($('promptMaxChars').value || 80000) || 80000;
+        if (!/^[0-9a-f]{64}$/.test(a) || !/^[0-9a-f]{64}$/.test(b)) {
+          throw new Error('Pick valid A and B sha256 values (64 hex chars).');
+        }
+        const url = `/api/admin/prompt/diff?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}&max_chars=${encodeURIComponent(String(Math.max(5000, maxChars)))}`
+        const data = await api(url, { method: 'GET' });
+        $('promptDiffOut').textContent = data.diff || '(no diff)';
+        $('actionOut').textContent = JSON.stringify({ ok: true, truncated: !!data.truncated }, null, 2);
+      }
+
+      async function loadTools() {
+        const data = await api('/api/admin/runtime/tools', { method: 'GET' });
+        ALL_TOOLS = data.tools || [];
+        ALWAYS_ENABLED = new Set((data.always_enabled || ['message', 'respond']).map(String));
+      }
+
+      async function refreshStatus() {
+        const data = await api('/api/admin/runtime/status', { method: 'GET' });
+        $('statusTime').textContent = new Date().toISOString();
+        $('statusOut').textContent = JSON.stringify(data, null, 2);
+        return data;
+      }
+
+      function fillFromServiceStatus(statusData) {
+        const svc = $('service').value;
+        const svcData = (statusData.services || {})[svc] || {};
+        const env = svcData.env || {};
+
+        if (env.RHODES_MODEL) $('model').value = env.RHODES_MODEL;
+        if (env.RHODES_BRIDGE_MODE) $('bridge').value = env.RHODES_BRIDGE_MODE;
+
+        if (env.DEEPSEEK_REASONING) $('reasoning').value = String(env.DEEPSEEK_REASONING).toLowerCase() === 'true' ? 'true' : 'false';
+        if (env.DEEPSEEK_MAX_TOKENS) $('maxTokens').value = Number(env.DEEPSEEK_MAX_TOKENS) || $('maxTokens').value;
+        if (env.DEEPSEEK_MCP_TOOLS) $('mcpTools').value = String(env.DEEPSEEK_MCP_TOOLS).toLowerCase() === 'true' ? 'true' : 'false';
+
+        applyModelBridgeRules();
+
+        const deny = parseCsv(env.RHODES_TOOL_DENYLIST || '');
+        $('denylistRaw').value = toCsv(deny);
+        renderToolsGrid(new Set(deny));
+      }
+
+      async function applyConfig(extra = {}) {
+        applyModelBridgeRules();
+        const payload = Object.assign({
+          action: 'apply',
+          service: $('service').value,
+          model: $('model').value,
+          bridge: $('bridge').value,
+          reasoning: $('reasoning').value,
+          max_tokens: String($('maxTokens').value || '').trim(),
+          mcp_tools: $('mcpTools').value,
+          tool_denylist: $('denylistRaw').value.trim(),
+        }, extra);
+        const data = await api('/api/admin/runtime/apply', { method: 'POST', body: JSON.stringify(payload) });
+        $('actionOut').textContent = JSON.stringify(data, null, 2);
+        const st = await refreshStatus();
+        fillFromServiceStatus(st);
+      }
+
+      async function clearOverride() {
+        const payload = { action: 'clear', service: $('service').value };
+        const data = await api('/api/admin/runtime/apply', { method: 'POST', body: JSON.stringify(payload) });
+        $('actionOut').textContent = JSON.stringify(data, null, 2);
+        const st = await refreshStatus();
+        fillFromServiceStatus(st);
+      }
+
+      // Wire events
+      $('loginBtn').addEventListener('click', () => login().then(async () => {
+        await loadTools();
+        const st = await refreshStatus();
+        fillFromServiceStatus(st);
+        cdLoad().catch(() => {});
+      }).catch(e => $('actionOut').textContent = e.message));
+
+      $('logoutBtn').addEventListener('click', () => { setToken(''); setAuthState(); $('actionOut').textContent = 'logged out'; });
+      $('refreshBtn').addEventListener('click', () => refreshStatus().then(fillFromServiceStatus).catch(e => $('actionOut').textContent = e.message));
+      $('applyBtn').addEventListener('click', () => applyConfig().catch(e => $('actionOut').textContent = e.message));
+      $('clearBtn').addEventListener('click', () => clearOverride().catch(e => $('actionOut').textContent = e.message));
+
+      $('service').addEventListener('change', () => refreshStatus().then(fillFromServiceStatus).catch(() => {}));
+      $('model').addEventListener('change', applyModelBridgeRules);
+      $('toolFilter').addEventListener('input', () => {
+        const deny = parseCsv($('denylistRaw').value || '');
+        renderToolsGrid(new Set(deny));
+      });
+
+      $('cdLoadBtn')?.addEventListener('click', () => cdLoad());
+      $('cdCopyBtn')?.addEventListener('click', () => cdCopyCsv());
+      $('cdFilter')?.addEventListener('input', () => cdRenderTree());
+
+      $('syncDenylistBtn').addEventListener('click', () => {
+        const deny = currentDenylistFromCheckboxes();
+        $('denylistRaw').value = toCsv(deny);
+        $('actionOut').textContent = 'denylist synced from checkboxes';
+        // Clear pending states and update to reflect actual state
+        document.querySelectorAll('.tool.pending').forEach(t => {
+          const cb = t.querySelector('input[type=checkbox]');
+          t.classList.remove('pending');
+          t.classList.add(cb.checked ? 'active' : 'inactive');
+        });
+      });
+
+      $('applyDenylistBtn').addEventListener('click', () => {
+        $('syncDenylistBtn').click();
+        applyConfig({ model: null, bridge: null, reasoning: null, max_tokens: null, mcp_tools: null }).catch(e => $('actionOut').textContent = e.message);
+      });
+
+      $('guestSearchBtn').addEventListener('click', () => guestSearch().catch(e => $('actionOut').textContent = e.message));
+      $('guestClearBtn').addEventListener('click', () => {
+        $('guestQ').value = '';
+        $('guestResults').textContent = '(not loaded)';
+        setGuestSelected(null);
+      });
+      $('guestSetBtn').addEventListener('click', () => guestSetMessages($('guestMessagesSent').value).catch(e => $('actionOut').textContent = e.message));
+      $('guestResetBtn').addEventListener('click', () => guestSetMessages(0).catch(e => $('actionOut').textContent = e.message));
+      $('guestGrantBtn').addEventListener('click', () => {
+        const n = Number($('guestGrantN').value || 0) || 0;
+        if (!SELECTED_GUEST) { $('actionOut').textContent = 'Select a guest first'; return; }
+        const current = Number(SELECTED_GUEST.messages_sent || 0) || 0;
+        const next = current - n;
+        guestSetMessages(next).catch(e => $('actionOut').textContent = e.message);
+      });
+      $('guestOpenLatestSessionBtn').addEventListener('click', () => {
+        const sid = SELECTED_GUEST?.latest_session_id;
+        if (!sid) { $('actionOut').textContent = 'No latest session for selected guest'; return; }
+        openSession(sid).catch(e => $('actionOut').textContent = e.message);
+      });
+
+      $('sessSearchBtn').addEventListener('click', () => sessionSearch().catch(e => $('actionOut').textContent = e.message));
+      $('sessClearBtn').addEventListener('click', () => {
+        $('sessQ').value = '';
+        $('sessFilterSession').value = '';
+        $('sessFilterClient').value = '';
+        if ($('sessFilterUsername')) $('sessFilterUsername').value = '';
+        if ($('sessFilterIP')) $('sessFilterIP').value = '';
+        if ($('sessDateFrom')) $('sessDateFrom').value = '';
+        if ($('sessDateTo')) $('sessDateTo').value = '';
+        if ($('sessMinMsgs')) { $('sessMinMsgs').value = '0'; $('minMsgVal').textContent = '0'; }
+        if ($('sessSort')) $('sessSort').value = 'latest';
+        $('sessResults').textContent = '(not loaded)';
+        $('sessOpenLabel').textContent = '';
+        $('sessOut').textContent = '(none)';
+      });
+
+      $('promptLoadBtn').addEventListener('click', () => loadPrompt().catch(e => $('actionOut').textContent = e.message));
+      $('promptVersionsBtn').addEventListener('click', () => loadPromptVersions().catch(e => $('actionOut').textContent = e.message));
+      $('promptClearBtn').addEventListener('click', () => {
+        $('promptText').value = '';
+        $('promptMeta').textContent = '';
+        $('promptState').textContent = '(not loaded)';
+        $('promptSha').value = '';
+        $('promptEditMode').checked = false;
+        PROMPT_LOADED = { mode: null, source: null, sha256: null, truncated: false, path: null, originalText: '' };
+        updatePromptEditUI();
+      });
+      $('promptEditMode').addEventListener('change', updatePromptEditUI);
+      $('promptText').addEventListener('input', updatePromptEditUI);
+      $('promptSaveBtn').addEventListener('click', () => savePrompt().catch(e => { alert('Save failed: ' + e.message); $('actionOut').textContent = e.message; }));
+      $('promptDiffBtn').addEventListener('click', () => loadPromptDiff().catch(e => $('actionOut').textContent = e.message));
+      $('promptDiffClearBtn').addEventListener('click', () => {
+        $('promptDiffOut').textContent = '(no diff)';
+      });
+
+      // Init
+      setAuthState();
+      updatePromptEditUI();
+      if (token()) {
+        loadTools()
+          .then(refreshStatus)
+          .then(fillFromServiceStatus)
+          .then(() => cdLoad().catch(() => {}))
+          .catch(() => {});
+      }
+
+      
+      // ==================== USER FORMAT MANAGEMENT ====================
+      let allUsers = [];
+      
+      // Convert to EST
+      function toEST(date) {
+        return date.toLocaleString("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hour12: true });
+      }
+      
+      async function loadUsers() {
+        try {
+          const resp = await api("/api/admin/users/active");
+          if (resp && resp.users) {
+            allUsers = resp.users;
+            const sel = $("userSelect");
+            sel.innerHTML = "<option value=\"\">-- Select a user --</option>";
+            resp.users.forEach(u => {
+              const opt = document.createElement("option");
+              opt.value = u.id;
+              let label = u.username;
+              if (u.format_override) label += " 🔴[LIVE:" + u.format_override.replace("rhodes-delta-", "") + "]";
+              else if (u.default_format) label += " [" + u.default_format.replace("rhodes-delta-", "") + "]";
+              sel.appendChild(opt);
+              opt.textContent = label;
+            });
+          }
+        } catch (e) {
+          console.error("Failed to load users:", e);
+        }
+      }
+      
+      $("userSelect").addEventListener("change", () => {
+        const userId = $("userSelect").value;
+        const user = allUsers.find(u => u.id == userId);
+        if (user) {
+          $("formatSelect").value = user.default_format || "";
+          $("liveFormatSelect").value = user.format_override || "";
+          let info = "<b>" + user.username + "</b> (" + user.email + ")<br>";
+          info += "Default: " + (user.default_format || "Standard") + "<br>";
+          if (user.format_override) {
+            info += "<span style=\"color:var(--bad)\">🔴 LIVE OVERRIDE: " + user.format_override + "</span>";
+          }
+          $("userInfo").innerHTML = info;
+        } else {
+          $("formatSelect").value = "";
+          $("liveFormatSelect").value = "";
+          $("userInfo").innerHTML = "";
+        }
+      });
+      
+      $("setFormatBtn").addEventListener("click", async () => {
+        const userId = $("userSelect").value;
+        const format = $("formatSelect").value;
+        if (!userId) { alert("Please select a user"); return; }
+        try {
+          const resp = await api("/api/admin/users/format", {
+            method: "POST",
+            body: JSON.stringify({ user_id: parseInt(userId), default_format: format || null })
+          });
+          if (resp && resp.success) {
+            $("userInfo").innerHTML = "✓ Default format updated!";
+            setTimeout(() => loadUsers(), 1500);
+          }
+        } catch (e) {
+          $("userInfo").innerHTML = "✗ Error: " + e.message;
+        }
+      });
+      
+      $("setLiveFormatBtn").addEventListener("click", async () => {
+        const userId = $("userSelect").value;
+        const format = $("liveFormatSelect").value;
+        if (!userId) { alert("Please select a user"); return; }
+        try {
+          const resp = await api("/api/admin/users/live_format", {
+            method: "POST",
+            body: JSON.stringify({ user_id: parseInt(userId), format_override: format || null })
+          });
+          if (resp && resp.success) {
+            $("userInfo").innerHTML = "<span style=\"color:var(--ok)\">✓ " + resp.message + "</span><br>Takes effect on their next message!";
+            setTimeout(() => loadUsers(), 1500);
+          }
+        } catch (e) {
+          $("userInfo").innerHTML = "✗ Error: " + e.message;
+        }
+      });
+      
+      // Load users on page load if logged in
+      if (token()) loadUsers();
+
+// ==================== OPERATIONAL NOTES ====================
+      const NOTES_STORAGE_KEY = 'rhodes_admin_notes';
+      let mediaRecorder = null;
+      let audioChunks = [];
+      let recordingStartTime = null;
+      let timerInterval = null;
+
+      function loadNotes() {
+        try {
+          return JSON.parse(localStorage.getItem(NOTES_STORAGE_KEY) || '[]');
+        } catch { return []; }
+      }
+
+      function saveNotes(notes) {
+        localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes));
+      }
+
+      function renderNotes() {
+        const notes = loadNotes();
+        const container = $('notesList');
+        if (notes.length === 0) {
+          container.innerHTML = '<div class="muted" style="text-align:center;padding:20px;">No notes yet</div>';
+          return;
+        }
+        container.innerHTML = notes.map((note, i) => `
+          <div style="padding:10px;border-bottom:1px solid var(--border);position:relative;">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">
+              ${new Date(note.timestamp).toLocaleString('en-US', {timeZone: 'America/New_York'})}
+              ${note.isVoice ? ' 🎤' : ''}
+            </div>
+            <div style="white-space:pre-wrap;">${note.text}</div>
+            <button onclick="deleteNote(${i})" style="position:absolute;top:8px;right:8px;background:transparent;border:none;color:var(--bad);cursor:pointer;font-size:14px;">✕</button>
+          </div>
+        `).join('');
+      }
+
+      function addNote(text, isVoice = false) {
+        if (!text.trim()) return;
+        const notes = loadNotes();
+        notes.unshift({ text: text.trim(), timestamp: Date.now(), isVoice });
+        saveNotes(notes);
+        renderNotes();
+        $('notesInput').value = '';
+      }
+
+      function deleteNote(index) {
+        const notes = loadNotes();
+        notes.splice(index, 1);
+        saveNotes(notes);
+        renderNotes();
+      }
+
+      function clearAllNotes() {
+        if (confirm('Clear all operational notes?')) {
+          saveNotes([]);
+          renderNotes();
+        }
+      }
+
+      function updateRecordingTimer() {
+        if (!recordingStartTime) return;
+        const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+        const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        const secs = String(elapsed % 60).padStart(2, '0');
+        $('voiceRecordTimer').textContent = mins + ':' + secs;
+      }
+
+      async function startRecording() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+          
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+          };
+          
+          mediaRecorder.onstop = async () => {
+            stream.getTracks().forEach(t => t.stop());
+            clearInterval(timerInterval);
+            $('voiceRecordTimer').style.display = 'none';
+            
+            if (audioChunks.length === 0) {
+              $('voiceRecordStatus').textContent = 'No audio recorded';
+              return;
+            }
+            
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            await transcribeAudio(audioBlob);
+          };
+          
+          mediaRecorder.start(100);
+          recordingStartTime = Date.now();
+          timerInterval = setInterval(updateRecordingTimer, 1000);
+          
+          $('voiceRecordBtn').textContent = '⏹';
+          $('voiceRecordBtn').style.background = 'var(--ok)';
+          $('voiceRecordStatus').textContent = 'Recording... Click to stop';
+          $('voiceRecordTimer').style.display = 'inline';
+          $('voiceRecordTimer').textContent = '00:00';
+        } catch (err) {
+          console.error('Recording error:', err);
+          $('voiceRecordStatus').textContent = 'Microphone access denied';
+        }
+      }
+
+      function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+          $('voiceRecordBtn').textContent = '🎤';
+          $('voiceRecordBtn').style.background = 'var(--bad)';
+          $('voiceRecordStatus').textContent = 'Processing...';
+        }
+      }
+
+      async function transcribeAudio(audioBlob) {
+        $('voiceTranscribing').style.display = 'block';
+        $('voiceRecordStatus').textContent = 'Transcribing with Whisper...';
+        
+        try {
+          const formData = new FormData();
+          formData.append('audio', audioBlob, 'recording.webm');
+          
+          const resp = await fetch('/api/transcribe', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const data = await resp.json();
+          $('voiceTranscribing').style.display = 'none';
+          
+          if (data.transcript) {
+            addNote(data.transcript, true);
+            $('voiceRecordStatus').textContent = 'Transcribed and added!';
+          } else {
+            $('voiceRecordStatus').textContent = 'Transcription failed: ' + (data.error || 'Unknown error');
+          }
+        } catch (err) {
+          console.error('Transcription error:', err);
+          $('voiceTranscribing').style.display = 'none';
+          $('voiceRecordStatus').textContent = 'Transcription error: ' + err.message;
+        }
+        
+        setTimeout(() => {
+          $('voiceRecordStatus').textContent = 'Click to record voice note';
+        }, 3000);
+      }
+
+      // Initialize notes
+      $('voiceRecordBtn').addEventListener('click', () => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+          stopRecording();
+        } else {
+          startRecording();
+        }
+      });
+      $('addNoteBtn').addEventListener('click', () => addNote($('notesInput').value));
+      $('clearNotesBtn').addEventListener('click', clearAllNotes);
+      $('notesInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.ctrlKey) {
+          addNote($('notesInput').value);
+        }
+      });
+      renderNotes();
+
+      // === INSIGHT MEMORIES ===
+      async function loadInsights() {
+        const filter = $('insightFilter').value.trim();
+        const list = $('insightsList');
+        list.innerHTML = '<div class="muted" style="text-align:center;padding:20px;">Loading...</div>';
+        
+        try {
+          const url = '/api/admin/insights' + (filter ? '?topic=' + encodeURIComponent(filter) : '');
+          const res = await fetch(url, {headers: {'X-Rhodes-Key': ADMIN_KEY}});
+          const data = await res.json();
+          
+          if (!data.insights || data.insights.length === 0) {
+            list.innerHTML = '<div class="muted" style="text-align:center;padding:20px;">No insights found</div>';
+            return;
+          }
+          
+          let html = '';
+          data.insights.forEach(i => {
+            const date = i.marked_at ? new Date(i.marked_at).toLocaleString() : 'Unknown';
+            const hasEvolution = !!i.evolution_summary;
+            html += '<div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;background:rgba(0,0,0,0.15);">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">';
+            html += '<strong style="color:var(--warn);">' + (i.topic || 'Untitled') + '</strong>';
+            html += '<span class="pill" style="' + (hasEvolution ? 'border-color:var(--ok);color:var(--ok);' : '') + '">' + (hasEvolution ? '✓ Extracted' : 'Pending') + '</span>';
+            html += '</div>';
+            html += '<div class="muted" style="font-size:11px;margin-bottom:6px;">Session: ' + (i.session_id || '?').slice(0,12) + ' | User ID: ' + (i.user_id || 'N/A') + ' | ' + date + '</div>';
+            if (i.ai_reason) html += '<div style="margin-bottom:6px;"><span class="muted">Reason:</span> ' + i.ai_reason.slice(0,200) + '</div>';
+            if (i.evolution_summary) {
+              html += '<details style="margin-top:8px;">';
+              html += '<summary style="cursor:pointer;color:var(--ok);">View Evolution Summary</summary>';
+              html += '<div style="margin-top:8px;padding:8px;background:rgba(0,0,0,0.2);border-radius:6px;">';
+              if (i.position_before) html += '<div style="margin-bottom:4px;"><strong>Before:</strong> ' + i.position_before + '</div>';
+              if (i.position_after) html += '<div style="margin-bottom:4px;"><strong>After:</strong> ' + i.position_after + '</div>';
+              html += '<div><strong>Summary:</strong> ' + i.evolution_summary + '</div>';
+              if (i.key_evidence) html += '<div style="margin-top:4px;"><strong>Evidence:</strong> ' + (Array.isArray(i.key_evidence) ? i.key_evidence.join(', ') : i.key_evidence) + '</div>';
+              html += '</div></details>';
+            }
+            html += '</div>';
+          });
+          list.innerHTML = html;
+        } catch(e) {
+          list.innerHTML = '<div class="bad" style="text-align:center;padding:20px;">Error: ' + e.message + '</div>';
+        }
+      }
+      
+      $('loadInsightsBtn').onclick = loadInsights;
+      $('insightFilter').addEventListener('keyup', e => { if (e.key === 'Enter') loadInsights(); });
+
+    
+      // === CONTEXT COMPACTION ===
+      function updateTriggerDisplay(val) {
+        $("compactionTriggerDisplay").textContent = val + "%";
+        // Color gradient from yellow (low) to green (high)
+        if (val < 50) {
+          $("compactionTriggerDisplay").style.color = "var(--warn)";
+        } else if (val < 70) {
+          $("compactionTriggerDisplay").style.color = "var(--ok)";
+        } else {
+          $("compactionTriggerDisplay").style.color = "var(--muted)";
+        }
+      }
+
+      // Sync slider and input
+      $("compactionTriggerSlider").oninput = function() {
+        $("compactionTrigger").value = this.value;
+        updateTriggerDisplay(this.value);
+      };
+      $("compactionTrigger").oninput = function() {
+        $("compactionTriggerSlider").value = this.value;
+        updateTriggerDisplay(this.value);
+      };
+
+      async function loadCompactionConfig() {
+        try {
+          const res = await fetch("/api/admin/compaction/status", {headers: {"X-Rhodes-Key": ADMIN_KEY}});
+          const data = await res.json();
+
+          $("compactionStatus").textContent = data.config.enabled ? "Active" : "Inactive";
+          $("compactionStatus").style.color = data.config.enabled ? "var(--ok)" : "var(--muted)";
+
+          const triggerVal = Math.round(data.config.context_trigger_percent * 100);
+          $("compactionTrigger").value = triggerVal;
+          $("compactionTriggerSlider").value = triggerVal;
+          updateTriggerDisplay(triggerVal);
+
+          $("compactionTurns").value = data.config.turn_trigger_count;
+          $("compactionKeep").value = data.config.keep_recent_messages;
+          $("compactionCooldown").value = data.config.cooldown_after_swap;
+
+          if (data.stats) {
+            $("compactionStats").innerHTML =
+              "Total compactions: " + (data.stats.total_compactions || 0) +
+              " | Messages compacted: " + (data.stats.total_messages_compacted || 0) +
+              " | Active: " + (data.stats.active_compactions || 0);
+          }
+        } catch(e) {
+          $("compactionStatus").textContent = "Error: " + e.message;
+          $("compactionStatus").style.color = "var(--bad)";
+        }
+      }
+
+      async function saveCompactionConfig() {
+        try {
+          const config = {
+            context_trigger_percent: parseInt($("compactionTrigger").value) / 100,
+            turn_trigger_count: parseInt($("compactionTurns").value),
+            keep_recent_messages: parseInt($("compactionKeep").value),
+            cooldown_after_swap: parseInt($("compactionCooldown").value)
+          };
+
+          const res = await fetch("/api/admin/compaction/config", {
+            method: "POST",
+            headers: {"Content-Type": "application/json", "X-Rhodes-Key": ADMIN_KEY},
+            body: JSON.stringify(config)
+          });
+          const data = await res.json();
+
+          if (data.error) {
+            alert("Error: " + data.error);
+          } else {
+            $("compactionStatus").textContent = "Saved!";
+            $("compactionStatus").style.color = "var(--ok)";
+            setTimeout(loadCompactionConfig, 1500);
+          }
+        } catch(e) {
+          alert("Error saving: " + e.message);
+        }
+      }
+
+      $("compactionSaveBtn").onclick = saveCompactionConfig;
+      $("compactionRefreshBtn").onclick = loadCompactionConfig;
+
+      // Load compaction config on page load
+      setTimeout(loadCompactionConfig, 500);
+
+
+      // ── Bug Registry ──────────────────────────────────────────────
+      let _bugData = [];
+
+      function _sevColor(s) {
+        return s === 'critical' ? 'var(--bad)' : s === 'high' ? '#ff8c42' : s === 'medium' ? 'var(--warn)' : 'var(--muted)';
+      }
+      function _statusColor(s) {
+        return s === 'open' ? 'var(--bad)' : s === 'fixed' ? 'var(--ok)' : 'var(--muted)';
+      }
+      function _testColor(s) {
+        return s === 'passed' ? 'var(--ok)' : s === 'failed' ? 'var(--bad)' : 'var(--warn)';
+      }
+
+      function _makePill(text, color, onclick) {
+        const span = document.createElement('span');
+        span.className = 'pill';
+        span.textContent = text || '-';
+        span.style.borderColor = color;
+        span.style.color = color;
+        span.style.cursor = onclick ? 'pointer' : 'default';
+        if (onclick) span.onclick = onclick;
+        return span;
+      }
+
+      async function loadBugs() {
+        const status = $('bugFilterStatus').value;
+        const severity = $('bugFilterSeverity').value;
+        let url = '/api/admin/bugs?limit=200';
+        if (status) url += '&status=' + encodeURIComponent(status);
+        if (severity) url += '&severity=' + encodeURIComponent(severity);
+
+        $('bugMeta').textContent = 'loading...';
+        try {
+          const data = await api(url);
+          _bugData = data.bugs || [];
+          $('bugMeta').textContent = _bugData.length + ' of ' + data.total + ' bugs';
+          renderBugTable();
+        } catch(e) {
+          $('bugMeta').textContent = 'error: ' + e.message;
+        }
+      }
+
+      function renderBugTable() {
+        const tbody = $('bugTableBody');
+        tbody.innerHTML = '';
+        if (_bugData.length === 0) {
+          $('bugTable').style.display = 'none';
+          $('bugEmpty').textContent = '(no bugs match filters)';
+          $('bugEmpty').style.display = '';
+          return;
+        }
+        $('bugTable').style.display = '';
+        $('bugEmpty').style.display = 'none';
+
+        _bugData.forEach(bug => {
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid var(--border)';
+          tr.style.cursor = 'pointer';
+
+          // Bug ID
+          const tdId = document.createElement('td');
+          tdId.style.padding = '6px';
+          tdId.style.fontFamily = 'var(--mono)';
+          tdId.style.fontSize = '11px';
+          tdId.style.color = 'var(--warn)';
+          tdId.textContent = bug.bug_id;
+          tr.appendChild(tdId);
+
+          // Title
+          const tdTitle = document.createElement('td');
+          tdTitle.style.padding = '6px';
+          tdTitle.textContent = bug.title;
+          tr.appendChild(tdTitle);
+
+          // Severity pill
+          const tdSev = document.createElement('td');
+          tdSev.style.padding = '6px';
+          const sevCycle = ['low', 'medium', 'high', 'critical'];
+          tdSev.appendChild(_makePill(bug.severity, _sevColor(bug.severity), async (e) => {
+            e.stopPropagation();
+            const next = sevCycle[(sevCycle.indexOf(bug.severity) + 1) % sevCycle.length];
+            await updateBug(bug.bug_id, { severity: next });
+            bug.severity = next;
+            renderBugTable();
+          }));
+          tr.appendChild(tdSev);
+
+          // Status pill
+          const tdStatus = document.createElement('td');
+          tdStatus.style.padding = '6px';
+          const statusCycle = ['open', 'fixed', 'wontfix'];
+          tdStatus.appendChild(_makePill(bug.status, _statusColor(bug.status), async (e) => {
+            e.stopPropagation();
+            const next = statusCycle[(statusCycle.indexOf(bug.status) + 1) % statusCycle.length];
+            await updateBug(bug.bug_id, { status: next });
+            bug.status = next;
+            renderBugTable();
+          }));
+          tr.appendChild(tdStatus);
+
+          // Test status pill
+          const tdTest = document.createElement('td');
+          tdTest.style.padding = '6px';
+          const testCycle = ['untested', 'passed', 'failed'];
+          tdTest.appendChild(_makePill(bug.test_status || 'untested', _testColor(bug.test_status), async (e) => {
+            e.stopPropagation();
+            const cur = bug.test_status || 'untested';
+            const next = testCycle[(testCycle.indexOf(cur) + 1) % testCycle.length];
+            await updateBug(bug.bug_id, { test_status: next });
+            bug.test_status = next;
+            renderBugTable();
+          }));
+          tr.appendChild(tdTest);
+
+          // Session
+          const tdSess = document.createElement('td');
+          tdSess.style.padding = '6px';
+          tdSess.style.fontFamily = 'var(--mono)';
+          tdSess.style.fontSize = '11px';
+          tdSess.textContent = bug.fixed_in_session || '-';
+          tr.appendChild(tdSess);
+
+          // Created
+          const tdCreated = document.createElement('td');
+          tdCreated.style.padding = '6px';
+          tdCreated.style.fontSize = '11px';
+          tdCreated.style.color = 'var(--muted)';
+          tdCreated.textContent = bug.created_at ? new Date(bug.created_at).toLocaleDateString() : '-';
+          tr.appendChild(tdCreated);
+
+          // Click row to expand detail
+          tr.onclick = () => showBugDetail(bug);
+          tbody.appendChild(tr);
+        });
+      }
+
+      function showBugDetail(bug) {
+        $('bugDetail').style.display = '';
+        $('bugDetailId').textContent = bug.bug_id + ' — ' + bug.title;
+        $('bugDetailSymptoms').textContent = bug.symptoms || '(none)';
+        $('bugDetailRootCause').textContent = bug.root_cause || '(none)';
+        $('bugDetailFix').textContent = bug.fix_description || '(none)';
+        $('bugDetailFiles').textContent = (bug.affected_files || []).join('\n') || '(none)';
+      }
+
+      $('bugDetailClose').onclick = () => { $('bugDetail').style.display = 'none'; };
+
+      async function updateBug(bugId, fields) {
+        try {
+          await api('/api/admin/bugs/' + encodeURIComponent(bugId), { method: 'PUT', body: JSON.stringify(fields) });
+        } catch(e) {
+          $('bugMeta').textContent = 'update error: ' + e.message;
+        }
+      }
+
+      // Add bug form toggle
+      $('bugAddToggle').onclick = () => {
+        const form = $('bugAddForm');
+        form.style.display = form.style.display === 'none' ? '' : 'none';
+      };
+      $('bugCancelBtn').onclick = () => { $('bugAddForm').style.display = 'none'; };
+
+      $('bugSubmitBtn').onclick = async () => {
+        const title = $('bugNewTitle').value.trim();
+        if (!title) { alert('Title required'); return; }
+        const filesRaw = $('bugNewFiles').value.trim();
+        const affected_files = filesRaw ? filesRaw.split(',').map(f => f.trim()).filter(Boolean) : [];
+        const body = {
+          title,
+          severity: $('bugNewSeverity').value,
+          status: $('bugNewStatus').value,
+          symptoms: $('bugNewSymptoms').value.trim(),
+          root_cause: $('bugNewRootCause').value.trim(),
+          fix_description: $('bugNewFix').value.trim(),
+          fixed_in_session: $('bugNewSession').value.trim(),
+          affected_files
+        };
+        try {
+          const data = await api('/api/admin/bugs', { method: 'POST', body: JSON.stringify(body) });
+          $('bugAddForm').style.display = 'none';
+          $('bugNewTitle').value = '';
+          $('bugNewSymptoms').value = '';
+          $('bugNewRootCause').value = '';
+          $('bugNewFix').value = '';
+          $('bugNewSession').value = '';
+          $('bugNewFiles').value = '';
+          $('bugMeta').textContent = 'created ' + data.bug_id;
+          await loadBugs();
+        } catch(e) {
+          alert('Error: ' + e.message);
+        }
+      };
+
+      $('bugLoadBtn').onclick = loadBugs;
+
+console.log('Admin panel script fully loaded');
+    </script>
+  </body>
+</html>

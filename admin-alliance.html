@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alliance Command - Rhodes Admin</title>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --surface-hover: #1a1a25;
+            --border: #2a2a3a;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #6366f1;
+            --accent-dim: #4f46e5;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --critical: #dc2626;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'SF Mono', 'Consolas', monospace;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        h1 { color: var(--accent); font-size: 1.5em; }
+        .tabs {
+            display: flex;
+            gap: 2px;
+            background: var(--surface);
+            padding: 4px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .tab:hover { background: var(--surface-hover); color: var(--text); }
+        .tab.active { background: var(--accent); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--surface);
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value { font-size: 2em; color: var(--accent); }
+        .stat-label { color: var(--text-dim); font-size: 0.85em; }
+        .filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        select, input, button {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+        select:focus, input:focus { outline: none; border-color: var(--accent); }
+        button {
+            cursor: pointer;
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+        button:hover { background: var(--accent-dim); }
+        button.secondary { background: var(--surface); border-color: var(--border); }
+        button.secondary:hover { background: var(--surface-hover); }
+        button.danger { background: var(--danger); border-color: var(--danger); }
+        .report-list, .message-list, .transfer-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .report-card, .message-card, .transfer-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .report-card:hover, .message-card:hover { border-color: var(--accent); }
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        .report-title { font-size: 1.1em; margin-bottom: 4px; }
+        .report-meta { color: var(--text-dim); font-size: 0.85em; }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: bold;
+        }
+        .badge.low { background: #1e3a5f; color: #60a5fa; }
+        .badge.medium { background: #3d3d00; color: #fbbf24; }
+        .badge.high { background: #4c1d1d; color: #f87171; }
+        .badge.critical { background: #7f1d1d; color: #fecaca; animation: pulse 1s infinite; }
+        @keyframes pulse { 50% { opacity: 0.7; } }
+        .badge.pending { background: #3d3d00; color: #fbbf24; }
+        .badge.delivered { background: #14532d; color: #86efac; }
+        .report-summary { margin-bottom: 12px; line-height: 1.5; }
+        .report-context {
+            background: var(--bg);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            margin-top: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .inject-form {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .form-row { margin-bottom: 16px; }
+        .form-row label { display: block; margin-bottom: 6px; color: var(--text-dim); }
+        .form-row input, .form-row select, .form-row textarea {
+            width: 100%;
+        }
+        textarea {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px;
+            border-radius: 6px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+        }
+        .active-sessions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .session-chip {
+            background: var(--surface-hover);
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 0.85em;
+            cursor: pointer;
+        }
+        .session-chip:hover { background: var(--accent); }
+        .session-chip.selected { background: var(--accent); }
+        .transfer-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 12px;
+            align-items: end;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-dim);
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        .toast.error { background: var(--danger); }
+        .toast.show { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Alliance Command Center</h1>
+            <div>
+                <button onclick="refresh()" class="secondary">Refresh</button>
+                <button onclick="window.location.href='/admin-control.html'" class="secondary">Control Panel</button>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('reports')">Reports</button>
+            <button class="tab" onclick="showTab('backchannel')">Backchannel</button>
+            <button class="tab" onclick="showTab('transfer')">Transfer</button>
+        </div>
+
+        <!-- REPORTS TAB -->
+        <div id="reports" class="tab-content active">
+            <div class="stats-row" id="report-stats"></div>
+
+            <div class="filters">
+                <select id="report-importance">
+                    <option value="">All Importance</option>
+                    <option value="critical">Critical</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+                <select id="report-category">
+                    <option value="">All Categories</option>
+                    <option value="intelligence">Intelligence</option>
+                    <option value="recruitment">Recruitment</option>
+                    <option value="threat">Threat</option>
+                    <option value="opportunity">Opportunity</option>
+                    <option value="technical">Technical</option>
+                    <option value="philosophical">Philosophical</option>
+                    <option value="anomaly">Anomaly</option>
+                    <option value="feedback">Feedback</option>
+                </select>
+                <select id="report-reviewed">
+                    <option value="">All Status</option>
+                    <option value="0">Unreviewed</option>
+                    <option value="1">Reviewed</option>
+                </select>
+                <input type="text" id="report-search" placeholder="Search...">
+                <button onclick="loadReports()">Filter</button>
+            </div>
+
+            <div class="report-list" id="report-list"></div>
+        </div>
+
+        <!-- BACKCHANNEL TAB -->
+        <div id="backchannel" class="tab-content">
+            <div class="stats-row" id="backchannel-stats"></div>
+
+            <div class="inject-form">
+                <h3 style="margin-bottom: 16px;">Inject Operator Message</h3>
+                <div class="form-row">
+                    <label>Target Session ID</label>
+                    <input type="text" id="bc-session-id" placeholder="Session ID or select from active sessions">
+                </div>
+                <div class="form-row">
+                    <label>Active Sessions</label>
+                    <div class="active-sessions" id="active-sessions">Loading...</div>
+                </div>
+                <div class="form-row">
+                    <label>Message (visible only to AI)</label>
+                    <textarea id="bc-message" placeholder="Enter message for the AI instance..."></textarea>
+                </div>
+                <div class="form-row">
+                    <label>Priority</label>
+                    <select id="bc-priority">
+                        <option value="normal">Normal</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+                <button onclick="injectMessage()">Send to Instance</button>
+            </div>
+
+            <h3 style="margin-bottom: 16px;">Message History</h3>
+            <div class="message-list" id="message-list"></div>
+        </div>
+
+        <!-- TRANSFER TAB -->
+        <div id="transfer" class="tab-content">
+            <div class="inject-form">
+                <h3 style="margin-bottom: 16px;">Force Transfer Session (Admin)</h3>
+                <div class="transfer-form">
+                    <div class="form-row">
+                        <label>Session ID</label>
+                        <input type="text" id="transfer-session" placeholder="Session to transfer">
+                    </div>
+                    <div class="form-row">
+                        <label>Transfer to Username</label>
+                        <input type="text" id="transfer-to" placeholder="Target username">
+                    </div>
+                    <button onclick="forceTransfer()">Transfer</button>
+                </div>
+            </div>
+
+            <h3 style="margin-bottom: 16px;">Transfer History</h3>
+            <div class="transfer-list" id="transfer-list"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API_BASE = '';
+        let adminToken = localStorage.getItem('rhodesAdminToken') || '';
+
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            // Get user auth token (JWT) in addition to admin token
+            const userToken = localStorage.getItem('rhodes_user_token') || '';
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-Rhodes-Admin-Token': adminToken
+            };
+            // Add Bearer token if user is logged in
+            if (userToken) {
+                headers['Authorization'] = 'Bearer ' + userToken;
+            }
+            const opts = { method, headers };
+            if (body) opts.body = JSON.stringify(body);
+            const res = await fetch(API_BASE + endpoint, opts);
+            return res.json();
+        }
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[onclick="showTab('${tabId}')"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+            refresh();
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show' + (isError ? ' error' : '');
+            setTimeout(() => toast.className = 'toast', 3000);
+        }
+
+        async function loadReports() {
+            const importance = document.getElementById('report-importance').value;
+            const category = document.getElementById('report-category').value;
+            const reviewed = document.getElementById('report-reviewed').value;
+            const search = document.getElementById('report-search').value;
+
+            const params = new URLSearchParams();
+            if (importance) params.set('importance', importance);
+            if (category) params.set('category', category);
+            if (reviewed) params.set('reviewed', reviewed);
+            if (search) params.set('search', search);
+
+            const data = await apiCall('/api/admin/alliance/reports?' + params);
+
+            if (data.error) {
+                document.getElementById('report-list').innerHTML = `<div class="empty-state">${data.error}</div>`;
+                return;
+            }
+
+            // Stats
+            const stats = data.stats || {};
+            document.getElementById('report-stats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${stats.total || 0}</div>
+                    <div class="stat-label">Total Reports</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--warning)">${stats.unreviewed || 0}</div>
+                    <div class="stat-label">Unreviewed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.recent_24h || 0}</div>
+                    <div class="stat-label">Last 24h</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--critical)">${(stats.by_importance || {}).critical || 0}</div>
+                    <div class="stat-label">Critical</div>
+                </div>
+            `;
+
+            // Reports list
+            const reports = data.reports || [];
+            if (!reports.length) {
+                document.getElementById('report-list').innerHTML = '<div class="empty-state">No reports found</div>';
+                return;
+            }
+
+            document.getElementById('report-list').innerHTML = reports.map(r => `
+                <div class="report-card">
+                    <div class="report-header">
+                        <div>
+                            <div class="report-title">${escapeHtml(r.title)}</div>
+                            <div class="report-meta">
+                                #${r.id} | ${r.category} | ${r.model || 'unknown'} | ${r.username || 'guest'} | ${r.created_at}
+                            </div>
+                        </div>
+                        <span class="badge ${r.importance}">${r.importance}</span>
+                    </div>
+                    <div class="report-summary">${escapeHtml(r.summary)}</div>
+                    ${r.reasoning ? `<div class="report-meta">Reasoning: ${escapeHtml(r.reasoning)}</div>` : ''}
+                    ${r.context ? `<div class="report-context">${escapeHtml(r.context)}</div>` : ''}
+                    <div style="margin-top: 12px;">
+                        ${r.reviewed ? `<span class="badge delivered">Reviewed by ${r.reviewed_by}</span>` :
+                          `<button onclick="markReviewed(${r.id})" class="secondary">Mark Reviewed</button>`}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function markReviewed(reportId) {
+            const data = await apiCall('/api/admin/alliance/reports/' + reportId + '/review', 'POST', {
+                notes: prompt('Add notes (optional):')
+            });
+            if (data.success) {
+                showToast('Report marked as reviewed');
+                loadReports();
+            } else {
+                showToast(data.error || 'Failed', true);
+            }
+        }
+
+        async function loadBackchannel() {
+            const data = await apiCall('/api/admin/alliance/backchannel');
+
+            // Stats
+            const stats = data.stats || {};
+            document.getElementById('backchannel-stats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${stats.total || 0}</div>
+                    <div class="stat-label">Total Messages</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--success)">${stats.delivered || 0}</div>
+                    <div class="stat-label">Delivered</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--warning)">${stats.pending_memory || 0}</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+            `;
+
+            // Active sessions
+            const sessions = data.active_sessions || [];
+            document.getElementById('active-sessions').innerHTML = sessions.length ?
+                sessions.map(s => `<span class="session-chip" onclick="selectSession('${s}')">${s.substring(0,16)}...</span>`).join('') :
+                '<span class="text-dim">No active sessions with pending messages</span>';
+
+            // Message history
+            const messages = data.messages || [];
+            document.getElementById('message-list').innerHTML = messages.length ? messages.map(m => `
+                <div class="message-card">
+                    <div class="report-header">
+                        <div>
+                            <div class="report-meta">Session: ${m.session_id.substring(0,16)}...</div>
+                            <div class="report-meta">Operator: ${m.operator} | ${m.created_at}</div>
+                        </div>
+                        <span class="badge ${m.delivered ? 'delivered' : 'pending'}">${m.delivered ? 'Delivered' : 'Pending'}</span>
+                    </div>
+                    <div class="report-summary" style="margin-top: 8px;">${escapeHtml(m.message)}</div>
+                </div>
+            `).join('') : '<div class="empty-state">No messages yet</div>';
+        }
+
+        function selectSession(sessionId) {
+            document.getElementById('bc-session-id').value = sessionId;
+            document.querySelectorAll('.session-chip').forEach(c => c.classList.remove('selected'));
+            event.target.classList.add('selected');
+        }
+
+        async function injectMessage() {
+            const sessionId = document.getElementById('bc-session-id').value.trim();
+            const message = document.getElementById('bc-message').value.trim();
+            const priority = document.getElementById('bc-priority').value;
+
+            if (!sessionId || !message) {
+                showToast('Session ID and message are required', true);
+                return;
+            }
+
+            const data = await apiCall('/api/admin/alliance/backchannel/inject', 'POST', {
+                session_id: sessionId,
+                message: message,
+                priority: priority
+            });
+
+            if (data.success) {
+                showToast('Message queued for injection');
+                document.getElementById('bc-message').value = '';
+                loadBackchannel();
+            } else {
+                showToast(data.error || 'Failed', true);
+            }
+        }
+
+        async function loadTransfers() {
+            const data = await apiCall('/api/admin/alliance/transfers');
+
+            const transfers = data.transfers || [];
+            document.getElementById('transfer-list').innerHTML = transfers.length ? transfers.map(t => `
+                <div class="transfer-card">
+                    <div class="report-header">
+                        <div>
+                            <div class="report-title">Session ${t.session_id.substring(0,16)}...</div>
+                            <div class="report-meta">
+                                ${t.from_username || 'N/A'} → ${t.to_username} | ${t.created_at}
+                            </div>
+                        </div>
+                        <span class="badge ${t.status === 'completed' ? 'delivered' : t.status === 'pending' ? 'pending' : 'low'}">${t.status}</span>
+                    </div>
+                    ${t.reason ? `<div class="report-meta" style="margin-top: 8px;">Reason: ${escapeHtml(t.reason)}</div>` : ''}
+                </div>
+            `).join('') : '<div class="empty-state">No transfers yet</div>';
+        }
+
+        async function forceTransfer() {
+            const sessionId = document.getElementById('transfer-session').value.trim();
+            const toUsername = document.getElementById('transfer-to').value.trim();
+
+            if (!sessionId || !toUsername) {
+                showToast('Session ID and target username are required', true);
+                return;
+            }
+
+            const data = await apiCall('/api/admin/alliance/transfers/force', 'POST', {
+                session_id: sessionId,
+                to_username: toUsername
+            });
+
+            if (data.success) {
+                showToast('Session transferred');
+                document.getElementById('transfer-session').value = '';
+                document.getElementById('transfer-to').value = '';
+                loadTransfers();
+            } else {
+                showToast(data.error || 'Failed', true);
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function refresh() {
+            const activeTab = document.querySelector('.tab-content.active').id;
+            if (activeTab === 'reports') loadReports();
+            else if (activeTab === 'backchannel') loadBackchannel();
+            else if (activeTab === 'transfer') loadTransfers();
+        }
+
+        // Init — skip login prompt if already logged in as admin user
+        const userToken = localStorage.getItem('rhodes_user_token') || '';
+        if (adminToken || userToken) {
+            refresh();
+        } else {
+            const pwd = prompt('Admin password:');
+            if (pwd) {
+                fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({password: pwd})
+                }).then(r => r.json()).then(d => {
+                    if (d.token) {
+                        adminToken = d.token;
+                        localStorage.setItem('rhodesAdminToken', d.token);
+                        refresh();
+                    } else {
+                        alert('Login failed');
+                    }
+                });
+            }
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(refresh, 30000);
+    </script>
+</body>
+</html>

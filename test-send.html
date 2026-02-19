@@ -1,0 +1,52 @@
+<!DOCTYPE html><html><body>
+<script>
+// Set token
+localStorage.setItem('rhodes_user_token', 'wj5IwWtgjwyxnH7daX9gixPc9-KNSVgi7DsiJczJfvc');
+localStorage.setItem('rhodes_token', 'wj5IwWtgjwyxnH7daX9gixPc9-KNSVgi7DsiJczJfvc');
+
+// Send via WebSocket API
+var ws_url = 'wss://rhodesagi.com/ws';
+var ws = new WebSocket(ws_url);
+ws.onopen = function() {
+    // Auth message
+    var auth = {
+        msg_type: 'auth',
+        msg_id: 'test-auth-1',
+        timestamp: Date.now(),
+        payload: {
+            client_id: 'test-browser-' + Date.now(),
+            tab_id: 'test-tab-1',
+            token: 'wj5IwWtgjwyxnH7daX9gixPc9-KNSVgi7DsiJczJfvc',
+            user_token: 'wj5IwWtgjwyxnH7daX9gixPc9-KNSVgi7DsiJczJfvc',
+            platform: 'web'
+        }
+    };
+    ws.send(JSON.stringify(auth));
+    
+    // Wait then send message
+    setTimeout(function() {
+        var msg = {
+            msg_type: 'user_message',
+            msg_id: 'test-msg-1',
+            timestamp: Date.now(),
+            payload: {
+                text: 'What is 2+2? Answer in one word.',
+                model: 'd'
+            }
+        };
+        ws.send(JSON.stringify(msg));
+        document.getElementById('status').textContent = 'Message sent!';
+    }, 1000);
+};
+ws.onmessage = function(e) {
+    var data = JSON.parse(e.data);
+    var log = document.getElementById('log');
+    log.textContent += '\n' + data.msg_type + ': ' + JSON.stringify(data.payload || {}).substring(0, 200);
+};
+ws.onerror = function(e) {
+    document.getElementById('status').textContent = 'WS Error: ' + e;
+};
+</script>
+<h2 id="status">Connecting...</h2>
+<pre id="log" style="max-height:600px;overflow:auto;"></pre>
+</body></html>

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects - RHODES</title>
+    <link rel="stylesheet" href="/rhodes.css?v=20260115-06">
+    <style>
+        body { background: var(--bg); color: var(--text); font-family: 'Orbitron', 'Segoe UI', monospace; margin: 0; padding: 20px; }
+        .page-layout { max-width: 1100px; margin: 0 auto; display: flex; gap: 20px; }
+        .main-col { flex: 1; min-width: 0; }
+        .sidebar-col { width: 300px; flex-shrink: 0; }
+        h1 { color: var(--cyan); font-size: 24px; margin-bottom: 20px; }
+        .top-bar { max-width: 1100px; margin: 0 auto 20px auto; }
+        .back-link { color: var(--cyan); text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { text-decoration: underline; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; color: var(--dim); font-size: 12px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 12px;
+            background: var(--panel); border: 1px solid var(--border);
+            color: var(--text); font-family: inherit; font-size: 14px;
+            border-radius: 3px; box-sizing: border-box;
+        }
+        .form-group textarea { min-height: 120px; resize: vertical; font-family: monospace; }
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--cyan); outline: none; }
+        .btn {
+            padding: 10px 20px; background: transparent;
+            border: 1px solid var(--green); color: var(--green);
+            font-family: 'Orbitron', monospace; cursor: pointer; font-size: 13px;
+            border-radius: 3px; margin-right: 10px;
+        }
+        .btn:hover { background: rgba(0, 255, 65, 0.1); }
+        .btn-small { padding: 6px 12px; font-size: 11px; }
+        .btn-danger { border-color: var(--red); color: var(--red); }
+        .btn-danger:hover { background: rgba(255, 0, 100, 0.1); }
+        .btn-cyan { border-color: var(--cyan); color: var(--cyan); }
+        .btn-cyan:hover { background: rgba(0, 255, 213, 0.1); }
+        .upload-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+        .message { padding: 10px 15px; margin-bottom: 20px; border-radius: 3px; font-size: 13px; max-width: 1100px; margin-left: auto; margin-right: auto; }
+        .message.success { background: rgba(0, 255, 65, 0.1); border: 1px solid var(--green); color: var(--green); }
+        .message.error { background: rgba(255, 0, 100, 0.1); border: 1px solid var(--red); color: var(--red); }
+        .section { background: var(--panel); border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; border-radius: 3px; }
+        .section h2 { color: var(--cyan); font-size: 16px; margin: 0 0 15px 0; }
+        .project-list { list-style: none; padding: 0; margin: 0; }
+        .project-item {
+            background: rgba(0, 0, 0, 0.2); border: 2px solid var(--border);
+            padding: 15px; margin-bottom: 10px; border-radius: 3px;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .project-item.is-default { border-color: var(--green); }
+        .project-item.drag-over { border-color: var(--cyan); background: rgba(0, 255, 213, 0.05); }
+        .project-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .project-info { flex: 1; }
+        .project-name { color: var(--cyan); font-size: 15px; font-weight: bold; margin-bottom: 5px; }
+        .project-desc { color: var(--dim); font-size: 12px; margin-bottom: 8px; }
+        .project-meta { color: var(--dim); font-size: 11px; opacity: 0.6; }
+        .project-actions { display: flex; gap: 8px; flex-shrink: 0; margin-left: 15px; }
+        .default-badge { background: var(--green); color: #000; padding: 2px 8px; font-size: 10px; border-radius: 3px; margin-left: 10px; }
+        .empty-state { text-align: center; padding: 40px; color: var(--dim); }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; }
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel); border: 1px solid var(--cyan); padding: 25px; border-radius: 5px; width: 90%; max-width: 500px; z-index: 1001; max-height: 90vh; overflow-y: auto; }
+        .modal h3 { color: var(--cyan); margin: 0 0 20px 0; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .instructions-toggle {
+            color: var(--cyan); cursor: pointer; font-size: 12px;
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;
+            user-select: none; display: flex; align-items: center; gap: 6px;
+        }
+        .instructions-toggle:hover { opacity: 0.8; }
+        .instructions-toggle .arrow { transition: transform 0.2s; display: inline-block; }
+        .instructions-toggle .arrow.open { transform: rotate(90deg); }
+        .instructions-body { display: none; }
+        .instructions-body.open { display: block; }
+        .sessions-section { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px; }
+        .sessions-section h4 { color: var(--dim); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px 0; }
+        .session-link {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 6px 10px; margin-bottom: 4px; border-radius: 3px;
+            background: rgba(0, 0, 0, 0.2); text-decoration: none; color: var(--text);
+            font-size: 12px; transition: background 0.15s;
+        }
+        .session-link:hover { background: rgba(0, 255, 213, 0.1); }
+        .session-link .session-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .session-link .session-meta { color: var(--dim); font-size: 10px; flex-shrink: 0; margin-left: 10px; }
+        .no-sessions { color: var(--dim); font-size: 11px; font-style: italic; }
+
+        /* Sidebar: recent sessions */
+        .sidebar-section { background: var(--panel); border: 1px solid var(--border); padding: 15px; border-radius: 3px; position: sticky; top: 20px; }
+        .sidebar-section h3 { color: var(--cyan); font-size: 13px; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 1px; }
+        .sidebar-hint { color: var(--dim); font-size: 11px; margin-bottom: 12px; }
+        .drag-session {
+            padding: 8px 10px; margin-bottom: 6px; border-radius: 3px;
+            background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border);
+            cursor: grab; user-select: none; transition: border-color 0.15s, opacity 0.15s;
+        }
+        .drag-session:hover { border-color: var(--cyan); }
+        .drag-session:active { cursor: grabbing; }
+        .drag-session.dragging { opacity: 0.4; }
+        .drag-session .ds-title { color: var(--text); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .drag-session .ds-meta { color: var(--dim); font-size: 10px; margin-top: 3px; }
+        .drag-session .ds-project { color: var(--green); font-size: 10px; margin-top: 2px; }
+        .sidebar-empty { color: var(--dim); font-size: 11px; font-style: italic; padding: 10px 0; }
+
+        /* Unassign drop zone */
+        .unassign-zone {
+            margin-top: 12px; padding: 10px; border: 2px dashed var(--border); border-radius: 3px;
+            text-align: center; color: var(--dim); font-size: 11px;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .unassign-zone.drag-over { border-color: var(--red); background: rgba(255, 0, 100, 0.05); color: var(--red); }
+
+        @media (max-width: 768px) {
+            .page-layout { flex-direction: column; }
+            .sidebar-col { width: 100%; }
+            .sidebar-section { position: static; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <a href="/" class="back-link">&larr; Back to RHODES</a>
+        <h1>// PROJECTS</h1>
+        <div id="message" class="message" style="display:none;"></div>
+    </div>
+
+    <div class="page-layout">
+        <div class="main-col">
+            <div class="section">
+                <h2>Workspaces</h2>
+                <p style="color: var(--dim); font-size: 13px; margin-bottom: 15px;">
+                    Drag sessions from the right panel into a project to organize them.
+                </p>
+                <button class="btn" onclick="showCreateModal()">+ New Project</button>
+            </div>
+
+            <div id="projects-container">
+                <ul class="project-list" id="project-list">
+                    <li class="empty-state">No projects yet. Create your first project above.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="sidebar-col">
+            <div class="sidebar-section">
+                <h3>Recent Sessions</h3>
+                <div class="sidebar-hint">Drag into a project to assign</div>
+                <div id="recent-sessions-list">
+                    <div class="sidebar-empty">Loading...</div>
+                </div>
+                <div class="unassign-zone" id="unassign-zone">Drop here to unassign from project</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Modal -->
+    <div class="modal-overlay" id="modal-overlay" onclick="closeModal()"></div>
+    <div class="modal" id="project-modal" style="display:none;">
+        <h3 id="modal-title">New Project</h3>
+        <input type="hidden" id="edit-project-id">
+        <div class="form-group">
+            <label>Project Name *</label>
+            <input type="text" id="project-name" placeholder="e.g., Code Review, Research Notes">
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <input type="text" id="project-desc" placeholder="Brief description of this project">
+        </div>
+        <div class="instructions-toggle" onclick="toggleInstructions()">
+            <span class="arrow" id="instructions-arrow">&#9654;</span> Add Instructions (optional)
+        </div>
+        <div class="instructions-body" id="instructions-body">
+            <div class="form-group">
+                <label>Project Instructions</label>
+                <textarea id="project-prompt" placeholder="Type your project instructions here..."></textarea>
+                <div class="upload-row" style="margin-top: 8px;">
+                    <input type="file" id="prompt-file" accept=".md,.txt" style="display:none;" onchange="loadPromptFile(this)">
+                    <button type="button" class="btn btn-small" onclick="document.getElementById('prompt-file').click()">Import from file</button>
+                    <button type="button" class="btn btn-small btn-cyan" id="export-btn" onclick="downloadPrompt()" style="display:none;">Export</button>
+                    <span id="prompt-file-name" style="color:var(--dim);font-size:11px;margin-left:10px;"></span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-danger" onclick="closeModal()">Cancel</button>
+            <button class="btn" onclick="saveProject()">Save</button>
+        </div>
+    </div>
+
+    <script>
+        const USER_TOKEN = localStorage.getItem('rhodes_user_token') || '';
+        if (!USER_TOKEN) { window.location.href = '/?login=1'; }
+
+        let projects = [];
+        let projectSessions = {};
+        let recentSessions = [];
+
+        // ---- Instructions toggle & export ----
+        function toggleInstructions() {
+            document.getElementById('instructions-body').classList.toggle('open');
+            document.getElementById('instructions-arrow').classList.toggle('open');
+        }
+        function updateExportBtn() {
+            var btn = document.getElementById('export-btn');
+            var ta = document.getElementById('project-prompt');
+            if (btn && ta) btn.style.display = ta.value.trim() ? '' : 'none';
+        }
+        document.addEventListener('input', function(e) {
+            if (e.target && e.target.id === 'project-prompt') updateExportBtn();
+        });
+
+        // ---- Load projects ----
+        async function loadProjects() {
+            try {
+                var resp = await fetch('/api/user/projects', { headers: { 'Authorization': 'Bearer ' + USER_TOKEN } });
+                if (!resp.ok) throw new Error('Failed to load projects');
+                var data = await resp.json();
+                projects = data.projects || [];
+                renderProjects();
+                for (var i = 0; i < projects.length; i++) loadProjectSessions(projects[i].id);
+            } catch (e) { showMessage('error', 'Failed to load projects: ' + e.message); }
+        }
+
+        async function loadProjectSessions(projectId) {
+            try {
+                var resp = await fetch('/api/user/projects/' + projectId + '/sessions', { headers: { 'Authorization': 'Bearer ' + USER_TOKEN } });
+                if (!resp.ok) return;
+                var data = await resp.json();
+                projectSessions[projectId] = data.sessions || [];
+                renderProjectSessions(projectId);
+            } catch (e) {}
+        }
+
+        function renderProjectSessions(projectId) {
+            var container = document.getElementById('sessions-' + projectId);
+            if (!container) return;
+            var sessions = projectSessions[projectId] || [];
+            if (sessions.length === 0) { container.innerHTML = '<div class="no-sessions">No sessions yet &mdash; drag one here</div>'; return; }
+            container.innerHTML = sessions.slice(0, 5).map(function(s) {
+                var title = s.title || s.session_id.substring(0, 12) + '...';
+                var msgs = s.message_count || 0;
+                var date = s.updated_at ? new Date(s.updated_at * 1000).toLocaleDateString() : '';
+                return '<a class="session-link" href="/?session=' + s.session_id + '" title="' + escapeHtml(title) + '">' +
+                    '<span class="session-title">' + escapeHtml(title) + '</span>' +
+                    '<span class="session-meta">' + msgs + ' msgs' + (date ? ' &middot; ' + date : '') + '</span></a>';
+            }).join('') + (sessions.length > 5 ? '<div class="no-sessions">+ ' + (sessions.length - 5) + ' more</div>' : '');
+        }
+
+        function renderProjects() {
+            var list = document.getElementById('project-list');
+            if (projects.length === 0) { list.innerHTML = '<li class="empty-state">No projects yet. Create your first project above.</li>'; return; }
+            list.innerHTML = projects.map(function(p) {
+                var hasPrompt = p.system_prompt && p.system_prompt.trim();
+                return '<li class="project-item ' + (p.is_default ? 'is-default' : '') + '" data-project-id="' + p.id + '">' +
+                    '<div class="project-header">' +
+                    '<div class="project-info">' +
+                    '<div class="project-name">' + escapeHtml(p.name) + (p.is_default ? ' <span class="default-badge">DEFAULT</span>' : '') + '</div>' +
+                    (p.description ? '<div class="project-desc">' + escapeHtml(p.description) + '</div>' : '') +
+                    (hasPrompt ? '<div class="project-meta">Has instructions (' + p.system_prompt.length + ' chars)</div>' : '') +
+                    '</div>' +
+                    '<div class="project-actions">' +
+                    (!p.is_default ? '<button class="btn btn-small btn-cyan" onclick="setDefault(' + p.id + ')">Set Default</button>' : '') +
+                    '<button class="btn btn-small" onclick="editProject(' + p.id + ')">Edit</button>' +
+                    '<button class="btn btn-small btn-danger" onclick="deleteProject(' + p.id + ')">Delete</button>' +
+                    '</div></div>' +
+                    '<div class="sessions-section"><h4>Sessions</h4>' +
+                    '<div id="sessions-' + p.id + '"><div class="no-sessions">Loading...</div></div>' +
+                    '</div></li>';
+            }).join('');
+            // Attach drop handlers to project items
+            setupDropTargets();
+        }
+
+        // ---- Recent sessions sidebar ----
+        async function loadRecentSessions() {
+            try {
+                var resp = await fetch('/api/user/sessions/recent', { headers: { 'Authorization': 'Bearer ' + USER_TOKEN } });
+                if (!resp.ok) throw new Error('Failed');
+                var data = await resp.json();
+                recentSessions = data.sessions || [];
+                renderRecentSessions();
+            } catch (e) {
+                document.getElementById('recent-sessions-list').innerHTML = '<div class="sidebar-empty">Failed to load sessions</div>';
+            }
+        }
+
+        function renderRecentSessions() {
+            var container = document.getElementById('recent-sessions-list');
+            if (recentSessions.length === 0) { container.innerHTML = '<div class="sidebar-empty">No sessions yet</div>'; return; }
+            container.innerHTML = recentSessions.map(function(s) {
+                var title = s.title || s.session_id.substring(0, 16) + '...';
+                var msgs = s.message_count || 0;
+                var projName = '';
+                if (s.project_id) {
+                    var proj = projects.find(function(p) { return p.id === s.project_id; });
+                    projName = proj ? proj.name : 'Project #' + s.project_id;
+                }
+                return '<div class="drag-session" draggable="true" data-session-id="' + s.session_id + '" data-current-project="' + (s.project_id || '') + '">' +
+                    '<div class="ds-title">' + escapeHtml(title) + '</div>' +
+                    '<div class="ds-meta">' + msgs + ' msgs' + (s.model ? ' &middot; ' + escapeHtml(s.model) : '') + '</div>' +
+                    (projName ? '<div class="ds-project">' + escapeHtml(projName) + '</div>' : '') +
+                    '</div>';
+            }).join('');
+            setupDragSources();
+        }
+
+        // ---- Drag and drop ----
+        var draggedSessionId = null;
+
+        function setupDragSources() {
+            var items = document.querySelectorAll('.drag-session');
+            items.forEach(function(el) {
+                el.addEventListener('dragstart', function(e) {
+                    draggedSessionId = el.getAttribute('data-session-id');
+                    el.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', draggedSessionId);
+                });
+                el.addEventListener('dragend', function() {
+                    el.classList.remove('dragging');
+                    draggedSessionId = null;
+                    // Clear all highlights
+                    document.querySelectorAll('.drag-over').forEach(function(d) { d.classList.remove('drag-over'); });
+                });
+            });
+        }
+
+        function setupDropTargets() {
+            var items = document.querySelectorAll('.project-item');
+            items.forEach(function(el) {
+                el.addEventListener('dragover', function(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; el.classList.add('drag-over'); });
+                el.addEventListener('dragleave', function() { el.classList.remove('drag-over'); });
+                el.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    el.classList.remove('drag-over');
+                    var sessionId = e.dataTransfer.getData('text/plain');
+                    var projectId = parseInt(el.getAttribute('data-project-id'));
+                    if (sessionId && projectId) assignSession(sessionId, projectId);
+                });
+            });
+
+            // Unassign zone
+            var uz = document.getElementById('unassign-zone');
+            uz.addEventListener('dragover', function(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; uz.classList.add('drag-over'); });
+            uz.addEventListener('dragleave', function() { uz.classList.remove('drag-over'); });
+            uz.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uz.classList.remove('drag-over');
+                var sessionId = e.dataTransfer.getData('text/plain');
+                if (sessionId) assignSession(sessionId, null);
+            });
+        }
+
+        async function assignSession(sessionId, projectId) {
+            try {
+                var resp = await fetch('/api/user/sessions/' + sessionId + '/project', {
+                    method: 'PUT',
+                    headers: { 'Authorization': 'Bearer ' + USER_TOKEN, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_id: projectId })
+                });
+                if (!resp.ok) { var err = await resp.json().catch(function() { return {}; }); throw new Error(err.error || 'Failed'); }
+                showMessage('success', projectId ? 'Session assigned to project' : 'Session unassigned');
+                // Reload everything
+                loadProjects();
+                loadRecentSessions();
+            } catch (e) {
+                showMessage('error', 'Failed to assign: ' + e.message);
+            }
+        }
+
+        // ---- Modal ----
+        function showCreateModal() {
+            document.getElementById('modal-title').textContent = 'New Project';
+            document.getElementById('edit-project-id').value = '';
+            document.getElementById('project-name').value = '';
+            document.getElementById('project-desc').value = '';
+            document.getElementById('project-prompt').value = '';
+            document.getElementById('prompt-file-name').textContent = '';
+            document.getElementById('prompt-file').value = '';
+            document.getElementById('instructions-body').classList.remove('open');
+            document.getElementById('instructions-arrow').classList.remove('open');
+            updateExportBtn();
+            document.getElementById('modal-overlay').style.display = 'block';
+            document.getElementById('project-modal').style.display = 'block';
+        }
+
+        function editProject(id) {
+            var project = projects.find(function(p) { return p.id === id; });
+            if (!project) return;
+            document.getElementById('modal-title').textContent = 'Edit Project';
+            document.getElementById('edit-project-id').value = id;
+            document.getElementById('project-name').value = project.name || '';
+            document.getElementById('project-desc').value = project.description || '';
+            document.getElementById('project-prompt').value = project.system_prompt || '';
+            document.getElementById('prompt-file-name').textContent = '';
+            document.getElementById('prompt-file').value = '';
+            if (project.system_prompt && project.system_prompt.trim()) {
+                document.getElementById('instructions-body').classList.add('open');
+                document.getElementById('instructions-arrow').classList.add('open');
+            } else {
+                document.getElementById('instructions-body').classList.remove('open');
+                document.getElementById('instructions-arrow').classList.remove('open');
+            }
+            updateExportBtn();
+            document.getElementById('modal-overlay').style.display = 'block';
+            document.getElementById('project-modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').style.display = 'none';
+            document.getElementById('project-modal').style.display = 'none';
+        }
+
+        async function saveProject() {
+            var id = document.getElementById('edit-project-id').value;
+            var name = document.getElementById('project-name').value.trim();
+            var description = document.getElementById('project-desc').value.trim();
+            var system_prompt = document.getElementById('project-prompt').value;
+            if (!name) { showMessage('error', 'Project name is required'); return; }
+            try {
+                var url = id ? '/api/user/projects/' + id : '/api/user/projects';
+                var method = id ? 'PUT' : 'POST';
+                var body = { name: name, description: description };
+                body.system_prompt = (system_prompt && system_prompt.trim()) ? system_prompt : '';
+                var resp = await fetch(url, {
+                    method: method,
+                    headers: { 'Authorization': 'Bearer ' + USER_TOKEN, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (!resp.ok) { var errData = await resp.json().catch(function() { return {}; }); throw new Error(errData.error || 'Failed to save project'); }
+                closeModal();
+                showMessage('success', id ? 'Project updated' : 'Project created');
+                loadProjects();
+            } catch (e) { showMessage('error', 'Failed to save: ' + e.message); }
+        }
+
+        async function setDefault(id) {
+            try {
+                var resp = await fetch('/api/user/projects/' + id, {
+                    method: 'PUT',
+                    headers: { 'Authorization': 'Bearer ' + USER_TOKEN, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_default: true })
+                });
+                if (!resp.ok) throw new Error('Failed to set default');
+                showMessage('success', 'Default project updated');
+                loadProjects();
+            } catch (e) { showMessage('error', 'Failed to set default: ' + e.message); }
+        }
+
+        async function deleteProject(id) {
+            if (!confirm('Delete this project? This cannot be undone.')) return;
+            try {
+                var resp = await fetch('/api/user/projects/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + USER_TOKEN } });
+                if (!resp.ok) throw new Error('Failed to delete project');
+                showMessage('success', 'Project deleted');
+                loadProjects();
+                loadRecentSessions();
+            } catch (e) { showMessage('error', 'Failed to delete: ' + e.message); }
+        }
+
+        function loadPromptFile(input) {
+            var file = input.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('project-prompt').value = e.target.result;
+                document.getElementById('prompt-file-name').textContent = file.name;
+                document.getElementById('instructions-body').classList.add('open');
+                document.getElementById('instructions-arrow').classList.add('open');
+                updateExportBtn();
+                var nameInput = document.getElementById('project-name');
+                if (!nameInput.value.trim()) nameInput.value = file.name.replace(/\.(md|txt)$/i, '');
+                showMessage('success', 'File loaded: ' + file.name);
+            };
+            reader.onerror = function() { showMessage('error', 'Failed to read file'); };
+            reader.readAsText(file);
+        }
+
+        function downloadPrompt() {
+            var id = document.getElementById('edit-project-id').value;
+            var content = document.getElementById('project-prompt').value;
+            var name = document.getElementById('project-name').value.trim() || 'system-prompt';
+            if (!content.trim()) { showMessage('error', 'No instruction content to download'); return; }
+            // Use server endpoint for saved projects, client-side for unsaved
+            if (id) {
+                var a = document.createElement('a');
+                a.href = '/api/user/projects/' + id + '/download?token=' + encodeURIComponent(USER_TOKEN);
+                a.download = 'rhodes-' + name.toLowerCase().replace(/\s+/g, '-') + '.md';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                var blob = new Blob(['# ' + name + '\n\n' + content + '\n'], { type: 'text/markdown' });
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = 'rhodes-' + name.toLowerCase().replace(/\s+/g, '-') + '.md';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        function showMessage(type, text) {
+            var msg = document.getElementById('message');
+            msg.className = 'message ' + type;
+            msg.textContent = text;
+            msg.style.display = 'block';
+            setTimeout(function() { msg.style.display = 'none'; }, 5000);
+        }
+
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ---- Init ----
+        loadProjects();
+        loadRecentSessions();
+
+        // Auto-open create modal if ?new=1 in URL
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            if (params.get('new') === '1') {
+                showCreateModal();
+                history.replaceState(null, '', window.location.pathname);
+            }
+        })();
+    </script>
+</body>
+</html>

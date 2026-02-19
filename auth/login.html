@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rhodes - Sign In</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e0e0e0;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo p {
+            color: #888;
+            margin-top: 8px;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .form-group input::placeholder {
+            color: #666;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            background: rgba(255, 59, 48, 0.15);
+            border: 1px solid rgba(255, 59, 48, 0.3);
+            color: #ff6b6b;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .error-message.visible {
+            display: block;
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 24px;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .register-link a {
+            color: #00d4ff;
+            text-decoration: none;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        .secure-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 24px;
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .secure-badge svg {
+            width: 14px;
+            height: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>RHODES</h1>
+            <p>Sign in to continue</p>
+        </div>
+
+        <div id="error-message" class="error-message"></div>
+
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">Username or Email</label>
+                <input type="text" id="username" name="username" placeholder="Enter your username" required autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="submit-btn" id="submit-btn">Sign In</button>
+        </form>
+
+        <div class="register-link">
+            Don't have an account? <a href="https://rhodesagi.com/#register">Create one</a>
+        </div>
+
+        <div class="secure-badge">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+            </svg>
+            Secure authentication
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // Get redirect URL from query params
+            const params = new URLSearchParams(window.location.search);
+            const redirectUrl = params.get('redirect') || 'https://rhodesagi.com/';
+
+            const form = document.getElementById('login-form');
+            const errorEl = document.getElementById('error-message');
+            const submitBtn = document.getElementById('submit-btn');
+
+            function showError(message) {
+                errorEl.textContent = message;
+                errorEl.classList.add('visible');
+            }
+
+            function hideError() {
+                errorEl.classList.remove('visible');
+            }
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                hideError();
+
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+
+                if (!username || !password) {
+                    showError('Please enter both username and password');
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Signing in...';
+
+                try {
+                    const response = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include',  // Important: send/receive cookies
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Login successful - server has set HttpOnly cookie
+                        // Also store token in localStorage for legacy compatibility
+                        if (data.token) {
+                            try {
+                                // Use postMessage to send token to parent domain
+                                // This allows rhodesagi.com to receive the token
+                                window.opener?.postMessage({
+                                    type: 'rhodes_auth',
+                                    token: data.token,
+                                    user: data.user
+                                }, 'https://rhodesagi.com');
+                            } catch (e) {
+                                console.log('Could not post message to opener:', e);
+                            }
+                        }
+
+                        // Redirect back to original page
+                        window.location.href = redirectUrl;
+                    } else {
+                        showError(data.message || 'Login failed');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Sign In';
+                    }
+                } catch (err) {
+                    console.error('Login error:', err);
+                    showError('Connection error. Please try again.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Sign In';
+                }
+            });
+
+            // Auto-focus username field
+            document.getElementById('username').focus();
+        })();
+    </script>
+</body>
+</html>

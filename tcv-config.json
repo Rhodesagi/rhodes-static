@@ -1,0 +1,24 @@
+{
+  "version": 6,
+  "classifier": {
+    "provider": "gemini-vision",
+    "model": "gemini-2.0-flash",
+    "api_key": "AIzaSyCRitFDDOQx3k5tevsfHUi6mcDl8sDlQF4",
+    "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+  },
+  "fallback": {
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "api_key": "sk-8e2ecb03cf0341ddac08e398485bc01c",
+    "endpoint": "https://api.deepseek.com/chat/completions"
+  },
+  "settings": {
+    "grace_period_ms": 8000,
+    "warning_window_ms": 20000,
+    "block_duration_ms": 300000,
+    "cooldown_ms": 8000,
+    "cooldown_max_ms": 15000,
+    "blackout_duration_ms": 30000,
+    "config_refresh_ms": 3600000
+  }
+}

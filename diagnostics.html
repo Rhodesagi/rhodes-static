@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RHODES AGI Diagnostics</title>
+    <style>
+        body { font-family: monospace; background: #0a0a0a; color: #00ffd5; margin: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #333; }
+        .pass { color: #00ff00; }
+        .fail { color: #ff0000; }
+        .warn { color: #ffff00; }
+        button { background: #1a1a1a; color: #00ffd5; border: 1px solid #00ffd5; padding: 5px 10px; cursor: pointer; }
+        pre { background: #0d0d0d; padding: 10px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>RHODES AGI Diagnostics</h1>
+    <div id="results">
+        <div class="test" id="test1">1. Checking WebSocket server (wss://rhodesagi.com/ws)...</div>
+        <div class="test" id="test2">2. Checking nginx WebSocket proxy...</div>
+        <div class="test" id="test3">3. Checking local WebSocket server (ws://localhost:8766)...</div>
+        <div class="test" id="test4">4. Checking browser WebSocket support...</div>
+        <div class="test" id="test5">5. Testing authentication flow...</div>
+        <div class="test" id="test6">6. Checking localStorage tokens...</div>
+        <div class="test" id="test7">7. Checking main application status...</div>
+    </div>
+    <button onclick="runTests()">Run Tests</button>
+    <button onclick="clearLocalStorage()">Clear localStorage</button>
+    <button onclick="window.location.href='/'">Back to RHODES</button>
+    <pre id="log"></pre>
+    
+    <script>
+        const log = document.getElementById('log');
+        function addLog(msg) {
+            log.textContent += new Date().toLocaleTimeString() + ' ' + msg + '\\n';
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function updateTest(id, status, message) {
+            const el = document.getElementById(id);
+            el.innerHTML = el.innerHTML.split('...')[0] + '... <strong class="' + status + '">' + message + '</strong>';
+            addLog('Test ' + id + ': ' + message);
+        }
+        
+        async function runTests() {
+            log.textContent = '';
+            addLog('Starting diagnostics...');
+            
+            // Test 1: Browser WebSocket support
+            if ('WebSocket' in window) {
+                updateTest('test4', 'pass', 'Supported');
+            } else {
+                updateTest('test4', 'fail', 'Not supported');
+                return;
+            }
+            
+            // Test 2: localStorage tokens
+            const token = localStorage.getItem('rhodes_token');
+            const userToken = localStorage.getItem('rhodes_user_token');
+            const clientId = localStorage.getItem('rhodes_client_id');
+            updateTest('test6', token || userToken ? 'warn' : 'pass', 
+                'token=' + (token ? token.length + ' chars' : 'none') + 
+                ', userToken=' + (userToken ? userToken.length + ' chars' : 'none') + 
+                ', clientId=' + (clientId || 'none'));
+            
+            // Test 3: WebSocket connection to wss://rhodesagi.com/ws
+            await testWebSocket('wss://rhodesagi.com/ws', 'test1');
+            
+            // Test 4: WebSocket connection to ws://localhost:8766 (only works if same origin)
+            // Only test if on same host
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                await testWebSocket('ws://localhost:8766', 'test3');
+            } else {
+                updateTest('test3', 'warn', 'Skipped (not localhost)');
+            }
+            
+            // Test 5: Main app status
+            try {
+                const mainApp = window.opener || window.parent;
+                if (mainApp && mainApp.ws) {
+                    updateTest('test7', 'pass', 'Main app WebSocket exists, readyState=' + mainApp.ws.readyState);
+                } else {
+                    updateTest('test7', 'warn', 'Main app not accessible');
+                }
+            } catch(e) {
+                updateTest('test7', 'warn', 'Cannot access main app: ' + e.message);
+            }
+            
+            addLog('Diagnostics complete.');
+        }
+        
+        function testWebSocket(url, testId) {
+            return new Promise(resolve => {
+                updateTest(testId, 'warn', 'Connecting...');
+                let timeout;
+                const ws = new WebSocket(url);
+                
+                ws.onopen = () => {
+                    clearTimeout(timeout);
+                    updateTest(testId, 'pass', 'Connected successfully');
+                    ws.close();
+                    resolve();
+                };
+                
+                ws.onerror = (error) => {
+                    clearTimeout(timeout);
+                    updateTest(testId, 'fail', 'Connection failed');
+                    console.error('WebSocket error:', error);
+                    resolve();
+                };
+                
+                ws.onclose = (event) => {
+                    clearTimeout(timeout);
+                    if (event.code === 1000) {
+                        updateTest(testId, 'pass', 'Closed normally');
+                    } else {
+                        updateTest(testId, 'warn', 'Closed with code ' + event.code);
+                    }
+                    resolve();
+                };
+                
+                timeout = setTimeout(() => {
+                    ws.close();
+                    updateTest(testId, 'fail', 'Timeout after 5s');
+                    resolve();
+                }, 5000);
+            });
+        }
+        
+        function clearLocalStorage() {
+            if (confirm('Clear all RHODES localStorage data? This will log you out.')) {
+                localStorage.removeItem('rhodes_token');
+                localStorage.removeItem('rhodes_user_token');
+                localStorage.removeItem('rhodes_client_id');
+                localStorage.removeItem('rhodes_server');
+                localStorage.removeItem('rhodes_session_id');
+                updateTest('test6', 'pass', 'Cleared');
+                addLog('LocalStorage cleared.');
+            }
+        }
+        
+        // Run tests on load
+        setTimeout(runTests, 500);
+    </script>
+</body>
+</html>

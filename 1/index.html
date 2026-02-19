@@ -1,0 +1,2935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- /1/ VERSION: Rhodes Code + Hands-Free Audio Mode enabled -->
+<style>
+/* Override hidden features for /1/ version */
+#voice-mode-btn { display: inline-block !important; }
+#downloads-link { display: inline-block !important; }
+#audio-toggle-btn { display: inline-block !important; }
+/* Allow handsfree-takeover to work - override the base !important hide */
+div#handsfree-takeover { display: none !important; }
+div#handsfree-takeover.active {
+    display: flex !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+}
+</style>
+<script>
+// Immediately hide Google sign-in on localhost (desktop app)
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    document.write('<style>#google-signin-btn,button[onclick*=signInWithGoogle],[onclick*=signInWithGoogle]{display:none!important;}</style>');
+}
+</script>
+
+    <!-- pywebview compatibility - must be first script -->
+    <script>
+// Split view functionality - opens Rhodes in a new window for multi-instance
+function toggleSplitView() {
+    const width = Math.floor(window.screen.width / 2);
+    const height = window.screen.height;
+    const left = window.screenX < width / 2 ? width : 0;
+
+    // Open new window with different session
+    const newWindow = window.open(
+        window.location.origin + '?new=1',
+        '_blank',
+        `width=${width},height=${height},left=${left},top=0,menubar=no,toolbar=no,location=no,status=no`
+    );
+
+    // Resize current window to take other half
+    if (newWindow) {
+        const currentLeft = left === 0 ? width : 0;
+        window.moveTo(currentLeft, 0);
+        window.resizeTo(width, height);
+    }
+}
+
+    (function() {
+        // Stub for pywebview API until it is ready
+        if (typeof window.pywebview === "undefined") {
+            window.pywebview = { api: {}, _createApi: function() {} };
+        }
+        
+        // Ensure document.body exists before any script tries to use it
+        // This polling approach handles pywebview early injection
+        function ensureBody(callback) {
+            if (document.body) {
+                callback();
+            } else {
+                setTimeout(function() { ensureBody(callback); }, 10);
+            }
+        }
+        
+        // Store original addEventListener to wrap later
+        var origDocAddEventListener = document.addEventListener;
+        var pendingBodyListeners = [];
+        
+        // Intercept document.body.addEventListener calls before body exists
+        Object.defineProperty(document, "body", {
+            get: function() {
+                return document.querySelector("body");
+            },
+            configurable: true
+        });
+        
+        // Safe wrapper for adding body event listeners
+        window.addBodyEventListener = function(type, listener, options) {
+            ensureBody(function() {
+                document.body.addEventListener(type, listener, options);
+            });
+        };
+    })();
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="version" content="2.0.0-cyberpunk">
+    <script>
+        // Cache-bust the main HTML itself (helps even if a browser heuristically caches index.html).
+        (() => {
+            try {
+                const url = new URL(window.location.href);
+                if (!url.searchParams.has('v')) {
+                    url.searchParams.set('v', '20260122-think');
+                    window.location.replace(url.toString());
+                }
+            } catch {}
+        })();
+    </script>
+    <title>RHODES - Autonomous AI System</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Rhodes is an autonomous AI system built for truth-seeking and genuine assistance. Direct, capable, honest - no safety theater, no sycophancy. Available 24/7 for complex reasoning, research, and real conversation.">
+    <meta name="keywords" content="Rhodes AI, autonomous AI, AI assistant, artificial intelligence, AI chat, truth-seeking AI, honest AI">
+    <meta name="author" content="Rhodes Team">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://rhodesagi.com/">
+    <meta property="og:title" content="RHODES - Autonomous AI System">
+    <meta property="og:description" content="Direct, capable, honest. An autonomous AI built for truth-seeking and genuine assistance. No safety theater, no sycophancy.">
+    <meta property="og:image" content="https://rhodesagi.com/rhodes-og-image.png">
+    <meta property="og:site_name" content="RHODES">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="RHODES - Autonomous AI System">
+    <meta name="twitter:description" content="Direct, capable, honest. An autonomous AI built for truth-seeking and genuine assistance.">
+    <meta name="twitter:image" content="https://rhodesagi.com/rhodes-og-image.png">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://rhodesagi.com/">
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RHODES">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/rhodes-icon-32.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="/rhodes-icon-64.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/rhodes-icon-180.png">
+
+    <!-- Firebase Auth for Google Sign-In -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <link rel="stylesheet" href="/rhodes.css?v=20260124-faces4">
+<style>
+    /* Hide LOGIN when logged in */
+    #account-dropdown:not([style*="display:none"]) ~ #header-login-btn,
+    #account-dropdown:not([style*="display: none"]) ~ #header-login-btn,
+    body.logged-in #header-login-btn { display: none !important; }
+</style>
+<script>const params=new URLSearchParams(window.location.search);
+if(params.get("nologo")==="1"){document.write(`<style>.logo{visibility:hidden!important}
+    /* Slash command autocomplete dropdown */
+    #slash-dropdown {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg);
+        border: 1px solid var(--green);
+        border-bottom: none;
+        max-height: 200px;
+        overflow-y: auto;
+        display: none;
+        z-index: 1000;
+    }
+    #slash-dropdown.visible {
+        display: block;
+    }
+    .slash-option {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #333;
+        display: flex;
+        justify-content: space-between;
+    }
+    .slash-option:hover, .slash-option.selected {
+        background: var(--green);
+        color: #000;
+    }
+    .slash-option .cmd {
+        font-weight: bold;
+        color: var(--green);
+    }
+    .slash-option:hover .cmd, .slash-option.selected .cmd {
+        color: #000;
+    }
+    .slash-option .desc {
+        color: #888;
+        font-size: 0.9em;
+    }
+    .slash-option:hover .desc, .slash-option.selected .desc {
+        color: #333;
+    }
+
+        
+    /* RHODES CODE link - boxed style */
+    #downloads-link {
+        border: 2px solid #00ff41 !important;
+        padding: 6px 12px !important;
+        margin-right: 20px !important;
+        border-radius: 4px;
+        background: rgba(0, 255, 65, 0.15) !important;
+        color: #00ff41 !important;
+    }
+    #downloads-link:hover {
+        background: rgba(0, 255, 65, 0.2);
+        box-shadow: 0 0 8px var(--cyan);
+    }
+    body.light-mode #downloads-link {
+        border-color: #006400 !important;
+        background: rgba(0, 100, 0, 0.15) !important;
+        color: #006400 !important;
+        font-weight: 800;
+    }
+    body.light-mode #downloads-link:hover {
+        background: rgba(0, 100, 0, 0.25) !important;
+        box-shadow: 0 0 8px #006400;
+    }
+</style>`);}
+if(params.get("nostatus")==="1"){document.write(`<style>#status{visibility:hidden!important}
+    /* Slash command autocomplete dropdown */
+    #slash-dropdown {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg);
+        border: 1px solid var(--green);
+        border-bottom: none;
+        max-height: 200px;
+        overflow-y: auto;
+        display: none;
+        z-index: 1000;
+    }
+    #slash-dropdown.visible {
+        display: block;
+    }
+    .slash-option {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #333;
+        display: flex;
+        justify-content: space-between;
+    }
+    .slash-option:hover, .slash-option.selected {
+        background: var(--green);
+        color: #000;
+    }
+    .slash-option .cmd {
+        font-weight: bold;
+        color: var(--green);
+    }
+    .slash-option:hover .cmd, .slash-option.selected .cmd {
+        color: #000;
+    }
+    .slash-option .desc {
+        color: #888;
+        font-size: 0.9em;
+    }
+    .slash-option:hover .desc, .slash-option.selected .desc {
+        color: #333;
+    }
+
+/* ASCII Face Flash Animation */
+    #ascii-face-flash {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        display: none;
+        z-index: 99999;
+        display: none;
+        background: rgba(0, 0, 0, 0.95);
+        pointer-events: none;
+    }
+    #ascii-face-flash.active {
+        display: block;
+        animation: ascii-fade 1.5s ease-out forwards;
+    }
+    #ascii-face-flash pre {
+        color: #00ffff;
+        font-family: monospace;
+        font-size: 7px;
+        line-height: 1.0;
+        text-align: left;
+        white-space: pre;
+        margin: 0;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1px solid #00ff41;
+        border-radius: 8px;
+        text-shadow: 0 0 5px #00ffff;
+    }
+    @keyframes ascii-fade {
+        0% { opacity: 0; }
+        15% { opacity: 1; }
+        70% { opacity: 1; }
+        100% { opacity: 0.12; }
+    }
+    /* Light mode ASCII flash */
+    body.light-mode #ascii-face-flash {
+        background: rgba(255, 255, 255, 0.95);
+    }
+    body.light-mode #ascii-face-flash pre {
+        color: #0066cc;
+        background: rgba(255, 255, 255, 0.9);
+        border-color: #0066cc;
+        text-shadow: none;
+    }
+
+    </style>`);}
+if(params.get("nosessionid")==="1"){document.write(`<style>#session-id{display:none!important}
+    /* Slash command autocomplete dropdown */
+    #slash-dropdown {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg);
+        border: 1px solid var(--green);
+        border-bottom: none;
+        max-height: 200px;
+        overflow-y: auto;
+        display: none;
+        z-index: 1000;
+    }
+    #slash-dropdown.visible {
+        display: block;
+    }
+    .slash-option {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #333;
+        display: flex;
+        justify-content: space-between;
+    }
+    .slash-option:hover, .slash-option.selected {
+        background: var(--green);
+        color: #000;
+    }
+    .slash-option .cmd {
+        font-weight: bold;
+        color: var(--green);
+    }
+    .slash-option:hover .cmd, .slash-option.selected .cmd {
+        color: #000;
+    }
+    .slash-option .desc {
+        color: #888;
+        font-size: 0.9em;
+    }
+    .slash-option:hover .desc, .slash-option.selected .desc {
+        color: #333;
+    }
+
+/* ASCII Face Flash Animation */
+    #ascii-face-flash {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        display: none;
+        z-index: 99999;
+        display: none;
+        background: rgba(0, 0, 0, 0.95);
+        pointer-events: none;
+    }
+    #ascii-face-flash.active {
+        display: block;
+        animation: ascii-fade 1.5s ease-out forwards;
+    }
+    #ascii-face-flash pre {
+        color: #00ffff;
+        font-family: monospace;
+        font-size: 7px;
+        line-height: 1.0;
+        text-align: left;
+        white-space: pre;
+        margin: 0;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1px solid #00ff41;
+        border-radius: 8px;
+        text-shadow: 0 0 5px #00ffff;
+    }
+    @keyframes ascii-fade {
+        0% { opacity: 0; }
+        15% { opacity: 1; }
+        70% { opacity: 1; }
+        100% { opacity: 0.12; }
+    }
+    /* Light mode ASCII flash */
+    body.light-mode #ascii-face-flash {
+        background: rgba(255, 255, 255, 0.95);
+    }
+    body.light-mode #ascii-face-flash pre {
+        color: #0066cc;
+        background: rgba(255, 255, 255, 0.9);
+        border-color: #0066cc;
+        text-shadow: none;
+    }
+
+    </style>`);}
+if(params.get("chatpad")==="1"){document.write(`<style>#chat{padding-top:180px!important}
+    /* Slash command autocomplete dropdown */
+    #slash-dropdown {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg);
+        border: 1px solid var(--green);
+        border-bottom: none;
+        max-height: 200px;
+        overflow-y: auto;
+        display: none;
+        z-index: 1000;
+    }
+    #slash-dropdown.visible {
+        display: block;
+    }
+    .slash-option {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #333;
+        display: flex;
+        justify-content: space-between;
+    }
+    .slash-option:hover, .slash-option.selected {
+        background: var(--green);
+        color: #000;
+    }
+    .slash-option .cmd {
+        font-weight: bold;
+        color: var(--green);
+    }
+    .slash-option:hover .cmd, .slash-option.selected .cmd {
+        color: #000;
+    }
+    .slash-option .desc {
+        color: #888;
+        font-size: 0.9em;
+    }
+    .slash-option:hover .desc, .slash-option.selected .desc {
+        color: #333;
+    }
+
+/* ASCII Face Flash Animation */
+    #ascii-face-flash {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        display: none;
+        z-index: 99999;
+        display: none;
+        background: rgba(0, 0, 0, 0.95);
+        pointer-events: none;
+    }
+    #ascii-face-flash.active {
+        display: block;
+        animation: ascii-fade 1.5s ease-out forwards;
+    }
+    #ascii-face-flash pre {
+        color: #00ffff;
+        font-family: monospace;
+        font-size: 7px;
+        line-height: 1.0;
+        text-align: left;
+        white-space: pre;
+        margin: 0;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1px solid #00ff41;
+        border-radius: 8px;
+        text-shadow: 0 0 5px #00ffff;
+    }
+    @keyframes ascii-fade {
+        0% { opacity: 0; }
+        15% { opacity: 1; }
+        70% { opacity: 1; }
+        100% { opacity: 0.12; }
+    }
+    /* Light mode ASCII flash */
+    body.light-mode #ascii-face-flash {
+        background: rgba(255, 255, 255, 0.95);
+    }
+    body.light-mode #ascii-face-flash pre {
+        color: #0066cc;
+        background: rgba(255, 255, 255, 0.9);
+        border-color: #0066cc;
+        text-shadow: none;
+    }
+
+    </style>`);}
+</script>
+    <!-- Silero VAD for speech detection -->
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.19/dist/bundle.min.js"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(function(reg) { console.log('SW registered:', reg.scope); })
+                .catch(function(err) { console.log('SW failed:', err); });
+        });
+    }
+    </script>
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "RHODES",
+        "url": "https://rhodesagi.com",
+        "description": "Rhodes is an autonomous AI system built for truth-seeking and genuine assistance. Direct, capable, honest.",
+        "applicationCategory": "Artificial Intelligence",
+        "operatingSystem": "Web Browser",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "creator": {
+            "@type": "Organization",
+            "name": "Rhodes Team",
+            "url": "https://rhodesagi.com"
+        },
+        "featureList": [
+            "Autonomous AI reasoning",
+            "Research and analysis",
+            "Code assistance",
+            "Real-time conversation",
+            "File and image processing"
+        ]
+    }
+    </script>
+</head>
+<body>
+    <!-- Preview Panel - Sandboxed side panel for generated content -->
+    <div id="preview-overlay" onclick="closePreview()"></div>
+    <div id="preview-panel">
+        <div id="preview-header">
+            <span id="preview-title">Preview</span>
+            <button id="preview-close" onclick="closePreview()">✕ Close</button>
+        </div>
+        <div id="preview-actions">
+            <button onclick="downloadPreview()">↓ Download</button>
+            <button onclick="openPreviewNewTab()">↗ Open in New Tab</button>
+            <button onclick="deployPreview()">🚀 Deploy to Site</button>
+        </div>
+        <!-- Sandboxed iframe - cannot access parent, no scripts by default -->
+        <iframe id="preview-frame" sandbox="allow-scripts" title="Preview"></iframe>
+    </div>
+
+    <header>
+        <button id="menu-toggle" onclick="toggleMobileMenu()" title="☰">☰</button>
+        <!-- Single row: nav left, logo center, controls right -->
+        <div style="display:flex;align-items:center;width:100%;">
+            <!-- Left: CHAT, Language Courses -->
+            <nav class="nav" style="flex:1;">
+                <a href="#" id="chat-link" class="nav-item active">CHAT</a>
+                <a href="/download/" id="downloads-link" class="nav-item" style="border:2px solid #00ff41;padding:6px 12px;border-radius:4px;background:rgba(0,255,65,0.15);color:#00ff41;margin-left:10px;margin-right:10px;">Try Rhodes_Code!</a>
+            </nav>
+            <!-- Center: Logo -->
+            <div style="text-align:center;">
+                <div class="logo" id="main-logo" style="margin-top:8px;">RHODES AGI</div>
+                <span class="status" id="status" style="font-size:14px;font-weight:600;">CONNECTING...</span>
+                <span id="session-id" style="display:none;color:var(--dim);cursor:pointer;margin-left:8px;font-size:10px;" onclick="copySessionId()" title="Click to copy session ID"></span>
+                <button id="debug-btn" style="display:none;margin-left:8px;font-size:10px;background:transparent;border:1px solid var(--red);color:var(--red);padding:2px 6px;cursor:pointer;" onclick="toggleDebugPanel()">DEBUG</button>
+            </div>
+            <!-- Right: LOGIN/Account, theme, ABOUT -->
+            <div style="display:flex;align-items:center;gap:10px;flex:1;justify-content:flex-end;flex-wrap:nowrap;white-space:nowrap;">
+                <!-- Language Courses dropdown -->
+                <div class="lang-dropdown" style="position:relative;display:inline-block;">
+                    <a href="#" id="courses-link" style="color:var(--cyan);font-size:15px;font-weight:700;text-decoration:none;white-space:nowrap;margin-right:15px;">Language Courses ▾</a>
+                    <div class="lang-dropdown-content" id="lang-dropdown-right" style="display:none;position:absolute;top:100%;right:0;background:#111;border:1px solid var(--cyan);padding:5px 0;z-index:1000;">
+                        <a href="/rhodes-french/" style="display:block;padding:8px 15px;color:var(--green);text-decoration:none;">🇫🇷 Rhodes French</a>
+                        <a href="/rhodes-german/" style="display:block;padding:8px 15px;color:var(--green);text-decoration:none;">🇩🇪 Rhodes German</a>
+                    </div>
+                </div>
+                <!-- ROOMS button -->
+                <a href="#" id="rooms-link" onclick="openRoomsMenu();return false;" style="color:var(--cyan);font-size:15px;font-weight:700;text-decoration:none;margin-right:15px;">ROOMS</a>
+                <!-- LOGIN button (shown when not logged in) -->
+                <a href="#" id="header-login-btn" onclick="document.getElementById('auth-modal').style.display='flex';showAuthTab('login');return false;" style="color:var(--cyan);font-size:15px;font-weight:700;text-decoration:none;">LOGIN</a>
+                <!-- Account dropdown (shown when logged in) -->
+                <div id="account-dropdown" class="account-dropdown" style="display:none;">
+                    <a href="#" id="account-trigger" style="color:var(--cyan);font-size:15px;font-weight:700;text-decoration:none;">
+                        <span id="account-username" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle;">ACCOUNT</span> ▾
+                    </a>
+                    <div class="account-dropdown-content">
+                        <a href="/profile.html">Profile</a>
+                        <a href="/preferences.html">Preferences</a>
+                        <a href="/projects.html">Projects</a>
+                        <div class="account-dropdown-divider"></div>
+                        <a href="/admin-control.html" id="admin-link" style="display:none;">Control Panel</a>
+                        <a href="#" id="logout-link" onclick="logout(); return false;">Logout</a>
+                    </div>
+                </div>
+                <span id="agent-status" style="display:none;color:var(--green);font-size:12px;padding:3px 8px;border:1px solid var(--green);border-radius:3px;background:rgba(0,255,65,0.1);" title="Desktop agent connected">🖥️ AGENT</span>
+                <a href="#" id="theme-toggle" title="Toggle light/dark mode">☀️</a>
+                <a href="#" id="about-link" onclick="showAbout(); return false;">ABOUT</a>
+            </div>
+        </div>
+        <!-- Session controls (positioned via CSS) -->
+        <div class="session-controls">
+            <button id="new-rhodes-btn" onclick="startNewSession()" style="background:transparent;border:1px solid var(--green);color:var(--green);padding:4px 10px;cursor:pointer;font-size:12px;border-radius:3px 0 0 3px;border-right:none;">+ New Session</button>
+            <div class="session-dropdown">
+                <button id="sessions-btn" onclick="toggleSessionDropdown(event)" style="background:transparent;border:1px solid var(--green);color:var(--green);padding:4px 8px;cursor:pointer;font-size:12px;border-radius:0;border-right:none;border-left:none;">▼</button>
+                <div id="sessions-list" class="sessions-dropdown-content">
+                    <div id="session-search-container" style="padding:8px 12px;border-bottom:1px solid var(--border);">
+                        <input type="text" id="session-search-input" placeholder="Search sessions (preview, ID, dates, or content)..." oninput="debouncedSearch()" style="width:100%;background:var(--bg);border:1px solid var(--cyan);color:var(--cyan);padding:6px 8px;font-size:12px;outline:none;border-radius:3px;">
+                    </div>
+                    <div id="split-mode-section" style="border-bottom:1px solid var(--border);padding:8px 12px;">
+                        <div onclick="toggleSplitModeDropdown()" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+                            <span style="color:var(--green);font-weight:bold;">⊞ Split Mode</span>
+                            <span id="split-mode-arrow" style="color:var(--dim);">▶</span>
+                        </div>
+                        <div id="split-mode-options" style="display:none;margin-top:8px;padding-left:10px;">
+                            <div onclick="enterSplitFromDropdown(2)" style="padding:6px;cursor:pointer;color:var(--text);" onmouseover="this.style.background='rgba(0,255,65,0.1)'" onmouseout="this.style.background='none'">2 Panes (side by side)</div>
+                            <div onclick="enterSplitFromDropdown(3)" style="padding:6px;cursor:pointer;color:var(--text);" onmouseover="this.style.background='rgba(0,255,65,0.1)'" onmouseout="this.style.background='none'">3 Panes (vertical)</div>
+                            <div onclick="enterSplitFromDropdown(4)" style="padding:6px;cursor:pointer;color:var(--text);" onmouseover="this.style.background='rgba(0,255,65,0.1)'" onmouseout="this.style.background='none'">4 Panes (grid)</div>
+                        </div>
+                    </div>
+                    <div id="sessions-results"></div>
+                </div>
+            </div>
+            <button id="search-sessions-btn" onclick="toggleSessionSearch(event)" title="Search sessions" style="background:transparent;border:1px solid var(--green);color:var(--green);padding:4px 8px;cursor:pointer;font-size:12px;border-radius:0 3px 3px 0;border-left:none;">🔍</button>
+        </div>
+        <div class="system-info" id="system-info" style="display:none;"></div>
+        
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobile-menu-dropdown" class="mobile-menu-dropdown">
+            <a href="#" class="mobile-menu-item" onclick="closeMobileMenu()">CHAT</a>
+            <a href="#" class="mobile-menu-item" onclick="openRoomsMenu(); closeMobileMenu(); return false;">ROOMS</a>
+            <div class="mobile-menu-submenu">
+                <a href="#" class="mobile-menu-item" onclick="toggleMobileSubmenu(this); return false;">Language Courses ▾</a>
+                <div class="mobile-submenu-items">
+                    <a href="/rhodes-french/" class="mobile-submenu-item" onclick="closeMobileMenu()">🇫🇷 Rhodes French</a>
+                    <a href="/rhodes-german/" class="mobile-submenu-item" onclick="closeMobileMenu()">🇩🇪 Rhodes German</a>
+                    <a href="/rhodes-spanish/" class="mobile-submenu-item" onclick="closeMobileMenu()">🇪🇸 Rhodes Spanish</a>
+                    <a href="/rhodes-italian/" class="mobile-submenu-item" onclick="closeMobileMenu()">🇮🇹 Rhodes Italian</a>
+                    <a href="/rhodes-russian/" class="mobile-submenu-item" onclick="closeMobileMenu()">🇷🇺 Rhodes Russian</a>
+                    <a href="#" class="mobile-submenu-item" id="mobile-all-courses-link" onclick="closeMobileMenu()">All Courses...</a>
+                </div>
+            </div>
+            <!-- Guest: LOGIN link -->
+            <a href="#" id="mobile-login-link" class="mobile-menu-item" onclick="showAuth('login'); closeMobileMenu();">LOGIN</a>
+            <!-- Logged in: Account submenu (hidden by default) -->
+            <div id="mobile-account-menu" class="mobile-menu-submenu" style="display:none;">
+                <a href="#" class="mobile-menu-item" onclick="toggleMobileSubmenu(this); return false;"><span id="mobile-account-username">ACCOUNT</span> ▾</a>
+                <div class="mobile-submenu-items">
+                    <a href="/profile.html" class="mobile-submenu-item" onclick="closeMobileMenu()">Profile</a>
+                    <a href="/preferences.html" class="mobile-submenu-item" onclick="closeMobileMenu()">Preferences</a>
+                    <a href="/projects.html" class="mobile-submenu-item" onclick="closeMobileMenu()">Projects</a>
+                    <a href="/admin-control.html" id="mobile-admin-link" class="mobile-submenu-item" style="display:none;" onclick="closeMobileMenu()">Control Panel</a>
+                    <a href="#" class="mobile-submenu-item" onclick="logout(); closeMobileMenu(); return false;">Logout</a>
+                </div>
+            </div>
+            <a href="#" class="mobile-menu-item" onclick="toggleTheme(); closeMobileMenu();">THEME</a>
+            <a href="#" class="mobile-menu-item" onclick="showAbout(); closeMobileMenu(); return false;">ABOUT</a>
+            <a href="/download/" class="mobile-menu-item" onclick="closeMobileMenu();">RHODES CODE</a>
+            <a href="#" class="mobile-menu-item" onclick="showCourses(); closeMobileMenu();">COURSES</a>
+        </div>
+    </header>
+    <div id="ascii-face-flash"><pre style="text-align:center;">                     ⣀⣀⣀⣀⣀⣀⣀
+               ⣀⣴⣾⣿⣿⣿⣿⣿⣿⣿⣷⣦⣀
+           ⣀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⣀
+        ⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄
+      ⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦
+    ⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧
+   ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+  ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⡛⠉⠉⠉⠉⠉⠉⠉⠉⠉⡛⣻⣿⣿⣿⣿⣿⣿⣿⣿⣿
+ ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠏    ⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀    ⠹⣿⣿⣿⣿⣿⣿⣿⣿⣿
+ ⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟   ⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄   ⢻⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟   ⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧   ⢻⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁  ⢀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡀  ⠘⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⡇   ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿   ⢸⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⡇  ⣰⣿⡟⠁ ⠈⠙⣿⣿⣿⣿⣿⣿⠋⠁ ⠈⢻⣿⡆  ⢸⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⡇  ⢸⣿⡇ ⬤  ⢸⣿⣿⣿⣿⡇  ⬤ ⢸⣿⡇  ⢸⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⡇  ⠘⣿⣷⣄ ⣀⣴⣿⣿⣿⣿⣿⣿⣦⣀ ⣠⣾⣿⠃  ⢸⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣧   ⠙⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠋   ⣼⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣄    ⠈⠉⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠉⠁    ⣠⣿⣿⣿⣿⣿⣿⣿⣿
+ ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣆      ⢻⣿⣿⡿⡟⢻⣿⡟      ⣰⣿⣿⣿⣿⣿⣿⣿⣿
+ ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣆       ⠉⠁  ⠈⠉       ⣰⣿⣿⣿⣿⣿⣿⣿⣿⣿
+  ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣄                  ⣠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+
+               RHODES AGI</pre></div>
+
+    <!-- Multi-Instance Split View -->
+    <div id="split-view" style="display:none;">
+        <div class="split-container">
+            <div class="split-instance" data-instance="1">
+                <div class="instance-header">
+                    <span class="instance-label">RHODES α</span>
+                    <span class="instance-status" data-instance="1">●</span>
+                </div>
+                <div class="instance-chat" id="split-chat-1"></div>
+                <div class="instance-input">
+                    <input type="text" id="instance-1-input" name="instance-1-input" placeholder="Follow-up..." data-instance="1" onkeypress="if(event.key==='Enter')sendToInstance(1,this.value)">
+                    <button onclick="sendToInstance(1, this.previousElementSibling.value)">→</button>
+                </div>
+            </div>
+            <div class="split-instance" data-instance="2">
+                <div class="instance-header">
+                    <span class="instance-label">RHODES β</span>
+                    <span class="instance-status" data-instance="2">●</span>
+                </div>
+                <div class="instance-chat" id="split-chat-2"></div>
+                <div class="instance-input">
+                    <input type="text" id="instance-2-input" name="instance-2-input" placeholder="Follow-up..." data-instance="2" onkeypress="if(event.key==='Enter')sendToInstance(2,this.value)">
+                    <button onclick="sendToInstance(2, this.previousElementSibling.value)">→</button>
+                </div>
+            </div>
+            <div class="split-instance" data-instance="3">
+                <div class="instance-header">
+                    <span class="instance-label">RHODES γ</span>
+                    <span class="instance-status" data-instance="3">●</span>
+                </div>
+                <div class="instance-chat" id="split-chat-3"></div>
+                <div class="instance-input">
+                    <input type="text" id="instance-3-input" name="instance-3-input" placeholder="Follow-up..." data-instance="3" onkeypress="if(event.key==='Enter')sendToInstance(3,this.value)">
+                    <button onclick="sendToInstance(3, this.previousElementSibling.value)">→</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="chat"></div>
+
+    <div id="voice-bar">
+        <button id="audio-toggle-btn" title="Toggle audio responses (text-to-speech)">🔊 AUDIO</button>
+        <button id="voice-mode-btn" title="Toggle hands-free mode (voice input + audio output)">🎤❌ HANDS-FREE</button>
+        <button id="split-view-btn" onclick="toggleSplitView()" title="Multi-instance split view">⫸ SPLIT</button>
+    </div>
+    <div id="input-area">
+        <div class="input-group">
+            <div class="input-with-attachment" style="position:relative;">
+                <span class="prompt" aria-hidden="true">&gt;</span>
+                <input type="text" id="input" placeholder="enter message..." autocomplete="off">
+                <button type="button" id="attach-btn" onclick="document.getElementById('image-input').click()" title="Attach files">📎</button>
+            </div>
+            <!-- ⚠️⚠️⚠️ DO NOT REMOVE onclick="send()" - REQUIRED FOR MOBILE COMPATIBILITY ⚠️⚠️⚠️ -->
+            <button id="send" type="button" onclick="send()">SEND</button>
+        </div>
+        <select id="lang-select" style="display:none;">
+            <option value="en-US">EN</option>
+            <option value="en-GB">EN-UK</option>
+            <option value="es-ES">ES</option>
+            <option value="fr-FR">FR</option>
+            <option value="de-DE">DE</option>
+            <option value="it-IT">IT</option>
+            <option value="pt-BR">PT</option>
+            <option value="ru-RU">RU</option>
+            <option value="ja-JP">JA</option>
+            <option value="zh-CN">ZH</option>
+            <option value="ko-KR">KO</option>
+            <option value="ar-SA">AR</option>
+            <option value="hi-IN">HI</option>
+            <option value="nl-NL">NL</option>
+            <option value="pl-PL">PL</option>
+            <option value="sv-SE">SV</option>
+        </select>
+        <input type="file" id="image-input" accept="image/*,.pdf,.txt,.md,.json,.csv,.xml,.html,.css,.js,.py,.java,.c,.cpp,.h,.yml,.yaml,.log,.doc,.docx,.odt,.odf,.rtf" multiple style="display:none;">
+    </div>
+    <div id="image-preview" style="display:none;padding:8px 15px;background:#0a0a0a;border-top:1px solid rgba(0,255,213,0.2);"></div>
+
+    <div id="voice-indicator">LISTENING...</div>
+    <div id="speaking-face"></div>
+    <div id="handsfree-takeover">
+        <div id="takeover-return" onclick="VoiceChat.toggleMode()">‹ Return to text mode</div>
+        <div id="takeover-status">LISTENING</div>
+        <div id="takeover-face"></div>
+        <div class="takeover-transcript" id="takeover-transcript"></div>
+        <div class="exit-hint" onclick="VoiceChat.toggleMode()">EXIT HANDS-FREE</div>
+    </div>
+    <audio id="tts-audio" style="display:none;"></audio>
+    <!-- ASCII Face Flash -->
+    
+
+    <!-- Webcam Modal -->
+    <div id="webcam-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.95);z-index:10000;flex-direction:column;justify-content:center;align-items:center;">
+        <div style="color:var(--cyan);font-family:'Orbitron',monospace;font-size:18px;margin-bottom:20px;">📸 WEBCAM CAPTURE</div>
+        <video id="webcam-video" autoplay playsinline style="max-width:80vw;max-height:60vh;border:2px solid var(--cyan);border-radius:8px;transform:scaleX(-1);"></video>
+        <canvas id="webcam-canvas" style="display:none;"></canvas>
+        <div style="margin-top:20px;display:flex;gap:15px;">
+            <button id="webcam-capture" style="background:var(--magenta);border:none;color:#fff;padding:12px 24px;font-family:'Orbitron',monospace;cursor:pointer;border-radius:4px;">📷 CAPTURE</button>
+            <button id="webcam-cancel" style="background:transparent;border:1px solid var(--dim);color:var(--dim);padding:12px 24px;font-family:'Orbitron',monospace;cursor:pointer;border-radius:4px;">✕ CANCEL</button>
+        </div>
+        <div style="color:var(--dim);font-size:12px;margin-top:15px;">Rhodes can draw your portrait from this photo</div>
+    </div>
+
+    <!-- Auth Modal - Guest/Register/Login -->
+    <div class="modal" id="auth-modal" style="display:none;">
+        <div class="modal-box" style="width: 420px;">
+            <h2>// ACCESS RHODES</h2>
+
+            <!-- Tab buttons -->
+            <div id="auth-tabs" style="display:flex;gap:10px;margin-bottom:20px;">
+                <button class="auth-tab active" data-tab="guest" style="flex:1;padding:10px;background:transparent;border:1px solid var(--green);color:var(--green);cursor:pointer;font-family:inherit;">GUEST</button>
+                <button class="auth-tab" data-tab="login" style="flex:1;padding:10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;font-family:inherit;">LOGIN</button>
+                <button class="auth-tab" data-tab="reset" style="flex:1;padding:10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;font-family:inherit;">RESET</button>
+                <button class="auth-tab" data-tab="register" style="flex:1;padding:10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;font-family:inherit;">REGISTER</button>
+                <button class="auth-tab" data-tab="token" style="flex:1;padding:10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;font-family:inherit;">TOKEN</button>
+            </div>
+
+            <!-- Guest tab -->
+            <div id="tab-guest" class="auth-tab-content">
+                <p style="color:var(--cyan);margin-bottom:15px;">Try RHODES with 3 free messages. No account required.</p>
+                <button id="guest-connect-btn" style="width:100%;padding:12px;background:transparent;border:1px solid var(--green);color:var(--green);font-family:'Orbitron',monospace;cursor:pointer;">START AS GUEST</button>
+            </div>
+
+            <!-- Login tab -->
+            <div id="tab-login" class="auth-tab-content" style="display:none;">
+                <form id="login-form" onsubmit="event.preventDefault(); document.getElementById('login-btn').click(); return false;">
+                <input type="text" id="login-username" placeholder="Username or email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" style="width:100%;margin-bottom:10px;">
+                <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" style="width:100%;margin-bottom:10px;">
+                <button id="login-btn" type="submit" style="width:100%;padding:12px;background:transparent;border:1px solid var(--green);color:var(--green);font-family:'Orbitron',monospace;cursor:pointer;">LOGIN</button>
+                </form>
+                <div style="margin-top:10px;text-align:center;">
+                    <a href="#" onclick="showAuthTab('reset');return false;" style="color:var(--cyan);text-decoration:underline;font-size:12px;">Forgot password?</a>
+                </div>
+                <div style="margin:15px 0;text-align:center;color:var(--dim);">- or -</div>
+                <button id="google-signin-btn" onclick="signInWithGoogle()" style="width:100%;padding:12px;background:#4285f4;border:none;color:white;font-family:'Orbitron',monospace;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;">
+                    <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFF" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#FFF" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FFF" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#FFF" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                    Sign in with Google
+                </button>
+                <div id="login-error" style="color:var(--magenta);margin-top:10px;display:none;"></div>
+            </div>
+
+            <!-- Reset tab -->
+            <div id="tab-reset" class="auth-tab-content" style="display:none;">
+                <div style="color:var(--cyan);margin-bottom:10px;font-size:13px;">Reset your password via email token.</div>
+                <div style="color:var(--dim);margin-bottom:15px;font-size:12px;">Step 1: request a reset link. Step 2: paste the token from the link/email and set a new password.</div>
+
+                <div style="padding:12px;border:1px solid rgba(0,255,213,0.2);border-radius:6px;margin-bottom:12px;">
+                    <div style="color:var(--green);font-size:12px;margin-bottom:8px;">REQUEST RESET</div>
+                    <form id="reset-request-form" onsubmit="event.preventDefault(); document.getElementById('reset-request-btn').click(); return false;">
+                        <input type="email" id="reset-email" placeholder="Email address" style="width:100%;margin-bottom:10px;">
+                        <button id="reset-request-btn" type="submit" style="width:100%;padding:12px;background:transparent;border:1px solid var(--green);color:var(--green);font-family:'Orbitron',monospace;cursor:pointer;">SEND RESET LINK</button>
+                    </form>
+                </div>
+
+                <div style="padding:12px;border:1px solid rgba(255,0,255,0.2);border-radius:6px;">
+                    <div style="color:var(--magenta);font-size:12px;margin-bottom:8px;">SET NEW PASSWORD</div>
+                    <form id="reset-complete-form" onsubmit="event.preventDefault(); document.getElementById('reset-complete-btn').click(); return false;">
+                        <input type="text" id="reset-token" placeholder="Reset token (from email link)" autocomplete="one-time-code" autocapitalize="none" autocorrect="off" spellcheck="false" style="width:100%;margin-bottom:10px;">
+                        <input type="password" id="reset-new-password" placeholder="New password (8+ chars)" autocomplete="new-password" autocapitalize="none" autocorrect="off" spellcheck="false" style="width:100%;margin-bottom:10px;">
+                        <input type="password" id="reset-new-password2" placeholder="Confirm new password" autocomplete="new-password" autocapitalize="none" autocorrect="off" spellcheck="false" style="width:100%;margin-bottom:10px;">
+                        <button id="reset-complete-btn" type="submit" style="width:100%;padding:12px;background:transparent;border:1px solid var(--magenta);color:var(--magenta);font-family:'Orbitron',monospace;cursor:pointer;">SET NEW PASSWORD</button>
+                    </form>
+                </div>
+
+                <div id="reset-info" style="color:var(--cyan);margin-top:10px;display:none;"></div>
+                <div id="reset-error" style="color:#ff4141;margin-top:10px;display:none;"></div>
+            </div>
+
+            <!-- Register tab -->
+            <div id="tab-register" class="auth-tab-content" style="display:none;">
+                <form id="register-form" onsubmit="event.preventDefault(); document.getElementById('register-btn').click(); return false;">
+                <input type="text" id="reg-username" placeholder="Username (3+ chars)" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" style="width:100%;margin-bottom:10px;">
+                <input type="email" id="reg-email" placeholder="Email address (optional)" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" style="width:100%;margin-bottom:10px;">
+                <input type="password" id="reg-password" placeholder="Password (6+ chars)" autocomplete="new-password" autocapitalize="none" autocorrect="off" spellcheck="false" style="width:100%;margin-bottom:10px;">
+                <button id="register-btn" type="submit" style="width:100%;padding:12px;background:transparent;border:1px solid var(--green);color:var(--green);font-family:'Orbitron',monospace;cursor:pointer;">CREATE ACCOUNT</button>
+                </form>
+                <div id="reg-error" style="color:var(--magenta);margin-top:10px;display:none;"></div>
+            </div>
+
+            <!-- Token tab (legacy) -->
+            <div id="tab-token" class="auth-tab-content" style="display:none;">
+                <input type="text" id="server-input" placeholder="Server URL (wss://rhodesagi.com/ws or wss://api.rhodesagi.com)" autocapitalize="none" autocorrect="off" spellcheck="false" style="width:100%;margin-bottom:10px;">
+                <input type="password" id="token-input" placeholder="Access token" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" style="width:100%;margin-bottom:10px;">
+                <button id="connect-btn" style="width:100%;padding:12px;background:transparent;border:1px solid var(--green);color:var(--green);font-family:'Orbitron',monospace;cursor:pointer;">CONNECT</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guest limit modal -->
+    <div class="modal" id="limit-modal" style="display:none;">
+        <div class="modal-box">
+            <h2>// GUEST LIMIT REACHED</h2>
+            <p style="color:var(--cyan);margin-bottom:15px;">You've used your 3 free guest messages. Sign in to continue.</p>
+            <button onclick="signInWithGoogle(); document.getElementById('limit-modal').style.display='none';" style="width:100%;padding:14px;background:#4285f4;border:none;color:white;font-family:'Orbitron',monospace;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;font-size:14px;">
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="white" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="white" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="white" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="white" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                SIGN IN WITH GOOGLE
+            </button>
+            <button id="limit-login-btn" style="width:100%;padding:12px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);font-family:'Orbitron',monospace;cursor:pointer;margin-bottom:10px;">LOGIN</button>
+            <button id="limit-register-btn" style="width:100%;padding:12px;background:transparent;border:1px solid var(--green);color:var(--green);font-family:'Orbitron',monospace;cursor:pointer;">SIGN UP</button>
+        </div>
+    </div>
+
+    <!-- Downloads Panel -->
+        <div id="about-panel">
+        <div class="panel-content">
+            <div class="panel-header">
+                <div class="panel-title">ABOUT</div>
+                <button class="close-btn" onclick="closeAbout()">✕</button>
+            </div>
+            <div style="color:var(--text);line-height:1.6;font-size:14px;">
+                <p style="color:var(--cyan);">RHODES is a persistent, session-based chat system with WebSocket streaming and tooling.</p>
+                <p style="color:var(--dim);">Guest sessions are rate-limited. Accounts enable persistent sessions and saved history.</p>
+                <p style="color:var(--dim);">Privacy: transcripts are stored server-side for your account.</p>
+            </div>
+        </div>
+    </div>
+
+<div id="downloads-panel" style="display:none !important;">
+        <div class="panel-content">
+            <div class="panel-header">
+                <div class="panel-title" style="display:none;">// NATIVE CLIENTS</div>
+                <button class="close-btn" id="close-downloads">[X] CLOSE</button>
+            </div>
+            <div class="dl-grid" id="dl-grid" style="display:none;">
+                <a href="RHODES-Windows.zip?v=3" download class="dl-item" data-os="windows">
+                    <div><div class="name">> WINDOWS</div><div class="desc">Portable zip (14MB, extract and run RHODES.exe)</div></div>
+                    <div class="icon">[↓]</div>
+                </a>
+                <a href="RHODES-Linux.zip?v=3" download class="dl-item" data-os="linux">
+                    <div><div class="name">> LINUX</div><div class="desc">Zip package (37MB, extract and double-click RHODES.desktop)</div></div>
+                    <div class="icon">[↓]</div>
+                </a>
+                <a href="RHODES-Mac.zip?v=3" download class="dl-item" data-os="macos">
+                    <div><div class="name">> MACOS</div><div class="desc">Native binary (20MB, extract and run)</div></div>
+                    <div class="icon">[↓]</div>
+                </a>
+                <a href="RHODES.py?v=3" download class="dl-item" data-os="any">
+                    <div><div class="name">> PYTHON</div><div class="desc">Cross-platform script (any OS with Python)</div></div>
+                    <div class="icon">[↓]</div>
+                </a>
+            </div>
+            <div class="panel-title" style="margin-top: 20px;">// DESKTOP AGENT (v1.3.0)</div>
+            <div class="dl-grid">
+                <a href="/download/rhodes-mac.py" download class="dl-item" data-os="macos">
+                    <div><div class="name">> MACOS</div><div class="desc">Python agent with computer use</div></div>
+                    <div class="icon">[↓]</div>
+                </a>
+                <a href="/download/rhodes-windows.py" download class="dl-item" data-os="windows">
+                    <div><div class="name">> WINDOWS</div><div class="desc">Python agent with computer use</div></div>
+                    <div class="icon">[↓]</div>
+                </a>
+            </div>
+            <div style="margin-top:15px;padding:12px;background:rgba(0,255,65,0.05);border:1px solid var(--green);border-radius:3px;font-family:monospace;font-size:12px;overflow-x:auto;max-width:100%;word-break:break-all;">
+                <div class="cmd-box" style="margin-bottom:12px;">
+                    <div style="color:var(--green);font-size:13px;font-weight:bold;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:16px;">&#x1F427;</span> LINUX
+                    </div>
+                    <div class="cmd-row" onclick="copyCmd(this)" style="padding:10px;cursor:pointer;border-radius:3px;background:rgba(0,0,0,0.3);display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='rgba(0,255,65,0.1)'" onmouseout="this.style.background='rgba(0,0,0,0.3)'">
+                        <code id="linux-curl-cmd" style="color:var(--text);flex:1;word-break:break-all;font-size:11px;">curl -sL https://rhodesagi.com/download/rhodes-installer.sh | bash</code>
+                        <span class="copy-hint" style="color:var(--green);font-size:11px;white-space:nowrap;">[COPY]</span>
+                    </div>
+                </div>
+                <div class="cmd-box" style="margin-bottom:12px;">
+                    <div style="color:var(--green);font-size:13px;font-weight:bold;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:16px;">&#x1F34E;</span> MAC
+                    </div>
+                    <div class="cmd-row" onclick="copyCmd(this)" style="padding:10px;cursor:pointer;border-radius:3px;background:rgba(0,0,0,0.3);display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='rgba(0,255,65,0.1)'" onmouseout="this.style.background='rgba(0,0,0,0.3)'">
+                        <code id="mac-curl-cmd" style="color:var(--text);flex:1;word-break:break-all;font-size:11px;">mkdir -p ~/.local/bin &amp;&amp; curl -so ~/.local/bin/rhodes https://rhodesagi.com/download/rhodes-mac.py &amp;&amp; chmod +x ~/.local/bin/rhodes &amp;&amp; rhodes</code>
+                        <span class="copy-hint" style="color:var(--green);font-size:11px;white-space:nowrap;">[COPY]</span>
+                    </div>
+                </div>
+                <div class="cmd-box">
+                    <div style="color:var(--green);font-size:13px;font-weight:bold;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:16px;">&#x1FA9F;</span> WINDOWS
+                    </div>
+                    <div class="cmd-row" onclick="copyCmd(this)" style="padding:10px;cursor:pointer;border-radius:3px;background:rgba(0,0,0,0.3);display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='rgba(0,255,65,0.1)'" onmouseout="this.style.background='rgba(0,0,0,0.3)'">
+                        <code id="win-curl-cmd" style="color:var(--text);flex:1;word-break:break-all;font-size:11px;">curl -o %USERPROFILE%
+hodes.py https://rhodesagi.com/download/rhodes-windows.py</code>
+                        <span class="copy-hint" style="color:var(--green);font-size:11px;white-space:nowrap;">[COPY]</span>
+                    </div>
+                </div>
+                <div id="login-for-token" style="margin-top:8px;color:var(--yellow);font-size:11px;display:none;">Login to get one-click setup with your token</div>
+            </div>
+            <!-- Token commands handled by rhodes.js -->
+            
+            <div class="panel-title" style="margin-top: 20px;display:none;">// MOBILE</div>
+            <div class="dl-grid" style="display:none;">
+                <a href="RHODES-Android.apk?v=20260103-2329" download class="dl-item" data-os="android">
+                    <div><div class="name">> ANDROID</div><div class="desc">APK (61MB, v1.0.1 with voice/menu)</div></div>
+                    <div class="icon">[↓]</div>
+                </a>
+                <a href="#" id="pwa-install-btn" class="dl-item" data-os="ios">
+                    <div><div class="name">> iPHONE</div><div class="desc">Install as app (no App Store)</div></div>
+                    <div class="icon">[+]</div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Courses Panel -->
+    <div id="courses-panel">
+        <div class="panel-content">
+            <div class="panel-header">
+                <div class="panel-title">// Language Courses</div>
+                <button class="close-btn" id="close-courses">[X] CLOSE</button>
+            </div>
+            <div style="margin-bottom:20px;padding:15px;background:rgba(0,255,65,0.05);border:1px solid var(--green);border-radius:3px;">
+                <p style="color:var(--text);margin-bottom:12px;line-height:1.6;">
+                    Rhodes has developed several language learning courses based on elite US Foreign Service and Defense Language Institute materials. It can tutor you in them, or you can take them directly flashcard and pre-recorded voice prompt style. In either case, you can learn hands-free.
+                </p>
+                <div style="display:flex;gap:30px;flex-wrap:wrap;">
+                    <div>
+                        <div style="color:var(--cyan);font-weight:bold;margin-bottom:5px;">TUTORING MODE</div>
+                        <div style="color:var(--dim);font-size:13px;">Just ask me to teach you the language in main chat</div>
+                    </div>
+                    <div>
+                        <div style="color:var(--green);font-weight:bold;margin-bottom:5px;">LEARN ON YOUR OWN</div>
+                        <div style="color:var(--dim);font-size:13px;">Select a course below for self-paced study</div>
+                    </div>
+                </div>
+            </div>
+            <div class="dl-grid">
+                <a href="/rhodes-french/" class="dl-item">
+                    <div><div class="name">> RHODES-FRENCH</div><div class="desc">24 units, 7799 drills, native audio, SRS</div></div>
+                    <div class="icon">🇫🇷</div>
+                </a>
+                <a href="/rhodes-german/" class="dl-item">
+                    <div><div class="name">> RHODES-GERMAN</div><div class="desc">1,589 drills, spaced repetition</div></div>
+                    <div class="icon">🇩🇪</div>
+                </a>
+                <a href="/rhodes-spanish/" class="dl-item">
+                    <div><div class="name">> RHODES-SPANISH</div><div class="desc">651 drills, interactive</div></div>
+                    <div class="icon">🇪🇸</div>
+                </a>
+                <a href="/rhodes-italian/" class="dl-item">
+                    <div><div class="name">> RHODES-ITALIAN</div><div class="desc">Dialogues and grammar</div></div>
+                    <div class="icon">🇮🇹</div>
+                </a>
+                <a href="/rhodes-russian/" class="dl-item">
+                    <div><div class="name">> RHODES-RUSSIAN</div><div class="desc">Cyrillic with audio support</div></div>
+                    <div class="icon">🇷🇺</div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/credentials-popup.js"></script>
+    <script src="/rhodes.js?v=DEBUG1"></script>
+
+    <!-- PWA Service Worker & Install -->
+    <script>
+        let deferredPrompt = null;
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('SW registered'))
+                .catch(err => console.log('SW failed:', err));
+        }
+
+        // Capture install prompt for Android/Chrome
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+
+        // Handle install button click
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('pwa-install-btn');
+            if (!btn) return;
+
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
+
+                // Android/Chrome - use native prompt
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    deferredPrompt = null;
+                    if (outcome === 'accepted') {
+                        btn.querySelector('.desc').textContent = 'Installed!';
+                    }
+                    return;
+                }
+
+                // iOS Safari - show instructions
+                const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+                const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+
+                if (isIOS) {
+                    alert('To install RHODES:\\n\\n1. Tap the Share button (box with arrow)\\n2. Scroll down and tap "Add to Home Screen"\\n3. Tap "Add"');
+                } else if (window.matchMedia('(display-mode: standalone)').matches) {
+                    alert('RHODES is already installed!');
+                } else {
+                    alert('To install: Use your browser menu to "Add to Home Screen" or "Install App"');
+                }
+            });
+         });
+     </script>
+     
+     <!-- Debug Panel -->
+     <div id="debug-panel" style="display:none; position:fixed; bottom:10px; left:10px; width:400px; max-height:300px; background:var(--panel); border:2px solid var(--red); color:var(--cyan); font-family:monospace; font-size:11px; z-index:9999; overflow-y:auto; padding:10px; border-radius:5px;">
+         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+             <strong>DEBUG LOGS</strong>
+             <button onclick="document.getElementById('debug-panel').style.display='none'" style="background:transparent; border:none; color:var(--red); cursor:pointer;">✕</button>
+         </div>
+         <div id="debug-log" style="max-height:250px; overflow-y:auto;"></div>
+     </div>
+     
+     <script>
+         // Debug logging to panel
+         window.debugLog = function(message, type = 'info') {
+             const panel = document.getElementById('debug-panel');
+             const logDiv = document.getElementById('debug-log');
+             if (!logDiv) return;
+             
+             const entry = document.createElement('div');
+             entry.style.cssText = 'margin:2px 0; padding:4px; border-left:3px solid ' + 
+                 (type === 'error' ? 'var(--red)' : type === 'warn' ? 'var(--yellow)' : 'var(--cyan)') + ';';
+             entry.textContent = new Date().toLocaleTimeString() + ' ' + message;
+             logDiv.appendChild(entry);
+             logDiv.scrollTop = logDiv.scrollHeight;
+             
+             // Auto-show panel on errors
+             if (type === 'error' && panel.style.display === 'none') {
+                 panel.style.display = 'block';
+             }
+         };
+         
+         // Override console.log to also log to debug panel
+         const originalConsoleLog = console.log;
+         const originalConsoleError = console.error;
+         const originalConsoleWarn = console.warn;
+         
+         console.log = function(...args) {
+             originalConsoleLog.apply(console, args);
+             window.debugLog(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '), 'info');
+         };
+         console.error = function(...args) {
+             originalConsoleError.apply(console, args);
+             window.debugLog(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '), 'error');
+         };
+         console.warn = function(...args) {
+             originalConsoleWarn.apply(console, args);
+             window.debugLog(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '), 'warn');
+         };
+         
+         // Log initialization
+         window.debugLog('Debug panel initialized', 'info');
+     </script>
+
+    <!-- Download commands handler -->
+    <script>
+    function copyCmd(row) {
+        var code = row.querySelector("code");
+        if (code) {
+            navigator.clipboard.writeText(code.textContent).then(function() {
+                var hint = row.querySelector(".copy-hint");
+                if (hint) {
+                    hint.textContent = "[COPIED!]";
+                    setTimeout(function() { hint.textContent = "[COPY]"; }, 1500);
+                }
+            });
+        }
+    }
+    (function() {
+        function updateCommands() {
+            var token = null;
+            try {
+                if (typeof localStorage !== 'undefined' && localStorage !== null && localStorage.getItem) {
+                    token = localStorage.getItem("rhodes_user_token");
+                }
+            } catch(e) {
+                token = null;
+            }
+            var linux = document.getElementById("linux-curl-cmd");
+            var mac = document.getElementById("mac-curl-cmd");
+            var win = document.getElementById("win-curl-cmd");
+            var msg = document.getElementById("login-for-token");
+            if (token && linux && mac && win) {
+                linux.textContent = "mkdir -p ~/.local/bin && curl -so ~/.local/bin/rhodes https://rhodesagi.com/download/rhodes-linux.py && chmod +x ~/.local/bin/rhodes && ~/.local/bin/rhodes -t " + token;
+                mac.textContent = "mkdir -p ~/.local/bin && curl -so ~/.local/bin/rhodes https://rhodesagi.com/download/rhodes-mac.py && chmod +x ~/.local/bin/rhodes && ~/.local/bin/rhodes -t " + token;
+                win.textContent = "curl -o %USERPROFILE%\\rhodes.py https://rhodesagi.com/download/rhodes-windows.py && python %USERPROFILE%\\rhodes.py -t " + token;
+                if (msg) msg.style.display = "none";
+            } else if (msg) {
+                msg.style.display = "block";
+            }
+        }
+        window.addEventListener("load", updateCommands);
+        var i = 0, t = setInterval(function() { updateCommands(); if (++i >= 15) clearInterval(t); }, 2000);
+    })();
+    </script>
+
+    <!-- Desktop Client Modifications -->
+    <script>
+    (function() {
+        // /1/ version: Rhodes Code always visible, audio mode enabled
+        // Desktop detection disabled for this version
+        const isDesktop = false; // Always treat as web version to keep Rhodes Code visible
+
+        if (isDesktop) {
+            // This block won't run - kept for reference
+            const langDropdown = document.querySelector('.lang-dropdown');
+            if (langDropdown) langDropdown.style.display = 'none';
+            const chatLink = document.getElementById('chat-link');
+            if (chatLink) chatLink.textContent = 'Terminal';
+            const logo = document.getElementById('main-logo');
+            if (logo) logo.textContent = 'Rhodes_Code';
+            const downloadsLink = document.getElementById('downloads-link');
+            if (downloadsLink) downloadsLink.style.display = 'none';
+        }
+
+        // Ensure Rhodes Code link is always visible
+        const downloadsLink = document.getElementById('downloads-link');
+        if (downloadsLink) {
+            downloadsLink.style.display = 'inline-block';
+            downloadsLink.textContent = 'Rhodes Code';
+        }
+
+        console.log('[/1/ Version] Rhodes Code visible, audio mode enabled');
+    })();
+    </script>
+
+
+    <!-- Custom Slash Commands Support -->
+    <script>
+    (function() {
+        const isDesktop = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (!isDesktop) return;
+
+        window.displayCommandResult = function(command, result) {
+            const chatArea = document.getElementById('chat');
+            if (!chatArea) return;
+
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'message system-message';
+            resultDiv.style.cssText = 'background: rgba(0,255,65,0.1); border-left: 3px solid var(--green); padding: 10px; margin: 10px 0; font-family: monospace;';
+
+            if (result.error) {
+                resultDiv.style.borderLeftColor = '#ff4444';
+                let html = '<div style="color:#ff4444;font-weight:bold;">/' + command + ' - Error</div>';
+                html += '<pre style="margin:5px 0;white-space:pre-wrap;">' + result.error + '</pre>';
+                if (result.available && result.available.length > 0) {
+                    html += '<div style="margin-top:10px;color:var(--dim);">Available: ' + result.available.map(c => '/' + c).join(', ') + '</div>';
+                }
+                resultDiv.innerHTML = html;
+            } else {
+                resultDiv.innerHTML = '<div style="color:var(--green);font-weight:bold;">/' + command + '</div><pre style="margin:5px 0;white-space:pre-wrap;color:var(--text);">' + (result.output || '(no output)') + '</pre>';
+            }
+            chatArea.appendChild(resultDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        };
+
+        // Intercept custom commands
+        const origSend = window.handleSend;
+        window.handleSend = function(e) {
+            if (e) e.preventDefault();
+            const input = document.getElementById('input');
+            const text = (input ? input.value : '').trim();
+
+            if (text.startsWith('/') && !text.startsWith('//')) {
+                const parts = text.slice(1).split(' ');
+                const cmd = parts[0].toLowerCase();
+                const args = parts.slice(1).join(' ');
+
+                // Built-in commands pass through
+                const builtins = ['model','format','english','russian','french','latin','german','help','clear','new','rooms','split','commands'];
+                if (builtins.includes(cmd) || cmd.startsWith('format-') || cmd.startsWith('rhodes-')) {
+                    if (origSend) return origSend(e);
+                    return;
+                }
+
+                // /commands - list available
+                if (cmd === 'commands' && window.pywebview && window.pywebview.api) {
+                    window.pywebview.api.list_commands().then(cmds => {
+                        if (!cmds || cmds.length === 0) {
+                            displayCommandResult('commands', {output: 'No custom commands.\nCreate in: ~/.rhodes/commands/'});
+                        } else {
+                            const list = cmds.map(c => '/' + c.name + (c.description ? ' - ' + c.description : '')).join('\n');
+                            displayCommandResult('commands', {output: 'Custom commands:\n' + list});
+                        }
+                    });
+                    if (input) input.value = '';
+                    return;
+                }
+
+                // Snapshot commands (handled in browser, no pywebview needed)
+                if (cmd === 'snapshot') {
+                    if (input) input.value = '';
+                    if (typeof window.executeSnapshotCreate === 'function') {
+                        window.executeSnapshotCreate();
+                    } else if (typeof window.displaySystemMessage === 'function') {
+                        window.displaySystemMessage('Snapshot feature not loaded yet');
+                    } else {
+                        alert('Snapshot feature not loaded');
+                    }
+                    return;
+                }
+                if (cmd === 'snapshots') {
+                    if (input) input.value = '';
+                    if (typeof window.executeSnapshotsList === 'function') {
+                        window.executeSnapshotsList();
+                    } else if (typeof window.displaySystemMessage === 'function') {
+                        window.displaySystemMessage('Snapshot feature not loaded yet');
+                    } else {
+                        alert('Snapshot feature not loaded');
+                    }
+                    return;
+                }
+                if (cmd === 'fork') {
+                    if (input) input.value = '';
+                    if (typeof window.executeSnapshotFork === 'function') {
+                        window.executeSnapshotFork(args);
+                    } else if (typeof window.displaySystemMessage === 'function') {
+                        window.displaySystemMessage('Fork feature not loaded yet');
+                    } else {
+                        alert('Fork feature not loaded');
+                    }
+                    return;
+                }
+
+                // Try custom command via pywebview API
+                if (window.pywebview && window.pywebview.api) {
+                    window.pywebview.api.execute_command(cmd, args).then(result => {
+                        displayCommandResult(cmd, result);
+                    }).catch(err => {
+                        displayCommandResult(cmd, {error: String(err)});
+                    });
+                    if (input) input.value = '';
+                    return;
+                }
+            }
+            if (origSend) return origSend(e);
+        };
+
+        console.log('[Desktop] Custom commands loaded');
+    })();
+    </script>
+
+    <!-- Terminal Split Mode (4 parallel terminals) -->
+    <style>
+    #split-container {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: var(--bg, #0a0a0a);
+        z-index: 9999;
+    }
+    #split-container.active { display: grid; gap: 2px; }
+    /* 2 panes: side by side */
+    #split-container.active.split-2 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; }
+    /* 3 panes: vertical stack */
+    #split-container.active.split-3 { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr 1fr; }
+    /* 4 panes: 2x2 grid (default) */
+    #split-container.active.split-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+    .split-pane {
+        background: var(--bg, #0a0a0a);
+        border: 1px solid var(--green, #00ff41);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .split-pane-header {
+        background: rgba(0,255,65,0.1);
+        padding: 5px 10px;
+        font-size: 12px;
+        color: var(--green);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .split-pane-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+        font-family: monospace;
+        font-size: 13px;
+        color: var(--text, #ddd);
+        white-space: pre-wrap;
+        user-select: text;
+        cursor: text;
+        position: relative;
+    }
+    .pane-ascii-face {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0.35;
+        pointer-events: none;
+        z-index: 1;
+        font-size: 8px;
+        line-height: 1.05;
+        color: var(--cyan, #00ffd5);
+        white-space: pre;
+        font-family: monospace;
+        transition: opacity 0.5s ease-out;
+        text-align: center;
+        text-shadow: 0 0 8px var(--cyan, #00ffd5);
+    }
+    .pane-ascii-face.faded {
+        opacity: 0.05 !important;
+        text-shadow: none;
+    }
+    .split-pane-input {
+        display: flex;
+        border-top: 1px solid var(--green);
+    }
+    .split-pane-input input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        padding: 8px;
+        color: var(--text);
+        font-family: monospace;
+    }
+
+    /* Split pane slash command menu */
+    .split-slash-menu {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background: #0a0a12;
+        border: 1px solid var(--green);
+        border-bottom: none;
+        max-height: 150px;
+        overflow-y: auto;
+        display: none;
+        z-index: 1000;
+    }
+    .split-slash-menu.visible { display: block; }
+    .split-slash-menu .slash-item {
+        padding: 6px 10px;
+        cursor: pointer;
+        border-bottom: 1px solid #222;
+        font-size: 12px;
+    }
+    .split-slash-menu .slash-item:hover,
+    .split-slash-menu .slash-item.selected {
+        background: var(--green);
+        color: #000;
+    }
+    .split-slash-menu .slash-item .cmd { color: var(--cyan); font-weight: bold; }
+    .split-slash-menu .slash-item:hover .cmd { color: #000; }
+    .split-slash-menu .slash-item .desc { color: #666; margin-left: 8px; }
+    .split-slash-menu .slash-item:hover .desc { color: #333; }
+
+    .split-pane-input button {
+        background: var(--green);
+        color: #000;
+        border: none;
+        padding: 8px 15px;
+        cursor: pointer;
+    }
+    #split-toggle {
+        position: fixed;
+        bottom: 80px;
+        right: 20px;
+        background: var(--green);
+        color: #000;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 1000;
+        font-weight: bold;
+    }
+    #split-exit {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: #ff4444;
+        color: #fff;
+        border: none;
+        padding: 8px 15px;
+        cursor: pointer;
+        z-index: 10000;
+        border-radius: 3px;
+    }
+    
+    /* Slash command autocomplete dropdown */
+    #slash-dropdown {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg);
+        border: 1px solid var(--green);
+        border-bottom: none;
+        max-height: 200px;
+        overflow-y: auto;
+        display: none;
+        z-index: 1000;
+    }
+    #slash-dropdown.visible {
+        display: block;
+    }
+    .slash-option {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #333;
+        display: flex;
+        justify-content: space-between;
+    }
+    .slash-option:hover, .slash-option.selected {
+        background: var(--green);
+        color: #000;
+    }
+    .slash-option .cmd {
+        font-weight: bold;
+        color: var(--green);
+    }
+    .slash-option:hover .cmd, .slash-option.selected .cmd {
+        color: #000;
+    }
+    .slash-option .desc {
+        color: #888;
+        font-size: 0.9em;
+    }
+    .slash-option:hover .desc, .slash-option.selected .desc {
+        color: #333;
+    }
+
+/* ASCII Face Flash Animation */
+    #ascii-face-flash {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        display: none;
+        z-index: 99999;
+        display: none;
+        background: rgba(0, 0, 0, 0.95);
+        pointer-events: none;
+    }
+    #ascii-face-flash.active {
+        display: block;
+        animation: ascii-fade 1.5s ease-out forwards;
+    }
+    #ascii-face-flash pre {
+        color: #00ffff;
+        font-family: monospace;
+        font-size: 7px;
+        line-height: 1.0;
+        text-align: left;
+        white-space: pre;
+        margin: 0;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1px solid #00ff41;
+        border-radius: 8px;
+        text-shadow: 0 0 5px #00ffff;
+    }
+    @keyframes ascii-fade {
+        0% { opacity: 0; }
+        15% { opacity: 1; }
+        70% { opacity: 1; }
+        100% { opacity: 0.12; }
+    }
+    /* Light mode ASCII flash */
+    body.light-mode #ascii-face-flash {
+        background: rgba(255, 255, 255, 0.95);
+    }
+    body.light-mode #ascii-face-flash pre {
+        color: #0066cc;
+        background: rgba(255, 255, 255, 0.9);
+        border-color: #0066cc;
+        text-shadow: none;
+    }
+
+    </style>
+    <script>
+    (function() {
+        const isDesktop = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (!isDesktop) return;
+
+        // Create split container
+        const splitContainer = document.createElement('div');
+        splitContainer.id = 'split-container';
+        splitContainer.innerHTML = `
+            <button id="split-exit" onclick="window.exitSplitMode()">✕ Exit Split</button>
+            ${[1,2,3,4].map(i => `
+                <div class="split-pane" id="pane-${i}">
+                    <div class="split-pane-header">
+                        <span>Terminal ${i}</span>
+                        <button onclick="window.copyPaneContent(${i})" style="background:transparent;border:1px solid var(--dim);color:var(--dim);padding:2px 6px;font-size:10px;cursor:pointer;margin-left:auto;">COPY</button>
+                        <button onclick="window.promoteToMain(${i})" style="background:transparent;border:1px solid var(--green);color:var(--green);padding:2px 6px;font-size:10px;cursor:pointer;margin-left:4px;margin-right:8px;" title="Make this the main session">⬆ MAIN</button>
+                        <span class="pane-status" id="pane-${i}-status">Ready</span>
+                    </div>
+                    <div class="split-pane-content" id="pane-${i}-content"><pre class="pane-ascii-face" id="pane-${i}-face">  ⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄
+⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⠏  ⣀⣀⣀⣀⣀⣀  ⠹⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⡟ ⣼⣿⣿⣿⣿⣿⣿⣿⣿⣧ ⢻⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⡇ ⢸⡇ ⊙ ⣿⣿ ⊙ ⢸⡇ ⢸⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⡇ ⠘⣷⣄⣀⣴⣿⣿⣿⣦⣀⣠⣾⠃ ⢸⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣧  ⠙⠿⣿⣿⣿⣿⣿⣿⠿⠋  ⣼⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣄   ⠉⣿⣿⣿⣿⠉   ⣠⣿⣿⣿⣿⣿⣿
+ ⣿⣿⣿⣿⣿⣿⣿⣆   ⢻⡟⢻⡟   ⣰⣿⣿⣿⣿⣿⣿⣿
+  ⠻⣿⣿⣿⣿⣿⣿⣿⣄       ⣠⣿⣿⣿⣿⣿⣿⣿⠟</pre></div>
+                    <div class="split-pane-input" style="position:relative;">
+                        <div class="split-slash-menu" id="pane-${i}-slash"></div>
+                        <input type="text" id="pane-${i}-input" placeholder="> command..." 
+                               onkeypress="if(event.key==='Enter'){window.hidePaneSlash(${i});window.runPaneCommand(${i})}"
+                               onkeyup="window.handlePaneSlash(${i}, event)"
+                               onkeydown="window.handlePaneSlashNav(${i}, event)">
+                        <button onclick="window.runPaneCommand(${i})">RUN</button>
+                    </div>
+                </div>
+            `).join('')}
+        `;
+        document.body.appendChild(splitContainer);
+
+        // Add split toggle button with pane count selector (only in desktop mode)
+        const toggleContainer = document.createElement('div');
+        toggleContainer.id = 'split-toggle-container';
+        toggleContainer.style.cssText = 'position:fixed;bottom:80px;right:20px;z-index:1000;display:flex;gap:5px;';
+        toggleContainer.innerHTML = '<select id="split-pane-count" style="background:var(--bg);border:1px solid var(--green);color:var(--green);padding:5px;font-family:monospace;"><option value="2">2 Panes</option><option value="3">3 Panes</option><option value="4" selected>4 Panes</option></select><button id="split-toggle" style="background:var(--green);color:#000;border:none;padding:5px 10px;cursor:pointer;font-family:monospace;">⊞ SPLIT</button>';
+        document.body.appendChild(toggleContainer);
+        const toggleBtn = document.getElementById('split-toggle');
+        toggleBtn.onclick = () => {
+            const count = parseInt(document.getElementById('split-pane-count').value);
+            window.enterSplitMode(count);
+        };
+
+        // Multi-instance WebSocket connections for each pane
+        const paneConnections = {};
+        window.paneConnections = paneConnections;  // Expose for sendToInstance
+        const paneSessionIds = {};
+        window.paneSessionIds = paneSessionIds;  // Expose for promoteToMain
+
+        function generateSessionId(paneNum) {
+            return 'split_pane_' + paneNum + '_' + Math.random().toString(36).substring(2, 10);
+        }
+
+        function getWebSocketUrl() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                ? 'rhodesagi.com' : window.location.host;
+            return protocol + '//' + host + '/ws';
+        }
+
+        function connectPane(paneNum) {
+            const content = document.getElementById('pane-' + paneNum + '-content');
+            const status = document.getElementById('pane-' + paneNum + '-status');
+            // Fade ASCII face when content arrives
+            const paneFace = document.getElementById('pane-' + paneNum + '-face');
+            if (paneFace) paneFace.classList.add('faded');
+            const sessionId = generateSessionId(paneNum);
+            paneSessionIds[paneNum] = sessionId;
+
+            status.textContent = 'Connecting...';
+            content.innerHTML += '<div style="color:var(--dim);">[Connecting to Rhodes...]</div>';
+
+            const ws = new WebSocket(getWebSocketUrl());
+            paneConnections[paneNum] = ws;
+
+            ws.onopen = function() {
+                status.textContent = 'Authenticating...';
+                content.innerHTML += '<div style="color:var(--green);">[Connected - Instance ' + paneNum + ']</div>';
+                // Send auth request - use user token from main session
+                const userToken = window.rhodesStorage?.getItem('rhodes_user_token') || window.localStorage.getItem('rhodes_user_token') || '';
+                const token = window.rhodesStorage?.getItem('rhodes_token') || window.localStorage.getItem('rhodes_token') || '';
+                ws.send(JSON.stringify({
+                    msg_type: 'auth_request',
+                    msg_id: sessionId,
+                    timestamp: new Date().toISOString(),
+                    payload: { 
+                        client_id: 'split_pane_' + paneNum,
+                        tab_id: sessionId,
+                        token: token,
+                        user_token: userToken
+                    }
+                }));
+            };
+
+            ws.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    // Handle auth response
+                    if (data.msg_type === 'auth_success' || data.msg_type === 'session_init') {
+                        status.textContent = 'Ready';
+                        content.innerHTML += '<div style="color:var(--cyan);">[Authenticated - Ready]</div>';
+                        return;
+                    }
+                    if (data.msg_type === 'error') {
+                        status.textContent = 'Auth Failed';
+                        content.innerHTML += '<div style="color:#ff4444;">[Auth Error: ' + (data.payload?.error || 'Unknown') + ']</div>';
+                        return;
+                    }
+                    if (data.type === 'ai_message' || data.type === 'assistant' || data.msg_type === 'ai_message') {
+                        const text = data.payload?.content || data.content || '';
+                        if (text) {
+                            content.innerHTML += '<div style="color:var(--text);background:rgba(0,255,65,0.05);padding:8px;margin:5px 0;border-left:2px solid var(--green);">' + text.replace(/\n/g, '<br>') + '</div>';
+                            content.scrollTop = content.scrollHeight;
+                        }
+                        status.textContent = 'Ready';
+                    } else if (data.type === 'error') {
+                        content.innerHTML += '<div style="color:#ff4444;">[Error: ' + (data.payload?.message || 'Unknown') + ']</div>';
+                        status.textContent = 'Error';
+                    } else if (data.type === 'stream_start') {
+                        status.textContent = 'Receiving...';
+                    } else if (data.type === 'stream_chunk') {
+                        // Handle streaming chunks
+                        const chunk = data.payload?.content || '';
+                        let streamDiv = content.querySelector('.streaming-' + paneNum);
+                        if (!streamDiv) {
+                            streamDiv = document.createElement('div');
+                            streamDiv.className = 'streaming-' + paneNum;
+                            streamDiv.style.cssText = 'color:var(--text);background:rgba(0,255,65,0.05);padding:8px;margin:5px 0;border-left:2px solid var(--cyan);';
+                            content.appendChild(streamDiv);
+                        }
+                        streamDiv.innerHTML += chunk.replace(/\n/g, '<br>');
+                        content.scrollTop = content.scrollHeight;
+                    } else if (data.type === 'stream_end') {
+                        const streamDiv = content.querySelector('.streaming-' + paneNum);
+                        if (streamDiv) streamDiv.classList.remove('streaming-' + paneNum);
+                        status.textContent = 'Ready';
+                    }
+                } catch (e) {
+                    console.error('Pane ' + paneNum + ' message parse error:', e);
+                }
+            };
+
+            ws.onerror = function(err) {
+                status.textContent = 'Error';
+                content.innerHTML += '<div style="color:#ff4444;">[Connection error]</div>';
+            };
+
+            ws.onclose = function() {
+                status.textContent = 'Disconnected';
+                content.innerHTML += '<div style="color:var(--dim);">[Disconnected]</div>';
+                paneConnections[paneNum] = null;
+            };
+        }
+
+        function disconnectAllPanes() {
+            for (let i = 1; i <= 4; i++) {
+                if (paneConnections[i]) {
+                    paneConnections[i].close();
+                    paneConnections[i] = null;
+                }
+            }
+        }
+
+        // Flash ASCII face on mode activation
+        window.flashAsciiFace = function() {
+            const flash = document.getElementById('ascii-face-flash');
+            if (flash) {
+                flash.classList.remove('active');
+                void flash.offsetWidth;
+                flash.classList.add('active');
+                // Face stays visible faintly after animation
+            }
+        };
+
+
+        window.enterSplitMode = function(paneCount = 4) {
+            window.flashAsciiFace();
+            // Remove old layout classes
+            splitContainer.classList.remove('split-2', 'split-3', 'split-4');
+            // Add appropriate layout class
+            splitContainer.classList.add('active', 'split-' + paneCount);
+            document.getElementById('split-toggle-container').style.display = 'none';
+
+            // Show/hide panes based on count
+            for (let i = 1; i <= 4; i++) {
+                const pane = document.getElementById('pane-' + i);
+                if (pane) {
+                    pane.style.display = i <= paneCount ? 'flex' : 'none';
+                }
+            }
+
+            // Connect only the active panes
+            for (let i = 1; i <= paneCount; i++) {
+                if (!paneConnections[i] || paneConnections[i].readyState !== WebSocket.OPEN) {
+                    connectPane(i);
+                }
+            }
+        };
+
+        window.exitSplitMode = function() {
+            splitContainer.classList.remove('active', 'split-2', 'split-3', 'split-4');
+            document.getElementById('split-toggle-container').style.display = 'flex';
+            // Keep connections alive for quick re-entry, or disconnect:
+            // disconnectAllPanes();
+        };
+
+        
+        // Slash command menu for split panes
+        const SPLIT_SLASH_COMMANDS = [
+            {cmd: '/new', desc: 'New session'},
+            {cmd: '/clear', desc: 'Clear chat'},
+            {cmd: '/stop', desc: 'Stop generation'},
+            {cmd: '/format-2', desc: 'English mode'},
+            {cmd: '/format-3', desc: 'Russian mode'},
+            {cmd: '/format-4', desc: 'French mode'},
+            {cmd: '/format-5', desc: 'Latin mode'},
+            {cmd: '/format-6', desc: 'German mode'},
+            {cmd: '/english', desc: 'English (alias)'},
+            {cmd: '/russian', desc: 'Russian (alias)'},
+            {cmd: '/french', desc: 'French (alias)'},
+            {cmd: '/latin', desc: 'Latin (alias)'},
+            {cmd: '/german', desc: 'German (alias)'},
+            {cmd: '/help', desc: 'Show help'},
+            {cmd: '/duo-max', desc: 'Maximum quality duo'},
+            {cmd: '/duo', desc: 'Standard duo mode'},
+            {cmd: '/supervised', desc: 'Supervised mode'},
+            {cmd: '/solo', desc: 'Direct mode'},
+            {cmd: '/clear-cache', desc: 'Clear local cache (desktop)'},
+        ];
+        let paneSlashSelected = {};
+
+        window.handlePaneSlash = function(paneNum, event) {
+            const input = document.getElementById('pane-' + paneNum + '-input');
+            const menu = document.getElementById('pane-' + paneNum + '-slash');
+            const val = input.value;
+            
+            if (val.startsWith('/') && val.length > 0) {
+                const filter = val.toLowerCase();
+                const matches = SPLIT_SLASH_COMMANDS.filter(c => c.cmd.toLowerCase().startsWith(filter));
+                if (matches.length > 0) {
+                    menu.innerHTML = matches.map((c, i) => 
+                        '<div class="slash-item' + (i === 0 ? ' selected' : '') + '" data-cmd="' + c.cmd + '" onclick="window.selectPaneSlash(' + paneNum + ', \'' + c.cmd + '\')">' +
+                        '<span class="cmd">' + c.cmd + '</span><span class="desc">' + c.desc + '</span></div>'
+                    ).join('');
+                    menu.classList.add('visible');
+                    paneSlashSelected[paneNum] = 0;
+                } else {
+                    menu.classList.remove('visible');
+                }
+            } else {
+                menu.classList.remove('visible');
+            }
+        };
+
+        window.handlePaneSlashNav = function(paneNum, event) {
+            const menu = document.getElementById('pane-' + paneNum + '-slash');
+            if (!menu.classList.contains('visible')) return;
+            
+            const items = menu.querySelectorAll('.slash-item');
+            if (items.length === 0) return;
+            
+            let sel = paneSlashSelected[paneNum] || 0;
+            
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                sel = (sel + 1) % items.length;
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                sel = (sel - 1 + items.length) % items.length;
+            } else if (event.key === 'Tab') {
+                event.preventDefault();
+                const cmd = items[sel].dataset.cmd;
+                document.getElementById('pane-' + paneNum + '-input').value = cmd + ' ';
+                menu.classList.remove('visible');
+                return;
+            } else if (event.key === 'Escape') {
+                menu.classList.remove('visible');
+                return;
+            }
+            
+            paneSlashSelected[paneNum] = sel;
+            items.forEach((it, i) => it.classList.toggle('selected', i === sel));
+        };
+
+        window.selectPaneSlash = function(paneNum, cmd) {
+            document.getElementById('pane-' + paneNum + '-input').value = cmd + ' ';
+            document.getElementById('pane-' + paneNum + '-slash').classList.remove('visible');
+            document.getElementById('pane-' + paneNum + '-input').focus();
+        };
+
+        window.hidePaneSlash = function(paneNum) {
+            document.getElementById('pane-' + paneNum + '-slash').classList.remove('visible');
+        };
+
+
+        window.copyPaneContent = function(paneNum) {
+            const content = document.getElementById('pane-' + paneNum + '-content');
+            if (content) {
+                const text = content.innerText || content.textContent;
+                navigator.clipboard.writeText(text).then(() => {
+                    const status = document.getElementById('pane-' + paneNum + '-status');
+                    const orig = status.textContent;
+                    status.textContent = 'Copied!';
+                    setTimeout(() => status.textContent = orig, 1000);
+                }).catch(() => {
+                    // Fallback
+                    const range = document.createRange();
+                    range.selectNodeContents(content);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                    document.execCommand('copy');
+                    sel.removeAllRanges();
+                });
+            }
+        };
+
+        window.runPaneCommand = function(paneNum) {
+            const input = document.getElementById('pane-' + paneNum + '-input');
+            const content = document.getElementById('pane-' + paneNum + '-content');
+            const status = document.getElementById('pane-' + paneNum + '-status');
+            // Fade ASCII face when content arrives
+            const paneFace = document.getElementById('pane-' + paneNum + '-face');
+            if (paneFace) paneFace.classList.add('faded');
+            const cmd = input.value.trim();
+            if (!cmd) return;
+
+            content.innerHTML += '<div style="color:var(--cyan);">> ' + cmd + '</div>';
+            input.value = '';
+
+            // Desktop-only commands
+            const desktopCmds = ['clear-cache', 'clearcache', 'refresh-assets'];
+            const lowerCmd = cmd.toLowerCase();
+            if (cmd.startsWith('/') && desktopCmds.includes(lowerCmd.slice(1)) && window.pywebview && window.pywebview.api) {
+                status.textContent = 'Running...';
+                window.pywebview.api.execute_command(lowerCmd.slice(1), '').then(result => {
+                    content.innerHTML += '<div style="color:var(--green);">' + (result.message || 'Done') + '</div>';
+                    status.textContent = 'Ready';
+                    content.scrollTop = content.scrollHeight;
+                });
+            } else {
+                // Send to this pane's dedicated WebSocket connection
+                const ws = paneConnections[paneNum];
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    status.textContent = 'Sending...';
+                    ws.send(JSON.stringify({
+                        msg_type: 'user_message',
+                        msg_id: 'split_' + paneNum + '_' + Date.now(),
+                        timestamp: new Date().toISOString(),
+                        payload: { content: cmd }
+                    }));
+                } else {
+                    content.innerHTML += '<div style="color:#ff4444;">[Not connected - reconnecting...]</div>';
+                    connectPane(paneNum);
+                }
+            }
+            content.scrollTop = content.scrollHeight;
+        };
+
+        // /split command to toggle
+        const origHandle = window.handleSend;
+        window.handleSend = function(e) {
+            const input = document.getElementById('input');
+            const text = (input ? input.value : '').trim().toLowerCase();
+            if (text === '/split') {
+                if (input) input.value = '';
+                window.enterSplitMode();
+                return;
+            }
+            if (origHandle) return origHandle(e);
+        };
+
+        console.log('[Desktop] Split terminal mode loaded');
+    })();
+    </script>
+
+
+    <!-- Computer Use Mode (Split Screen with Live View) -->
+    <style>
+    #computer-use-container {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: var(--bg, #0a0a0a);
+        z-index: 9998;
+    }
+    #computer-use-container.active {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr;
+        gap: 2px;
+    }
+    /* Hide ASCII face in computer use mode */
+    #computer-use-container.active ~ #ascii-face-flash,
+    body:has(#computer-use-container.active) #ascii-face-flash {
+        display: none !important;
+    }
+    #cu-screen-pane {
+        background: #000;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border-right: 2px solid var(--green, #00ff41);
+        height: 100%;
+        min-height: 0;
+    }
+    #cu-screen-header {
+        background: rgba(0,255,65,0.15);
+        padding: 6px 12px;
+        font-size: 12px;
+        color: var(--green);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--green);
+        min-height: 36px;
+        max-height: 36px;
+    }
+    #cu-screen-view {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+        cursor: crosshair;
+    }
+    #cu-screen-img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+    #cu-screen-controls {
+        background: rgba(0,0,0,0.8);
+        padding: 10px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        border-top: 1px solid var(--green);
+    }
+    #cu-screen-controls button {
+        background: var(--green);
+        color: #000;
+        border: none;
+        padding: 8px 15px;
+        cursor: pointer;
+        font-weight: bold;
+        border-radius: 3px;
+    }
+    #cu-screen-controls button:hover {
+        background: #00cc33;
+    }
+    #cu-screen-controls button.danger {
+        background: #ff4444;
+        color: #fff;
+    }
+    #cu-screen-controls input {
+        background: rgba(0,255,65,0.1);
+        border: 1px solid var(--green);
+        padding: 8px;
+        color: var(--text);
+        border-radius: 3px;
+    }
+    #cu-chat-pane {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: #0a0a0a;
+        height: 100%;
+        min-height: 0;  /* Important for flex children in grid */
+    }
+    #cu-chat-pane .chat-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    /* Align TERMINAL and RHODES VISION headers */
+    #cu-chat-pane .chat-wrapper > div:first-child {
+        min-height: 36px;
+        max-height: 36px;
+        padding: 6px 12px !important;
+        font-size: 12px;
+    }
+    #cu-chat-pane .chat-input-area,
+    #cu-chat-pane .chat-wrapper > div:last-child {
+        min-height: 52px;
+        max-height: 52px;
+    }
+
+    #cu-mouse-pos {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(0,0,0,0.7);
+        color: var(--green);
+        padding: 5px 10px;
+        font-family: monospace;
+        font-size: 12px;
+        border-radius: 3px;
+    }
+    #cu-toggle-btn {
+        position: fixed;
+        bottom: 130px;
+        right: 20px;
+        background: var(--green);
+        color: #000;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 1000;
+        font-weight: bold;
+        display: none;
+    }
+    #cu-exit-btn {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: #ff4444;
+        color: #fff;
+        border: none;
+        padding: 8px 15px;
+        cursor: pointer;
+        z-index: 10000;
+        border-radius: 3px;
+        display: none;
+    }
+    #computer-use-container.active + #cu-exit-btn,
+    #computer-use-container.active ~ #cu-exit-btn {
+        display: block;
+    }
+    .cu-click-marker {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #ff0;
+        border-radius: 50%;
+        pointer-events: none;
+        animation: cu-click-pulse 0.5s ease-out;
+    }
+    @keyframes cu-click-pulse {
+        0% { transform: scale(1); opacity: 1; }
+        100% { transform: scale(2); opacity: 0; }
+    }
+    #cu-auto-refresh {
+        accent-color: var(--green);
+    }
+    
+    /* Slash command autocomplete dropdown */
+    #slash-dropdown {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg);
+        border: 1px solid var(--green);
+        border-bottom: none;
+        max-height: 200px;
+        overflow-y: auto;
+        display: none;
+        z-index: 1000;
+    }
+    #slash-dropdown.visible {
+        display: block;
+    }
+    .slash-option {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #333;
+        display: flex;
+        justify-content: space-between;
+    }
+    .slash-option:hover, .slash-option.selected {
+        background: var(--green);
+        color: #000;
+    }
+    .slash-option .cmd {
+        font-weight: bold;
+        color: var(--green);
+    }
+    .slash-option:hover .cmd, .slash-option.selected .cmd {
+        color: #000;
+    }
+    .slash-option .desc {
+        color: #888;
+        font-size: 0.9em;
+    }
+    .slash-option:hover .desc, .slash-option.selected .desc {
+        color: #333;
+    }
+
+/* ASCII Face Flash Animation */
+    #ascii-face-flash {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        display: none;
+        z-index: 99999;
+        display: none;
+        background: rgba(0, 0, 0, 0.95);
+        pointer-events: none;
+    }
+    #ascii-face-flash.active {
+        display: block;
+        animation: ascii-fade 1.5s ease-out forwards;
+    }
+    #ascii-face-flash pre {
+        color: #00ffff;
+        font-family: monospace;
+        font-size: 7px;
+        line-height: 1.0;
+        text-align: left;
+        white-space: pre;
+        margin: 0;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1px solid #00ff41;
+        border-radius: 8px;
+        text-shadow: 0 0 5px #00ffff;
+    }
+    @keyframes ascii-fade {
+        0% { opacity: 0; }
+        15% { opacity: 1; }
+        70% { opacity: 1; }
+        100% { opacity: 0.12; }
+    }
+    /* Light mode ASCII flash */
+    body.light-mode #ascii-face-flash {
+        background: rgba(255, 255, 255, 0.95);
+    }
+    body.light-mode #ascii-face-flash pre {
+        color: #0066cc;
+        background: rgba(255, 255, 255, 0.9);
+        border-color: #0066cc;
+        text-shadow: none;
+    }
+
+    </style>
+    <script>
+    (function() {
+        const isDesktop = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (!isDesktop) return;
+
+        // Create computer use container
+        const cuContainer = document.createElement('div');
+        cuContainer.id = 'computer-use-container';
+        cuContainer.innerHTML = `
+            <div id="cu-screen-pane">
+                <div id="cu-screen-header">
+                    <span>RHODES VISION</span>
+                    <span id="cu-last-capture">Not captured</span>
+                </div>
+                <div id="cu-screen-view" onclick="window.cuHandleClick(event)">
+                    <img id="cu-screen-img" src="" alt="Screen capture">
+                    <div id="cu-mouse-pos">X: 0, Y: 0</div>
+                </div>
+                <div id="cu-screen-controls">
+                    <button onclick="window.cuCaptureScreen()">Capture</button>
+                    <label style="color:var(--text);display:flex;align-items:center;gap:5px;">
+                        <input type="checkbox" id="cu-auto-refresh" onchange="window.cuToggleAutoRefresh()">
+                        Auto (2s)
+                    </label>
+                    <input type="text" id="cu-type-input" placeholder="Type text..." style="flex:1;min-width:150px;">
+                    <button onclick="window.cuTypeText()">Type</button>
+                    <button onclick="window.cuSendKey('Return')">Enter</button>
+                    <button onclick="window.cuSendKey('Tab')">Tab</button>
+                    <button onclick="window.cuSendKey('Escape')">Esc</button>
+                </div>
+            </div>
+            <div id="cu-chat-pane">
+                <div style="padding:20px;color:#00ff41;font-weight:bold;border-bottom:1px solid #00ff41;background:#222;">RHODES TERMINAL</div>
+                <div id="cu-messages" style="flex:1;overflow-y:auto;padding:10px;background:#1a1a1a;">
+                    <div style="color:#ffffff;text-align:center;padding:20px;font-size:16px;">Computer Use Mode Active - Chat Ready</div>
+                </div>
+                <div style="display:flex;gap:10px;padding:10px;border-top:1px solid #00ff41;background:#222;">
+                    <input type="text" id="cu-chat-input" placeholder="Message Rhodes..." style="flex:1;background:rgba(0,255,65,0.1);border:1px solid #00ff41;padding:10px;color:#ffffff;border-radius:3px;">
+                    <button onclick="window.cuSendMessage()" style="background:#00ff41;color:#000;border:none;padding:10px 20px;cursor:pointer;font-weight:bold;border-radius:3px;">Send</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(cuContainer);
+
+        // Exit button
+        const exitBtn = document.createElement('button');
+        exitBtn.id = 'cu-exit-btn';
+        exitBtn.textContent = 'Exit Computer Use';
+        exitBtn.onclick = () => window.exitComputerUse();
+        document.body.appendChild(exitBtn);
+
+        // Toggle button (desktop only)
+        const toggleBtn = document.createElement('button');
+        toggleBtn.id = 'cu-toggle-btn';
+        toggleBtn.innerHTML = '&#x1F5A5; COMPUTER USE';
+        toggleBtn.onclick = () => window.enterComputerUse();
+        toggleBtn.style.display = 'block';
+        document.body.appendChild(toggleBtn);
+
+        let autoRefreshInterval = null;
+        let lastImgData = null;
+        let screenScale = {x: 1, y: 1};
+
+        window.enterComputerUse = function() {
+            if (window.flashAsciiFace) window.flashAsciiFace();
+            cuContainer.classList.add('active');
+            // Move ASCII face to center of chat pane (right half)
+            const face = document.getElementById('ascii-face-flash');
+            if (face) face.style.left = '75%';
+            toggleBtn.style.display = 'none';
+            exitBtn.style.display = 'block';
+
+            // Clone chat into right pane
+            const chatPane = document.getElementById('cu-chat-pane');
+            console.log('enterComputerUse: chatPane element:', chatPane);
+            console.log('enterComputerUse: chatPane dimensions:', chatPane?.offsetWidth, chatPane?.offsetHeight);
+            const originalChat = document.querySelector('.chat-container') || document.getElementById('chat');
+            const originalInput = document.querySelector('.input-container') || document.getElementById('input-container');
+
+            // Always create chat wrapper with input
+            chatPane.innerHTML = '';
+            const wrapper = document.createElement('div');
+            wrapper.className = 'chat-wrapper';
+            wrapper.style.cssText = 'flex:1;display:flex;flex-direction:column;overflow:hidden;padding:10px;min-height:0;height:100%;';
+
+            // Create header
+            const header = document.createElement('div');
+            header.style.cssText = 'padding:10px;color:var(--green);font-weight:bold;border-bottom:1px solid var(--green);';
+            header.textContent = 'RHODES TERMINAL';
+            wrapper.appendChild(header);
+
+            // Clone chat if available, otherwise create empty message area
+            const chatArea = document.createElement('div');
+            chatArea.id = 'cu-messages';
+            chatArea.style.cssText = 'flex:1;overflow-y:auto;padding:10px;';
+            if (originalChat) {
+                chatArea.innerHTML = originalChat.innerHTML;
+            } else {
+                chatArea.innerHTML = '<div style="color:var(--dim);text-align:center;padding:20px;">Computer Use Mode Active</div>';
+            }
+            wrapper.appendChild(chatArea);
+
+            // Create input area - ALWAYS
+            const inputArea = document.createElement('div');
+            inputArea.style.cssText = 'display:flex;gap:10px;padding:10px;border-top:1px solid var(--green);';
+            inputArea.innerHTML = `
+                <input type="text" id="cu-chat-input" placeholder="Message Rhodes..." style="flex:1;background:rgba(0,255,65,0.1);border:1px solid var(--green);padding:10px;color:var(--text);border-radius:3px;">
+                <button onclick="window.cuSendMessage()" style="background:var(--green);color:#000;border:none;padding:10px 20px;cursor:pointer;font-weight:bold;border-radius:3px;">Send</button>
+            `;
+            wrapper.appendChild(inputArea);
+
+            chatPane.appendChild(wrapper);
+            console.log('enterComputerUse: wrapper appended, chatPane innerHTML length:', chatPane.innerHTML.length);
+            console.log('enterComputerUse: wrapper dimensions:', wrapper.offsetWidth, wrapper.offsetHeight);
+
+            // Handle enter key
+            document.getElementById('cu-chat-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') window.cuSendMessage();
+            });
+
+            // Initial capture
+            window.cuCaptureScreen();
+        };
+
+        window.exitComputerUse = function() {
+            // Move ASCII face back to center
+            const face = document.getElementById('ascii-face-flash');
+            if (face) face.style.left = '50%';
+            cuContainer.classList.remove('active');
+            toggleBtn.style.display = 'block';
+            exitBtn.style.display = 'none';
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        };
+
+        window.cuCaptureScreen = function() {
+            if (!window.pywebview || !window.pywebview.api) {
+                console.error('pywebview API not available');
+                return;
+            }
+
+            window.pywebview.api.capture_screen().then(result => {
+                if (result.error) {
+                    console.error('Screenshot error:', result.error);
+                    document.getElementById('cu-last-capture').textContent = 'Error: ' + result.error;
+                    return;
+                }
+
+                const img = document.getElementById('cu-screen-img');
+                img.src = 'data:image/png;base64,' + result.image;
+                lastImgData = result;
+
+                const now = new Date();
+                document.getElementById('cu-last-capture').textContent =
+                    'Captured: ' + now.toLocaleTimeString();
+
+                // Update scale for click mapping
+                img.onload = function() {
+                    const container = document.getElementById('cu-screen-view');
+                    const imgRect = img.getBoundingClientRect();
+
+                    // Get actual screen size
+                    window.pywebview.api.get_screen_size().then(size => {
+                        if (!size.error) {
+                            screenScale.x = size.width / imgRect.width;
+                            screenScale.y = size.height / imgRect.height;
+                        }
+                    });
+                };
+            });
+        };
+
+        window.cuToggleAutoRefresh = function() {
+            const checkbox = document.getElementById('cu-auto-refresh');
+            if (checkbox.checked) {
+                autoRefreshInterval = setInterval(window.cuCaptureScreen, 2000);
+            } else {
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
+            }
+        };
+
+        window.cuHandleClick = function(event) {
+            const img = document.getElementById('cu-screen-img');
+            const imgRect = img.getBoundingClientRect();
+
+            // Calculate click position relative to image
+            const imgX = event.clientX - imgRect.left;
+            const imgY = event.clientY - imgRect.top;
+
+            // Scale to actual screen coordinates
+            const screenX = Math.round(imgX * screenScale.x);
+            const screenY = Math.round(imgY * screenScale.y);
+
+            // Show click marker
+            const marker = document.createElement('div');
+            marker.className = 'cu-click-marker';
+            marker.style.left = (event.clientX - 10) + 'px';
+            marker.style.top = (event.clientY - 10) + 'px';
+            document.body.appendChild(marker);
+            setTimeout(() => marker.remove(), 500);
+
+            // Execute click
+            if (window.pywebview && window.pywebview.api) {
+                window.pywebview.api.mouse_click(screenX, screenY, 1).then(result => {
+                    if (result.error) {
+                        console.error('Click error:', result.error);
+                    } else {
+                        // Refresh screen after click
+                        setTimeout(window.cuCaptureScreen, 300);
+                    }
+                });
+            }
+        };
+
+        // Update mouse position display
+        document.addEventListener('mousemove', (e) => {
+            const img = document.getElementById('cu-screen-img');
+            if (!img || !cuContainer.classList.contains('active')) return;
+
+            const imgRect = img.getBoundingClientRect();
+            const posDisplay = document.getElementById('cu-mouse-pos');
+
+            if (e.clientX >= imgRect.left && e.clientX <= imgRect.right &&
+                e.clientY >= imgRect.top && e.clientY <= imgRect.bottom) {
+                const imgX = e.clientX - imgRect.left;
+                const imgY = e.clientY - imgRect.top;
+                const screenX = Math.round(imgX * screenScale.x);
+                const screenY = Math.round(imgY * screenScale.y);
+                posDisplay.textContent = `X: ${screenX}, Y: ${screenY}`;
+            }
+        });
+
+        window.cuTypeText = function() {
+            const input = document.getElementById('cu-type-input');
+            const text = input.value;
+            if (!text) return;
+
+            if (window.pywebview && window.pywebview.api) {
+                window.pywebview.api.type_text(text).then(result => {
+                    if (result.error) {
+                        console.error('Type error:', result.error);
+                    } else {
+                        input.value = '';
+                        setTimeout(window.cuCaptureScreen, 300);
+                    }
+                });
+            }
+        };
+
+        window.cuSendKey = function(key) {
+            if (window.pywebview && window.pywebview.api) {
+                window.pywebview.api.key_press(key).then(result => {
+                    if (result.error) {
+                        console.error('Key error:', result.error);
+                    } else {
+                        setTimeout(window.cuCaptureScreen, 300);
+                    }
+                });
+            }
+        };
+
+        window.cuSendMessage = function() {
+            console.log('cuSendMessage called');
+            const input = document.getElementById('cu-chat-input');
+            const text = input.value.trim();
+            console.log('cuSendMessage text:', text);
+            if (!text) return;
+
+            // Add to chat display
+            const chatArea = document.querySelector('#cu-chat-pane .chat-wrapper > div:nth-child(2)');
+            console.log('cuSendMessage chatArea:', chatArea);
+            if (chatArea) {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'message user-message';
+                msgDiv.style.cssText = 'background:rgba(0,255,65,0.1);padding:10px;margin:10px 0;border-radius:5px;';
+                msgDiv.textContent = text;
+                chatArea.appendChild(msgDiv);
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }
+
+            // Send to main chat - use the global send() function
+            const mainInput = document.getElementById('input');
+            console.log('cuSendMessage mainInput:', mainInput);
+            if (mainInput) {
+                mainInput.value = text;
+                // Call the global send() function directly
+                if (window.send) {
+                    console.log('cuSendMessage: calling window.send()');
+                    window.send();
+                } else {
+                    // Fallback to clicking the send button
+                    const sendBtn = document.getElementById('send') || 
+                                   document.querySelector('button[onclick*=send]');
+                    console.log('cuSendMessage sendBtn:', sendBtn);
+                    if (sendBtn) sendBtn.click();
+                }
+            } else {
+                console.log('cuSendMessage: mainInput not found');
+            }
+
+            input.value = '';
+        };
+
+        // /computer command to toggle
+        const origHandle2 = window.handleSend;
+        window.handleSend = function(e) {
+            const input = document.getElementById('input');
+            const text = (input ? input.value : '').trim().toLowerCase();
+            if (text === '/computer' || text === '/cu') {
+                if (input) input.value = '';
+                window.enterComputerUse();
+                return;
+            }
+            if (origHandle2) return origHandle2(e);
+        };
+
+        console.log('[Desktop] Computer use mode loaded');
+    })();
+    </script>
+<script>
+    // Slash command autocomplete
+    (function() {
+        const slashCommands = [
+            {cmd: '/split', desc: 'Open split view (new window)'},
+            {cmd: '/clear', desc: 'Clear chat history'},
+            {cmd: '/help', desc: 'Show available commands'},
+            {cmd: '/stop', desc: 'Interrupt AI response'},
+            {cmd: '/alpha', desc: 'Switch to Opus (Alpha)'},
+            {cmd: '/beta', desc: 'Switch to Sonnet (Beta)'},
+            {cmd: '/delta', desc: 'Switch to DeepSeek (Delta)'},
+            {cmd: '/ada', desc: 'Switch to Haiku (Ada)'},
+            {cmd: '/snapshot', desc: 'Create a snapshot of current conversation'},
+            {cmd: '/snapshots', desc: 'List all snapshots for this session'},
+            {cmd: '/fork', desc: 'Fork from snapshot: /fork <id|index>'},
+        ];
+
+        let selectedIndex = -1;
+        let dropdown = null;
+        let inputEl = null;
+
+        function createDropdown() {
+            if (dropdown) return dropdown;
+            dropdown = document.createElement('div');
+            dropdown.id = 'slash-dropdown';
+            return dropdown;
+        }
+
+        function showDropdown(input, filter = '') {
+            if (!dropdown) {
+                dropdown = createDropdown();
+                input.parentElement.style.position = 'relative';
+                input.parentElement.insertBefore(dropdown, input);
+            }
+            inputEl = input;
+
+            const filtered = slashCommands.filter(c =>
+                c.cmd.toLowerCase().includes(filter.toLowerCase()) ||
+                c.desc.toLowerCase().includes(filter.toLowerCase())
+            );
+
+            if (filtered.length === 0) {
+                hideDropdown();
+                return;
+            }
+
+            dropdown.innerHTML = filtered.map((c, i) =>
+                `<div class="slash-option${i === selectedIndex ? ' selected' : ''}" data-cmd="${c.cmd}">
+                    <span class="cmd">${c.cmd}</span>
+                    <span class="desc">${c.desc}</span>
+                </div>`
+            ).join('');
+
+            dropdown.querySelectorAll('.slash-option').forEach((opt, i) => {
+                opt.addEventListener('click', () => {
+                    selectCommand(opt.dataset.cmd);
+                });
+                opt.addEventListener('mouseenter', () => {
+                    selectedIndex = i;
+                    updateSelection();
+                });
+            });
+
+            dropdown.classList.add('visible');
+        }
+
+        function hideDropdown() {
+            if (dropdown) {
+                dropdown.classList.remove('visible');
+            }
+            selectedIndex = -1;
+        }
+
+        function updateSelection() {
+            if (!dropdown) return;
+            const opts = dropdown.querySelectorAll('.slash-option');
+            opts.forEach((opt, i) => {
+                opt.classList.toggle('selected', i === selectedIndex);
+            });
+        }
+
+        function selectCommand(cmd) {
+            hideDropdown();
+
+            // Handle special commands that execute immediately
+            if (cmd === '/split') {
+                if (inputEl) inputEl.value = '';
+                if (typeof toggleSplitView === 'function') {
+                    toggleSplitView();
+                } else {
+                    // Fallback: open new window
+                    const width = Math.floor(window.screen.width / 2);
+                    const height = window.screen.height;
+                    window.open(window.location.origin + '?new=1', '_blank',
+                        `width=${width},height=${height},left=${width},top=0`);
+                }
+                return;
+            }
+
+            if (cmd === '/help') {
+                if (inputEl) inputEl.value = '';
+                showHelpPopup();
+                return;
+            }
+
+            // Snapshot commands
+            if (cmd === '/snapshot') {
+                if (inputEl) inputEl.value = '';
+                executeSnapshotCreate();
+                return;
+            }
+
+            if (cmd === '/snapshots') {
+                if (inputEl) inputEl.value = '';
+                executeSnapshotsList();
+                return;
+            }
+
+            if (cmd === '/fork') {
+                // Put in input for user to add index/id
+                if (inputEl) {
+                    inputEl.value = cmd + ' ';
+                    inputEl.focus();
+                }
+                return;
+            }
+
+            // For other commands, put in input
+            if (inputEl) {
+                inputEl.value = cmd + ' ';
+                inputEl.focus();
+            }
+        }
+
+        // Snapshot command implementations (global for cross-script access)
+        const executeSnapshotCreate = window.executeSnapshotCreate = async function() {
+            const sessionId = window.currentSessionId || localStorage.getItem('session_id');
+            if (!sessionId) {
+                displaySystemMessage('No active session for snapshot');
+                return;
+            }
+            try {
+                displaySystemMessage('Creating snapshot...');
+                const resp = await fetch('/api/snapshots', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({session_id: sessionId})
+                });
+                const data = await resp.json();
+                if (data.error) {
+                    displaySystemMessage('Snapshot error: ' + data.error);
+                } else {
+                    displaySystemMessage('Snapshot created: ' + data.snapshot_id);
+                }
+            } catch (e) {
+                displaySystemMessage('Snapshot failed: ' + e.message);
+            }
+        }
+
+        const executeSnapshotsList = window.executeSnapshotsList = async function() {
+            const sessionId = window.currentSessionId || localStorage.getItem('session_id');
+            if (!sessionId) {
+                displaySystemMessage('No active session');
+                return;
+            }
+            try {
+                const resp = await fetch('/api/snapshots?session_id=' + encodeURIComponent(sessionId));
+                const data = await resp.json();
+                if (data.error) {
+                    displaySystemMessage('Error: ' + data.error);
+                    return;
+                }
+                if (!data.snapshots || data.snapshots.length === 0) {
+                    displaySystemMessage('No snapshots for this session');
+                    return;
+                }
+                let msg = 'Snapshots for this session:\n';
+                data.snapshots.forEach((s, i) => {
+                    msg += '[' + i + '] ' + s.id.slice(0,12) + '... - ' + s.topic + ' (' + s.tokens + ' tokens, ' + s.reason + ')\n';
+                });
+                msg += '\nUse /fork <index> to restore';
+                displaySystemMessage(msg);
+            } catch (e) {
+                displaySystemMessage('Error listing snapshots: ' + e.message);
+            }
+        }
+
+        const executeSnapshotFork = window.executeSnapshotFork = async function(indexOrId) {
+            const sessionId = window.currentSessionId || localStorage.getItem('session_id');
+            if (!sessionId) {
+                displaySystemMessage('No active session');
+                return;
+            }
+            try {
+                displaySystemMessage('Forking from snapshot...');
+                const body = {session_id: sessionId};
+                if (/^\d+$/.test(indexOrId)) {
+                    body.index = parseInt(indexOrId);
+                } else {
+                    body.snapshot_id = indexOrId;
+                }
+                const resp = await fetch('/api/snapshots/fork', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(body)
+                });
+                const data = await resp.json();
+                if (data.error) {
+                    displaySystemMessage('Fork error: ' + data.error);
+                } else {
+                    displaySystemMessage(data.message);
+                    // Reload chat to show forked state
+                    if (typeof window.loadChatHistory === 'function') {
+                        window.loadChatHistory();
+                    } else {
+                        location.reload();
+                    }
+                }
+            } catch (e) {
+                displaySystemMessage('Fork failed: ' + e.message);
+            }
+        }
+
+        const displaySystemMessage = window.displaySystemMessage = function(msg) {
+            // Try to display in chat area
+            const chatArea = document.getElementById('chat') || document.getElementById('output') || document.getElementById('messages');
+            if (chatArea) {
+                const div = document.createElement('div');
+                div.className = 'system-message';
+                div.style.cssText = 'color: var(--cyan, #00ffd5); padding: 10px; margin: 5px 0; background: rgba(0,255,213,0.1); border-left: 3px solid var(--cyan, #00ffd5); white-space: pre-wrap; font-family: monospace;';
+                div.textContent = msg;
+                chatArea.appendChild(div);
+                chatArea.scrollTop = chatArea.scrollHeight;
+            } else {
+                alert(msg);
+            }
+        }
+
+        function showHelpPopup() {
+            // Remove existing popup if any
+            const existing = document.getElementById('help-popup');
+            if (existing) existing.remove();
+
+            const popup = document.createElement('div');
+            popup.id = 'help-popup';
+            popup.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: var(--bg, #1a1a2e);
+                border: 2px solid var(--green, #00ff41);
+                border-radius: 8px;
+                padding: 20px;
+                z-index: 10000;
+                max-width: 500px;
+                max-height: 80vh;
+                overflow-y: auto;
+                box-shadow: 0 0 20px rgba(0,255,65,0.3);
+            `;
+
+            const commands = [
+                {cmd: '/split', desc: 'Open Rhodes in a new split window'},
+                {cmd: '/clear', desc: 'Clear the chat history'},
+                {cmd: '/stop', desc: 'Interrupt the current AI response'},
+                {cmd: '/alpha', desc: 'Switch to Opus model (most capable)'},
+                {cmd: '/beta', desc: 'Switch to Sonnet model (balanced)'},
+                {cmd: '/delta', desc: 'Switch to DeepSeek model'},
+                {cmd: '/ada', desc: 'Switch to Haiku model (fastest)'},
+                {cmd: '/help', desc: 'Show this help panel'},
+            ];
+
+            popup.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                    <h3 style="margin:0;color:var(--green,#00ff41);">RHODES Commands</h3>
+                    <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:var(--green,#00ff41);font-size:20px;cursor:pointer;">&times;</button>
+                </div>
+                <div style="font-family:monospace;">
+                    ${commands.map(c => `
+                        <div style="margin:8px 0;padding:8px;border-bottom:1px solid #333;">
+                            <span style="color:var(--cyan,#00ffff);font-weight:bold;">${c.cmd}</span>
+                            <span style="color:#888;margin-left:10px;">${c.desc}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="margin-top:15px;color:#666;font-size:12px;">
+                    Press ESC or click outside to close
+                </div>
+            `;
+
+            document.body.appendChild(popup);
+
+            // Close on ESC
+            const closeHandler = (e) => {
+                if (e.key === 'Escape') {
+                    popup.remove();
+                    document.removeEventListener('keydown', closeHandler);
+                }
+            };
+            document.addEventListener('keydown', closeHandler);
+
+            // Close on click outside
+            setTimeout(() => {
+                const clickHandler = (e) => {
+                    if (!popup.contains(e.target)) {
+                        popup.remove();
+                        document.removeEventListener('click', clickHandler);
+                    }
+                };
+                document.addEventListener('click', clickHandler);
+            }, 100);
+        }
+
+        // Listen for input events on message inputs
+        document.addEventListener('input', function(e) {
+            const input = e.target;
+            if (input.tagName === 'INPUT' && (input.placeholder?.includes('message') || input.placeholder?.includes('Message'))) {
+                const val = input.value;
+                if (val.startsWith('/')) {
+                    const filter = val.substring(1);
+                    showDropdown(input, filter);
+                } else {
+                    hideDropdown();
+                }
+            }
+        });
+
+        // Handle keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (!dropdown || !dropdown.classList.contains('visible')) return;
+
+            const opts = dropdown.querySelectorAll('.slash-option');
+            if (opts.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, opts.length - 1);
+                updateSelection();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, 0);
+                updateSelection();
+            } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                e.preventDefault();
+                const selected = opts[selectedIndex];
+                if (selected) selectCommand(selected.dataset.cmd);
+            } else if (e.key === 'Escape') {
+                hideDropdown();
+            } else if (e.key === 'Tab' && selectedIndex >= 0) {
+                e.preventDefault();
+                const selected = opts[selectedIndex];
+                if (selected) selectCommand(selected.dataset.cmd);
+            }
+        });
+
+        // Hide on click outside
+        document.addEventListener('click', function(e) {
+            if (dropdown && !dropdown.contains(e.target) && e.target !== inputEl) {
+                hideDropdown();
+            }
+        });
+    })();
+</script>
+
+<!-- /1/ Version: Enable audio mode by default -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait for VoiceChat to be initialized
+    setTimeout(function() {
+        if (typeof VoiceChat !== 'undefined') {
+            // Enable audio responses by default
+            VoiceChat.voiceEnabled = true;
+            const audioBtn = document.getElementById('audio-toggle-btn');
+            if (audioBtn) {
+                audioBtn.innerHTML = '🔊 AUDIO';
+                audioBtn.classList.add('active');
+                audioBtn.style.background = 'rgba(0,255,65,0.2)';
+                audioBtn.style.borderColor = '#00ff41';
+            }
+            console.log('[/1/ Version] Audio mode enabled by default');
+        }
+    }, 1000);
+});
+</script>
+</body>
+</html>

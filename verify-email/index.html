@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email - RHODES</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/rhodes-icon-32.png">
+    <link rel="stylesheet" href="/rhodes.css">
+    <style>
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Share Tech Mono', monospace;
+            line-height: 1.7;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+        }
+        .verify-container {
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            padding: 40px 24px;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--cyan);
+            margin-bottom: 40px;
+            letter-spacing: 4px;
+        }
+        .status-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        .status-message {
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+        .status-detail {
+            font-size: 14px;
+            color: var(--text-dim);
+            margin-bottom: 30px;
+        }
+        .verify-link {
+            display: inline-block;
+            color: var(--cyan);
+            text-decoration: none;
+            padding: 12px 24px;
+            border: 1px solid var(--cyan);
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .verify-link:hover {
+            background: var(--cyan);
+            color: var(--bg);
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--cyan);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+    </style>
+</head>
+<body>
+    <div class="verify-container">
+        <div class="logo">RHODES AGI</div>
+
+        <div id="loading">
+            <div class="spinner"></div>
+            <div class="status-message">Verifying your email...</div>
+        </div>
+
+        <div id="success" style="display:none;">
+            <div class="status-icon success">&#10003;</div>
+            <div class="status-message success">Email Verified</div>
+            <div class="status-detail">Your email has been verified successfully. You can now use all features of your account.</div>
+            <a href="/" class="verify-link">Go to Rhodes</a>
+        </div>
+
+        <div id="error" style="display:none;">
+            <div class="status-icon error">&#10007;</div>
+            <div class="status-message error">Verification Failed</div>
+            <div class="status-detail" id="error-detail">The verification link is invalid or has expired.</div>
+            <a href="/" class="verify-link">Go to Rhodes</a>
+        </div>
+
+        <div id="no-token" style="display:none;">
+            <div class="status-icon error">?</div>
+            <div class="status-message">No Verification Token</div>
+            <div class="status-detail">This page requires a verification token. Check your email for the verification link.</div>
+            <a href="/" class="verify-link">Go to Rhodes</a>
+        </div>
+    </div>
+
+    <script>
+        (async () => {
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('token');
+
+            if (!token) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('no-token').style.display = 'block';
+                return;
+            }
+
+            try {
+                const resp = await fetch(`/api/user/verify-email?token=${encodeURIComponent(token)}`);
+                const data = await resp.json();
+
+                document.getElementById('loading').style.display = 'none';
+
+                if (data.success) {
+                    document.getElementById('success').style.display = 'block';
+                } else {
+                    document.getElementById('error-detail').textContent = data.message || 'The verification link is invalid or has expired.';
+                    document.getElementById('error').style.display = 'block';
+                }
+            } catch (e) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error-detail').textContent = 'Network error. Please try again.';
+                document.getElementById('error').style.display = 'block';
+            }
+        })();
+    </script>
+</body>
+</html>

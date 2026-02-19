@@ -1,0 +1,54 @@
+# RHODES_CODE PowerShell Installer
+Write-Host ""
+Write-Host "=====================================" -ForegroundColor Cyan
+Write-Host "  RHODES_CODE INSTALLER (Windows)" -ForegroundColor Cyan
+Write-Host "=====================================" -ForegroundColor Cyan
+Write-Host ""
+
+# Create Rhodes directory
+$rhodesDir = "$env:USERPROFILE\.rhodes"
+if (-not (Test-Path $rhodesDir)) {
+    New-Item -ItemType Directory -Path $rhodesDir -Force | Out-Null
+}
+
+# Handle token from environment (write without BOM)
+if ($env:RHODES_TOKEN) {
+    Write-Host "  [INFO] Token detected - will auto-login" -ForegroundColor Green
+    $configJson = "{`"token`": `"$env:RHODES_TOKEN`"}"
+    [System.IO.File]::WriteAllText("$rhodesDir\config.json", $configJson)
+}
+
+# Download bundled exe (includes Python 3.13)
+Write-Host "  Downloading RHODES_CODE..." -ForegroundColor Yellow
+$exePath = "$rhodesDir\rhodes.exe"
+Invoke-WebRequest -Uri "https://rhodesagi.com/rhodes-windows.exe" -OutFile $exePath
+
+# Also download Python source for advanced users
+Write-Host "  Downloading source..." -ForegroundColor Yellow
+Invoke-WebRequest -Uri "https://rhodesagi.com/download/rhodes-desktop.py" -OutFile "$rhodesDir\rhodes.py" 2>$null
+
+# Create batch launcher that uses the exe
+Write-Host "  Creating launchers..." -ForegroundColor Yellow
+"@echo off`n`"$exePath`" %*" | Out-File "$rhodesDir\rhodes.bat" -Encoding ascii
+"@echo off`n`"$exePath`" %*" | Out-File "$rhodesDir\RHODES_CODE.bat" -Encoding ascii
+
+# Add to PATH
+$userPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+if ($userPath -notlike "*$rhodesDir*") {
+    [Environment]::SetEnvironmentVariable("PATH", "$userPath;$rhodesDir", "User")
+    Write-Host "  [OK] Added to PATH" -ForegroundColor Green
+}
+
+# Mark as installed
+"exe" | Out-File "$rhodesDir\.installed" -Encoding ascii
+
+Write-Host ""
+Write-Host "=====================================" -ForegroundColor Green
+Write-Host "  INSTALLATION COMPLETE\!" -ForegroundColor Green
+Write-Host "=====================================" -ForegroundColor Green
+Write-Host ""
+Write-Host "  Launching RHODES_CODE..." -ForegroundColor Cyan
+Write-Host ""
+
+# Launch the exe
+Start-Process $exePath

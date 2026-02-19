@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Keys - Rhodes AI</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/rhodes-icon-32.png">
+    <link rel="stylesheet" href="/rhodes.css">
+    <style>
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Share Tech Mono', monospace;
+            line-height: 1.7;
+            min-height: 100vh;
+            height: auto;
+            overflow: auto;
+            display: block;
+        }
+
+        .keys-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 24px 60px;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: var(--cyan);
+            text-decoration: none;
+            margin-bottom: 30px;
+            font-size: 14px;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        .back-link:hover { opacity: 1; }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 36px;
+            color: var(--cyan);
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(0, 255, 213, 0.3);
+        }
+
+        .subtitle {
+            color: var(--dim);
+            margin-bottom: 30px;
+            border-left: 3px solid var(--magenta);
+            padding-left: 16px;
+            font-size: 14px;
+        }
+
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            color: var(--green);
+            margin: 30px 0 15px;
+        }
+
+        /* Auth gate */
+        .auth-gate {
+            text-align: center;
+            padding: 60px 20px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        .auth-gate p {
+            color: var(--dim);
+            margin-bottom: 20px;
+        }
+
+        .auth-gate a {
+            display: inline-block;
+            padding: 12px 36px;
+            border: 2px solid var(--cyan);
+            color: var(--cyan);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .auth-gate a:hover {
+            background: var(--cyan);
+            color: var(--bg);
+        }
+
+        /* Create key section */
+        .create-section {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 24px;
+            margin-bottom: 30px;
+        }
+
+        .create-form {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .create-form input {
+            flex: 1;
+            padding: 12px 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+        }
+
+        .create-form input:focus {
+            outline: none;
+            border-color: var(--cyan);
+        }
+
+        .create-form input::placeholder {
+            color: var(--dim);
+        }
+
+        .btn-create {
+            padding: 12px 24px;
+            background: transparent;
+            border: 2px solid var(--green);
+            color: var(--green);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn-create:hover {
+            background: var(--green);
+            color: var(--bg);
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.3);
+        }
+
+        .btn-create:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* New key display */
+        .new-key-display {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 255, 102, 0.05);
+            border: 1px solid var(--green);
+            border-radius: 4px;
+        }
+
+        .new-key-display .warning {
+            color: var(--magenta);
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .new-key-value {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg);
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .new-key-value code {
+            flex: 1;
+            color: var(--green);
+            font-size: 13px;
+            word-break: break-all;
+        }
+
+        .btn-copy {
+            padding: 6px 14px;
+            background: transparent;
+            border: 1px solid var(--cyan);
+            color: var(--cyan);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-copy:hover {
+            background: var(--cyan);
+            color: var(--bg);
+        }
+
+        /* Keys list */
+        .keys-list {
+            margin-top: 10px;
+        }
+
+        .key-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .key-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .key-name {
+            color: var(--text);
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .key-meta {
+            color: var(--dim);
+            font-size: 12px;
+        }
+
+        .key-prefix {
+            color: var(--cyan);
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .key-calls {
+            color: var(--dim);
+            font-size: 13px;
+            text-align: right;
+            min-width: 80px;
+        }
+
+        .btn-revoke {
+            padding: 6px 14px;
+            background: transparent;
+            border: 1px solid var(--dim);
+            color: var(--dim);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        .btn-revoke:hover {
+            border-color: var(--magenta);
+            color: var(--magenta);
+        }
+
+        .key-inactive {
+            opacity: 0.4;
+        }
+
+        .key-inactive .key-name::after {
+            content: ' (revoked)';
+            color: var(--magenta);
+            font-size: 12px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--dim);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: var(--dim);
+        }
+
+        /* Usage info */
+        .info-box {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 20px;
+            margin-top: 30px;
+            font-size: 14px;
+            color: var(--dim);
+            line-height: 1.8;
+        }
+
+        .info-box code {
+            color: var(--cyan);
+            background: rgba(0, 255, 204, 0.05);
+            padding: 2px 6px;
+            border-radius: 2px;
+        }
+
+        .info-box a {
+            color: var(--cyan);
+            text-decoration: none;
+        }
+
+        .info-box a:hover {
+            text-decoration: underline;
+        }
+
+        /* MCP manager */
+        .mcp-section {
+            margin-top: 10px;
+        }
+
+        .mcp-help {
+            color: var(--dim);
+            font-size: 13px;
+            margin: 0 0 12px;
+        }
+
+        .mcp-grid {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .mcp-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 10px;
+        }
+
+        .mcp-row-full {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .mcp-grid input, .mcp-grid select {
+            padding: 10px 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+        }
+
+        .mcp-grid input:focus, .mcp-grid select:focus {
+            outline: none;
+            border-color: var(--cyan);
+        }
+
+        .mcp-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .btn-mcp {
+            padding: 8px 14px;
+            background: transparent;
+            border: 1px solid var(--cyan);
+            color: var(--cyan);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .btn-mcp:hover {
+            background: var(--cyan);
+            color: var(--bg);
+        }
+
+        .btn-mcp-danger {
+            border-color: var(--magenta);
+            color: var(--magenta);
+        }
+
+        .btn-mcp-danger:hover {
+            background: var(--magenta);
+            color: var(--bg);
+        }
+
+        .mcp-status {
+            color: var(--dim);
+            font-size: 12px;
+            margin: 8px 0 12px;
+        }
+
+        .mcp-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .mcp-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 12px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .mcp-card-title {
+            color: var(--text);
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .mcp-card-meta {
+            color: var(--dim);
+            font-size: 12px;
+            line-height: 1.5;
+            word-break: break-all;
+        }
+
+        .mcp-card-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .mcp-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--dim);
+            font-size: 12px;
+        }
+
+        .mcp-empty {
+            color: var(--dim);
+            font-size: 13px;
+            padding: 10px 0;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            background: var(--panel);
+            border: 1px solid var(--green);
+            color: var(--green);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            border-radius: 4px;
+            z-index: 9999;
+            display: none;
+        }
+
+        /* Light mode */
+        body.light-mode .new-key-value { background: #f0f2f0; }
+        body.light-mode .create-form input { background: #f0f2f0; }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 26px; }
+            .create-form { flex-direction: column; }
+            .key-card { flex-direction: column; align-items: flex-start; }
+            .key-calls { text-align: left; }
+            .mcp-row { grid-template-columns: 1fr; }
+            .mcp-card { grid-template-columns: 1fr; }
+            .mcp-card-actions { justify-content: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="keys-container">
+        <a href="/api.html" class="back-link">&larr; Back to API</a>
+
+        <h1>API Keys</h1>
+        <p class="subtitle">Create and manage your Rhodes API keys</p>
+
+        <!-- Auth gate — shown when not logged in -->
+        <div id="auth-gate" class="auth-gate" style="display:none;">
+            <p>You need an account to create API keys.</p>
+            <a href="/?action=register">Sign Up</a>
+        </div>
+
+        <!-- Main content — shown when logged in -->
+        <div id="main-content" style="display:none;">
+
+            <h2>Create New Key</h2>
+            <div class="create-section">
+                <div class="create-form">
+                    <input type="text" id="key-name" placeholder="Key name (e.g. My App)" maxlength="64">
+                    <button class="btn-create" id="create-btn" onclick="createKey()">Create Key</button>
+                </div>
+                <div class="new-key-display" id="new-key-display">
+                    <p class="warning">Save this key now. It will not be shown again.</p>
+                    <div class="new-key-value">
+                        <code id="new-key-value"></code>
+                        <button class="btn-copy" onclick="copyKey()">Copy</button>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Your Keys</h2>
+            <div id="keys-loading" class="loading">Loading keys...</div>
+            <div id="keys-list" class="keys-list"></div>
+            <div id="keys-empty" class="empty-state" style="display:none;">
+                No API keys yet. Create one above to get started.
+            </div>
+
+            <h2>MCP Servers</h2>
+            <div class="create-section mcp-section">
+                <p class="mcp-help">Manage MCP servers for one API key. Paste a full <code>rh_live_...</code> key to load, add, refresh, disable, or delete servers.</p>
+                <div class="mcp-grid">
+                    <div class="mcp-row-full">
+                        <input type="password" id="mcp-api-key" placeholder="rh_live_..." autocomplete="off">
+                    </div>
+                    <div class="mcp-row">
+                        <input type="text" id="mcp-server-name" placeholder="server name (e.g. github)" maxlength="40">
+                        <input type="url" id="mcp-server-url" placeholder="https://mcp.example.com/rpc">
+                        <select id="mcp-server-type">
+                            <option value="http">http</option>
+                            <option value="sse">sse</option>
+                        </select>
+                    </div>
+                    <div class="mcp-row-full">
+                        <input type="text" id="mcp-server-headers" placeholder='Optional headers JSON, e.g. {"Authorization":"Bearer ..."}'>
+                    </div>
+                </div>
+                <div class="mcp-actions">
+                    <button class="btn-mcp" id="mcp-load-btn" onclick="loadMcpServers()">Load Servers</button>
+                    <button class="btn-mcp" id="mcp-add-btn" onclick="addMcpServer()">Add / Update Server</button>
+                </div>
+                <div id="mcp-status" class="mcp-status">No API key loaded.</div>
+                <div id="mcp-list" class="mcp-list"></div>
+                <div id="mcp-empty" class="mcp-empty" style="display:none;">No MCP servers configured for this key.</div>
+            </div>
+
+            <div class="info-box">
+                <strong>Quick Start</strong><br>
+                Use your key with any OpenAI-compatible client:<br><br>
+                <code>base_url: https://rhodesagi.com/v1</code><br>
+                <code>model: rhodes</code><br>
+                <code>Authorization: Bearer rh_live_...</code><br><br>
+                <a href="/api.html">View full API documentation &rarr;</a><br>
+                <a href="/api-tokens.html">Buy API tokens &rarr;</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+    var token = null;
+    var mcpServers = [];
+
+    function getToken() {
+        // Try cookie first
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var c = cookies[i].trim();
+            if (c.startsWith('rhodes_session=')) {
+                return c.substring('rhodes_session='.length);
+            }
+        }
+        // Try localStorage
+        var t = localStorage.getItem('rhodes_token') || localStorage.getItem('token');
+        return t || null;
+    }
+
+    function showToast(msg, duration) {
+        var el = document.getElementById('toast');
+        el.textContent = msg;
+        el.style.display = 'block';
+        setTimeout(function() { el.style.display = 'none'; }, duration || 2000);
+    }
+
+    function authHeaders() {
+        return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+    }
+
+    function apiBaseUrl() {
+        return window.location.origin.replace(/\/$/, '') + '/v1';
+    }
+
+    function getMcpApiKey() {
+        var el = document.getElementById('mcp-api-key');
+        return el ? el.value.trim() : '';
+    }
+
+    function setMcpApiKey(key) {
+        var el = document.getElementById('mcp-api-key');
+        if (!el || !key) return;
+        el.value = key;
+    }
+
+    function mcpHeaders(apiKey) {
+        return {
+            'Authorization': 'Bearer ' + apiKey,
+            'Content-Type': 'application/json'
+        };
+    }
+
+    function setMcpStatus(msg) {
+        var el = document.getElementById('mcp-status');
+        if (el) el.textContent = msg;
+    }
+
+    function renderMcpServers(servers) {
+        var listEl = document.getElementById('mcp-list');
+        var emptyEl = document.getElementById('mcp-empty');
+        if (!listEl || !emptyEl) return;
+
+        listEl.innerHTML = '';
+        if (!servers || servers.length === 0) {
+            emptyEl.style.display = 'block';
+            return;
+        }
+        emptyEl.style.display = 'none';
+
+        servers.forEach(function(srv) {
+            var rawName = String(srv.name || 'unnamed');
+            var safeType = String(srv.type || 'http');
+            var safeUrl = String(srv.url || '');
+            var toolCount = Number(srv.tool_count || 0);
+            var enabled = srv.enabled !== false;
+
+            var card = document.createElement('div');
+            card.className = 'mcp-card';
+
+            var left = document.createElement('div');
+            var title = document.createElement('div');
+            title.className = 'mcp-card-title';
+            title.textContent = rawName;
+
+            var meta = document.createElement('div');
+            meta.className = 'mcp-card-meta';
+            meta.innerHTML = escapeHtml(safeType) + ' &middot; ' + escapeHtml(safeUrl) + '<br>' + toolCount + ' tools cached';
+
+            left.appendChild(title);
+            left.appendChild(meta);
+
+            var actions = document.createElement('div');
+            actions.className = 'mcp-card-actions';
+
+            var label = document.createElement('label');
+            label.className = 'mcp-toggle';
+
+            var checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = enabled;
+            checkbox.addEventListener('change', function() {
+                toggleMcpServer(rawName, checkbox.checked);
+            });
+
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(' enabled'));
+
+            var refreshBtn = document.createElement('button');
+            refreshBtn.className = 'btn-mcp';
+            refreshBtn.textContent = 'Refresh';
+            refreshBtn.addEventListener('click', function() {
+                refreshMcpServer(rawName);
+            });
+
+            var deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn-mcp btn-mcp-danger';
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.addEventListener('click', function() {
+                deleteMcpServer(rawName);
+            });
+
+            actions.appendChild(label);
+            actions.appendChild(refreshBtn);
+            actions.appendChild(deleteBtn);
+
+            card.appendChild(left);
+            card.appendChild(actions);
+            listEl.appendChild(card);
+        });
+    }
+
+    async function loadMcpServers() {
+        var apiKey = getMcpApiKey();
+        if (!apiKey) {
+            setMcpStatus('Paste an API key first.');
+            showToast('API key required', 2200);
+            return;
+        }
+
+        setMcpStatus('Loading MCP servers...');
+
+        try {
+            var resp = await fetch(apiBaseUrl() + '/mcp/servers', {
+                headers: mcpHeaders(apiKey)
+            });
+            var data = await resp.json();
+            if (!resp.ok) {
+                setMcpStatus('Failed to load MCP servers.');
+                showToast((data.error && data.error.message) || data.detail || 'Failed to load MCP servers', 3200);
+                renderMcpServers([]);
+                return;
+            }
+
+            mcpServers = data.data || [];
+            renderMcpServers(mcpServers);
+            setMcpStatus('Loaded ' + mcpServers.length + ' MCP servers.');
+        } catch (e) {
+            setMcpStatus('Failed to load MCP servers.');
+            showToast('Error: ' + e.message, 3200);
+            renderMcpServers([]);
+        }
+    }
+
+    async function addMcpServer() {
+        var apiKey = getMcpApiKey();
+        var name = (document.getElementById('mcp-server-name').value || '').trim();
+        var url = (document.getElementById('mcp-server-url').value || '').trim();
+        var type = (document.getElementById('mcp-server-type').value || 'http').trim();
+        var headersRaw = (document.getElementById('mcp-server-headers').value || '').trim();
+
+        if (!apiKey) { showToast('API key required', 2200); return; }
+        if (!name || !url) { showToast('Server name and URL are required', 2600); return; }
+
+        var headers = undefined;
+        if (headersRaw) {
+            try {
+                headers = JSON.parse(headersRaw);
+            } catch (e) {
+                showToast('Headers JSON is invalid', 2600);
+                return;
+            }
+        }
+
+        setMcpStatus('Adding MCP server...');
+
+        try {
+            var resp = await fetch(apiBaseUrl() + '/mcp/servers', {
+                method: 'POST',
+                headers: mcpHeaders(apiKey),
+                body: JSON.stringify({
+                    name: name,
+                    url: url,
+                    type: type,
+                    headers: headers
+                })
+            });
+            var data = await resp.json();
+            if (!resp.ok) {
+                setMcpStatus('Failed to add MCP server.');
+                showToast((data.error && data.error.message) || data.detail || 'Failed to add MCP server', 3400);
+                return;
+            }
+
+            showToast('MCP server saved (' + (data.tool_count || 0) + ' tools)', 2400);
+            await loadMcpServers();
+        } catch (e) {
+            setMcpStatus('Failed to add MCP server.');
+            showToast('Error: ' + e.message, 3200);
+        }
+    }
+
+    async function refreshMcpServer(serverName) {
+        var apiKey = getMcpApiKey();
+        if (!apiKey) { showToast('API key required', 2200); return; }
+
+        setMcpStatus('Refreshing ' + serverName + '...');
+        try {
+            var resp = await fetch(apiBaseUrl() + '/mcp/servers/' + encodeURIComponent(serverName) + '/refresh', {
+                method: 'POST',
+                headers: mcpHeaders(apiKey)
+            });
+            var data = await resp.json();
+            if (!resp.ok) {
+                setMcpStatus('Refresh failed.');
+                showToast((data.error && data.error.message) || data.detail || 'Refresh failed', 3200);
+                return;
+            }
+
+            showToast('Refreshed ' + serverName + ' (' + (data.tool_count || 0) + ' tools)', 2200);
+            await loadMcpServers();
+        } catch (e) {
+            setMcpStatus('Refresh failed.');
+            showToast('Error: ' + e.message, 3000);
+        }
+    }
+
+    async function toggleMcpServer(serverName, enabled) {
+        var apiKey = getMcpApiKey();
+        if (!apiKey) { showToast('API key required', 2200); return; }
+
+        try {
+            var resp = await fetch(apiBaseUrl() + '/mcp/servers/' + encodeURIComponent(serverName), {
+                method: 'PATCH',
+                headers: mcpHeaders(apiKey),
+                body: JSON.stringify({ enabled: !!enabled })
+            });
+            var data = await resp.json();
+            if (!resp.ok) {
+                showToast((data.error && data.error.message) || data.detail || 'Update failed', 3200);
+                loadMcpServers();
+                return;
+            }
+            setMcpStatus('Updated ' + serverName + '.');
+        } catch (e) {
+            showToast('Error: ' + e.message, 3000);
+            loadMcpServers();
+        }
+    }
+
+    async function deleteMcpServer(serverName) {
+        var apiKey = getMcpApiKey();
+        if (!apiKey) { showToast('API key required', 2200); return; }
+        if (!confirm('Delete MCP server ' + serverName + '?')) return;
+
+        setMcpStatus('Deleting ' + serverName + '...');
+        try {
+            var resp = await fetch(apiBaseUrl() + '/mcp/servers/' + encodeURIComponent(serverName), {
+                method: 'DELETE',
+                headers: mcpHeaders(apiKey)
+            });
+            var data = await resp.json();
+            if (!resp.ok) {
+                setMcpStatus('Delete failed.');
+                showToast((data.error && data.error.message) || data.detail || 'Delete failed', 3200);
+                return;
+            }
+            showToast('Deleted ' + serverName, 2200);
+            await loadMcpServers();
+        } catch (e) {
+            setMcpStatus('Delete failed.');
+            showToast('Error: ' + e.message, 3000);
+        }
+    }
+
+    async function init() {
+        token = getToken();
+
+        if (!token) {
+            document.getElementById('auth-gate').style.display = 'block';
+            return;
+        }
+
+        // Verify token
+        try {
+            var resp = await fetch('/api/user/me', { headers: authHeaders() });
+            var data = await resp.json();
+            if (!data.authenticated) {
+                document.getElementById('auth-gate').style.display = 'block';
+                return;
+            }
+        } catch (e) {
+            document.getElementById('auth-gate').style.display = 'block';
+            return;
+        }
+
+        document.getElementById('main-content').style.display = 'block';
+
+        loadKeys();
+    }
+
+    async function loadKeys() {
+        var listEl = document.getElementById('keys-list');
+        var loadingEl = document.getElementById('keys-loading');
+        var emptyEl = document.getElementById('keys-empty');
+
+        loadingEl.style.display = 'block';
+        listEl.innerHTML = '';
+        emptyEl.style.display = 'none';
+
+        try {
+            var resp = await fetch('/api/user/api-keys', { headers: authHeaders() });
+            var data = await resp.json();
+            loadingEl.style.display = 'none';
+
+            if (!data.keys || data.keys.length === 0) {
+                emptyEl.style.display = 'block';
+                return;
+            }
+
+            data.keys.forEach(function(key) {
+                var card = document.createElement('div');
+                card.className = 'key-card' + (key.is_active ? '' : ' key-inactive');
+
+                var lastUsed = key.last_used_at ? timeAgo(key.last_used_at) : 'never';
+                var created = key.created_at ? key.created_at.split('T')[0] : '';
+
+                card.innerHTML =
+                    '<div class="key-info">' +
+                        '<div class="key-name">' + escapeHtml(key.name) + '</div>' +
+                        '<div class="key-meta"><span class="key-prefix">' + escapeHtml(key.key_prefix) + '</span> &middot; Created ' + created + ' &middot; Last used ' + lastUsed + '</div>' +
+                    '</div>' +
+                    '<div class="key-calls">' + (key.total_calls || 0) + ' calls</div>' +
+                    (key.is_active ? '<button class="btn-revoke" onclick="revokeKey(' + key.id + ', this)">Revoke</button>' : '');
+
+                listEl.appendChild(card);
+            });
+        } catch (e) {
+            loadingEl.style.display = 'none';
+            listEl.innerHTML = '<div class="empty-state">Failed to load keys: ' + e.message + '</div>';
+        }
+    }
+
+    async function createKey() {
+        var nameInput = document.getElementById('key-name');
+        var btn = document.getElementById('create-btn');
+        var name = nameInput.value.trim() || 'API Key';
+
+        btn.disabled = true;
+        btn.textContent = 'Creating...';
+
+        try {
+            var resp = await fetch('/api/user/api-keys', {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({ name: name })
+            });
+
+            var data = await resp.json();
+
+            if (!resp.ok) {
+                showToast(data.error || 'Failed to create key', 3000);
+                return;
+            }
+
+            // Show the key
+            document.getElementById('new-key-value').textContent = data.key;
+            document.getElementById('new-key-display').style.display = 'block';
+            nameInput.value = '';
+
+            // Prime MCP manager with freshly created key
+            setMcpApiKey(data.key);
+
+            // Refresh the list
+            loadKeys();
+        } catch (e) {
+            showToast('Error: ' + e.message, 3000);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Create Key';
+        }
+    }
+
+    async function revokeKey(keyId, btn) {
+        if (!confirm('Revoke this API key? Any applications using it will stop working.')) return;
+
+        btn.disabled = true;
+        btn.textContent = '...';
+
+        try {
+            var resp = await fetch('/api/user/api-keys/' + keyId, {
+                method: 'DELETE',
+                headers: authHeaders()
+            });
+
+            if (resp.ok) {
+                showToast('Key revoked');
+                loadKeys();
+            } else {
+                var data = await resp.json();
+                showToast(data.error || 'Failed to revoke', 3000);
+            }
+        } catch (e) {
+            showToast('Error: ' + e.message, 3000);
+        }
+    }
+
+    function copyKey() {
+        var key = document.getElementById('new-key-value').textContent;
+        navigator.clipboard.writeText(key);
+        showToast('Copied to clipboard');
+    }
+
+    function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function timeAgo(isoStr) {
+        var now = new Date();
+        var then = new Date(isoStr);
+        var diff = Math.floor((now - then) / 1000);
+        if (diff < 60) return 'just now';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+        if (diff < 2592000) return Math.floor(diff / 86400) + 'd ago';
+        return then.toISOString().split('T')[0];
+    }
+
+    // Handle Enter key in name input
+    document.addEventListener('DOMContentLoaded', function() {
+        var input = document.getElementById('key-name');
+        if (input) {
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') createKey();
+            });
+        }
+        init();
+    });
+    </script>
+</body>
+</html>

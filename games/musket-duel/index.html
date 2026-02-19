@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Musket Duel - A Gentleman's Game of Honor</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #1a1612;
+      color: #c9a55a;
+      font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #game-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 4px solid #3a2a1a;
+      border-radius: 8px;
+      box-shadow:
+        0 0 20px rgba(0, 0, 0, 0.5),
+        inset 0 0 60px rgba(0, 0, 0, 0.3);
+      background: #0a0806;
+      padding: 10px;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    #ui-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+
+    #game-canvas {
+      cursor: crosshair;
+    }
+
+    #game-canvas:active {
+      cursor: none;
+    }
+
+    .header {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      color: #c9a55a;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      letter-spacing: 0.2em;
+    }
+
+    .header p {
+      color: #8a7a5a;
+      font-style: italic;
+      margin-top: 5px;
+    }
+
+    .footer {
+      margin-top: 20px;
+      text-align: center;
+      color: #5a4a3a;
+      font-size: 0.9rem;
+    }
+
+    .controls {
+      display: flex;
+      gap: 20px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .control-group {
+      background: rgba(58, 42, 26, 0.5);
+      padding: 10px 15px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    .control-group strong {
+      color: #c9a55a;
+    }
+
+    .control-group span {
+      color: #8a7a5a;
+    }
+
+    /* Loading screen */
+    #loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #1a1612;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      transition: opacity 0.5s ease;
+    }
+
+    #loading.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .loading-text {
+      font-size: 1.5rem;
+      color: #c9a55a;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    /* Decorative elements */
+    .ornament {
+      width: 200px;
+      height: 20px;
+      margin: 10px auto;
+      background: linear-gradient(90deg,
+        transparent,
+        #3a2a1a 20%,
+        #c9a55a 50%,
+        #3a2a1a 80%,
+        transparent
+      );
+      mask: linear-gradient(90deg,
+        transparent 0%,
+        white 10%,
+        white 90%,
+        transparent 100%
+      );
+      -webkit-mask: linear-gradient(90deg,
+        transparent 0%,
+        white 10%,
+        white 90%,
+        transparent 100%
+      );
+    }
+  </style>
+  <script type="module" crossorigin src="./assets/index-Be1x309M.js"></script>
+</head>
+<body>
+  <div id="loading">
+    <div class="loading-text">Preparing the dueling grounds...</div>
+    <div class="ornament"></div>
+  </div>
+
+  <div class="header">
+    <h1>MUSKET DUEL</h1>
+    <p>A Gentleman's Game of Honor</p>
+    <div class="ornament"></div>
+  </div>
+
+  <div id="game-container">
+    <div class="canvas-wrapper">
+      <canvas id="game-canvas" width="800" height="600"></canvas>
+      <canvas id="ui-canvas" width="800" height="600"></canvas>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="controls">
+      <div class="control-group">
+        <strong>WASD</strong> <span>Move</span>
+      </div>
+      <div class="control-group">
+        <strong>Mouse</strong> <span>Aim</span>
+      </div>
+      <div class="control-group">
+        <strong>LMB</strong> <span>Fire</span>
+      </div>
+      <div class="control-group">
+        <strong>RMB</strong> <span>Aim Down Sights</span>
+      </div>
+      <div class="control-group">
+        <strong>R</strong> <span>Reload</span>
+      </div>
+      <div class="control-group">
+        <strong>B</strong> <span>Fix Bayonet</span>
+      </div>
+      <div class="control-group">
+        <strong>Shift</strong> <span>Sprint</span>
+      </div>
+    </div>
+    <p style="margin-top: 15px;">Click to capture mouse • ESC to release</p>
+    <div class="ornament"></div>
+    <p style="margin-top: 10px; font-size: 0.8rem;">© 2024 Rhodes Games</p>
+  </div>
+
+  <script>
+    // Hide loading screen when game is ready
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.getElementById('loading').classList.add('hidden');
+      }, 500);
+    });
+  </script>
+</body>
+</html>

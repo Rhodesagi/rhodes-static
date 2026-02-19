@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchestration Monitor - Rhodes AI</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #0d1117; color: #c9d1d9; padding: 20px;
+        }
+        h1 { color: #58a6ff; margin-bottom: 20px; }
+        h2 { color: #8b949e; margin: 20px 0 10px; font-size: 1.2em; }
+        .status-bar {
+            background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+            padding: 15px; margin-bottom: 20px; display: flex; gap: 30px;
+        }
+        .status-item { text-align: center; }
+        .status-value { font-size: 2em; font-weight: bold; color: #58a6ff; }
+        .status-label { color: #8b949e; font-size: 0.9em; }
+        .panel {
+            background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+            padding: 15px; margin-bottom: 20px;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #30363d; }
+        th { color: #8b949e; font-weight: 500; }
+        tr:hover { background: #1f2428; }
+        .status-running { color: #3fb950; }
+        .status-completed { color: #58a6ff; }
+        .status-failed { color: #f85149; }
+        .status-paused { color: #d29922; }
+        .btn {
+            background: #238636; color: white; border: none; padding: 8px 16px;
+            border-radius: 6px; cursor: pointer; font-size: 0.9em;
+        }
+        .btn:hover { background: #2ea043; }
+        .btn-danger { background: #da3633; }
+        .btn-danger:hover { background: #f85149; }
+        .btn-secondary { background: #30363d; }
+        .btn-secondary:hover { background: #484f58; }
+        .actions { display: flex; gap: 8px; }
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); justify-content: center; align-items: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+            padding: 20px; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto;
+        }
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
+        .modal-close { background: none; border: none; color: #8b949e; font-size: 1.5em; cursor: pointer; }
+        pre { background: #0d1117; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 0.85em; }
+        .test-panel { margin-top: 20px; }
+        .test-panel input, .test-panel select {
+            background: #0d1117; border: 1px solid #30363d; color: #c9d1d9;
+            padding: 8px 12px; border-radius: 6px; margin-right: 10px;
+        }
+        .test-panel input { width: 400px; }
+        .refresh-btn { position: fixed; top: 20px; right: 20px; }
+        .empty { color: #8b949e; text-align: center; padding: 40px; }
+    </style>
+</head>
+<body>
+    <h1>Orchestration Monitor</h1>
+    
+    <button class="btn refresh-btn" onclick="refresh()">Refresh</button>
+    
+    <div class="status-bar" id="status-bar">
+        <div class="status-item">
+            <div class="status-value" id="status-state">-</div>
+            <div class="status-label">Status</div>
+        </div>
+        <div class="status-item">
+            <div class="status-value" id="subagent-count">0</div>
+            <div class="status-label">Active Subagents</div>
+        </div>
+        <div class="status-item">
+            <div class="status-value" id="fork-count">0</div>
+            <div class="status-label">Active Forks</div>
+        </div>
+        <div class="status-item">
+            <div class="status-value" id="providers">-</div>
+            <div class="status-label">Providers</div>
+        </div>
+    </div>
+    
+    <h2>Active Subagents</h2>
+    <div class="panel">
+        <table id="subagents-table">
+            <thead><tr><th>ID</th><th>Provider</th><th>Status</th><th>Duration</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    
+    <h2>Active Forks</h2>
+    <div class="panel">
+        <table id="forks-table">
+            <thead><tr><th>ID</th><th>Status</th><th>Turn</th><th>Pending</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    
+    <h2>Test Spawn</h2>
+    <div class="panel test-panel">
+        <input type="text" id="test-task" placeholder="Enter task..." value="Say hello briefly">
+        <select id="test-provider">
+            <option value="deepseek">DeepSeek (Delta)</option>
+            <option value="claude">Claude</option>
+        </select>
+        <button class="btn" onclick="testSpawn()">Spawn Test Agent</button>
+        <pre id="test-result" style="margin-top:15px;display:none;"></pre>
+    </div>
+    
+    <div class="modal" id="detail-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Details</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <pre id="modal-content"></pre>
+        </div>
+    </div>
+
+<script>
+const API = "/api/admin/orchestration";
+const token = localStorage.getItem("rhodes_admin_token") || localStorage.getItem("rhodes_token");
+const headers = token ? {"Authorization": `Bearer ${token}`} : {};
+
+async function api(path, method="GET", body=null) {
+    const opts = { method, headers: {...headers, "Content-Type": "application/json"} };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(API + path, opts);
+    return res.json();
+}
+
+async function refresh() {
+    // Status
+    const status = await api("/status");
+    document.getElementById("status-state").textContent = status.status || "unknown";
+    document.getElementById("subagent-count").textContent = status.subagents?.active || 0;
+    document.getElementById("fork-count").textContent = status.forks?.active || 0;
+    document.getElementById("providers").textContent = (status.providers || []).join(", ") || "-";
+    
+    // Subagents
+    const subagents = await api("/subagents");
+    const stbody = document.querySelector("#subagents-table tbody");
+    stbody.innerHTML = "";
+    const allSubagents = [...(subagents.active||[]), ...(subagents.recent||[]).slice(0,10)];
+    if (allSubagents.length === 0) {
+        stbody.innerHTML = "<tr><td colspan=\"5\" class=\"empty\">No subagents</td></tr>";
+    } else {
+        allSubagents.forEach(s => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td title="${s.agent_id}">${s.agent_id?.slice(0,8)}...</td>
+                <td>${s.provider || "-"}</td>
+                <td class="status-${s.status}">${s.status}</td>
+                <td>${s.duration_ms ? s.duration_ms + "ms" : "-"}</td>
+                <td class="actions">
+                    <button class="btn btn-secondary" onclick="viewSubagent('${s.agent_id}')">View</button>
+                    ${s.status==="running" ? `<button class="btn btn-danger" onclick="cancelSubagent('${s.agent_id}')">Cancel</button>` : ""}
+                </td>
+            `;
+            stbody.appendChild(row);
+        });
+    }
+    
+    // Forks
+    const forks = await api("/forks");
+    const ftbody = document.querySelector("#forks-table tbody");
+    ftbody.innerHTML = "";
+    const allForks = [...(forks.active||[]), ...(forks.recent||[]).slice(0,10)];
+    if (allForks.length === 0) {
+        ftbody.innerHTML = "<tr><td colspan=\"5\" class=\"empty\">No forks</td></tr>";
+    } else {
+        allForks.forEach(f => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td title="${f.fork_id}">${f.fork_id?.slice(0,8)}...</td>
+                <td class="status-${f.status}">${f.status}</td>
+                <td>${f.current_turn || 0}</td>
+                <td>${f.pending_approval ? "Yes" : "-"}</td>
+                <td class="actions">
+                    <button class="btn btn-secondary" onclick="viewFork('${f.fork_id}')">View</button>
+                    ${f.pending_approval ? `<button class="btn" onclick="forkAction('${f.fork_id}','approve')">Approve</button>` : ""}
+                    ${f.status==="running"||f.status==="paused" ? `<button class="btn btn-danger" onclick="forkAction('${f.fork_id}','terminate')">Terminate</button>` : ""}
+                </td>
+            `;
+            ftbody.appendChild(row);
+        });
+    }
+}
+
+async function viewSubagent(id) {
+    const data = await api(`/subagents/${id}`);
+    document.getElementById("modal-title").textContent = `Subagent ${id.slice(0,8)}...`;
+    document.getElementById("modal-content").textContent = JSON.stringify(data, null, 2);
+    document.getElementById("detail-modal").classList.add("active");
+}
+
+async function cancelSubagent(id) {
+    if (confirm("Cancel this subagent?")) {
+        await api(`/subagents/${id}/cancel`, "POST");
+        refresh();
+    }
+}
+
+async function viewFork(id) {
+    const data = await api(`/forks/${id}`);
+    document.getElementById("modal-title").textContent = `Fork ${id.slice(0,8)}...`;
+    document.getElementById("modal-content").textContent = JSON.stringify(data, null, 2);
+    document.getElementById("detail-modal").classList.add("active");
+}
+
+async function forkAction(id, action) {
+    const msg = action === "terminate" ? prompt("Reason (optional):") : "";
+    await api(`/forks/${id}/action`, "POST", {action, message: msg || ""});
+    refresh();
+}
+
+function closeModal() {
+    document.getElementById("detail-modal").classList.remove("active");
+}
+
+async function testSpawn() {
+    const task = document.getElementById("test-task").value;
+    const provider = document.getElementById("test-provider").value;
+    const resultEl = document.getElementById("test-result");
+    resultEl.style.display = "block";
+    resultEl.textContent = "Spawning...";
+    
+    try {
+        const data = await api("/test/spawn", "POST", {task, provider, blocking: true});
+        resultEl.textContent = JSON.stringify(data, null, 2);
+        refresh();
+    } catch (e) {
+        resultEl.textContent = "Error: " + e.message;
+    }
+}
+
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+refresh();
+setInterval(refresh, 10000);
+</script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rhodes - Oneline 2</title>
+<style>
+body {
+    background: #000;
+    color: #0f0;
+    font-family: 'Courier New', monospace;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+.container {
+    max-width: 800px;
+    width: 100%;
+    border: 2px solid #0f0;
+    padding: 20px;
+    background: #111;
+}
+.header {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #0f0;
+    font-size: 12px;
+    line-height: 1.2;
+}
+#chat {
+    margin-bottom: 20px;
+}
+.message {
+    margin: 10px 0;
+    padding: 5px;
+    border-left: 2px solid #0a0;
+}
+.user {
+    color: #0af;
+}
+.rhodes {
+    color: #0f0;
+}
+#input-container {
+    display: flex;
+    gap: 10px;
+}
+#input {
+    flex: 1;
+    background: #222;
+    color: #0f0;
+    border: 1px solid #444;
+    padding: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+}
+#input:focus {
+    outline: none;
+    border-color: #0f0;
+}
+button {
+    background: #222;
+    color: #0f0;
+    border: 1px solid #444;
+    padding: 10px 15px;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+}
+button:hover {
+    background: #333;
+    border-color: #0f0;
+}
+#status {
+    color: #888;
+    font-size: 12px;
+    margin-top: 10px;
+    text-align: center;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+<pre>
+██████╗ ██╗  ██╗ ██████╗ ██████╗ ███████╗███████╗    █████╗  ██████╗ ██╗
+██╔══██╗██║  ██║██╔═══██╗██╔══██╗██╔════╝██╔════╝   ██╔══██╗██╔════╝ ██║
+██████╔╝███████║██║   ██║██║  ██║█████╗  ███████╗   ███████║██║  ███╗██║
+██╔══██╗██╔══██║██║   ██║██║  ██║██╔══╝  ╚════██║   ██╔══██║██║   ██║██║
+██║  ██║██║  ██║╚██████╔╝██████╔╝███████╗███████║██╗██║  ██║╚██████╔╝██║
+╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝╚══════╝╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝
+</pre>
+    </div>
+    
+    <div id="chat">
+        <div id="messages"></div>
+    </div>
+    
+    <div id="input-container">
+        <input type="text" id="input" placeholder="Type message and press Enter...">
+        <button onclick="sendMessage()">Send</button>
+        <button onclick="clearChat()">Clear</button>
+    </div>
+    
+    <div id="status">Ready</div>
+</div>
+
+<script>
+const input = document.getElementById('input');
+const messages = document.getElementById('messages');
+const status = document.getElementById('status');
+
+// Auto-focus input
+input.focus();
+
+async function sendMessage() {
+    const text = input.value.trim();
+    if (!text) return;
+    
+    // Add user message
+    addMessage('user', text);
+    input.value = '';
+    status.textContent = 'Thinking...';
+    
+    try {
+        // Send to Rhodes API
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ message: text })
+        });
+        
+        const data = await response.json();
+        addMessage('rhodes', data.response || data.error);
+        status.textContent = 'Ready';
+    } catch (error) {
+        addMessage('Rhodes', 'Error: ' + error.message);
+        status.textContent = 'Error';
+    }
+    
+    // Refocus input
+    input.focus();
+}
+
+function addMessage(sender, text) {
+    const div = document.createElement('div');
+    div.className = 'message ' + sender;
+    div.innerHTML = `<strong>${sender}:</strong> ${text}`;
+    messages.appendChild(div);
+    div.scrollIntoView();
+}
+
+function clearChat() {
+    messages.innerHTML = '';
+    status.textContent = 'Chat cleared';
+}
+
+// Enter key to send
+input.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    // Ctrl+L to clear chat
+    if (e.ctrlKey && e.key === 'l') {
+        e.preventDefault();
+        clearChat();
+    }
+    // Escape to clear input
+    if (e.key === 'Escape') {
+        input.value = '';
+    }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greatest Musket Three</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #111; 
+            overflow: hidden; 
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+        }
+        #gameContainer { 
+            display: flex; 
+            width: 100vw; 
+            height: 100vh; 
+        }
+        .viewport {
+            width: 50%;
+            height: 100%;
+            position: relative;
+            border: 2px solid #333;
+        }
+        #p1View { border-right: 1px solid #333; }
+        #p2View { border-left: 1px solid #333; }
+        canvas { display: block; width: 100%; height: 100%; }
+        
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 10px 20px;
+            border: 1px solid #0f0;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 100;
+        }
+        
+        .control-col {
+            display: inline-block;
+            vertical-align: top;
+            width: 200px;
+            padding: 0 15px;
+        }
+        
+        .key {
+            display: inline-block;
+            background: #222;
+            border: 1px solid #444;
+            padding: 2px 6px;
+            margin: 2px;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+        
+        #instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            padding: 15px;
+            border: 1px solid #0f0;
+            text-align: center;
+            z-index: 100;
+        }
+        
+        .sight {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .sight.active { opacity: 1; }
+        
+        .rearSight {
+            width: 40px;
+            height: 4px;
+            background: #000;
+            border: 1px solid #333;
+        }
+        
+        .frontSight {
+            width: 4px;
+            height: 20px;
+            background: #000;
+            border: 1px solid #444;
+            margin: 0 auto;
+        }
+        
+        .reloadBar {
+            position: absolute;
+            bottom: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 10px;
+            background: #222;
+            border: 1px solid #0f0;
+            opacity: 0;
+        }
+        
+        .reloadBar.active { opacity: 1; }
+        
+        .reloadProgress {
+            height: 100%;
+            background: #0f0;
+            width: 0%;
+        }
+        
+        .reloadStage {
+            position: absolute;
+            bottom: calc(20% + 15px);
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: #0f0;
+            opacity: 0;
+        }
+        
+        .reloadStage.active { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <h3>GREATEST MUSKET THREE</h3>
+        <div class="control-col">
+            <h4>Player 1 (Left)</h4>
+            <span class="key">WASD</span> Move<br>
+            <span class="key">Mouse</span> Look<br>
+            <span class="key">X</span> Aim<br>
+            <span class="key">Q/E</span> Rotate Musket<br>
+            <span class="key">F</span> Fire<br>
+            <span class="key">R</span> Reload
+        </div>
+        <div class="control-col">
+            <h4>Player 2 (Right)</h4>
+            <span class="key">IJKL</span> Move<br>
+            <span class="key">Arrows</span> Look<br>
+            <span class="key">Shift</span> Aim<br>
+            <span class="key">U/O</span> Rotate Musket<br>
+            <span class="key">Enter</span> Fire<br>
+            <span class="key">Backspace</span> Reload
+        </div>
+    </div>
+    
+    <div id="gameContainer">
+        <div id="p1View" class="viewport">
+            <div id="p1Sight" class="sight"><div class="rearSight"></div><div class="frontSight"></div></div>
+            <div id="p1ReloadStage" class="reloadStage"></div>
+            <div id="p1ReloadBar" class="reloadBar"><div id="p1ReloadProgress" class="reloadProgress"></div></div>
+        </div>
+        <div id="p2View" class="viewport">
+            <div id="p2Sight" class="sight"><div class="rearSight"></div><div class="frontSight"></div></div>
+            <div id="p2ReloadStage" class="reloadStage"></div>
+            <div id="p2ReloadBar" class="reloadBar"><div id="p2ReloadProgress" class="reloadProgress"></div></div>
+        </div>
+    </div>
+    
+    <div id="instructions">Click to START | Iron sights ONLY | Full flintlock reload sequence required</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const RELOAD_STAGES = [
+            { name: 'PRIMING PAN', time: 1000 },
+            { name: 'LOADING POWDER', time: 1200 },
+            { name: 'PATCHING BALL', time: 1500 },
+            { name: 'RAMMING', time: 2000 },
+            { name: 'COCKING HAMMER', time: 800 }
+        ];
+        
+        const MUSKET_RANGE = 200, MUSKET_DAMAGE = 100, MOVE_SPEED = 5, LOOK_SPEED = 0.002;
+        
+        class Player {
+            constructor(id, startPos, viewElement) {
+                this.id = id;
+                this.position = startPos.clone();
+                this.lookAngles = { x: 0, y: id === 1 ? 0 : Math.PI };
+                this.isAiming = false;
+                this.isReloading = false;
+                this.isLoaded = true;
+                this.isCocked = true;
+                this.panPrimed = false;
+                this.musketRotation = 0;
+                this.reloadProgress = 0;
+                this.reloadStageIndex = 0;
+                this.health = 100;
+                this.viewElement = viewElement;
+                this.sightElement = document.getElementById('p' + id + 'Sight');
+                this.reloadBar = document.getElementById('p' + id + 'ReloadBar');
+                this.reloadProgressEl = document.getElementById('p' + id + 'ReloadProgress');
+                this.reloadStageEl = document.getElementById('p' + id + 'ReloadStage');
+                this.keys = {};
+                this.mouseDelta = { x: 0, y: 0 };
+                
+                this.camera = new THREE.PerspectiveCamera(75, 0.5, 0.1, 1000);
+                this.camera.position.copy(this.position);
+                
+                const musketGroup = new THREE.Group();
+                const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 1.2, 8), new THREE.MeshLambertMaterial({color: 0x333333}));
+                barrel.rotation.x = Math.PI / 2; barrel.position.z = 0.4;
+                const stock = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 0.8), new THREE.MeshLambertMaterial({color: 0x4a3728}));
+                stock.position.set(0, -0.08, -0.2);
+                const rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, 0.01), new THREE.MeshLambertMaterial({color: 0x111111}));
+                rearSight.position.set(0, 0.05, -0.1);
+                const frontSight = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.06, 0.01), new THREE.MeshLambertMaterial({color: 0x111111}));
+                frontSight.position.set(0, 0.08, 0.9);
+                musketGroup.add(barrel, stock, rearSight, frontSight);
+                this.musket = musketGroup;
+                this.musket.visible = false;
+                this.camera.add(musketGroup);
+                this.rearSightPos = new THREE.Vector3(0, 0.05, -0.1);
+                this.frontSightPos = new THREE.Vector3(0, 0.08, 0.9);
+            }
+            
+            update(deltaTime, worldObjects, otherPlayer) {
+                this.handleInput(deltaTime);
+                this.updateReload(deltaTime);
+                this.updateMusket();
+                this.position.x = Math.max(-48, Math.min(48, this.position.x));
+                this.position.z = Math.max(-48, Math.min(48, this.position.z));
+            }
+            
+            handleInput(deltaTime) {
+                const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
+                forward.y = 0; forward.normalize();
+                const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.camera.quaternion);
+                right.y = 0; right.normalize();
+                
+                let moveVec = new THREE.Vector3();
+                if (this.id === 1) {
+                    if (this.keys['w']) moveVec.add(forward);
+                    if (this.keys['s']) moveVec.sub(forward);
+                    if (this.keys['a']) moveVec.sub(right);
+                    if (this.keys['d']) moveVec.add(right);
+                    this.lookAngles.y -= this.mouseDelta.x * LOOK_SPEED;
+                    this.lookAngles.x -= this.mouseDelta.y * LOOK_SPEED;
+                    this.mouseDelta.x = 0; this.mouseDelta.y = 0;
+                } else {
+                    if (this.keys['i'] || this.keys['arrowup']) moveVec.add(forward);
+                    if (this.keys['k'] || this.keys['arrowdown']) moveVec.sub(forward);
+                    if (this.keys['j'] || this.keys['arrowleft']) moveVec.sub(right);
+                    if (this.keys['l'] || this.keys['arrowright']) moveVec.add(right);
+                    const lookSpeed = 2 * deltaTime;
+                    if (this.keys['arrowleft']) this.lookAngles.y += lookSpeed;
+                    if (this.keys['arrowright']) this.lookAngles.y -= lookSpeed;
+                    if (this.keys['arrowup']) this.lookAngles.x += lookSpeed;
+                    if (this.keys['arrowdown']) this.lookAngles.x -= lookSpeed;
+                }
+                
+                moveVec.normalize().multiplyScalar(MOVE_SPEED * deltaTime);
+                this.position.add(moveVec);
+                this.lookAngles.x = Math.max(-Math.PI/2.5, Math.min(Math.PI/2.5, this.lookAngles.x));
+                this.camera.position.copy(this.position);
+                this.camera.rotation.order = 'YXZ';
+                this.camera.rotation.y = this.lookAngles.y;
+                this.camera.rotation.x = this.lookAngles.x;
+                
+                if (!this.isReloading) {
+                    let rotInput = 0;
+                    if (this.id === 1) { if (this.keys['q']) rotInput = -1; if (this.keys['e']) rotInput = 1; }
+                    else { if (this.keys['u']) rotInput = -1; if (this.keys['o']) rotInput = 1; }
+                    if (rotInput !== 0) {
+                        this.musketRotation += rotInput * 30 * deltaTime;
+                        this.musketRotation = Math.max(-15, Math.min(15, this.musketRotation));
+                    }
+                }
+            }
+            
+            updateMusket() {
+                if (this.isAiming) {
+                    this.musket.visible = true;
+                    this.musket.position.set(0.15, -0.15, 0.3);
+                    this.musket.rotation.set(0, 0, THREE.MathUtils.degToRad(this.musketRotation));
+                    this.sightElement.classList.add('active');
+                } else {
+                    this.musket.visible = false;
+                    this.sightElement.classList.remove('active');
+                    this.musketRotation = 0;
+                }
+            }
+            
+            updateReload(deltaTime) {
+                if (!this.isReloading) return;
+                const stage = RELOAD_STAGES[this.reloadStageIndex];
+                this.reloadProgress += deltaTime * 1000;
+                this.reloadProgressEl.style.width = Math.min((this.reloadProgress / stage.time) * 100, 100) + '%';
+                this.reloadStageEl.textContent = stage.name;
+                this.reloadStageEl.classList.add('active');
+                if (this.reloadProgress >= stage.time) this.completeReloadStage();
+            }
+            
+            completeReloadStage() {
+                switch(this.reloadStageIndex) { case 0: this.panPrimed = true; break; case 3: this.isLoaded = true; break; case 4: this.isCocked = true; this.isReloading = false; break; }
+                this.reloadStageIndex++;
+                this.reloadProgress = 0;
+                if (this.reloadStageIndex >= RELOAD_STAGES.length) this.finishReload();
+            }
+            
+            finishReload() {
+                this.isReloading = false;
+                this.reloadStageIndex = 0;
+                this.reloadBar.classList.remove('active');
+                this.reloadStageEl.classList.remove('active');
+            }
+            
+            toggleAim() { if (!this.isReloading) this.isAiming = !this.isAiming; }
+            
+            fire(worldObjects, otherPlayer) {
+                if (this.isReloading || !this.isAiming || !this.isLoaded || !this.isCocked || !this.panPrimed) return;
+                const rearWorld = this.rearSightPos.clone().applyMatrix4(this.musket.matrixWorld);
+                const frontWorld = this.frontSightPos.clone().applyMatrix4(this.musket.matrixWorld);
+                let direction = frontWorld.clone().sub(rearWorld).normalize();
+                if (this.musketRotation !== 0) direction.applyAxisAngle(new THREE.Vector3(0, 0, 1), THREE.MathUtils.degToRad(this.musketRotation));
+                const raycaster = new THREE.Raycaster(frontWorld, direction, 0, MUSKET_RANGE);
+                const hitObjects = worldObjects.filter(obj => obj !== this.collider);
+                const intersects = raycaster.intersectObjects(hitObjects, true);
+                if (intersects.length > 0) {
+                    let target = intersects[0].object;
+                    while (target && !target.userData.player && target.parent) target = target.parent;
+                    if (target && target.userData && target.userData.player) target.userData.player.takeDamage(MUSKET_DAMAGE, this);
+                }
+                this.createMuzzleFlash();
+                this.isLoaded = false; this.isCocked = false; this.panPrimed = false;
+            }
+            
+            startReload() {
+                if (this.isReloading || this.isLoaded) return;
+                if (this.isAiming) this.toggleAim();
+                this.isReloading = true; this.reloadStageIndex = 0; this.reloadProgress = 0; this.panPrimed = false;
+                this.reloadBar.classList.add('active');
+            }
+            
+            takeDamage(damage, attacker) {
+                this.health -= damage;
+                if (this.health <= 0) this.respawn(attacker);
+            }
+            
+            respawn(killer) {
+                this.health = 100; this.isLoaded = true; this.isCocked = true; this.panPrimed = false; this.isReloading = false;
+                const angle = Math.random() * Math.PI * 2;
+                this.position.set(Math.cos(angle) * 20, 1.6, Math.sin(angle) * 20);
+                this.lookAngles.y = angle + Math.PI;
+            }
+            
+            createMuzzleFlash() {
+                const flash = document.createElement('div');
+                flash.style.cssText = 'position:absolute;width:150px;height:150px;background:radial-gradient(circle,#ffaa00 0%,#ff4400 30%,transparent 70%);border-radius:50%;pointer-events:none;top:50%;left:50%;transform:translate(-50%,-50%);opacity:0.9;z-index:50;';
+                this.viewElement.appendChild(flash);
+                setTimeout(() => flash.remove(), 80);
+            }
+            
+            onKeyDown(key) {
+                this.keys[key.toLowerCase()] = true;
+                if (this.id === 1) { if (key === 'x') this.toggleAim(); if (key === 'f') return 'fire'; if (key === 'r') this.startReload(); }
+                else { if (key === 'shift') this.toggleAim(); if (key === 'enter') return 'fire'; if (key === 'backspace') this.startReload(); }
+                return null;
+            }
+            
+            onKeyUp(key) { this.keys[key.toLowerCase()] = false; }
+            onMouseMove(x, y) { if (this.id === 1) { this.mouseDelta.x += x; this.mouseDelta.y += y; } }
+        }
+        
+        class GameWorld {
+            constructor() {
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0x1a1a2e);
+                this.scene.fog = new THREE.Fog(0x1a1a2e, 10, 100);
+                this.worldObjects = [];
+                this.setupLighting();
+                this.createArena();
+                this.player1 = new Player(1, new THREE.Vector3(-10, 1.6, 0), document.getElementById('p1View'));
+                this.player2 = new Player(2, new THREE.Vector3(10, 1.6, 0), document.getElementById('p2View'));
+                this.players = [this.player1, this.player2];
+                this.setupPlayerColliders();
+                this.setupInput();
+                this.setupRenderers();
+                this.lastTime = performance.now();
+                this.animate();
+            }
+            
+            setupLighting() {
+                this.scene.add(new THREE.AmbientLight(0x404040, 0.5));
+                const moon = new THREE.DirectionalLight(0x6688ff, 0.5);
+                moon.position.set(50, 100, 50);
+                this.scene.add(moon);
+                [[-20,5,-20],[20,5,-20],[-20,5,20],[20,5,20]].forEach(pos => {
+                    const light = new THREE.PointLight(0xff6600, 0.8, 30);
+                    light.position.set(pos[0], pos[1], pos[2]);
+                    this.scene.add(light);
+                });
+            }
+            
+            createArena() {
+                const ground = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshLambertMaterial({color: 0x2d4a22}));
+                ground.rotation.x = -Math.PI / 2;
+                this.scene.add(ground);
+                this.worldObjects.push(ground);
+                const wallMat = new THREE.MeshLambertMaterial({color: 0x4a4a4a});
+                [[0,0,4,2,4],[-15,-15,3,1.5,3],[15,-15,3,1.5,3],[-15,15,3,1.5,3],[15,15,3,1.5,3],[0,-25,10,2,2],[0,25,10,2,2]].forEach(pos => {
+                    const mesh = new THREE.Mesh(new THREE.BoxGeometry(pos[2], pos[3], pos[4]), wallMat);
+                    mesh.position.set(pos[0], pos[3]/2, pos[1]);
+                    this.scene.add(mesh);
+                    this.worldObjects.push(mesh);
+                });
+                for (let i = 0; i < 10; i++) {
+                    const angle = (i / 10) * Math.PI * 2, radius = 35 + Math.random() * 10;
+                    this.createTree(Math.cos(angle) * radius, Math.sin(angle) * radius);
+                }
+            }
+            
+            createTree(x, z) {
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 3, 6), new THREE.MeshLambertMaterial({color: 0x3d2817}));
+                trunk.position.set(x, 1.5, z);
+                const leaves = new THREE.Mesh(new THREE.ConeGeometry(2, 5, 8), new THREE.MeshLambertMaterial({color: 0x1a3d1a}));
+                leaves.position.set(0, 3, 0);
+                trunk.add(leaves);
+                this.scene.add(trunk);
+                this.worldObjects.push(trunk);
+            }
+            
+            setupPlayerColliders() {
+                this.players.forEach(player => {
+                    const collider = new THREE.Mesh(new THREE.CapsuleGeometry(0.3, 1.4, 4, 8), new THREE.MeshBasicMaterial({visible: false}));
+                    collider.userData.player = player;
+                    player.collider = collider;
+                    this.scene.add(collider);
+                    this.worldObjects.push(collider);
+                });
+            }
+            
+            setupInput() {
+                document.addEventListener('keydown', (e) => {
+                    const key = e.key.toLowerCase();
+                    if (this.player1.onKeyDown(key) === 'fire') this.player1.fire(this.worldObjects, this.player2);
+                    if (this.player2.onKeyDown(key) === 'fire') this.player2.fire(this.worldObjects, this.player1);
+                });
+                document.addEventListener('keyup', (e) => {
+                    const key = e.key.toLowerCase();
+                    this.player1.onKeyUp(key);
+                    this.player2.onKeyUp(key);
+                });
+                document.addEventListener('mousemove', (e) => {
+                    if (document.pointerLockElement) this.player1.onMouseMove(e.movementX, e.movementY);
+                });
+                document.addEventListener('click', () => {
+                    document.body.requestPointerLock();
+                    document.getElementById('instructions').style.display = 'none';
+                });
+            }
+            
+            setupRenderers() {
+                this.renderer1 = new THREE.WebGLRenderer({antialias: true});
+                this.renderer1.setSize(window.innerWidth / 2, window.innerHeight);
+                document.getElementById('p1View').appendChild(this.renderer1.domElement);
+                this.renderer2 = new THREE.WebGLRenderer({antialias: true});
+                this.renderer2.setSize(window.innerWidth / 2, window.innerHeight);
+                document.getElementById('p2View').appendChild(this.renderer2.domElement);
+                window.addEventListener('resize', () => {
+                    this.renderer1.setSize(window.innerWidth / 2, window.innerHeight);
+                    this.renderer2.setSize(window.innerWidth / 2, window.innerHeight);
+                    this.player1.camera.aspect = (window.innerWidth / 2) / window.innerHeight;
+                    this.player1.camera.updateProjectionMatrix();
+                    this.player2.camera.aspect = (window.innerWidth / 2) / window.innerHeight;
+                    this.player2.camera.updateProjectionMatrix();
+                });
+            }
+            
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                const now = performance.now();
+                const deltaTime = Math.min((now - this.lastTime) / 1000, 0.1);
+                this.lastTime = now;
+                this.player1.update(deltaTime, this.worldObjects, this.player2);
+                this.player2.update(deltaTime, this.worldObjects, this.player1);
+                this.players.forEach(player => {
+                    if (player.collider) { player.collider.position.copy(player.position); player.collider.position.y -= 0.2; }
+                });
+                this.renderer1.render(this.scene, this.player1.camera);
+                this.renderer2.render(this.scene, this.player2.camera);
+            }
+        }
+        
+        window.onload = () => new GameWorld();
+    </script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#0b1220" />
+    <title>RHODES AI — Admin Sessions</title>
+    <link rel="icon" href="/rhodes-icon.svg" type="image/svg+xml" />
+    <style>
+      :root{
+        --bg:#0b1220; --panel:#0f1a2e; --panel2:#0c1526;
+        --text:#e8eefc; --muted:#9db0d0; --border:#1c2a46;
+        --accent:#7c5cff; --accent2:#27d9a5; --danger:#ff4d6d;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      }
+      *{box-sizing:border-box}
+      body{margin:0; font-family:var(--sans); background:radial-gradient(1200px 800px at 20% -10%, #1a2b55 0%, rgba(26,43,85,0) 60%), var(--bg); color:var(--text);}
+      a{color:inherit}
+      .wrap{max-width:1220px; margin:0 auto; padding:18px 14px 28px;}
+      .top{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0 16px;}
+      .brand{display:flex; align-items:center; gap:10px;}
+      .logo{width:34px; height:34px; display:grid; place-items:center; border:1px solid var(--border); border-radius:10px; background:linear-gradient(135deg, rgba(124,92,255,.25), rgba(39,217,165,.14));}
+      .title b{letter-spacing:.2px; font-size:15px}
+      .title span{color:var(--muted); font-size:12px}
+      .nav{display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end}
+      .pill{display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--border); border-radius:999px; background:rgba(15,26,46,.7); text-decoration:none; font-size:12px}
+      .pill:hover{border-color:#2a3d66}
+      .grid{display:grid; grid-template-columns: 420px 1fr; gap:14px;}
+      @media (max-width: 1040px){ .grid{grid-template-columns:1fr;} }
+      .card{border:1px solid var(--border); border-radius:16px; background:rgba(15,26,46,.72); overflow:hidden;}
+      .card h2{margin:0; font-size:13px; color:var(--muted); font-weight:600; padding:12px 12px 0;}
+      .pad{padding:12px}
+      .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+      .btn{cursor:pointer; border:1px solid #263a64; border-radius:12px; padding:10px 12px; background:linear-gradient(180deg, rgba(124,92,255,.22), rgba(124,92,255,.08)); color:var(--text); font-weight:600; font-size:12px}
+      .btn.secondary{background:rgba(12,21,38,.45)}
+      .btn.danger{border-color:#5a2030; background:rgba(255,77,109,.12)}
+      .btn:disabled{opacity:.5; cursor:not-allowed}
+      .in{width:100%; border:1px solid #223155; border-radius:12px; padding:10px 12px; background:rgba(12,21,38,.6); color:var(--text); outline:none; font-family:var(--mono); font-size:12px}
+      .hint{color:var(--muted); font-size:12px; margin:10px 0 0; line-height:1.35}
+      .list{max-height:52vh; overflow:auto; padding:10px; border-top:1px solid var(--border); background:rgba(12,21,38,.35)}
+      .item{cursor:pointer; padding:10px 10px; border:1px solid rgba(28,42,70,.9); border-radius:14px; background:rgba(12,21,38,.42); margin:0 0 10px}
+      .item:hover{border-color:#2a3d66}
+      .item .sid{font-family:var(--mono); font-size:12px}
+      .item .meta{color:var(--muted); font-size:12px; margin-top:4px}
+      .results{max-height:70vh; overflow:auto; padding:12px; border-top:1px solid var(--border); background:rgba(12,21,38,.35)}
+      .res{padding:10px 10px; border:1px solid rgba(28,42,70,.9); border-radius:14px; background:rgba(12,21,38,.42); margin:0 0 10px}
+      .res .meta{color:var(--muted); font-size:12px; display:flex; gap:10px; flex-wrap:wrap}
+      mark{background:rgba(39,217,165,.18); color:var(--text); padding:0 2px; border-radius:4px}
+      .k{color:var(--muted); font-size:12px}
+      .mono{font-family:var(--mono)}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+              <path d="M12 2.5c4.9 0 8.9 4 8.9 8.9 0 5.8-4.8 10.1-8.9 10.1S3.1 17.2 3.1 11.4C3.1 6.5 7.1 2.5 12 2.5Z" stroke="rgba(232,238,252,.9)" stroke-width="1.6"/>
+              <path d="M7.2 12c2.4-2.4 7.2-2.4 9.6 0" stroke="rgba(39,217,165,.9)" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M8.2 15.2c1.9-1.3 5.7-1.3 7.6 0" stroke="rgba(124,92,255,.9)" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="title">
+            <b>RHODES AI</b><br/>
+            <span>Admin sessions viewer (password login)</span>
+          </div>
+        </div>
+        <div class="nav">
+          <a class="pill" href="/admin.html">Control Panel</a>
+          <a class="pill" href="/admin-alliance.html">Alliance</a>
+          <a class="pill" href="/polivisual/">PoliVisual</a>
+          <a class="pill" href="/index.html">Chat</a>
+          <a class="pill" href="/sessions.html">Sessions Viewer</a>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2>Admin Login</h2>
+          <div class="pad">
+            <label class="k mono" for="pw">Password</label>
+            <input id="pw" class="in" type="password" placeholder="Admin password…" />
+            <div style="height:10px"></div>
+            <div class="row">
+              <button id="login" class="btn">Login</button>
+              <button id="logout" class="btn secondary" disabled>Logout</button>
+            </div>
+            <div style="height:14px"></div>
+            <details>
+              <summary class="k">Change password</summary>
+              <div style="height:10px"></div>
+              <label class="k mono" for="cur">Current password</label>
+              <input id="cur" class="in" type="password" placeholder="Current password…" />
+              <div style="height:8px"></div>
+              <label class="k mono" for="next">New password</label>
+              <input id="next" class="in" type="password" placeholder="New password…" />
+              <div style="height:10px"></div>
+              <button id="setpw" class="btn secondary" disabled>Submit new password</button>
+              <p class="hint">Uses your admin session token; no legacy admin key needed.</p>
+            </details>
+            <p id="who" class="hint"></p>
+          </div>
+
+          <h2>Users</h2>
+          <div class="pad">
+            <button id="loadUsers" class="btn secondary" disabled>Load users</button>
+            <div style="height:10px"></div>
+            <select id="userFilter" class="in" disabled>
+              <option value="">All users</option>
+            </select>
+          </div>
+
+          <h2>Search</h2>
+          <div class="pad">
+            <div class="row">
+              <input id="q" class="in" placeholder="Search (FTS)…" />
+              <button id="search" class="btn" style="flex:0 0 auto" disabled>Search</button>
+            </div>
+            <p class="hint">Searches across all sessions. Select a user to narrow results.</p>
+          </div>
+          <div class="list" id="sessions"></div>
+        </div>
+
+        <div class="card">
+          <h2>Results</h2>
+          <div class="results" id="results"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const ADMIN_TOKEN_KEY = "rhodes_admin_token";
+      const els = {
+        pw: document.getElementById("pw"),
+        login: document.getElementById("login"),
+        logout: document.getElementById("logout"),
+        who: document.getElementById("who"),
+        cur: document.getElementById("cur"),
+        next: document.getElementById("next"),
+        setpw: document.getElementById("setpw"),
+        loadUsers: document.getElementById("loadUsers"),
+        userFilter: document.getElementById("userFilter"),
+        q: document.getElementById("q"),
+        search: document.getElementById("search"),
+        results: document.getElementById("results"),
+        sessions: document.getElementById("sessions"),
+      };
+
+      const adminHeader = () => {
+        const t = sessionStorage.getItem(ADMIN_TOKEN_KEY) || "";
+        if (!t) return null;
+        return { "X-Rhodes-Admin-Token": t };
+      };
+
+      const api = async (method, path, body) => {
+        const headers = Object.assign({ "Content-Type": "application/json" }, adminHeader() || {});
+        const res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+        const txt = await res.text();
+        let data;
+        try { data = JSON.parse(txt); } catch { data = { error: txt }; }
+        if (!res.ok) throw new Error((data && data.error) ? data.error : ("HTTP " + res.status));
+        return data;
+      };
+
+      const el = (tag, cls, text) => {
+        const n = document.createElement(tag);
+        if (cls) n.className = cls;
+        if (text != null) n.textContent = text;
+        return n;
+      };
+
+      const setAuthed = (on, info) => {
+        els.logout.disabled = !on;
+        els.search.disabled = !on;
+        els.loadUsers.disabled = !on;
+        els.setpw.disabled = !on;
+        els.userFilter.disabled = !on;
+        els.who.textContent = on ? ("Logged in. " + (info || "")) : "";
+      };
+
+      const login = async () => {
+        const pw = (els.pw.value || "").trim();
+        if (!pw) return;
+        const data = await api("POST", "/api/admin/login", { password: pw });
+        sessionStorage.setItem(ADMIN_TOKEN_KEY, data.token);
+        setAuthed(true, `Token expires in ${Math.round((data.expires_in_seconds||0)/60)} min.`);
+      };
+
+      const logout = () => {
+        sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+        setAuthed(false);
+      };
+
+      const loadUsers = async () => {
+        const data = await api("GET", "/api/admin/users");
+        const users = data.users || [];
+        els.userFilter.innerHTML = '<option value=\"\">All users</option>';
+        for (const u of users) {
+          const opt = document.createElement("option");
+          opt.value = u.username;
+          opt.textContent = `${u.username} (${u.email})`;
+          els.userFilter.appendChild(opt);
+        }
+      };
+
+      const renderResults = (results) => {
+        els.results.textContent = "";
+        if (!results.length) {
+          els.results.appendChild(el("div", "hint", "No results."));
+          return;
+        }
+        for (const r of results) {
+          const box = el("div", "res");
+          box.appendChild(el("div", "meta", `${r.session_id} • round ${r.round_num} • ${r.created_at || ""} • ${r.username || ""}`));
+          const snippet = el("div", "");
+          snippet.innerHTML = (r.snippet || "").replace(/\\n/g, "<br/>");
+          box.appendChild(snippet);
+          els.results.appendChild(box);
+        }
+      };
+
+      const doSearch = async () => {
+        const q = (els.q.value || "").trim();
+        if (!q) return;
+        const url = new URL("/api/search", location.origin);
+        url.searchParams.set("q", q);
+        const u = els.userFilter.value;
+        if (u) url.searchParams.set("username", u);
+        const data = await api("GET", url.toString());
+        renderResults(data.results || []);
+      };
+
+      const setPassword = async () => {
+        const cur = (els.cur.value || "").trim();
+        const next = (els.next.value || "").trim();
+        if (!next) throw new Error("New password is required");
+        await api("POST", "/api/admin/password", { current_password: cur || undefined, new_password: next });
+        els.cur.value = "";
+        els.next.value = "";
+        alert("Admin password updated.");
+      };
+
+      els.login.addEventListener("click", () => login().catch(e => alert(e.message)));
+      els.logout.addEventListener("click", logout);
+      els.loadUsers.addEventListener("click", () => loadUsers().catch(e => alert(e.message)));
+      els.search.addEventListener("click", () => doSearch().catch(e => alert(e.message)));
+      els.setpw.addEventListener("click", () => setPassword().catch(e => alert(e.message)));
+      els.q.addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch().catch(err => alert(err.message)); });
+
+      if (sessionStorage.getItem(ADMIN_TOKEN_KEY)) setAuthed(true);
+    </script>
+  </body>
+</html>
+

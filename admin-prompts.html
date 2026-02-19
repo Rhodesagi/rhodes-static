@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RHODES Admin - System Prompts</title>
+  <style>
+:root {
+  --bg: #0b1020; --panel: #121a33; --text: #e7ecff; --muted: #aab4e6;
+  --border: #27325c; --ok: #4ade80; --bad: #ff5a6b; --warn: #fbbf24;
+  --btn: #1d2a5a; --btn2: #25336a; --accent: #6366f1;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  background: var(--bg); color: var(--text); min-height: 100vh;
+}
+header {
+  padding: 12px 20px; border-bottom: 1px solid var(--border);
+  background: rgba(11,16,32,0.95); position: sticky; top: 0;
+  backdrop-filter: blur(8px); z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+}
+header h1 { font-size: 15px; font-weight: 600; }
+header .nav { display: flex; gap: 8px; align-items: center; }
+header a {
+  color: var(--muted); text-decoration: none; font-size: 12px;
+  padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
+}
+header a:hover { border-color: var(--accent); color: var(--text); }
+.tabs {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border);
+  background: var(--panel); padding: 0 20px;
+}
+.tab {
+  padding: 10px 20px; font-size: 13px; color: var(--muted); cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.15s;
+}
+.tab:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+.tab { cursor: pointer; text-decoration: none; }
+.tab.active { color: var(--ok); border-bottom-color: var(--ok); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.prompt-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px; padding: 20px;
+}
+.prompt-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.15s;
+}
+.prompt-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.prompt-card .name { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.prompt-card .meta { font-size: 11px; color: var(--muted); display: flex; gap: 12px; margin-bottom: 8px; }
+.prompt-card .preview {
+  font-size: 11px; color: var(--muted); font-family: var(--mono);
+  line-height: 1.4; max-height: 60px; overflow: hidden; opacity: 0.7;
+}
+.badge { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-right: 4px; }
+.badge-base { background: #1e3a5f; color: #7dd3fc; }
+.badge-format { background: #3b1f5e; color: #c084fc; }
+.badge-combined { background: #1f3d2e; color: #86efac; }
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.9); z-index: 200; backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; flex-direction: column; }
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px; background: var(--panel);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.modal-header .title { font-size: 14px; font-weight: 600; }
+.modal-header .meta { font-size: 11px; color: var(--muted); }
+.modal-header .actions { display: flex; gap: 8px; align-items: center; }
+.modal-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.modal-body textarea {
+  flex: 1; width: 100%; background: #080e1a; color: var(--text);
+  border: none; padding: 20px; font-family: var(--mono);
+  font-size: 13px; line-height: 1.6; resize: none; outline: none;
+}
+.modal-body textarea:not([readonly]) {
+  background: #0a1020; border-left: 3px solid var(--ok);
+}
+.modal-footer {
+  padding: 8px 20px; background: var(--panel);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 11px; color: var(--muted); flex-shrink: 0;
+}
+button {
+  background: var(--btn); color: var(--text); border: 1px solid var(--border);
+  padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;
+}
+button:hover { background: var(--btn2); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button.primary { background: var(--accent); border-color: var(--accent); }
+button.primary:hover { opacity: 0.9; }
+button.danger { background: #4a1525; border-color: #ff5a6b; color: #ff5a6b; }
+button.success { background: #1a3d2a; border-color: var(--ok); color: var(--ok); }
+.assignments-container { padding: 20px; max-width: 1000px; }
+.assignment-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; margin-bottom: 8px; flex-wrap: wrap;
+}
+.assignment-row select, .assignment-row input[type="text"], .assignment-row input[type="number"] {
+  background: var(--bg); color: var(--text); border: 1px solid var(--border);
+  padding: 5px 8px; border-radius: 4px; font-size: 12px;
+}
+.assignment-row .label { font-size: 11px; color: var(--muted); min-width: 60px; }
+.test-container { padding: 20px; max-width: 1000px; }
+.test-output {
+  background: #080e1a; border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px; font-family: var(--mono); font-size: 12px;
+  line-height: 1.5; min-height: 200px; white-space: pre-wrap; overflow-y: auto;
+}
+.login-card {
+  max-width: 360px; margin: 80px auto; background: var(--panel);
+  border: 1px solid var(--border); border-radius: 12px; padding: 24px;
+}
+.login-card input {
+  width: 100%; background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px;
+  font-size: 13px; margin: 8px 0 12px;
+}
+.pill { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: var(--btn); }
+.pill-ok { background: #1a3d2a; color: var(--ok); }
+select {
+  background: var(--bg); color: var(--text); border: 1px solid var(--border);
+  padding: 5px 8px; border-radius: 4px; font-size: 12px;
+}
+.status-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; padding: 6px 20px;
+  background: var(--panel); border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--muted); z-index: 50;
+  display: flex; justify-content: space-between;
+}
+.toolbar {
+  padding: 12px 20px; display: flex; gap: 10px; align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.toolbar input {
+  background: var(--panel); color: var(--text); border: 1px solid var(--border);
+  padding: 6px 12px; border-radius: 6px; font-size: 12px; flex: 1; max-width: 300px;
+}
+</style>
+</head>
+<body>
+
+  <div id="loginView">
+    <div class="login-card">
+      <h2 style="font-size:15px;margin-bottom:4px">System Prompts</h2>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:16px">Admin authentication required</div>
+      <input id="loginPw" type="password" placeholder="Admin password" autofocus>
+      <button onclick="doLogin()" style="width:100%" class="primary">Login</button>
+      <div id="loginError" style="color:var(--bad);font-size:11px;margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div id="mainApp" style="display:none">
+    <header>
+      <h1>RHODES — System Prompts</h1>
+      <div class="nav">
+        <a href="admin-control.html">Control Panel</a>
+        <a href="admin.html">Legacy Admin</a>
+        <span class="pill pill-ok" id="promptCount">0 prompts</span>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <a class="tab active" data-tab="prompts" href="#prompts" onclick="switchTab('prompts');return false">All Prompts</a>
+      <a class="tab" data-tab="assignments" href="#assignments" onclick="switchTab('assignments');return false">Assignments</a>
+      <a class="tab" data-tab="test" href="#test" onclick="switchTab('test');return false">Test</a>
+    </div>
+
+    <div class="tab-content active" id="tab-prompts">
+      <div class="toolbar">
+        <input id="promptFilter" type="text" placeholder="Filter prompts..." oninput="filterPrompts()">
+        <select id="promptTypeFilter" onchange="filterPrompts()">
+          <option value="">All types</option>
+          <option value="base">Base prompts</option>
+          <option value="format">Format only</option>
+          <option value="combined">Combined</option>
+        </select>
+        <button onclick="loadAllPrompts()">↻ Refresh</button>
+      </div>
+      <div class="prompt-grid" id="promptGrid">
+        <div style="padding:20px;color:var(--muted)">Loading prompts...</div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-assignments">
+      <div class="assignments-container">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div>
+            <div style="font-size:14px;font-weight:600">Prompt Assignments</div>
+            <div style="font-size:11px;color:var(--muted)">Route prompts to models, users, and tiers. Higher priority wins.</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="primary" onclick="addAssignment()">+ New Assignment</button>
+            <button class="success" onclick="saveAssignments()">Save All</button>
+            <button onclick="loadAssignments()">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="assignmentsList" style="color:var(--muted);padding:12px">Loading...</div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-test">
+      <div class="test-container">
+        <div style="font-size:14px;font-weight:600;margin-bottom:12px">Test System Prompt</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px">
+          Send a test message with a specific prompt to verify it works. Uses DeepSeek chat model.
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end">
+          <label style="font-size:11px;color:var(--muted)">
+            Prompt source
+            <select id="testSource" style="display:block;margin-top:4px"></select>
+          </label>
+          <label style="font-size:11px;color:var(--muted);flex:1;min-width:250px">
+            Test message
+            <input id="testMessage" type="text" value="Respond in one sentence. Who are you and what system are you part of?"
+              style="display:block;margin-top:4px;width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:4px;font-size:12px">
+          </label>
+          <button class="primary" onclick="runPromptTest()" id="testRunBtn">Send Test</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px" id="testStatus">Ready</div>
+        <div style="font-size:12px;font-weight:600;margin-bottom:4px">Response:</div>
+        <div class="test-output" id="testOutput">(no test run yet)</div>
+        <div style="margin-top:20px">
+          <div style="font-size:12px;font-weight:600;margin-bottom:4px">Prompt Preview (what model sees):</div>
+          <div class="test-output" id="testPreview" style="max-height:400px">(select source and click Send Test)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="editorModal">
+      <div class="modal-header">
+        <div>
+          <div class="title" id="editorTitle">(prompt)</div>
+          <div class="meta" id="editorMeta"></div>
+        </div>
+        <div class="actions">
+          <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="editorEditMode" onchange="toggleEditMode()"> Edit mode
+          </label>
+          <button id="editorSaveBtn" class="success" onclick="saveFromEditor()" disabled>Save</button>
+          <button onclick="showVersions()">Versions</button>
+          <button class="danger" onclick="closeEditor()">Close (Esc)</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <textarea id="editorText" readonly placeholder="Loading..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <div>
+          <span id="editorCharCount">0 chars</span>
+          <span style="margin:0 8px">·</span>
+          <span id="editorSha">sha256: —</span>
+        </div>
+        <div id="editorDirty" style="color:var(--warn)"></div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="versionsModal">
+      <div class="modal-header">
+        <div class="title" id="versionsTitle">Version History</div>
+        <div class="actions">
+          <button class="danger" onclick="closeVersions()">Close</button>
+        </div>
+      </div>
+      <div class="modal-body" style="overflow-y:auto;padding:20px">
+        <div id="versionsList"></div>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <span id="statusLeft">Connected</span>
+      <span id="statusRight"></span>
+    </div>
+  </div>
+
+<script>
+
+let TOKEN = localStorage.getItem('rhodes_admin_token') || '';
+let ALL_PROMPTS = [];
+let EDITOR_STATE = {source:null, sha256:null, originalText:'', path:null, truncated:false, combined:false};
+let ASSIGNMENTS = [];
+
+const $ = id => document.getElementById(id);
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector('.tab[data-tab="' + name + '"]').classList.add('active');
+  $('tab-' + name).classList.add('active');
+}
+
+async function api(url, opts={}) {
+  const headers = {...(opts.headers||{})};
+  if (TOKEN) headers['X-Rhodes-Admin-Token'] = TOKEN;
+  const resp = await fetch(url, {...opts, headers});
+  if (resp.status === 401) {
+    TOKEN = ''; localStorage.removeItem('rhodes_admin_token');
+    $('mainApp').style.display = 'none';
+    $('loginView').style.display = 'block';
+    throw new Error('Session expired');
+  }
+  return resp.json();
+}
+
+async function doLogin() {
+  const pw = $('loginPw').value.trim();
+  if (!pw) return;
+  try {
+    const resp = await fetch('/api/admin/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({password:pw})
+    });
+    const data = await resp.json();
+    if (data.token) {
+      TOKEN = data.token;
+      localStorage.setItem('rhodes_admin_token', TOKEN);
+      $('loginView').style.display = 'none';
+      $('mainApp').style.display = 'block';
+      init();
+    } else {
+      $('loginError').textContent = data.error || 'Login failed';
+    }
+  } catch(e) { $('loginError').textContent = e.message; }
+}
+$('loginPw').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    $('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ---- Prompt List ----
+async function loadAllPrompts() {
+  $('promptGrid').innerHTML = '<div style="padding:20px;color:var(--muted)">Loading prompts...</div>';
+  try {
+    const data = await api('/api/admin/prompt/list');
+    ALL_PROMPTS = data.prompts || [];
+    $('promptCount').textContent = ALL_PROMPTS.length + ' prompts';
+    renderPromptGrid();
+    populateTestSourceDropdown();
+  } catch(e) {
+    $('promptGrid').innerHTML = `<div style="color:var(--bad);padding:20px">Error: ${e.message}</div>`;
+  }
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderPromptGrid() {
+  const filter = ($('promptFilter').value||'').toLowerCase();
+  const typeFilter = $('promptTypeFilter').value;
+  let prompts = ALL_PROMPTS.filter(p => {
+    if (filter && !p.source.toLowerCase().includes(filter) && !(p.path||'').toLowerCase().includes(filter)) return false;
+    if (typeFilter === 'base' && (p.combined || p.source.startsWith('format_'))) return false;
+    if (typeFilter === 'format' && !p.source.startsWith('format_')) return false;
+    if (typeFilter === 'combined' && !p.combined) return false;
+    return true;
+  });
+  if (!prompts.length) {
+    $('promptGrid').innerHTML = '<div style="padding:20px;color:var(--muted)">No prompts match filter</div>';
+    return;
+  }
+  $('promptGrid').innerHTML = prompts.map(p => {
+    const badge = p.combined ? '<span class="badge badge-combined">combined</span>'
+      : p.source.startsWith('format_') ? '<span class="badge badge-format">format</span>'
+      : '<span class="badge badge-base">base</span>';
+    const size = p.chars >= 1000 ? (p.chars/1000).toFixed(1)+'k' : p.chars+'';
+    const preview = esc(p.preview||'');
+    const missing = p.exists===false ? '<span style="color:var(--bad)">MISSING</span>' : '';
+    const sha = p.sha256 ? 'sha:'+p.sha256.slice(0,8) : '';
+    return `<div class="prompt-card" onclick="openEditor('${esc(p.source)}')">
+      <div class="name">${badge} ${esc(p.source)}</div>
+      <div class="meta"><span>${size} chars</span>${sha ? `<span>${sha}</span>` : ''}${missing}</div>
+      <div class="preview">${preview}</div>
+    </div>`;
+  }).join('');
+}
+function filterPrompts() { renderPromptGrid(); }
+
+// ---- Full-page Editor ----
+async function openEditor(source) {
+  const modal = $('editorModal');
+  const textarea = $('editorText');
+  modal.classList.add('open');
+  textarea.value = 'Loading...'; textarea.readOnly = true;
+  $('editorEditMode').checked = false;
+  $('editorSaveBtn').disabled = true;
+  $('editorTitle').textContent = source;
+  $('editorMeta').textContent = 'Loading...';
+  EDITOR_STATE = {source, sha256:null, originalText:'', path:null, truncated:false, combined:false};
+  try {
+    const data = await api('/api/admin/prompt?source=' + encodeURIComponent(source) + '&max_chars=500000');
+    textarea.value = data.text || '';
+    EDITOR_STATE.sha256 = data.sha256 || null;
+    EDITOR_STATE.originalText = data.text || '';
+    EDITOR_STATE.path = data.path || null;
+    EDITOR_STATE.truncated = !!data.truncated;
+    EDITOR_STATE.combined = !!(data.note && data.note.includes('combined'));
+    const metaParts = [data.path||'', data.exists===false?'FILE MISSING':'', data.truncated?'TRUNCATED':'', data.note||''].filter(Boolean);
+    $('editorMeta').textContent = metaParts.join(' \u00b7 ');
+    $('editorCharCount').textContent = (data.chars||0).toLocaleString() + ' chars';
+    $('editorSha').textContent = 'sha256: ' + (data.sha256||'\u2014');
+    if (EDITOR_STATE.combined) {
+      $('editorEditMode').disabled = true;
+      $('editorMeta').textContent += ' (read-only: combined prompt)';
+    } else {
+      $('editorEditMode').disabled = false;
+    }
+    updateEditorDirty();
+  } catch(e) { textarea.value = 'Error: ' + e.message; }
+}
+
+function closeEditor() {
+  const dirty = $('editorText').value !== EDITOR_STATE.originalText;
+  if (dirty && $('editorEditMode').checked) {
+    if (!confirm('Unsaved changes. Close anyway?')) return;
+  }
+  $('editorModal').classList.remove('open');
+}
+
+function toggleEditMode() {
+  const textarea = $('editorText');
+  const checked = $('editorEditMode').checked;
+  if (EDITOR_STATE.combined || EDITOR_STATE.truncated) {
+    textarea.readOnly = true;
+    $('editorEditMode').checked = false;
+    if (EDITOR_STATE.truncated) alert('Cannot edit truncated prompt.');
+    return;
+  }
+  textarea.readOnly = !checked;
+  updateEditorDirty();
+}
+
+function updateEditorDirty() {
+  const textarea = $('editorText');
+  const dirty = textarea.value !== EDITOR_STATE.originalText;
+  const editing = $('editorEditMode').checked;
+  $('editorDirty').textContent = dirty ? '\u25cf unsaved changes' : '';
+  $('editorSaveBtn').disabled = !(editing && dirty && !EDITOR_STATE.combined && !EDITOR_STATE.truncated);
+  $('editorCharCount').textContent = textarea.value.length.toLocaleString() + ' chars';
+}
+$('editorText').addEventListener('input', updateEditorDirty);
+
+async function saveFromEditor() {
+  const source = EDITOR_STATE.source;
+  const text = $('editorText').value;
+  if (!confirm('Overwrite "' + source + '"? Updates the live prompt file immediately.')) return;
+  try {
+    const payload = {source, text};
+    if (EDITOR_STATE.sha256) payload.expected_sha256 = EDITOR_STATE.sha256;
+    const data = await api('/api/admin/prompt', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    if (data.success) {
+      EDITOR_STATE.sha256 = data.sha256;
+      EDITOR_STATE.originalText = text;
+      $('editorSha').textContent = 'sha256: ' + data.sha256;
+      $('editorEditMode').checked = false;
+      $('editorText').readOnly = true;
+      updateEditorDirty();
+      setStatus('Saved ' + source + ' (' + data.chars + ' chars)');
+      loadAllPrompts();
+    } else { alert('Save failed: ' + (data.error||'unknown')); }
+  } catch(e) { alert('Save error: ' + e.message); }
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if ($('versionsModal').classList.contains('open')) closeVersions();
+    else if ($('editorModal').classList.contains('open')) closeEditor();
+  }
+  if ((e.ctrlKey||e.metaKey) && e.key === 's') {
+    if ($('editorModal').classList.contains('open')) {
+      e.preventDefault();
+      if (!$('editorSaveBtn').disabled) saveFromEditor();
+    }
+  }
+});
+
+// ---- Versions ----
+async function showVersions() {
+  if (!EDITOR_STATE.source) return;
+  $('versionsModal').classList.add('open');
+  $('versionsTitle').textContent = 'Versions: ' + EDITOR_STATE.source;
+  $('versionsList').innerHTML = '<div style="color:var(--muted)">Loading...</div>';
+  try {
+    const data = await api('/api/admin/prompt/versions?source=' + encodeURIComponent(EDITOR_STATE.source) + '&limit=50');
+    const versions = data.versions || [];
+    if (!versions.length) {
+      $('versionsList').innerHTML = '<div style="color:var(--muted)">No version history</div>';
+      return;
+    }
+    $('versionsList').innerHTML = versions.map(v => {
+      const date = v.created_at ? new Date(Number(v.created_at)*1000).toLocaleString() : '?';
+      const active = v.sha256 === EDITOR_STATE.sha256;
+      const border = active ? 'var(--ok)' : 'var(--border)';
+      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--panel);border:1px solid ${border};border-radius:8px;margin-bottom:6px;cursor:pointer" onclick="loadVersion('${v.sha256}')">
+        <div style="flex:1">
+          <div style="font-size:12px;font-family:var(--mono)">${v.sha256.slice(0,16)}...</div>
+          <div style="font-size:11px;color:var(--muted)">${date} \u00b7 ${v.chars||'?'} chars \u00b7 ${v.uses||0} uses</div>
+        </div>
+        ${active ? '<span class="pill pill-ok">current</span>' : ''}
+        <button style="font-size:11px" onclick="event.stopPropagation();loadVersion('${v.sha256}')">Load</button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    $('versionsList').innerHTML = `<div style="color:var(--bad)">Error: ${e.message}</div>`;
+  }
+}
+
+async function loadVersion(sha256) {
+  try {
+    const data = await api('/api/admin/prompt/history?sha256=' + encodeURIComponent(sha256) + '&max_chars=500000');
+    $('editorText').value = data.text || '';
+    $('editorSha').textContent = 'sha256: ' + sha256;
+    updateEditorDirty();
+    closeVersions();
+  } catch(e) { alert('Error loading version: ' + e.message); }
+}
+function closeVersions() { $('versionsModal').classList.remove('open'); }
+
+// ---- Assignments ----
+async function loadAssignments() {
+  try {
+    const data = await api('/api/admin/prompt/assignments');
+    ASSIGNMENTS = data.assignments || [];
+    renderAssignments();
+  } catch(e) {
+    $('assignmentsList').innerHTML = '<div style="color:var(--muted);padding:12px">No assignments configured yet. Click + New Assignment to create routing rules.</div>';
+    ASSIGNMENTS = [];
+  }
+}
+
+function renderAssignments() {
+  const container = $('assignmentsList');
+  if (!ASSIGNMENTS.length) {
+    container.innerHTML = '<div style="color:var(--muted);padding:12px">No assignments. Click + New Assignment.</div>';
+    return;
+  }
+  const sources = ALL_PROMPTS.filter(p => !p.combined).map(p => p.source);
+  container.innerHTML = ASSIGNMENTS.map((a, i) => {
+    const sourceOpts = sources.map(s =>
+      `<option value="${s}"${s===a.prompt_source?' selected':''}>${s}</option>`
+    ).join('');
+    return `<div class="assignment-row">
+      <span class="label">Context:</span>
+      <select onchange="ASSIGNMENTS[${i}].context_type=this.value">
+        <option value="default"${a.context_type==='default'?' selected':''}>Default</option>
+        <option value="model"${a.context_type==='model'?' selected':''}>Model</option>
+        <option value="user"${a.context_type==='user'?' selected':''}>User ID</option>
+        <option value="tier"${a.context_type==='tier'?' selected':''}>Tier</option>
+      </select>
+      <input type="text" placeholder="value (* = all)" value="${esc(a.context_value||'*')}"
+        onchange="ASSIGNMENTS[${i}].context_value=this.value" style="width:120px">
+      <span class="label">\u2192 Prompt:</span>
+      <select onchange="ASSIGNMENTS[${i}].prompt_source=this.value">${sourceOpts}</select>
+      <span class="label">Priority:</span>
+      <input type="number" value="${a.priority||0}" style="width:50px"
+        onchange="ASSIGNMENTS[${i}].priority=parseInt(this.value)||0">
+      <label style="font-size:11px;display:flex;align-items:center;gap:4px">
+        <input type="checkbox"${a.active!==false?' checked':''}
+          onchange="ASSIGNMENTS[${i}].active=this.checked"> Active
+      </label>
+      <button class="danger" onclick="removeAssignment(${i})" style="padding:4px 8px;font-size:11px">\u2715</button>
+    </div>`;
+  }).join('');
+}
+
+function addAssignment() {
+  ASSIGNMENTS.push({context_type:'default', context_value:'*', prompt_source:'delta_public', priority:0, active:true});
+  renderAssignments();
+}
+function removeAssignment(idx) { ASSIGNMENTS.splice(idx,1); renderAssignments(); }
+
+async function saveAssignments() {
+  try {
+    const data = await api('/api/admin/prompt/assignments', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({assignments: ASSIGNMENTS})
+    });
+    if (data.success) { setStatus('Assignments saved'); loadAssignments(); }
+    else alert('Save failed: ' + (data.error||'unknown'));
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+// ---- Test ----
+function populateTestSourceDropdown() {
+  $('testSource').innerHTML = ALL_PROMPTS.map(p =>
+    `<option value="${p.source}">${p.source} (${p.chars?(p.chars/1000).toFixed(1)+'k':'?'})</option>`
+  ).join('');
+}
+
+async function runPromptTest() {
+  const source = $('testSource').value;
+  const message = $('testMessage').value.trim();
+  if (!source || !message) return;
+  const btn = $('testRunBtn');
+  btn.disabled = true; btn.textContent = 'Testing...';
+  $('testStatus').textContent = 'Sending test with prompt: ' + source;
+  $('testOutput').textContent = '(waiting...)';
+  try {
+    const promptData = await api('/api/admin/prompt?source=' + encodeURIComponent(source) + '&max_chars=500000');
+    $('testPreview').textContent = promptData.text || '(empty)';
+    const data = await api('/api/admin/prompt/test', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({source, message})
+    });
+    $('testOutput').textContent = data.response || data.error || JSON.stringify(data,null,2);
+    $('testStatus').textContent = data.success
+      ? '\u2713 Response (' + (data.model||'?') + ', ' + (data.tokens||'?') + ' tokens, ' + (data.duration_ms||'?') + 'ms)'
+      : '\u2717 Failed: ' + (data.error||'unknown');
+  } catch(e) {
+    $('testOutput').textContent = 'Error: ' + e.message;
+    $('testStatus').textContent = '\u2717 Error';
+  } finally { btn.disabled = false; btn.textContent = 'Send Test'; }
+}
+
+function setStatus(msg) {
+  $('statusLeft').textContent = msg;
+  setTimeout(() => { $('statusLeft').textContent = 'Connected'; }, 5000);
+}
+
+async function init() {
+  await loadAllPrompts();
+  loadAssignments().catch(() => {});
+  // Handle hash-based tab navigation
+  const hash = window.location.hash.replace('#', '');
+  if (hash && document.querySelector('.tab[data-tab="' + hash + '"]')) {
+    switchTab(hash);
+  }
+}
+window.addEventListener('hashchange', () => {
+  const hash = window.location.hash.replace('#', '');
+  if (hash) switchTab(hash);
+});
+
+if (TOKEN) {
+  $('loginView').style.display = 'none';
+  $('mainApp').style.display = 'block';
+  init();
+}
+
+</script>
+</body>
+</html>

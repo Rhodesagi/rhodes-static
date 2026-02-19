@@ -1,5 +1,5 @@
 /* RHODES AI service worker - MINIMAL, NO FALLBACK */
-const CACHE_NAME = "rhodes-v20260121-fix2mode";
+const CACHE_NAME = "rhodes-v20260129-debug1";
 
 self.addEventListener("install", e => {
   self.skipWaiting();

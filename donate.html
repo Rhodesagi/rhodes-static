@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donate - Rhodes AI</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #0d0d0d;
+            --surface-2: #1a1a1a;
+            --green: #00ff66;
+            --green-dim: #009933;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --success: #00ff00;
+            --border: #1a1a1a;
+            --cyan: #00ffcc;
+            --dim: #404040;
+            --stripe-purple: #635bff;
+            --stripe-purple-dim: #4b44c9;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 600px; margin: 0 auto; border: 1px solid var(--border); padding: 30px; border-radius: 2px; }
+        h1 { color: var(--green); margin-bottom: 10px; text-align: center; text-shadow: 0 0 5px rgba(0,255,102,0.3); }
+        .subtitle { color: var(--text-dim); margin-bottom: 30px; text-align: center; }
+
+        .donate-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .amount-presets {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .preset-btn {
+            padding: 15px;
+            background: var(--surface-2);
+            border: 2px solid var(--border);
+            border-radius: 3px;
+            color: var(--text);
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .preset-btn:hover { border-color: var(--green-dim); }
+        .preset-btn.selected { border-color: var(--green); background: rgba(0,255,102,0.1); }
+
+        .custom-amount {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        .custom-amount label { color: var(--text-dim); }
+        .custom-amount input {
+            flex: 1;
+            padding: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            color: var(--text);
+            font-size: 1.3em;
+            text-align: center;
+        }
+
+        .crypto-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .crypto-btn {
+            flex: 1;
+            padding: 20px;
+            background: var(--surface-2);
+            border: 2px solid var(--border);
+            border-radius: 2px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .crypto-btn:hover { border-color: var(--green-dim); }
+        .crypto-btn.selected { border-color: var(--green); background: rgba(0,255,102,0.1); }
+        .crypto-btn.stripe-selected { border-color: var(--stripe-purple); background: rgba(99,91,255,0.1); }
+        .crypto-btn .symbol { font-size: 2em; margin-bottom: 5px; }
+        .crypto-btn .name { font-weight: bold; }
+        .crypto-btn .price { font-size: 0.85em; color: var(--text-dim); margin-top: 5px; }
+
+        .message-box {
+            margin-bottom: 20px;
+        }
+        .message-box label { display: block; color: var(--text-dim); margin-bottom: 8px; }
+        .message-box textarea {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            color: var(--text);
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .anonymous-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 25px;
+            color: var(--text-dim);
+        }
+        .anonymous-check input { width: 18px; height: 18px; }
+
+        .donate-btn {
+            width: 100%;
+            padding: 18px;
+            background: var(--green);
+            color: #000;
+            border: none;
+            border-radius: 3px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .donate-btn:hover { background: var(--green-dim); color: #fff; }
+        .donate-btn.stripe-btn { background: var(--stripe-purple); color: #fff; }
+        .donate-btn.stripe-btn:hover { background: var(--stripe-purple-dim); }
+
+        /* Payment display */
+        .payment-display {
+            display: none;
+            text-align: center;
+        }
+        .payment-display.active { display: block; }
+        .qr-code {
+            background: #fff;
+            padding: 20px;
+            border-radius: 2px;
+            display: inline-block;
+            margin: 20px 0;
+        }
+        .qr-code img { width: 200px; height: 200px; }
+        .payment-address {
+            background: var(--bg);
+            padding: 15px;
+            border-radius: 3px;
+            font-family: monospace;
+            word-break: break-all;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        .payment-amount {
+            font-size: 1.8em;
+            color: var(--cyan);
+            margin: 15px 0;
+        }
+        .copy-btn {
+            background: var(--green);
+            color: #000;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px 5px;
+        }
+        .copy-btn:hover { background: var(--green-dim); color: #fff; }
+        .cancel-btn {
+            background: var(--surface-2);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 12px 25px;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        .timer { color: var(--text-dim); margin-top: 15px; }
+        .status { margin-top: 15px; font-size: 1.1em; }
+        .status-pending { color: var(--green); }
+        .status-confirmed { color: var(--success); }
+
+        .back-link {
+            display: inline-block;
+            color: var(--cyan);
+            text-decoration: none;
+            margin-bottom: 20px;
+        }
+        .back-link:hover { text-decoration: underline; }
+
+        .thank-you {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .thank-you h2 { color: var(--success); margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">< Back to Rhodes</a>
+
+        <h1>Support Rhodes AI</h1>
+        <p class="subtitle">Your donation helps keep Rhodes running and improving</p>
+
+        <!-- Donation Form -->
+        <div class="donate-card" id="donate-form">
+            <div class="amount-presets">
+                <button class="preset-btn" onclick="setAmount(5)">$5</button>
+                <button class="preset-btn" onclick="setAmount(10)">$10</button>
+                <button class="preset-btn selected" onclick="setAmount(25)">$25</button>
+                <button class="preset-btn" onclick="setAmount(50)">$50</button>
+                <button class="preset-btn" onclick="setAmount(100)">$100</button>
+                <button class="preset-btn" onclick="setAmount(250)">$250</button>
+            </div>
+
+            <div class="custom-amount">
+                <label>$</label>
+                <input type="number" id="amount" value="25" min="1" placeholder="Custom amount">
+            </div>
+
+            <div class="crypto-selector">
+                <div class="crypto-btn selected" onclick="selectPayMethod('btc', this)">
+                    <div class="symbol">&#8383;</div>
+                    <div class="name">Bitcoin</div>
+                    <div class="price" id="btc-price">Loading...</div>
+                </div>
+                <div class="crypto-btn" onclick="selectPayMethod('xmr', this)">
+                    <div class="symbol">&#x0271;</div>
+                    <div class="name">Monero</div>
+                    <div class="price" id="xmr-price">Loading...</div>
+                </div>
+                <div class="crypto-btn" onclick="selectPayMethod('stripe', this)">
+                    <div class="symbol">&#128179;</div>
+                    <div class="name">Card</div>
+                    <div class="price">Visa / MC / Amex</div>
+                </div>
+            </div>
+
+            <div class="message-box">
+                <label>Message (optional)</label>
+                <textarea id="message" placeholder="Leave a message with your donation..."></textarea>
+            </div>
+
+            <label class="anonymous-check">
+                <input type="checkbox" id="anonymous">
+                Make this donation anonymous
+            </label>
+
+            <button class="donate-btn" id="donate-btn" onclick="createDonation()">
+                Donate Now
+            </button>
+        </div>
+
+        <!-- Payment Display (crypto) -->
+        <div class="donate-card payment-display" id="payment-display">
+            <h2>Complete Your Donation</h2>
+            <p>Send exactly:</p>
+            <div class="payment-amount" id="payment-amount"></div>
+            <p>to this address:</p>
+
+            <div class="qr-code">
+                <img id="qr-img" src="" alt="QR Code">
+            </div>
+
+            <div class="payment-address" id="payment-address"></div>
+
+            <button class="copy-btn" onclick="copyAddress()">Copy Address</button>
+            <button class="copy-btn" onclick="copyAmount()">Copy Amount</button>
+
+            <div class="timer" id="timer"></div>
+            <div class="status" id="status"></div>
+
+            <br><br>
+            <button class="cancel-btn" onclick="cancelPayment()">Cancel</button>
+        </div>
+
+        <!-- Thank You -->
+        <div class="donate-card thank-you" id="thank-you" style="display:none;">
+            <h2>Thank You!</h2>
+            <p>Your donation has been received and confirmed.</p>
+            <p style="color:var(--text-dim);margin-top:15px;">Your support means the world to us.</p>
+            <br>
+            <a href="/" class="donate-btn" style="display:inline-block;text-decoration:none;padding:15px 30px;">Return to Rhodes</a>
+        </div>
+    </div>
+
+    <script>
+        let selectedPayMethod = 'btc';
+        let currentPaymentId = null;
+        let statusInterval = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPrices();
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('payment') === 'success') {
+                document.getElementById('donate-form').style.display = 'none';
+                document.getElementById('thank-you').style.display = 'block';
+            }
+        });
+
+        async function loadPrices() {
+            try {
+                const [btc, xmr] = await Promise.all([
+                    fetch('/api/payments/price/btc').then(r => r.json()),
+                    fetch('/api/payments/price/xmr').then(r => r.json())
+                ]);
+                document.getElementById('btc-price').textContent = btc.formatted;
+                document.getElementById('xmr-price').textContent = xmr.formatted;
+            } catch (e) {
+                console.error('Failed to load prices:', e);
+            }
+        }
+
+        function setAmount(amount) {
+            document.getElementById('amount').value = amount;
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.textContent === '$' + amount);
+            });
+        }
+
+        function selectPayMethod(method, btn) {
+            selectedPayMethod = method;
+            document.querySelectorAll('.crypto-btn').forEach(b => {
+                b.classList.remove('selected');
+                b.classList.remove('stripe-selected');
+            });
+            if (method === 'stripe') {
+                btn.classList.add('stripe-selected');
+                document.getElementById('donate-btn').className = 'donate-btn stripe-btn';
+            } else {
+                btn.classList.add('selected');
+                document.getElementById('donate-btn').className = 'donate-btn';
+            }
+        }
+
+        async function getUserId() {
+            const token = localStorage.getItem("rhodes_user_token");
+            if (!token) return null;
+            try {
+                const resp = await fetch("/api/user/me", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data.authenticated && data.user) return data.user.id;
+                }
+            } catch(e) {}
+            return null;
+        }
+
+        async function createDonation() {
+            const amount = parseFloat(document.getElementById('amount').value);
+            const message = document.getElementById('message').value;
+            const anonymous = document.getElementById('anonymous').checked;
+
+            if (!amount || amount < 1) {
+                alert('Please enter a valid amount (minimum $1)');
+                return;
+            }
+
+            if (selectedPayMethod === 'stripe') {
+                return createStripeDonation(amount, message);
+            }
+
+            try {
+                const resp = await fetch('/api/payments/donate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount_usd: amount,
+                        crypto_type: selectedPayMethod,
+                        message: message || null,
+                        anonymous: anonymous
+                    })
+                });
+
+                const data = await resp.json();
+                if (data.error) throw new Error(data.error);
+
+                showPayment(data);
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        async function createStripeDonation(amount, message) {
+            const userId = await getUserId();
+            try {
+                const resp = await fetch('/api/payments/stripe/donate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount_usd: amount,
+                        user_id: userId,
+                        message: message || null,
+                    })
+                });
+                const data = await resp.json();
+                if (data.error) throw new Error(data.error);
+                window.location.href = data.checkout_url;
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        function showPayment(data) {
+            currentPaymentId = data.payment_id;
+
+            document.getElementById('donate-form').style.display = 'none';
+            document.getElementById('payment-display').classList.add('active');
+
+            const cryptoSymbol = data.crypto_type === 'BTC' ? '\u20BF' : '\u0271';
+            document.getElementById('payment-amount').textContent =
+                `${cryptoSymbol} ${data.amount_crypto} ${data.crypto_type}`;
+            document.getElementById('payment-address').textContent = data.address;
+
+            const qrData = data.crypto_type === 'BTC'
+                ? `bitcoin:${data.address}?amount=${data.amount_crypto}`
+                : data.address;
+            document.getElementById('qr-img').src =
+                `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
+
+            startStatusPolling();
+            updateTimer(new Date(data.expires_at));
+        }
+
+        function startStatusPolling() {
+            if (statusInterval) clearInterval(statusInterval);
+
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = '<span class="status-pending">Waiting for payment...</span>';
+
+            statusInterval = setInterval(async () => {
+                try {
+                    const resp = await fetch(`/api/payments/status/${currentPaymentId}`);
+                    const data = await resp.json();
+
+                    if (data.status === 'confirmed') {
+                        statusEl.innerHTML = '<span class="status-confirmed">Payment Confirmed!</span>';
+                        clearInterval(statusInterval);
+                        setTimeout(showThankYou, 2000);
+                    } else if (data.status === 'confirming') {
+                        statusEl.innerHTML = `<span class="status-pending">Confirming... (${data.confirmations}/${data.required_confirmations})</span>`;
+                    } else if (data.status === 'expired') {
+                        statusEl.innerHTML = '<span style="color:red;">Payment expired</span>';
+                        clearInterval(statusInterval);
+                    }
+                } catch (e) {
+                    console.error('Status check failed:', e);
+                }
+            }, 10000);
+        }
+
+        function updateTimer(expiresAt) {
+            const timerEl = document.getElementById('timer');
+            const update = () => {
+                const diff = expiresAt - new Date();
+                if (diff <= 0) {
+                    timerEl.textContent = 'Expired';
+                    return;
+                }
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                timerEl.textContent = `Expires in: ${h}h ${m}m ${s}s`;
+            };
+            update();
+            setInterval(update, 1000);
+        }
+
+        function copyAddress() {
+            navigator.clipboard.writeText(document.getElementById('payment-address').textContent);
+            event.target.textContent = 'Copied!';
+            setTimeout(() => event.target.textContent = 'Copy Address', 2000);
+        }
+
+        function copyAmount() {
+            const amount = document.getElementById('payment-amount').textContent.split(' ')[1];
+            navigator.clipboard.writeText(amount);
+            event.target.textContent = 'Copied!';
+            setTimeout(() => event.target.textContent = 'Copy Amount', 2000);
+        }
+
+        function cancelPayment() {
+            if (statusInterval) clearInterval(statusInterval);
+            currentPaymentId = null;
+            document.getElementById('payment-display').classList.remove('active');
+            document.getElementById('donate-form').style.display = 'block';
+        }
+
+        function showThankYou() {
+            document.getElementById('payment-display').classList.remove('active');
+            document.getElementById('thank-you').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

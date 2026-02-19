@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#0b1220" />
+    <title>RHODES AI — Sessions</title>
+    <link rel="icon" href="/rhodes-icon.svg" type="image/svg+xml" />
+    <style>
+      :root{
+        --bg:#0b1220; --panel:#0f1a2e; --panel2:#0c1526;
+        --text:#e8eefc; --muted:#9db0d0; --border:#1c2a46;
+        --accent:#7c5cff; --accent2:#27d9a5; --danger:#ff4d6d;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      }
+      *{box-sizing:border-box}
+      body{margin:0; font-family:var(--sans); background:radial-gradient(1200px 800px at 20% -10%, #1a2b55 0%, rgba(26,43,85,0) 60%), var(--bg); color:var(--text);}
+      a{color:inherit}
+      .wrap{max-width:1180px; margin:0 auto; padding:18px 14px 28px;}
+      .top{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0 16px;}
+      .brand{display:flex; align-items:center; gap:10px;}
+      .logo{width:34px; height:34px; display:grid; place-items:center; border:1px solid var(--border); border-radius:10px; background:linear-gradient(135deg, rgba(124,92,255,.25), rgba(39,217,165,.14));}
+      .title b{letter-spacing:.2px; font-size:15px}
+      .title span{color:var(--muted); font-size:12px}
+      .nav{display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end}
+      .pill{display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--border); border-radius:999px; background:rgba(15,26,46,.7); text-decoration:none; font-size:12px}
+      .pill:hover{border-color:#2a3d66}
+      .grid{display:grid; grid-template-columns: 360px 1fr; gap:14px;}
+      @media (max-width: 980px){ .grid{grid-template-columns:1fr;} }
+      .card{border:1px solid var(--border); border-radius:16px; background:rgba(15,26,46,.72); overflow:hidden;}
+      .card h2{margin:0; font-size:13px; color:var(--muted); font-weight:600; padding:12px 12px 0;}
+      .pad{padding:12px}
+      .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+      .btn{cursor:pointer; border:1px solid #263a64; border-radius:12px; padding:10px 12px; background:linear-gradient(180deg, rgba(124,92,255,.22), rgba(124,92,255,.08)); color:var(--text); font-weight:600; font-size:12px}
+      .btn.secondary{background:rgba(12,21,38,.45)}
+      .btn:disabled{opacity:.5; cursor:not-allowed}
+      .in{width:100%; border:1px solid #223155; border-radius:12px; padding:10px 12px; background:rgba(12,21,38,.6); color:var(--text); outline:none; font-family:var(--mono); font-size:12px}
+      .hint{color:var(--muted); font-size:12px; margin:10px 0 0; line-height:1.35}
+      .list{max-height:54vh; overflow:auto; padding:10px; border-top:1px solid var(--border); background:rgba(12,21,38,.35)}
+      .item{cursor:pointer; padding:10px 10px; border:1px solid rgba(28,42,70,.9); border-radius:14px; background:rgba(12,21,38,.42); margin:0 0 10px}
+      .item:hover{border-color:#2a3d66}
+      .item .sid{font-family:var(--mono); font-size:12px}
+      .item .meta{color:var(--muted); font-size:12px; margin-top:4px}
+      .main{min-height:70vh}
+      .panel{border-top:1px solid var(--border); padding:12px; background:rgba(12,21,38,.35)}
+      .k{color:var(--muted); font-size:12px}
+      pre{white-space:pre-wrap; margin:0; font-family:var(--sans); line-height:1.35}
+      mark{background:rgba(39,217,165,.18); color:var(--text); padding:0 2px; border-radius:4px}
+      .results{max-height:44vh; overflow:auto; margin-top:10px}
+      .res{padding:10px 10px; border:1px solid rgba(28,42,70,.9); border-radius:14px; background:rgba(12,21,38,.42); margin:0 0 10px}
+      .res .meta{color:var(--muted); font-size:12px; display:flex; gap:10px; flex-wrap:wrap}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+              <path d="M12 2.5c4.9 0 8.9 4 8.9 8.9 0 5.8-4.8 10.1-8.9 10.1S3.1 17.2 3.1 11.4C3.1 6.5 7.1 2.5 12 2.5Z" stroke="rgba(232,238,252,.9)" stroke-width="1.6"/>
+              <path d="M7.2 12c2.4-2.4 7.2-2.4 9.6 0" stroke="rgba(39,217,165,.9)" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M8.2 15.2c1.9-1.3 5.7-1.3 7.6 0" stroke="rgba(124,92,255,.9)" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="title">
+            <b>RHODES AI</b><br/>
+            <span>Sessions viewer (token required)</span>
+          </div>
+        </div>
+        <div class="nav">
+          <a class="pill" href="/index.html">Chat</a>
+          <a class="pill" href="/admin-sessions.html">Admin Viewer</a>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2>Auth</h2>
+          <div class="pad">
+            <label class="k mono" for="token">User token</label>
+            <input id="token" class="in" placeholder="Paste token…" />
+            <div style="height:10px"></div>
+            <div class="row">
+              <button id="save" class="btn">Save token</button>
+              <button id="load" class="btn secondary">Load sessions</button>
+            </div>
+            <p class="hint">
+              If you don’t have a token, open <a href="/index.html">Chat</a> and authenticate there, then copy your token from your account flow (or ask an operator to mint one).
+            </p>
+          </div>
+          <div class="list" id="sessions"></div>
+        </div>
+
+        <div class="card main">
+          <h2>Session</h2>
+          <div class="panel">
+            <div class="row">
+              <input id="q" class="in" placeholder="Search (FTS)…" />
+              <button id="search" class="btn" style="flex:0 0 auto">Search</button>
+            </div>
+            <div class="hint">Searches your sessions; select a session to narrow results.</div>
+            <div id="results" class="results"></div>
+          </div>
+          <div class="panel">
+            <div class="k">Selected session:</div>
+            <div id="sel" class="mono small">(none)</div>
+            <div style="height:8px"></div>
+            <div id="history"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const TOKEN_KEY = "rhodes_user_token";
+      const els = {
+        token: document.getElementById("token"),
+        save: document.getElementById("save"),
+        load: document.getElementById("load"),
+        sessions: document.getElementById("sessions"),
+        sel: document.getElementById("sel"),
+        history: document.getElementById("history"),
+        q: document.getElementById("q"),
+        search: document.getElementById("search"),
+        results: document.getElementById("results"),
+      };
+      els.token.value = localStorage.getItem(TOKEN_KEY) || "";
+
+      let selectedSession = null;
+
+      const authHeaders = () => {
+        const t = (els.token.value || "").trim();
+        if (!t) return null;
+        return { "Authorization": "Bearer " + t };
+      };
+
+      const api = async (path) => {
+        const headers = authHeaders();
+        if (!headers) throw new Error("Missing token");
+        const res = await fetch(path, { headers });
+        const txt = await res.text();
+        let data;
+        try { data = JSON.parse(txt); } catch { data = { error: txt }; }
+        if (!res.ok) throw new Error((data && data.error) ? data.error : ("HTTP " + res.status));
+        return data;
+      };
+
+      const el = (tag, cls, text) => {
+        const n = document.createElement(tag);
+        if (cls) n.className = cls;
+        if (text != null) n.textContent = text;
+        return n;
+      };
+
+      const renderSessions = (sessions) => {
+        els.sessions.textContent = "";
+        if (!sessions.length) {
+          els.sessions.appendChild(el("div", "hint", "No sessions found for this token."));
+          return;
+        }
+        for (const s of sessions) {
+          const item = el("div", "item");
+          item.appendChild(el("div", "sid", s.session_id));
+          item.appendChild(el("div", "meta", `${s.rounds} rounds • last: ${s.last_at || "?"}`));
+          item.addEventListener("click", () => loadSession(s.session_id));
+          els.sessions.appendChild(item);
+        }
+      };
+
+      const renderHistory = (rows) => {
+        els.history.textContent = "";
+        if (!rows.length) {
+          els.history.appendChild(el("div", "hint", "No messages found in this session."));
+          return;
+        }
+        for (const r of rows) {
+          const box = el("div", "res");
+          box.appendChild(el("div", "meta", `Round ${r.round_num} • ${r.created_at || ""}`));
+          const u = el("pre", "", r.user_message || "");
+          const a = el("pre", "", r.response || "");
+          box.appendChild(el("div", "k", "User"));
+          box.appendChild(u);
+          box.appendChild(el("div", "k", "Assistant"));
+          box.appendChild(a);
+          els.history.appendChild(box);
+        }
+      };
+
+      const loadSessions = async () => {
+        const data = await api("/api/sessions");
+        renderSessions(data.sessions || []);
+      };
+
+      const loadSession = async (sid) => {
+        selectedSession = sid;
+        els.sel.textContent = sid;
+        els.results.textContent = "";
+        const data = await api("/api/session/" + encodeURIComponent(sid));
+        renderHistory(data.rounds || []);
+      };
+
+      const doSearch = async () => {
+        const q = (els.q.value || "").trim();
+        if (!q) return;
+        const url = new URL("/api/search", location.origin);
+        url.searchParams.set("q", q);
+        if (selectedSession) url.searchParams.set("session_id", selectedSession);
+        const data = await api(url.toString());
+        const results = data.results || [];
+        els.results.textContent = "";
+        if (!results.length) {
+          els.results.appendChild(el("div", "hint", "No results."));
+          return;
+        }
+        for (const r of results) {
+          const box = el("div", "res");
+          box.appendChild(el("div", "meta", `${r.session_id} • round ${r.round_num} • ${r.created_at || ""}`));
+          const snippet = el("div", "");
+          snippet.innerHTML = (r.snippet || "").replace(/\\n/g, "<br/>");
+          box.appendChild(snippet);
+          box.addEventListener("click", () => loadSession(r.session_id));
+          els.results.appendChild(box);
+        }
+      };
+
+      els.save.addEventListener("click", () => {
+        const t = (els.token.value || "").trim();
+        if (!t) { localStorage.removeItem(TOKEN_KEY); return; }
+        localStorage.setItem(TOKEN_KEY, t);
+      });
+      els.load.addEventListener("click", () => loadSessions().catch(e => alert(e.message)));
+      els.search.addEventListener("click", () => doSearch().catch(e => alert(e.message)));
+      els.q.addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch().catch(err => alert(err.message)); });
+    </script>
+  </body>
+</html>
+

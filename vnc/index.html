@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rhodes VNC Viewer</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a12 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #60a5fa;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: rgba(26, 26, 46, 0.9);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #9ca3af;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            background: #0a0a12;
+            color: #e0e0e0;
+            font-size: 16px;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #60a5fa;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        .btn:hover { background: #1d4ed8; }
+        .btn-secondary {
+            background: #4b5563;
+        }
+        .btn-secondary:hover { background: #374151; }
+        .preset {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #1e3a5f;
+            border-radius: 20px;
+            margin: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .preset:hover { background: #2563eb; }
+        .info {
+            background: rgba(37, 99, 235, 0.2);
+            border-left: 3px solid #60a5fa;
+            padding: 12px 16px;
+            margin: 16px 0;
+            border-radius: 0 6px 6px 0;
+        }
+        #vnc-frame {
+            width: 100%;
+            height: 700px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #000;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Rhodes VNC Viewer</h1>
+        
+        <div class="card" id="connect-panel">
+            <h2>Connect to VNC Session</h2>
+            
+            <div class="info">
+                Connect to AI instance displays for captcha solving or debugging.
+            </div>
+            
+            <div class="form-group">
+                <label>Quick Connect (Preset Displays)</label>
+                <div id="presets">
+                    <span class="preset" onclick="setPort(5900)">:0 (Main)</span>
+                    <span class="preset" onclick="setPort(5901)">:1</span>
+                    <span class="preset" onclick="setPort(5909)">:19 (Substack)</span>
+                    <span class="preset" onclick="setPort(5910)">:20</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="vnc-port">VNC Port (5900 = display :0)</label>
+                <input type="number" id="vnc-port" value="5909" min="5900" max="5999">
+            </div>
+            
+            <div class="form-group">
+                <label for="vnc-password">Password (if required)</label>
+                <input type="password" id="vnc-password" placeholder="Leave blank if none">
+            </div>
+            
+            <button class="btn" onclick="connect()">Connect</button>
+            <button class="btn btn-secondary" onclick="openFullscreen()">Open Fullscreen</button>
+        </div>
+        
+        <div class="card" id="viewer-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="margin: 0;">VNC Session</h2>
+                <div>
+                    <button class="btn btn-secondary" onclick="disconnect()">Disconnect</button>
+                    <button class="btn" onclick="sendCtrlAltDel()">Ctrl+Alt+Del</button>
+                </div>
+            </div>
+            <iframe id="vnc-frame" src="about:blank"></iframe>
+        </div>
+    </div>
+    
+    <script>
+        function setPort(port) {
+            document.getElementById('vnc-port').value = port;
+        }
+        
+        function connect() {
+            const port = document.getElementById('vnc-port').value;
+            const password = document.getElementById('vnc-password').value;
+            const wsPort = 6080; // websockify port
+            
+            // Build noVNC URL
+            let url = '/vnc/vnc.html?autoconnect=true&reconnect=true';
+            url += '&host=' + window.location.hostname;
+            url += '&port=' + wsPort;
+            url += '&path=websockify/' + port;
+            if (password) {
+                url += '&password=' + encodeURIComponent(password);
+            }
+            
+            document.getElementById('vnc-frame').src = url;
+        }
+        
+        function openFullscreen() {
+            const port = document.getElementById('vnc-port').value;
+            const password = document.getElementById('vnc-password').value;
+            const wsPort = 6080;
+            
+            let url = '/vnc/vnc.html?autoconnect=true&reconnect=true&resize=remote';
+            url += '&host=' + window.location.hostname;
+            url += '&port=' + wsPort;
+            url += '&path=websockify/' + port;
+            if (password) {
+                url += '&password=' + encodeURIComponent(password);
+            }
+            
+            window.open(url, '_blank');
+        }
+        
+        function disconnect() {
+            document.getElementById('vnc-frame').src = 'about:blank';
+        }
+        
+        function sendCtrlAltDel() {
+            // This would require rfb object access - placeholder
+            alert('Use keyboard shortcut in the VNC frame');
+        }
+    </script>
+</body>
+</html>

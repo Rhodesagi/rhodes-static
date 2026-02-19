@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rhodes Admin Panel</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #222;
+        }
+        h1 { color: #fff; font-size: 1.5em; }
+        
+        /* Nav Links */
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 6px;
+            color: #aaa;
+            text-decoration: none;
+            font-size: 0.85em;
+            transition: all 0.2s;
+        }
+        .nav-link:hover {
+            background: #222;
+            border-color: #444;
+            color: #fff;
+        }
+        .nav-link.active {
+            background: #0066cc;
+            border-color: #0066cc;
+            color: #fff;
+        }
+
+        h2 { color: #aaa; font-size: 1.2em; margin: 20px 0 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+
+        /* Login */
+        .login-box {
+            max-width: 400px;
+            margin: 100px auto;
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 8px;
+        }
+        .login-box h2 { border: none; text-align: center; }
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #fff;
+        }
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            background: #0066cc;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .login-box button:hover { background: #0077ee; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: #1a1a1a;
+            border: none;
+            border-radius: 4px 4px 0 0;
+            color: #888;
+            cursor: pointer;
+        }
+        .tab.active { background: #2a2a2a; color: #fff; }
+        .tab:hover { color: #fff; }
+
+        /* Panel */
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        /* Tool Calls */
+        .tool-call {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .tool-call.hidden-tool { border-left: 3px solid #cc6600; }
+        .tool-call .header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .tool-call .tool-name {
+            font-weight: bold;
+            color: #4a9eff;
+        }
+        .tool-call .time { color: #666; font-size: 0.85em; }
+        .tool-call .args {
+            background: #0a0a0a;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85em;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .tool-call .result {
+            margin-top: 8px;
+            color: #888;
+            font-size: 0.85em;
+        }
+        .tool-call.failed { border-left: 3px solid #cc0000; }
+
+        /* Sessions */
+        .session-item {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .session-item .meta {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 8px;
+            color: #666;
+            font-size: 0.85em;
+        }
+        .session-item .message { color: #ccc; }
+        .session-item .response { color: #888; margin-top: 5px; font-size: 0.9em; }
+
+        /* Config */
+        .config-section {
+            background: #1a1a1a;
+            border-radius: 6px;
+            padding: 20px;
+        }
+        .tool-toggle {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .tool-toggle:last-child { border-bottom: none; }
+        .tool-toggle label {
+            flex: 1;
+            cursor: pointer;
+        }
+        .tool-toggle input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        /* Search */
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .search-box input {
+            flex: 1;
+            padding: 10px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: #fff;
+        }
+        .search-box button {
+            padding: 10px 20px;
+            background: #0066cc;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        /* Auto-refresh indicator */
+        .refresh-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1a1a1a;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: #666;
+        }
+        .refresh-indicator.active { color: #4a9eff; }
+
+        .btn { padding: 8px 16px; background: #0066cc; border: none; border-radius: 4px; color: #fff; cursor: pointer; }
+        .btn:hover { background: #0077ee; }
+        .btn-danger { background: #cc0000; }
+        .btn-danger:hover { background: #ee0000; }
+
+        .error { color: #ff4444; margin: 10px 0; }
+        .success { color: #44ff44; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div id="login-view" class="login-box" style="display:none;">
+        <h2>Admin Login</h2>
+        <input type="password" id="admin-password" placeholder="Admin password">
+        <button onclick="login()">Login</button>
+        <div id="login-error" class="error"></div>
+    </div>
+
+    <div id="loading-view" style="text-align:center;padding:100px;color:#666;">
+        Checking authentication...
+    </div>
+
+    <div id="admin-view" style="display:none;">
+        <div class="container">
+            <div class="header">
+                <h1>Rhodes Admin</h1>
+                <div class="nav-links">
+                    <a href="/admin.html" class="nav-link active">Control Panel</a>
+                    <a href="/admin-sessions.html" class="nav-link">Sessions</a>
+                    <a href="/admin-alliance.html" class="nav-link">Alliance</a>
+                    <a href="/polivisual/" class="nav-link">PoliVisual</a>
+                    <a href="/" class="nav-link">Back to Site</a>
+                </div>
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" data-tab="tools">Tool Calls</button>
+                <button class="tab" data-tab="sessions">Sessions</button>
+                <button class="tab" data-tab="config">Visibility Config</button>
+            </div>
+
+            <!-- Tool Calls Panel -->
+            <div id="tools-panel" class="panel active">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <div>
+                        <label><input type="checkbox" id="auto-refresh" checked> Auto-refresh (5s)</label>
+                    </div>
+                    <button class="btn" onclick="loadToolCalls()">Refresh Now</button>
+                </div>
+                <div id="tool-calls-list"></div>
+            </div>
+
+            <!-- Sessions Panel -->
+            <div id="sessions-panel" class="panel">
+                <div class="search-box">
+                    <input type="text" id="session-search" placeholder="Search sessions...">
+                    <button onclick="searchSessions()">Search</button>
+                </div>
+                <div id="sessions-list"></div>
+            </div>
+
+            <!-- Config Panel -->
+            <div id="config-panel" class="panel">
+                <h2>Tool Visibility</h2>
+                <p style="color:#888;margin-bottom:15px;">Hidden tools are only visible to admin. Uncheck to make visible to all users.</p>
+                <div class="config-section" id="visibility-config"></div>
+                <button class="btn" style="margin-top:15px;" onclick="saveVisibility()">Save Changes</button>
+                <div id="config-status"></div>
+
+                <h2 style="margin-top:30px;">Bridge & Model Settings</h2>
+                <p style="color:#888;margin-bottom:15px;">Control which backend is used for AI responses.</p>
+                <div class="config-section" id="bridge-config">
+                    <div style="margin-bottom:20px;">
+                        <label style="display:block;margin-bottom:8px;color:#aaa;">Bridge Mode:</label>
+                        <select id="bridge-mode" style="width:200px;padding:8px;background:#2a2a2a;border:1px solid #444;border-radius:4px;color:#fff;">
+                            <option value="auto">Auto (try both)</option>
+                            <option value="claude_api">API Only (billed per token)</option>
+                            <option value="claude_code">Claude Code Only (subscription)</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:20px;">
+                        <label style="display:block;margin-bottom:8px;color:#aaa;">Claude Code Model:</label>
+                        <select id="claude-code-model" style="width:200px;padding:8px;background:#2a2a2a;border:1px solid #444;border-radius:4px;color:#fff;">
+                            <option value="opus">Alpha (Opus)</option>
+                            <option value="sonnet">Beta (Sonnet)</option>
+                            <option value="haiku">Ada (Haiku)</option>
+                        </select>
+                        <span style="color:#666;margin-left:10px;font-size:0.85em;">Used when bridge=claude_code</span>
+                    </div>
+                    <div style="margin-bottom:20px;">
+                        <label style="display:block;margin-bottom:8px;color:#aaa;">API Model:</label>
+                        <select id="api-model" style="width:200px;padding:8px;background:#2a2a2a;border:1px solid #444;border-radius:4px;color:#fff;">
+                            <option value="opus">Alpha (Opus)</option>
+                            <option value="sonnet">Beta (Sonnet)</option>
+                            <option value="haiku">Ada (Haiku)</option>
+                            <option value="deepseek">Delta (DeepSeek)</option>
+                        </select>
+                        <span style="color:#666;margin-left:10px;font-size:0.85em;">Used when bridge=claude_api</span>
+                    </div>
+                    <div style="background:#1a1a1a;padding:10px;border-radius:4px;margin-bottom:15px;">
+                        <strong style="color:#4a9eff;">Current Status:</strong>
+                        <span id="bridge-status" style="color:#888;">Loading...</span>
+                    </div>
+                </div>
+                <button class="btn" style="margin-top:15px;" onclick="saveBridgeSettings()">Apply Bridge Settings</button>
+                <div id="bridge-status-msg" style="margin-top:10px;"></div>
+            </div>
+        </div>
+
+        <div class="refresh-indicator" id="refresh-indicator">Auto-refresh: OFF</div>
+    </div>
+
+    <script>
+        let adminToken = localStorage.getItem('rhodes_admin_token');
+        let userToken = localStorage.getItem('rhodes_user_token');
+        let autoRefreshInterval = null;
+        let hiddenTools = [];
+
+        // Check if user is already logged in as admin
+        async function checkUserAdmin() {
+            if (!userToken) return false;
+            try {
+                const resp = await fetch('/api/user/is_admin', {
+                    headers: { 'Authorization': 'Bearer ' + userToken }
+                });
+                const data = await resp.json();
+                return data.is_admin === true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Initialize - check user auth first, then fall back to admin token
+        (async function init() {
+            const loadingView = document.getElementById('loading-view');
+            const loginView = document.getElementById('login-view');
+
+            // First check if logged-in user is an admin
+            if (userToken) {
+                const isAdmin = await checkUserAdmin();
+                if (isAdmin) {
+                    // Use user token as admin token for API calls
+                    adminToken = userToken;
+                    loadingView.style.display = 'none';
+                    showAdmin();
+                    return;
+                }
+            }
+            // Fall back to stored admin token
+            if (adminToken) {
+                loadingView.style.display = 'none';
+                showAdmin();
+                return;
+            }
+            // No valid auth - show login
+            loadingView.style.display = 'none';
+            loginView.style.display = 'block';
+        })();
+
+        function login() {
+            const password = document.getElementById('admin-password').value;
+            fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.token) {
+                    adminToken = data.token;
+                    localStorage.setItem('rhodes_admin_token', adminToken);
+                    showAdmin();
+                } else {
+                    document.getElementById('login-error').textContent = data.error || 'Login failed';
+                }
+            })
+            .catch(e => {
+                document.getElementById('login-error').textContent = 'Connection error';
+            });
+        }
+
+        function showAdmin() {
+            document.getElementById('loading-view').style.display = 'none';
+            document.getElementById('login-view').style.display = 'none';
+            document.getElementById('admin-view').style.display = 'block';
+            loadToolCalls();
+            loadVisibilityConfig();
+            startAutoRefresh();
+        }
+
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab + '-panel').classList.add('active');
+            });
+        });
+
+        function authHeaders() {
+            return { 'Authorization': 'Bearer ' + adminToken };
+        }
+
+        function loadToolCalls() {
+            fetch('/api/tools/calls?limit=100', { headers: authHeaders() })
+            .then(r => r.json())
+            .then(data => {
+                const list = document.getElementById('tool-calls-list');
+                if (!data.calls || data.calls.length === 0) {
+                    list.innerHTML = '<p style="color:#666;">No tool calls yet</p>';
+                    return;
+                }
+                list.innerHTML = data.calls.map(call => {
+                    const isHidden = hiddenTools.includes(call.tool_name);
+                    const hiddenClass = isHidden ? 'hidden-tool' : '';
+                    const failedClass = !call.success ? 'failed' : '';
+                    let args = '';
+                    try { args = JSON.stringify(JSON.parse(call.arguments), null, 2); }
+                    catch { args = call.arguments || ''; }
+                    return `
+                        <div class="tool-call ${hiddenClass} ${failedClass}">
+                            <div class="header">
+                                <span class="tool-name">${call.tool_name}${isHidden ? ' (hidden)' : ''}</span>
+                                <span class="time">${call.created_at}</span>
+                            </div>
+                            <div class="args">${escapeHtml(args)}</div>
+                            ${call.result ? `<div class="result">${escapeHtml(call.result.substring(0, 200))}...</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            });
+        }
+
+        function searchSessions() {
+            const q = document.getElementById('session-search').value;
+            fetch('/api/admin/sessions?q=' + encodeURIComponent(q) + '&limit=50', { headers: authHeaders() })
+            .then(r => r.json())
+            .then(data => {
+                const list = document.getElementById('sessions-list');
+                if (!data.results || data.results.length === 0) {
+                    list.innerHTML = '<p style="color:#666;">No sessions found</p>';
+                    return;
+                }
+                list.innerHTML = data.results.map(s => `
+                    <div class="session-item">
+                        <div class="meta">
+                            <span>Session: ${s.session_id.substring(0, 8)}...</span>
+                            <span>User: ${s.username || 'guest'}</span>
+                            <span>Round: ${s.round_num}</span>
+                            <span>${s.created_at}</span>
+                        </div>
+                        <div class="message"><strong>User:</strong> ${escapeHtml(s.user_message || '')}</div>
+                        <div class="response"><strong>Response:</strong> ${escapeHtml(s.response || '')}</div>
+                    </div>
+                `).join('');
+            });
+        }
+
+        function loadVisibilityConfig() {
+            fetch('/api/admin/tools/visibility', { headers: authHeaders() })
+            .then(r => r.json())
+            .then(data => {
+                hiddenTools = data.hidden_tools || [];
+                const allTools = new Set([...hiddenTools, ...(data.all_tools || [])]);
+                const config = document.getElementById('visibility-config');
+                if (allTools.size === 0) {
+                    config.innerHTML = '<p style="color:#666;">No tools recorded yet.</p>';
+                    return;
+                }
+                config.innerHTML = Array.from(allTools).sort().map(tool => `
+                    <div class="tool-toggle">
+                        <label for="tool-${tool}">${tool}</label>
+                        <input type="checkbox" id="tool-${tool}" ${hiddenTools.includes(tool) ? 'checked' : ''}>
+                    </div>
+                `).join('');
+            });
+        }
+
+        function saveVisibility() {
+            const checkboxes = document.querySelectorAll('#visibility-config input[type="checkbox"]');
+            const hidden = [];
+            checkboxes.forEach(cb => { if (cb.checked) hidden.push(cb.id.replace('tool-', '')); });
+            fetch('/api/admin/tools/visibility', {
+                method: 'POST',
+                headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hidden_tools: hidden })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    hiddenTools = data.hidden_tools;
+                    document.getElementById('config-status').innerHTML = '<span class="success">Saved!</span>';
+                    setTimeout(() => document.getElementById('config-status').innerHTML = '', 2000);
+                }
+            });
+        }
+
+        function startAutoRefresh() {
+            const checkbox = document.getElementById('auto-refresh');
+            const indicator = document.getElementById('refresh-indicator');
+            function updateRefresh() {
+                if (checkbox.checked) {
+                    if (!autoRefreshInterval) autoRefreshInterval = setInterval(loadToolCalls, 5000);
+                    indicator.textContent = 'Auto-refresh: ON';
+                    indicator.classList.add('active');
+                } else {
+                    if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; }
+                    indicator.textContent = 'Auto-refresh: OFF';
+                    indicator.classList.remove('active');
+                }
+            }
+            checkbox.addEventListener('change', updateRefresh);
+            updateRefresh();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        document.getElementById('session-search').addEventListener('keypress', e => { if (e.key === 'Enter') searchSessions(); });
+        document.getElementById('admin-password').addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
+
+        async function loadBridgeStatus() {
+            try {
+                const resp = await fetch("/api/admin/runtime/status", { headers: { "X-Rhodes-Admin-Token": adminToken } });
+                const data = await resp.json();
+                if (data.success && data.services) {
+                    const svc = data.services["rhodes-server"] || {};
+                    const env = svc.env || {};
+                    const bridge = env.RHODES_BRIDGE_MODE || "auto";
+                    const model = env.RHODES_MODEL || "sonnet";
+                    document.getElementById("bridge-mode").value = bridge;
+                    document.getElementById("claude-code-model").value = model;
+                    document.getElementById("api-model").value = model;
+                    const statusEl = document.getElementById("bridge-status");
+                    const activeHtml = svc.active ? "<span style=\"color:#0f0;\">Yes</span>" : "<span style=\"color:#f00;\">No</span>";
+                    statusEl.innerHTML = "Bridge: <strong>" + bridge + "</strong>, Model: <strong>" + model + "</strong>, Active: " + activeHtml;
+                }
+            } catch (e) { console.error("Failed to load bridge status:", e); }
+        }
+
+        async function saveBridgeSettings() {
+            const bridge = document.getElementById("bridge-mode").value;
+            const codeModel = document.getElementById("claude-code-model").value;
+            const apiModel = document.getElementById("api-model").value;
+            const model = bridge === "claude_api" ? apiModel : codeModel;
+            const statusEl = document.getElementById("bridge-status-msg");
+            statusEl.innerHTML = "<span style=\"color:#888;\">Applying...</span>";
+            try {
+                const resp = await fetch("/api/admin/runtime/apply", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "X-Rhodes-Admin-Token": adminToken },
+                    body: JSON.stringify({ service: "rhodes-server", action: "apply", bridge: bridge, model: model })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    statusEl.innerHTML = "<span style=\"color:#0f0;\">Settings applied!</span>";
+                    setTimeout(function() { loadBridgeStatus(); }, 2000);
+                } else {
+                    statusEl.innerHTML = "<span style=\"color:#f00;\">Error: " + (data.stderr || "Unknown") + "</span>";
+                }
+            } catch (e) {
+                statusEl.innerHTML = "<span style=\"color:#f00;\">Error: " + e.message + "</span>";
+            }
+            setTimeout(function() { statusEl.innerHTML = ""; }, 5000);
+        }
+    </script>
+</body>
+</html>

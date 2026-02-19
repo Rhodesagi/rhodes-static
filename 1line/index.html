@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>1line</title>
+  <style>
+    body{margin:0;padding:14px;background:#0b0f14;color:#d8d8d8;font:14px/1.35 monospace}
+    #w{max-width:900px;margin:0 auto;border:2px solid #00ffd5;background:#060809}
+    #h{padding:10px 12px 30px;background:#000;border-bottom:2px solid #00ffd5;text-align:center;position:relative;overflow:hidden}
+    #sig{position:absolute;top:10px;right:12px;margin:0;color:#00ffd5;font:11px/1 monospace;white-space:pre;pointer-events:none;overflow:hidden}
+    #lb{display:inline-block;max-width:100%;overflow:auto;border:1px solid #00ffd5;background:#000;padding:8px 10px;margin:0 auto 6px}
+    #logo{display:inline-block;white-space:pre;color:#00ffd5;font:900 18px/1 monospace}
+    #logo b{display:inline-block;min-width:.75em;text-align:center;border:1px solid #00ffd5;padding:2px 0;margin:1px;background:rgba(0,255,213,.06)}
+    #c{padding:10px;overflow:auto}
+    #i{background:#000;border-top:2px solid #444;padding:10px;position:sticky;bottom:0}
+    form{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;max-width:800px;margin:0 auto;width:100%}
+    #row{position:relative;display:flex;min-width:0}
+    #p{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#00ffd5;font-weight:900;font-size:18px;line-height:1;user-select:none;pointer-events:none}
+    input{flex:1;min-width:0;width:100%;background:#111;color:#00ffd5;border:1px solid #444;padding:12px 12px 12px 40px;font:16px monospace}
+    button{background:#007c86;color:#fff;border:0;padding:12px 16px;font:700 14px monospace}
+    #s{text-align:center;color:#888;font-size:12px;margin:0 0 6px}
+    .m{margin:10px 0;padding:8px;border-left:3px solid #888;background:rgba(255,255,255,.05);color:#bbb}
+    .u{border-left-color:#7aa7ff}
+    .r{border-left-color:#00ffd5;color:#00ffd5}
+    @media(max-width:600px){form{grid-template-columns:1fr}#row{width:100%}button{width:100%}.m pre{font-size:min(2vw,10px);line-height:1.1;overflow-x:auto}#logo{font-size:14px}#sig{font-size:8px}}
+  </style>
+  <body>
+    <div id="w">
+      <div id="h">
+        <pre id="sig">    |
+   ||
+  |||
+ ||||
+█||||</pre>
+        <div id="lb">
+          <div id="logo"><b>R</b><b>H</b><b>O</b><b>D</b><b>E</b><b>S</b><b>&nbsp;</b><b>A</b><b>G</b><b>I</b></div>
+        </div>
+      </div>
+      <div id="c"></div>
+      <div id="i">
+        <div id="s"></div>
+        <form id="f">
+          <div id="row">
+            <span id="p">&gt;</span>
+            <input id="t" autocomplete="off" placeholder="enter message..." autofocus />
+          </div>
+          <button>Send</button>
+        </form>
+      </div>
+    </div>
+    <script>
+      (() => {
+        const G = (i) => document.getElementById(i);
+        const c = G("c");
+        const t = G("t");
+        const s = G("s");
+
+        let w;
+        let ok = 0;
+        let buf = "";
+        let bufEl = null;
+        let stall = 0;
+        let idle = 0;
+
+        t.addEventListener("input", () => {
+          const v = t.value;
+          if (v && v[0] !== v[0].toUpperCase()) t.value = v[0].toUpperCase() + v.slice(1);
+        });
+
+        addEventListener("beforeunload", (e) => {
+          if (stall) {
+            e.preventDefault();
+            e.returnValue = "";
+            return "";
+          }
+        });
+
+        const A = (k, x) => {
+          const d = document.createElement("div");
+          d.className = "m " + k;
+          d.textContent = x;
+          c.appendChild(d);
+          d.scrollIntoView({ block: "end" });
+          return d;
+        };
+        const S = (x) => (s.textContent = x);
+        const clr = () => {
+          if (stall) clearTimeout(stall);
+          if (idle) clearTimeout(idle);
+          stall = idle = 0;
+        };
+        const U = () => {
+          try {
+            if (crypto.randomUUID) return crypto.randomUUID();
+            if (crypto.getRandomValues) {
+              const d = crypto.getRandomValues(new Uint8Array(16));
+              d[6] = (d[6] & 15) | 64;
+              d[8] = (d[8] & 63) | 128;
+              return [...d]
+                .map((b, i) => (i == 4 || i == 6 || i == 8 || i == 10 ? "-" : "") + b.toString(16).padStart(2, "0"))
+                .join("");
+            }
+          } catch {}
+          return Date.now().toString(16) + "-" + Math.random().toString(16).slice(2);
+        };
+
+        const WS = (location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws";
+
+        function prettyModel(m) {
+          m = (m || "").toString().toLowerCase();
+          return m === "opus" ? "ALPHA" : m === "sonnet" ? "BETA" : m === "deepseek" ? "DELTA" : m === "haiku" ? "ADA" : m ? m.toUpperCase() : "MODEL";
+        }
+        function modelFromFlag(f) {
+          f = (f || "").toString().toLowerCase();
+          return f === "alpha" ? "opus" : f === "beta" ? "sonnet" : f === "delta" ? "deepseek" : f === "ada" ? "haiku" : "";
+        }
+
+        function C() {
+          clr();
+          S("Connecting...");
+          ok = 0;
+          try {
+            w = new WebSocket(WS);
+          } catch {
+            S("WebSocket unsupported");
+            A("r", "Rhodes: WebSocket unsupported");
+            return;
+          }
+          w.onopen = () =>
+            w.send(
+              JSON.stringify({
+                msg_type: "auth_request",
+                msg_id: U(),
+                timestamp: new Date().toISOString(),
+                payload: { client_id: "1line", tab_id: U(), token: "", user_token: "", resume_session: "" },
+              })
+            );
+          w.onclose = () => {
+            clr();
+            S("Disconnected; retrying...");
+            setTimeout(C, 1200);
+          };
+          w.onmessage = (z) => {
+            let m;
+            try {
+              m = JSON.parse(z.data);
+            } catch {
+              return;
+            }
+            const p = m.payload || {};
+            if (m.msg_type === "auth_response") {
+              ok = !!p.success;
+              S(ok ? "Ready" : "Auth failed");
+              ok && A("r", "Rhodes: Rhodes System Initialized. You have 10 free guest messages. Create an account or login to continue for longer.");
+              return;
+            }
+            if (m.msg_type === "ai_message_chunk") {
+              const x = p.content || "";
+              if (!x) return;
+              S("Thinking...");
+              if (!bufEl) {
+                buf = "";
+                bufEl = A("r", "Rhodes: ");
+              }
+              buf += x;
+              bufEl.textContent = "Rhodes: " + buf;
+              clr();
+              idle = setTimeout(() => S("Ready"), 8000);
+              return;
+            }
+            if (m.msg_type === "ai_message") {
+              const x = (p.content || "").trim();
+              bufEl = null;
+              buf = "";
+              x && A("r", "Rhodes: " + x);
+              clr();
+              S("Ready");
+              return;
+            }
+            if (m.msg_type === "guest_status" && p.message) {
+              A("r", "Rhodes: " + p.message);
+              clr();
+              S("Ready");
+              return;
+            }
+            if (m.msg_type === "model_set_response") {
+              if (p && p.success) A("r", "Rhodes: [System] Model switched to " + prettyModel(p.model));
+              else A("r", "Rhodes: [System] Model switch failed");
+              return;
+            }
+          };
+        }
+
+        C();
+
+        G("f").onsubmit = (z) => {
+          z.preventDefault();
+          let m = t.value.trim();
+          if (!m) return;
+          A("u", "You: " + m);
+          t.value = "";
+          clr();
+          stall = setTimeout(() => {
+            S("Ready");
+            bufEl = null;
+            buf = "";
+          }, 180000);
+
+          if (!w || w.readyState !== 1 || !ok) {
+            S("Not ready - reconnecting...");
+            try {
+              w && w.close();
+            } catch {}
+            C();
+            return;
+          }
+
+          const mm = m.match(/^(?:--|\/)(alpha|beta|delta|ada)\b[\s:,-]*(.*)$/i);
+          if (mm) {
+            const target = modelFromFlag(mm[1] || "");
+            const rest = (mm[2] || "").trim();
+            if (target) {
+              w.send(JSON.stringify({ msg_type: "model_set_request", msg_id: U(), timestamp: new Date().toISOString(), payload: { model: target } }));
+              S("Switching model...");
+            }
+            if (!rest) {
+              t.focus();
+              return;
+            }
+            m = rest;
+          }
+
+          S("Thinking...");
+          w.send(JSON.stringify({ msg_type: "user_message", msg_id: U(), timestamp: new Date().toISOString(), payload: { content: m, stream: true } }));
+          t.focus();
+        };
+      })();
+    </script>
+  </body>
+</html>

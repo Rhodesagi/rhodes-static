@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DumDumb Back - Elite Twerk Team</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial Black', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        header {
+            background: rgba(0,0,0,0.8);
+            padding: 2rem;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            font-size: 4rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255,0,255,0.5);
+            letter-spacing: 5px;
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            margin-top: 0.5rem;
+            color: #ff00ff;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        nav {
+            margin-top: 1rem;
+        }
+
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 1.5rem;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        nav a:hover {
+            color: #ff00ff;
+            text-shadow: 0 0 20px #ff00ff;
+        }
+
+        .hero {
+            height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="1200" height="600" fill="url(%23grid)"/></svg>');
+            position: relative;
+        }
+
+        .hero-content {
+            z-index: 10;
+        }
+
+        .hero h1 {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1.5rem 3rem;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            color: #000;
+            font-weight: 900;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 1.3rem;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 10px 30px rgba(255,0,255,0.5);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(255,0,255,0.7);
+        }
+
+        section {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .team-member {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,0,255,0.3);
+            transition: all 0.3s;
+        }
+
+        .team-member:hover {
+            transform: translateY(-10px);
+            border-color: #ff00ff;
+            box-shadow: 0 20px 40px rgba(255,0,255,0.4);
+        }
+
+        .member-name {
+            font-size: 1.8rem;
+            margin: 1rem 0;
+            color: #00ffff;
+        }
+
+        .member-role {
+            font-size: 1rem;
+            color: #ff00ff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .video-section {
+            background: rgba(0,0,0,0.5);
+            padding: 5rem 2rem;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .video-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid rgba(255,0,255,0.3);
+            transition: all 0.3s;
+        }
+
+        .video-card:hover {
+            border-color: #00ffff;
+            transform: scale(1.05);
+        }
+
+        .video-placeholder {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+
+        .video-info {
+            padding: 1.5rem;
+        }
+
+        .video-title {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .booking {
+            text-align: center;
+        }
+
+        .booking-info {
+            background: rgba(255,255,255,0.1);
+            padding: 3rem;
+            border-radius: 20px;
+            margin-top: 2rem;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,0,255,0.3);
+        }
+
+        .booking-info h3 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: #00ffff;
+        }
+
+        .booking-info p {
+            font-size: 1.2rem;
+            margin: 1rem 0;
+        }
+
+        .contact-email {
+            color: #ff00ff;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .social-links {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        .social-link {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .social-link:hover {
+            background: rgba(255,0,255,0.5);
+            border-color: #ff00ff;
+            transform: scale(1.1);
+        }
+
+        footer {
+            background: rgba(0,0,0,0.9);
+            padding: 2rem;
+            text-align: center;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @media (max-width: 768px) {
+            .logo { font-size: 2.5rem; }
+            .hero h1 { font-size: 3rem; }
+            .section-title { font-size: 2rem; }
+            nav a { display: block; margin: 0.5rem 0; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">DUMDUMB BACK</div>
+        <div class="tagline">Elite Twerk Team</div>
+        <nav>
+            <a href="#about">About</a>
+            <a href="#team">Team</a>
+            <a href="#videos">Videos</a>
+            <a href="#booking">Book Us</a>
+        </nav>
+    </header>
+
+    <div class="hero">
+        <div class="hero-content">
+            <h1>BRINGING THE ENERGY</h1>
+            <p>High-energy performances that move crowds</p>
+            <a href="#booking" class="cta-button">Book Now</a>
+        </div>
+    </div>
+
+    <section id="about">
+        <h2 class="section-title">About DumDumb Back</h2>
+        <p style="text-align: center; font-size: 1.3rem; line-height: 1.8;">
+            DumDumb Back is an elite performance group specializing in high-energy choreography and entertainment.
+            From club appearances to major events, we bring professional showmanship and crowd-moving performances
+            that leave lasting impressions. Our team combines athletic skill, rhythm, and stage presence to create
+            unforgettable experiences.
+        </p>
+    </section>
+
+    <section id="team">
+        <h2 class="section-title">Meet The Team</h2>
+        <div class="team-grid">
+            <div class="team-member">
+                <div style="font-size: 4rem;">💎</div>
+                <div class="member-name">Diamond</div>
+                <div class="member-role">Lead Performer</div>
+            </div>
+            <div class="team-member">
+                <div style="font-size: 4rem;">⭐</div>
+                <div class="member-name">Starr</div>
+                <div class="member-role">Choreographer</div>
+            </div>
+            <div class="team-member">
+                <div style="font-size: 4rem;">🔥</div>
+                <div class="member-name">Blaze</div>
+                <div class="member-role">Performance Director</div>
+            </div>
+            <div class="team-member">
+                <div style="font-size: 4rem;">👑</div>
+                <div class="member-name">Queen B</div>
+                <div class="member-role">Creative Lead</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="video-section" id="videos">
+        <section>
+            <h2 class="section-title">Performance Highlights</h2>
+            <div class="video-grid">
+                <div class="video-card">
+                    <div class="video-placeholder">🎬</div>
+                    <div class="video-info">
+                        <div class="video-title">Club Takeover 2025</div>
+                        <p>Epic performance at Miami's hottest venue</p>
+                    </div>
+                </div>
+                <div class="video-card">
+                    <div class="video-placeholder">🎬</div>
+                    <div class="video-info">
+                        <div class="video-title">Festival Energy</div>
+                        <p>Main stage performance that stopped the show</p>
+                    </div>
+                </div>
+                <div class="video-card">
+                    <div class="video-placeholder">🎬</div>
+                    <div class="video-info">
+                        <div class="video-title">Private Event Excellence</div>
+                        <p>VIP performance for exclusive clientele</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <section id="booking" class="booking">
+        <h2 class="section-title">Book DumDumb Back</h2>
+        <div class="booking-info">
+            <h3>Available for:</h3>
+            <p>🎉 Club Appearances</p>
+            <p>🎊 Private Events</p>
+            <p>🎪 Festivals & Concerts</p>
+            <p>📸 Music Videos</p>
+            <p>🎬 Corporate Events</p>
+
+            <div style="margin-top: 3rem;">
+                <p style="font-size: 1.5rem; margin-bottom: 1rem;">Contact for bookings:</p>
+                <a href="mailto:bookings@dumdumbback.com" class="contact-email">bookings@dumdumbback.com</a>
+            </div>
+
+            <div class="social-links">
+                <a href="#" class="social-link">Instagram</a>
+                <a href="#" class="social-link">TikTok</a>
+                <a href="#" class="social-link">YouTube</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 DumDumb Back. All rights reserved.</p>
+        <p style="margin-top: 1rem; opacity: 0.7;">Professional Entertainment Services</p>
+    </footer>
+
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Add parallax effect to hero
+        window.addEventListener('scroll', () => {
+            const hero = document.querySelector('.hero');
+            const scrolled = window.pageYOffset;
+            hero.style.transform = `translateY(${scrolled * 0.5}px)`;
+        });
+    </script>
+</body>
+</html>

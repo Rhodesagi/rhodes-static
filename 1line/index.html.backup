@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rhodes - 1 Line</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { 
+    background: #111; 
+    color: #ddd; 
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+#header {
+    background: #000;
+    padding: 10px;
+    border-bottom: 2px solid #0a0;
+    text-align: center;
+}
+#header h1 {
+    color: #0f0;
+    font-size: 1.5em;
+}
+#header p {
+    color: #888;
+    font-size: 0.8em;
+}
+#chat-container {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+}
+.message {
+    margin: 10px 0;
+    padding: 8px;
+    border-radius: 4px;
+    animation: fadeIn 0.3s ease-in;
+}
+.user {
+    background: rgba(0, 100, 255, 0.1);
+    border-left: 3px solid #0af;
+    color: #0af;
+}
+.rhodes {
+    background: rgba(0, 255, 0, 0.05);
+    border-left: 3px solid #0f0;
+    color: #0f0;
+}
+.system {
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 3px solid #888;
+    color: #888;
+    font-size: 0.9em;
+}
+#input-container {
+    background: #000;
+    padding: 10px;
+    border-top: 2px solid #444;
+    position: sticky;
+    bottom: 0;
+}
+#input-form {
+    display: flex;
+    gap: 10px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+#input {
+    flex: 1;
+    background: #222;
+    color: #0f0;
+    border: 1px solid #444;
+    padding: 12px;
+    font-size: 16px;
+    font-family: 'Courier New', monospace;
+    border-radius: 4px;
+}
+#input:focus {
+    outline: none;
+    border-color: #0f0;
+    box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+}
+button {
+    background: #0a0;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+}
+button:hover {
+    background: #0c0;
+}
+button:active {
+    background: #080;
+}
+#status {
+    text-align: center;
+    color: #888;
+    font-size: 0.8em;
+    margin-top: 5px;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 600px) {
+    #input-form { flex-direction: column; }
+    button { width: 100%; }
+}
+</style>
+</head>
+<body>
+<div id="header">
+    <pre style="color:#0f0; font-size:12px; line-height:1.2; margin:0; text-align:center;">
+  ██████╗ ██╗  ██╗ ██████╗ ██████╗ ███████╗███████╗    █████╗  ██████╗ ██╗
+  ██╔══██╗██║  ██║██╔═══██╗██╔══██╗██╔════╝██╔════╝   ██╔══██╗██╔════╝ ██║
+  ██████╔╝███████║██║   ██║██║  ██║█████╗  ███████╗   ███████║██║  ███╗██║
+  ██╔══██╗██╔══██║██║   ██║██║  ██║██╔══╝  ╚════██║   ██╔══██║██║   ██║██║
+  ██║  ██║██║  ██║╚██████╔╝██████╔╝███████╗███████║██╗██║  ██║╚██████╔╝██║
+  ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝╚══════╝╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝
+    </pre>
+    <p style="color:#888; font-size:0.8em; margin-top:5px;">Minimal interface for low-bandwidth connections (3G/EDGE)</p>
+</div>
+
+<div id="chat-container">
+    <div class="message system">
+        <strong>System:</strong> Rhodes Minimalist Interface loaded. Type your message below and press Enter.
+    </div>
+</div>
+
+<div id="input-container">
+    <form id="input-form">
+        <input type="text" id="input" placeholder="Type your message... (Press Enter to send)" autocomplete="off" autofocus>
+        <button type="submit">Send</button>
+    </form>
+    <div id="status">Ready</div>
+</div>
+
+<script>
+const chatContainer = document.getElementById('chat-container');
+const input = document.getElementById('input');
+const form = document.getElementById('input-form');
+const status = document.getElementById('status');
+
+// Auto-focus input
+input.focus();
+
+// Add message to chat
+function addMessage(sender, text) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}`;
+    messageDiv.innerHTML = `<strong>${sender}:</strong> ${text}`;
+    chatContainer.appendChild(messageDiv);
+    messageDiv.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Clear chat
+function clearChat() {
+    chatContainer.innerHTML = '<div class="message system"><strong>System:</strong> Chat cleared.</div>';
+}
+
+// Send message to Rhodes API
+async function sendMessage() {
+    const text = input.value.trim();
+    if (!text) return;
+    
+    // Add user message
+    addMessage('user', text);
+    input.value = '';
+    status.textContent = 'Thinking...';
+    
+    try {
+        // Send to Rhodes API
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: text,
+                user_id: 2, // Sebastian's user_id
+                username: 'sebastian'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.response) {
+            addMessage('rhodes', data.response);
+            status.textContent = 'Ready';
+        } else if (data.error) {
+            addMessage('rhodes', `Error: ${data.error}`);
+            status.textContent = 'Error';
+        } else {
+            addMessage('rhodes', 'No response received');
+            status.textContent = 'Error';
+        }
+    } catch (error) {
+        addMessage('rhodes', `Network error: ${error.message}`);
+        status.textContent = 'Network error';
+    }
+    
+    // Re-focus input
+    input.focus();
+}
+
+// Form submission
+form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    sendMessage();
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        input.value = '';
+        input.focus();
+    }
+    if (e.ctrlKey && e.key === 'l') {
+        e.preventDefault();
+        clearChat();
+    }
+});
+
+// Welcome message
+setTimeout(() => {
+    addMessage('Rhodes', 'Hello. This is Rhodes Minimalist Interface. I\'m operational and ready to assist. What would you like to discuss?');
+}, 500);
+</script>
+</body>
+</html>

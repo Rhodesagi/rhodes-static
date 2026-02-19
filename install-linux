@@ -1,0 +1,171 @@
+#!/bin/bash
+# RHODES_CODE Installer for Linux
+
+set -e
+
+echo ""
+echo "====================================="
+echo "  RHODES_CODE INSTALLER (Linux)"
+echo "====================================="
+echo ""
+
+# Handle authentication
+mkdir -p ~/.rhodes
+
+if [ -n "$RHODES_TOKEN" ]; then
+    echo "  Token detected - will auto-login"
+    echo "{\"token\": \"$RHODES_TOKEN\"}" > ~/.rhodes/config.json
+elif [ ! -f ~/.rhodes/config.json ]; then
+    echo "  Login to Rhodes (or press Enter to skip)"
+    echo ""
+    read -p "  Username or Email: " RHODES_USER
+    if [ -n "$RHODES_USER" ]; then
+        read -s -p "  Password: " RHODES_PASS
+        echo ""
+        echo "  Authenticating..."
+        RESPONSE=$(curl -s -X POST https://rhodesagi.com/api/user/login \
+            -H "Content-Type: application/json" \
+            -d "{\"username\":\"$RHODES_USER\",\"password\":\"$RHODES_PASS\"}" 2>/dev/null || echo "")
+        TOKEN=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('token',''))" 2>/dev/null || echo "")
+        if [ -n "$TOKEN" ] && [ "$TOKEN" != "null" ]; then
+            echo "{\"token\": \"$TOKEN\"}" > ~/.rhodes/config.json
+            echo "  [OK] Logged in successfully"
+        else
+            echo "  [WARN] Login failed - you can login later in the app"
+        fi
+    else
+        echo "  [SKIP] Will prompt for login in app"
+    fi
+fi
+
+echo ""
+echo "  Checking Python..."
+if ! command -v python3 &>/dev/null; then
+    echo "  Python3 not found. Please install python3 first."
+    exit 1
+fi
+
+echo "  Installing Python dependencies..."
+python3 -m pip install websockets pywebview --quiet 2>/dev/null || \
+python3 -m pip install websockets pywebview --quiet --user 2>/dev/null || true
+
+echo "  Downloading RHODES_CODE..."
+curl -so ~/.rhodes/rhodes-desktop.py https://rhodesagi.com/download/rhodes-desktop.py
+chmod +x ~/.rhodes/rhodes-desktop.py
+
+echo "  Downloading Computer Use module..."
+curl -so ~/.rhodes/computer-use.py https://rhodesagi.com/download/computer-use-linux.py
+chmod +x ~/.rhodes/computer-use.py
+
+# Clean up old wrappers that may point to wrong files
+rm -f ~/.local/bin/rhodes ~/.local/bin/RHODES_CODE ~/.local/bin/rhodes-ui ~/.local/bin/rhodes-bg ~/.local/bin/rhodes-stop 2>/dev/null || true
+
+# Create command scripts
+cat > /tmp/rhodes-cmd << 'CMDEOF'
+#!/bin/bash
+python3 ~/.rhodes/rhodes-desktop.py "$@"
+CMDEOF
+
+cat > /tmp/rhodes-ui << 'CMDEOF'
+#!/bin/bash
+python3 ~/.rhodes/rhodes-desktop.py --ui
+CMDEOF
+
+cat > /tmp/rhodes-bg << 'CMDEOF'
+#!/bin/bash
+python3 ~/.rhodes/rhodes-desktop.py -b
+CMDEOF
+
+cat > /tmp/rhodes-stop << 'CMDEOF'
+#!/bin/bash
+python3 ~/.rhodes/rhodes-desktop.py --stop
+CMDEOF
+
+cat > /tmp/rhodes-computer-use << 'CMDEOF'
+#!/bin/bash
+python3 ~/.rhodes/computer-use.py "$@"
+CMDEOF
+
+chmod +x /tmp/rhodes-cmd /tmp/rhodes-ui /tmp/rhodes-bg /tmp/rhodes-stop /tmp/rhodes-computer-use
+
+# Create single admin script that does EVERYTHING requiring elevated privileges
+cat > /tmp/rhodes-admin-install.sh << 'ADMINEOF'
+#!/bin/bash
+# Install system packages
+if command -v apt-get &>/dev/null; then
+    apt-get install -y xvfb xdotool xclip imagemagick x11-utils 2>/dev/null || true
+elif command -v dnf &>/dev/null; then
+    dnf install -y xorg-x11-server-Xvfb xdotool xclip ImageMagick xdpyinfo 2>/dev/null || true
+elif command -v pacman &>/dev/null; then
+    pacman -S --noconfirm xorg-server-xvfb xdotool xclip imagemagick xorg-xdpyinfo 2>/dev/null || true
+fi
+
+# Install commands to /usr/local/bin
+cp /tmp/rhodes-cmd /usr/local/bin/rhodes
+cp /tmp/rhodes-cmd /usr/local/bin/RHODES_CODE
+cp /tmp/rhodes-ui /usr/local/bin/rhodes-ui
+cp /tmp/rhodes-bg /usr/local/bin/rhodes-bg
+cp /tmp/rhodes-stop /usr/local/bin/rhodes-stop
+cp /tmp/rhodes-computer-use /usr/local/bin/rhodes-computer-use
+chmod +x /usr/local/bin/rhodes /usr/local/bin/RHODES_CODE /usr/local/bin/rhodes-ui
+chmod +x /usr/local/bin/rhodes-bg /usr/local/bin/rhodes-stop /usr/local/bin/rhodes-computer-use
+ADMINEOF
+
+chmod +x /tmp/rhodes-admin-install.sh
+
+echo "  Installing commands (requires admin access)..."
+INSTALL_PATH=""
+if pkexec /tmp/rhodes-admin-install.sh >/dev/null 2>&1; then
+    INSTALL_PATH="/usr/local/bin"
+    echo "  [OK] Installed to /usr/local/bin"
+else
+    echo "  [OK] Installing to ~/.local/bin (no admin needed)..."
+    mkdir -p ~/.local/bin
+    cp /tmp/rhodes-cmd ~/.local/bin/rhodes
+    cp /tmp/rhodes-cmd ~/.local/bin/RHODES_CODE
+    cp /tmp/rhodes-ui ~/.local/bin/rhodes-ui
+    cp /tmp/rhodes-bg ~/.local/bin/rhodes-bg
+    cp /tmp/rhodes-stop ~/.local/bin/rhodes-stop
+    cp /tmp/rhodes-computer-use ~/.local/bin/rhodes-computer-use
+    INSTALL_PATH="~/.local/bin"
+fi
+
+rm -f /tmp/rhodes-cmd /tmp/rhodes-ui /tmp/rhodes-bg /tmp/rhodes-stop /tmp/rhodes-computer-use /tmp/rhodes-admin-install.sh
+
+echo "  Creating desktop shortcut..."
+mkdir -p ~/.local/share/applications
+curl -so ~/.local/share/applications/rhodes.desktop https://rhodesagi.com/download/rhodes.desktop 2>/dev/null || true
+chmod +x ~/.local/share/applications/rhodes.desktop 2>/dev/null || true
+
+if command -v update-desktop-database &>/dev/null; then
+    update-desktop-database ~/.local/share/applications 2>/dev/null || true
+fi
+
+echo ""
+echo "====================================="
+echo "  INSTALLATION COMPLETE!"
+echo "====================================="
+echo ""
+echo "  Commands: rhodes, RHODES_CODE"
+echo "    rhodes              Launch RHODES_CODE"
+echo "    rhodes -b           Run in background"
+echo "    rhodes-computer-use Browser automation"
+echo ""
+
+if [ "$INSTALL_PATH" = "~/.local/bin" ]; then
+    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+        echo "  NOTE: Add ~/.local/bin to PATH:"
+        echo "    export PATH=\"\$HOME/.local/bin:\$PATH\""
+        echo ""
+    fi
+fi
+
+echo "  Launching RHODES_CODE..."
+echo ""
+
+# Auto-launch
+if [ "$INSTALL_PATH" = "/usr/local/bin" ]; then
+    rhodes --ui &
+else
+    ~/.local/bin/rhodes --ui &
+fi

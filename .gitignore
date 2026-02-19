@@ -1,0 +1,14 @@
+.git/
+_archive*/
+backups/
+*.bak*
+*.log
+*.tmp
+*.exe
+*.zip
+*.AppImage
+*.apk
+*.dmg
+*.iso
+*.tar
+*.tar.*
