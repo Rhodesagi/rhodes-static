@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!DOCTYPE model SYSTEM "http://www.apple.com/DTDs/CoreData-1.0.dtd">
+<model name="FlashcardsModel.xcdatamodel" userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="1">
+    <entity name="Deck" representedClassName="Deck" syncable="YES">
+        <attribute name="createdAt" attributeType="Date" defaultDateTimeInterval="0"/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" attributeType="String" defaultValueString="New Deck"/>
+        <relationship name="cards" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Card" inverseName="deck" inverseEntity="Card"/>
+    </entity>
+    <entity name="Card" representedClassName="Card" syncable="YES">
+        <attribute name="backText" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" attributeType="Date" defaultDateTimeInterval="0"/>
+        <attribute name="easeFactor" attributeType="Double" defaultValueString="2.5"/>
+        <attribute name="frontText" attributeType="String" defaultValueString=""/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="imagePath" optional="YES" attributeType="String"/>
+        <attribute name="interval" attributeType="Double" defaultValueString="0"/>
+        <attribute name="nextReviewDate" attributeType="Date"/>
+        <attribute name="repetitions" attributeType="Integer 16" defaultValueString="0"/>
+        <relationship name="deck" maxCount="1" deletionRule="Nullify" destinationEntity="Deck" inverseName="cards" inverseEntity="Deck"/>
+    </entity>
+</model>

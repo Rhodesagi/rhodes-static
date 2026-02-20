@@ -1511,8 +1511,11 @@ function showDownloads() {
                         localStorage.setItem('rhodes_user_token', USER_TOKEN);
                         IS_GUEST = false;
                         authModal.style.display = 'none';
-                        setStatus(true, `CONNECTED (${msg.payload.username})`);
-                        addMsg('ai', `Welcome ${msg.payload.username}! Your account is ready.`);
+                        CURRENT_USERNAME = (msg.payload.username || '').toLowerCase();
+                        rhodesStorage.setItem('rhodes_username', CURRENT_USERNAME);
+                        setStatus(true, 'CONNECTED (' + msg.payload.username + ')');
+                        addMsg('ai', 'Welcome ' + msg.payload.username + '! Your account is ready.');
+                        updateHeaderAuth();
                     } else {
                         errorEl.textContent = msg.payload.message;
                         errorEl.style.display = 'block';
