@@ -1302,12 +1302,7 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
                             '<button onclick="this.closest(\'.rhodes-site-embed\').style.display=\'none\'" style="background:var(--panel);border:1px solid var(--dim);color:var(--dim);padding:3px 10px;cursor:pointer;font-family:Orbitron,monospace;font-size:10px;border-radius:3px;">Close</button>' +
                         '</span>' +
                     '</div>';
-                if (!isEmbeddableUserSiteUrl(url)) {
-                    return '<div class="rhodes-site-embed" style="margin:12px 0;border:1px solid var(--cyan);border-radius:6px;overflow:hidden;background:var(--panel);">' +
-                        cardHeader +
-                        '<div style="padding:10px 12px;color:var(--dim);font-size:11px;">Preview disabled for non-web files. Open in a new tab to download or inspect.</div>' +
-                    '</div>';
-                }
+                if (!isEmbeddableUserSiteUrl(url)) return url;
                 return '<div class="rhodes-site-embed" style="margin:12px 0;border:1px solid var(--cyan);border-radius:6px;overflow:hidden;background:var(--panel);">' +
                     cardHeader +
                     '<iframe src="' + url + '" style="width:100%;height:400px;border:none;background:#fff;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>' +
