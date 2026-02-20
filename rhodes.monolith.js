@@ -3139,6 +3139,27 @@ function showDownloads() {
                     if (_seenRecently(fp, 2000)) return;
                     // Show all tool statuses (starting/running/complete) so it doesn't look "sporadic".
                     
+                    // Auto-handle download offers emitted by any tool result (e.g., local_* with no connected desktop)
+                    if (status === 'complete' && tool && tool.result && typeof tool.result === 'object' && tool.result._download_offer) {
+                        if (typeof collapseToolCalls === 'function') collapseToolCalls();
+                        window._renderDownloadCard(toolArgs, tool.result);
+
+                        const localSetupHint = [tool.result.error || '', tool.result.message || '']
+                            .join(' ')
+                            .trim();
+                        if (localSetupHint) {
+                            addMsg('ai', localSetupHint);
+                        }
+
+                        if (Array.isArray(tool.result.recommended_next_steps) && tool.result.recommended_next_steps.length > 0) {
+                            const steps = tool.result.recommended_next_steps
+                                .map((s, i) => `${i + 1}. ${s}`)
+                                .join('\n');
+                            addMsg('ai', `Next steps:\n${steps}`);
+                        }
+                        return;
+                    }
+
                     // Message and respond tools should display as normal messages, not tool calls
                     if (toolName === 'message' || toolName === 'respond' || toolName === 'offer_download') {
                         // Only display on 'complete' status to avoid showing same message twice
