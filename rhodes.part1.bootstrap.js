@@ -470,9 +470,9 @@ if (window.rhodesIOS.isIOS) {
             var reason = (args && args.reason) || '';
             var projectZipUrl = (args && args.project_zip_url) || '';
             var projectZipLabel = (args && args.project_zip_label) || 'Download Swift project (.zip)';
-            var projectZipPrompt = (args && args.project_zip_prompt) || 'Please export this iOS app as a downloadable .zip Xcode project so I can work on it manually.';
+            var iosFlowExplicit = !!(args && args.ios_mac_flow);
             var reasonLower = String(reason || '').toLowerCase();
-            var isIosMacFlow = /ios|xcode|simulator|testflight|app store/.test(reasonLower);
+            var isIosMacFlow = iosFlowExplicit || /ios|xcode|simulator|testflight|app store/.test(reasonLower);
 
             // Parse from tool result if needed
             if (toolResult && typeof toolResult === 'object' && toolResult.display_text) {
@@ -484,9 +484,18 @@ if (window.rhodesIOS.isIOS) {
                         reason = parsed.reason || reason;
                         projectZipUrl = parsed.project_zip_url || projectZipUrl;
                         projectZipLabel = parsed.project_zip_label || projectZipLabel;
-                        projectZipPrompt = parsed.project_zip_prompt || projectZipPrompt;
+                        iosFlowExplicit = iosFlowExplicit || !!parsed.ios_mac_flow;
                     } catch(e) {}
                 }
+            }
+
+            reasonLower = String(reason || '').toLowerCase();
+            isIosMacFlow = iosFlowExplicit || /ios|xcode|simulator|testflight|app store/.test(reasonLower);
+
+            // In iOS/mac workflows, only render the card when a Swift/Xcode zip already exists.
+            if (isIosMacFlow && !projectZipUrl) {
+                console.log('[DOWNLOAD_OFFER] Suppressed iOS card: project zip not ready yet');
+                return;
             }
 
             var info = RHODES_DOWNLOADS[product];
@@ -517,17 +526,10 @@ if (window.rhodesIOS.isIOS) {
             if (primary.note) {
                 cardHtml += '<div class="download-card-note">' + primary.note + '</div>';
             }
-            if (isIosMacFlow) {
-                if (projectZipUrl) {
-                    cardHtml += '<div class="download-card-alts">';
-                    cardHtml += '<a href="' + projectZipUrl + '" class="download-card-alt" target="_blank" rel="noopener">' + projectZipLabel + '</a>';
-                    cardHtml += '</div>';
-                } else {
-                    var zipPromptEsc = projectZipPrompt.replace(/'/g, "\\'");
-                    cardHtml += '<div class="download-card-alts">';
-                    cardHtml += '<button class="download-card-alt" style="background:none;" onclick="window._requestProjectZipFromCard(\'' + zipPromptEsc + '\')">Get Swift project .zip instead</button>';
-                    cardHtml += '</div>';
-                }
+            if (isIosMacFlow && projectZipUrl) {
+                cardHtml += '<div class="download-card-alts">';
+                cardHtml += '<a href="' + projectZipUrl + '" class="download-card-alt" target="_blank" rel="noopener">' + projectZipLabel + '</a>';
+                cardHtml += '</div>';
             }
             // Show alternate links for other platforms
             var altKeys = Object.keys(info.links).filter(function(k) { return k !== downloadKey && k !== 'any'; });
@@ -554,10 +556,3 @@ if (window.rhodesIOS.isIOS) {
             chatEl.scrollTop = chatEl.scrollHeight;
         };
 
-        window._requestProjectZipFromCard = function(promptText) {
-            var inputEl = document.getElementById('input');
-            if (!inputEl) return;
-            inputEl.value = promptText || 'Please export this iOS app as a downloadable .zip Xcode project so I can work on it manually.';
-            inputEl.focus();
-            if (typeof window.send === 'function') window.send();
-        };
