@@ -525,43 +525,65 @@ if (window.rhodesIOS.isIOS) {
         // Check if this IP+browser has ever been used by a logged-in user
         // If yes: show LOGIN. If no: show SIGN UP (default).
         if (IS_GUEST) {
+            const hadPriorClientId = !!rhodesStorage.getItem('rhodes_client_id');
+            const forceGuestLoginUi = function() {
+                window.__rhodesIsReturningUser = true;
+                const headerBtn = document.getElementById('header-login-btn');
+                const mobileBtn = document.getElementById('mobile-login-link');
+                const registerTab = document.querySelector('[data-tab="register"]');
+                const loginTab = document.querySelector('[data-tab="login"]');
+                if (headerBtn) {
+                    headerBtn.textContent = 'LOGIN';
+                    headerBtn.onclick = function(e) { e.preventDefault(); if (typeof showAuthTab === 'function') showAuthTab('login'); else { document.getElementById('auth-modal').style.display='flex'; if (loginTab) loginTab.click(); } };
+                }
+                if (mobileBtn) {
+                    mobileBtn.textContent = 'LOGIN';
+                    mobileBtn.onclick = function() { if (typeof showAuth === 'function') showAuth('login'); if (typeof closeMobileMenu === 'function') closeMobileMenu(); };
+                }
+                if (loginTab && registerTab) {
+                    registerTab.style.borderColor = 'var(--dim)';
+                    registerTab.style.color = 'var(--dim)';
+                    registerTab.classList.remove('active');
+                    loginTab.style.borderColor = 'var(--green)';
+                    loginTab.style.color = 'var(--green)';
+                    loginTab.classList.add('active');
+                    var regContent = document.getElementById('tab-register');
+                    var loginContent = document.getElementById('tab-login');
+                    if (regContent) regContent.style.display = 'none';
+                    if (loginContent) loginContent.style.display = 'block';
+                }
+            };
+            const reportReturningGlitch = function(message, severity) {
+                try {
+                    fetch('/api/log-error', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            category: 'auth_returning_detection_unresolved',
+                            message: message,
+                            source: 'rhodes.auth-state',
+                            severity: severity || 'warning'
+                        })
+                    }).catch(() => {});
+                } catch {}
+            };
+            forceGuestLoginUi();
             fetch('/api/auth/is_returning')
                 .then(r => r.json())
                 .then(data => {
                     const isReturning = data && data.returning === true;
-                    window.__rhodesIsReturningUser = isReturning;
-                    const headerBtn = document.getElementById('header-login-btn');
-                    const mobileBtn = document.getElementById('mobile-login-link');
-                    // Update the auth modal default tab
-                    const registerTab = document.querySelector('[data-tab="register"]');
-                    const loginTab = document.querySelector('[data-tab="login"]');
-                    if (isReturning) {
-                        // Returning user: show LOGIN
-                        if (headerBtn && headerBtn.textContent.trim() !== headerBtn.textContent.trim().replace('SIGN UP','')) {
-                            headerBtn.textContent = 'LOGIN';
-                            headerBtn.onclick = function(e) { e.preventDefault(); if (typeof showAuthTab === 'function') showAuthTab('login'); else { document.getElementById('auth-modal').style.display='flex'; if (loginTab) loginTab.click(); } };
-                        }
-                        if (mobileBtn) {
-                            mobileBtn.textContent = 'LOGIN';
-                            mobileBtn.onclick = function() { if (typeof showAuth === 'function') showAuth('login'); if (typeof closeMobileMenu === 'function') closeMobileMenu(); };
-                        }
-                        // Switch default tab to LOGIN
-                        if (loginTab && registerTab) {
-                            registerTab.style.borderColor = 'var(--dim)';
-                            registerTab.style.color = 'var(--dim)';
-                            registerTab.classList.remove('active');
-                            loginTab.style.borderColor = 'var(--green)';
-                            loginTab.style.color = 'var(--green)';
-                            loginTab.classList.add('active');
-                            var regContent = document.getElementById('tab-register');
-                            var loginContent = document.getElementById('tab-login');
-                            if (regContent) regContent.style.display = 'none';
-                            if (loginContent) loginContent.style.display = 'block';
-                        }
+                    if (!isReturning && hadPriorClientId) {
+                        reportReturningGlitch('Returning-user detection returned false for likely returning browser; guest menu forced to LOGIN fallback.', 'warning');
                     }
-                    // else: keep SIGN UP (the HTML default)
+                    forceGuestLoginUi();
                 })
-                .catch(() => { /* Keep default SIGN UP on error */ });
+                .catch((err) => {
+                    const detail = err && err.message ? err.message : 'unknown';
+                    if (hadPriorClientId) {
+                        reportReturningGlitch('Returning-user detection request failed for likely returning browser; guest menu forced to LOGIN fallback. ' + detail, 'error');
+                    }
+                    forceGuestLoginUi();
+                });
         }
         let GUEST_MESSAGES_REMAINING = 3;
         // Guest conversations are not persisted; warn on exit once they start chatting.

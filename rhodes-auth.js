@@ -1,7 +1,7 @@
 // Extracted from rhodes.js: auth/account/session-state UI subsystem
 
 // Global flag set by returning-user detection in rhodes.js
-window.__rhodesIsReturningUser = false;
+window.__rhodesIsReturningUser = true;
 
 window.installRhodesAuthUi = function installRhodesAuthUi(deps) {
     if (!deps || window.__rhodesAuthUiInstalled) return;
@@ -50,19 +50,18 @@ window.installRhodesAuthUi = function installRhodesAuthUi(deps) {
                 accountDropdown.parentElement.insertBefore(loginBtn, accountDropdown);
             }
             if (loginBtn) {
-                var _ret = window.__rhodesIsReturningUser;
-                loginBtn.textContent = _ret ? 'LOGIN' : 'SIGN UP';
+                loginBtn.textContent = 'LOGIN';
                 loginBtn.style.display = '';
                 loginBtn.style.cssText = 'color:var(--cyan);font-size:15px;font-weight:700;text-decoration:none;';
                 loginBtn.onclick = function(e) {
                     e.preventDefault();
-                    showAuthTab(_ret ? 'login' : 'register');
+                    showAuthTab('login');
                 };
             }
             if (accountDropdown) accountDropdown.style.display = 'none';
             if (accountTrigger) accountTrigger.style.display = '';
             if (mobileLoginLink) {
-                mobileLoginLink.textContent = window.__rhodesIsReturningUser ? 'LOGIN' : 'SIGN UP';
+                mobileLoginLink.textContent = 'LOGIN';
                 mobileLoginLink.style.display = '';
             }
             if (mobileAccountMenu) mobileAccountMenu.style.display = 'none';
