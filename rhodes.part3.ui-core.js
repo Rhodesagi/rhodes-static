@@ -12,10 +12,12 @@
                 const menuToggle = document.getElementById('menu-toggle');
                 const sc = document.querySelector('.session-controls');
                 if (menu.classList.contains('active')) {
+                    document.body.classList.add('mobile-menu-open');
                     menuToggle.innerHTML = '✕';
                     menuToggle.title = 'Close menu';
                     if (sc) sc.style.display = 'none';
                 } else {
+                    document.body.classList.remove('mobile-menu-open');
                     menuToggle.innerHTML = '☰';
                     menuToggle.title = '☰';
                     if (sc) sc.style.display = '';
@@ -27,6 +29,7 @@
             const menu = document.getElementById('mobile-menu-dropdown');
             if (menu) {
                 menu.classList.remove('active');
+                document.body.classList.remove('mobile-menu-open');
                 const menuToggle = document.getElementById('menu-toggle');
                 menuToggle.innerHTML = '☰';
                 menuToggle.title = '☰';

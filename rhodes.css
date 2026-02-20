@@ -1916,24 +1916,26 @@
 
 	            /* Position hamburger menu button */
 	            #menu-toggle {
-	                position: relative !important;
-	                top: auto;
-	                left: auto;
-	                right: auto;
-	                font-size: 28px;
-	                padding: 8px 12px;
-	                background: transparent;
-	                border: 1px solid var(--cyan);
-	                color: var(--cyan);
-	                cursor: pointer;
-	                border-radius: 4px;
-	                min-width: 44px;
-	                min-height: 44px;
-	                display: flex;
-	                align-items: center;
-	                justify-content: center;
-	                z-index: 3000;
-	                margin-right: 10px;
+                position: relative !important;
+                top: auto;
+                left: auto;
+                right: auto;
+                font-size: 28px;
+                padding: 8px 12px;
+                background: rgba(0, 255, 213, 0.04);
+                border: 1px solid rgba(0, 255, 213, 0.38);
+                color: rgba(0, 255, 213, 0.78);
+                opacity: 0.82;
+                box-shadow: 0 0 6px rgba(0, 255, 213, 0.14);
+                cursor: pointer;
+                border-radius: 4px;
+                min-width: 44px;
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 3000;
+                margin-right: 10px;
 	            }
 
             /* Mobile menu dropdown */
@@ -1956,6 +1958,14 @@
 
             #mobile-menu-dropdown.active {
                 display: flex;
+            }
+
+            body.mobile-menu-open header {
+                z-index: 5002 !important;
+            }
+
+            body.mobile-menu-open #mobile-menu-dropdown.active {
+                z-index: 5003 !important;
             }
 
             .mobile-menu-item {
@@ -2310,7 +2320,13 @@
     /* On mobile, split is always hidden, so voice-bar only has hands-free */
     /* When not typing: show hands-free with compact padding */
     #voice-bar #voice-mode-btn {
-        margin: 8px 12px;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        min-width: 128px;
+        max-width: 220px;
+        margin: 8px auto;
+        padding-left: 16px;
+        padding-right: 16px;
     }
     
     /* Inline send button — always visible, ghost when empty, fills when typing */

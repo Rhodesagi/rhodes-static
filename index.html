@@ -115,7 +115,7 @@ function toggleSplitView() {
     <!-- Firebase Auth for Google Sign-In -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-    <link rel="stylesheet" href="/rhodes.css?v=20260213-ui1">
+    <link rel="stylesheet" href="/rhodes.css?v=20260220-mobilemenu2">
 <script>const params=new URLSearchParams(window.location.search);
 if(params.get("nologo")==="1"){document.write(`<style>.logo{visibility:hidden!important}
     /* Slash command autocomplete dropdown */
@@ -538,6 +538,12 @@ header {
 OVERLAY DISABLED */
 #mobile-menu-dropdown.active {
     z-index: 4001 !important;
+}
+body.mobile-menu-open header {
+    z-index: 5002 !important;
+}
+body.mobile-menu-open #mobile-menu-dropdown.active {
+    z-index: 5003 !important;
 }
 #chat, #voice-bar, #input-area, .session-controls {
     position: relative;
@@ -1024,7 +1030,7 @@ OVERLAY DISABLED */
     <script src="/rhodes-voice.js?v=20260214-04"></script>
     <script src="/face-api.min.js"></script>
     <script src="/rhodes-valence.js?v=20260213-01"></script>
-    <script src="/rhodes.js?v=20260220-22"></script>
+    <script src="/rhodes.js?v=20260220-23"></script>
     <script src="/rhodes-split.js?v=20260218-02"></script>
 
     <!-- PWA Service Worker & Install -->
@@ -2311,20 +2317,27 @@ document.addEventListener('click', function(e) {
 <!-- TTS handled by addMsg hook in rhodes.js -->
 
 <script>
+window._sessionsPanelLegacyScrollButtons = false;
 window._openSessionsPanel = function() {
+    if (typeof window._ensureSessionsPanelScrollStyle === 'function') {
+        window._ensureSessionsPanelScrollStyle();
+    }
     var panel = document.getElementById('sessions-up-panel');
     if (panel) {
         if (panel.style.display === 'flex') { panel.style.display = 'none'; return; }
         panel.style.display = 'flex';
         window._loadSessionsUp();
         window._loadProjectsUp();
+        setTimeout(function() {
+            if (typeof window._refreshSessionsPanelScrollbarIndicators === 'function') window._refreshSessionsPanelScrollbarIndicators();
+        }, 120);
         var si = panel.querySelector('input');
         if (si) setTimeout(function(){ si.focus(); }, 100);
         return;
     }
     panel = document.createElement('div');
     panel.id = 'sessions-up-panel';
-    panel.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);width:560px;max-height:45vh;z-index:2000;background:var(--panel);border:1px solid var(--cyan);border-radius:4px;display:flex;flex-direction:column;box-shadow:0 4px 12px rgba(0,0,0,0.5);';
+    panel.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);width:620px;max-height:48vh;z-index:2000;background:var(--panel);border:1px solid var(--cyan);border-radius:4px;display:flex;flex-direction:column;box-shadow:0 4px 12px rgba(0,0,0,0.5);';
     // Two-column body
     var columns = document.createElement('div');
     columns.style.cssText = 'display:flex;flex:1;overflow:hidden;min-height:0;';
@@ -2335,22 +2348,41 @@ window._openSessionsPanel = function() {
     sessHeader.style.cssText = 'padding:10px 12px;font-size:14px;font-family:Orbitron,sans-serif;font-weight:700;color:var(--cyan);border-bottom:1px solid var(--border);';
     sessHeader.textContent = 'SESSIONS';
     sessCol.appendChild(sessHeader);
+    var sessListWrap = document.createElement('div');
+    sessListWrap.id = 'sessions-up-results-wrap';
+    sessListWrap.style.cssText = 'position:relative;flex:1;min-height:0;';
     var results = document.createElement('div');
     results.id = 'sessions-up-results';
-    results.style.cssText = 'overflow-y:auto;flex:1;';
-    sessCol.appendChild(results);
+    results.style.cssText = 'position:relative;overflow-y:auto;overflow-x:hidden;height:100%;padding-right:10px;box-sizing:border-box;-ms-overflow-style:none;scrollbar-width:none;';
+    sessListWrap.appendChild(results);
+    sessCol.appendChild(sessListWrap);
     columns.appendChild(sessCol);
     // Right: projects
     var projCol = document.createElement('div');
-    projCol.style.cssText = 'width:180px;display:flex;flex-direction:column;min-width:0;';
+    projCol.style.cssText = 'width:220px;display:flex;flex-direction:column;min-width:0;';
     var projHeader = document.createElement('div');
     projHeader.style.cssText = 'padding:10px 12px;font-size:14px;font-family:Orbitron,sans-serif;font-weight:700;color:var(--green);border-bottom:1px solid var(--border);';
     projHeader.textContent = 'PROJECTS';
     projCol.appendChild(projHeader);
+    var projListWrap = document.createElement('div');
+    projListWrap.id = 'projects-up-results-wrap';
+    projListWrap.style.cssText = 'position:relative;flex:1;min-height:0;';
     var projResults = document.createElement('div');
     projResults.id = 'projects-up-results';
-    projResults.style.cssText = 'overflow-y:auto;flex:1;';
-    projCol.appendChild(projResults);
+    projResults.style.cssText = 'position:relative;overflow-y:auto;overflow-x:hidden;height:100%;padding-right:10px;box-sizing:border-box;-ms-overflow-style:none;scrollbar-width:none;';
+    projListWrap.appendChild(projResults);
+    projCol.appendChild(projListWrap);
+    if (window._sessionsPanelLegacyScrollButtons && typeof window._mountLegacySessionsPanelScrollButtons === 'function') {
+        window._mountLegacySessionsPanelScrollButtons(sessCol, projCol);
+    }
+    var addProjectBtn = document.createElement('button');
+    addProjectBtn.id = 'projects-up-add-btn';
+    addProjectBtn.textContent = '+ Add project';
+    addProjectBtn.style.cssText = 'background:rgba(0,255,65,0.12);border:1px solid var(--green);color:var(--green);padding:8px 10px;cursor:pointer;font-size:13px;font-family:Orbitron,sans-serif;font-weight:700;text-align:left;';
+    addProjectBtn.onclick = function() {
+        if (typeof window._createProjectFromPanel === 'function') window._createProjectFromPanel();
+    };
+    projCol.appendChild(addProjectBtn);
     columns.appendChild(projCol);
     panel.appendChild(columns);
     // Search at bottom (spans full width)
@@ -2366,19 +2398,252 @@ window._openSessionsPanel = function() {
     document.body.appendChild(panel);
     window._loadSessionsUp();
     window._loadProjectsUp();
+    setTimeout(function() {
+        if (typeof window._refreshSessionsPanelScrollbarIndicators === 'function') window._refreshSessionsPanelScrollbarIndicators();
+    }, 120);
     setTimeout(function(){ searchInput.focus(); }, 100);
+};
+window._ensureSessionsPanelScrollStyle = function() {
+    if (document.getElementById('sessions-up-scroll-style')) return;
+    var style = document.createElement('style');
+    style.id = 'sessions-up-scroll-style';
+    style.textContent = '' +
+        '#sessions-up-results::-webkit-scrollbar,#projects-up-results::-webkit-scrollbar{width:0;height:0;}' +
+        '#sessions-up-results-wrap .sessions-up-scroll-track,#projects-up-results-wrap .sessions-up-scroll-track{position:absolute;top:2px;right:1px;bottom:2px;width:8px;border-radius:8px;background:rgba(255,255,255,0.06);pointer-events:auto;z-index:3;cursor:pointer;user-select:none;}' +
+        '#sessions-up-results-wrap .sessions-up-scroll-thumb,#projects-up-results-wrap .sessions-up-scroll-thumb{position:absolute;left:0;right:0;top:2px;height:20px;border-radius:8px;background:rgba(255,255,255,0.30);border:1px solid rgba(255,255,255,0.10);cursor:grab;}' +
+        '#sessions-up-results-wrap .sessions-up-scroll-thumb.dragging,#projects-up-results-wrap .sessions-up-scroll-thumb.dragging{cursor:grabbing;background:rgba(255,255,255,0.38);}' +
+        '#sessions-up-results-wrap .sessions-up-scroll-grip,#projects-up-results-wrap .sessions-up-scroll-grip{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:4px;height:14px;border-radius:2px;background-image:radial-gradient(circle, rgba(0,0,0,0.52) 1px, transparent 1px);background-size:4px 4px;background-position:center;}';
+    document.head.appendChild(style);
+};
+window._attachAlwaysVisibleScrollIndicator = function(wrapperId, listId, thumbColor) {
+    var wrap = document.getElementById(wrapperId);
+    var list = document.getElementById(listId);
+    if (!wrap || !list) return;
+    var track = wrap.querySelector('.sessions-up-scroll-track[data-target=\"' + listId + '\"]');
+    if (!track) {
+        track = document.createElement('div');
+        track.className = 'sessions-up-scroll-track';
+        track.setAttribute('data-target', listId);
+        var thumb = document.createElement('div');
+        thumb.className = 'sessions-up-scroll-thumb';
+        thumb.style.background = thumbColor;
+        var grip = document.createElement('div');
+        grip.className = 'sessions-up-scroll-grip';
+        thumb.appendChild(grip);
+        track.appendChild(thumb);
+        wrap.appendChild(track);
+    }
+    var thumbEl = track.querySelector('.sessions-up-scroll-thumb');
+    if (!thumbEl) return;
+    var scrollFromClientY = function(clientY, dragOffsetY) {
+        var clientHeight = list.clientHeight || 0;
+        var scrollHeight = list.scrollHeight || 0;
+        if (clientHeight <= 0 || scrollHeight <= clientHeight) return;
+        var thumbHeight = thumbEl.offsetHeight || 16;
+        var travel = Math.max(1, clientHeight - 4 - thumbHeight);
+        var rect = track.getBoundingClientRect();
+        var topRaw = clientY - rect.top - dragOffsetY;
+        var top = Math.max(2, Math.min(clientHeight - 2 - thumbHeight, topRaw));
+        var ratio = (top - 2) / travel;
+        var scrollRange = scrollHeight - clientHeight;
+        list.scrollTop = ratio * scrollRange;
+    };
+    var update = function() {
+        var clientHeight = list.clientHeight || 0;
+        var scrollHeight = list.scrollHeight || 0;
+        if (clientHeight <= 0) return;
+        var scrollRange = Math.max(0, scrollHeight - clientHeight);
+        var thumbHeight;
+        var thumbTop = 2;
+        if (scrollRange <= 1) {
+            thumbHeight = Math.max(16, Math.round(clientHeight * 0.16));
+        } else {
+            thumbHeight = Math.max(16, Math.round((clientHeight * clientHeight) / scrollHeight));
+            thumbHeight = Math.min(Math.max(16, clientHeight - 4), thumbHeight);
+            var travel = Math.max(0, clientHeight - 4 - thumbHeight);
+            thumbTop = 2 + Math.round((list.scrollTop / scrollRange) * travel);
+        }
+        thumbEl.style.height = thumbHeight + 'px';
+        thumbEl.style.top = thumbTop + 'px';
+    };
+    if (!track._interactiveBound) {
+        var dragState = { active: false, offsetY: 0 };
+        var stopDrag = function() {
+            if (!dragState.active) return;
+            dragState.active = false;
+            thumbEl.classList.remove('dragging');
+        };
+        thumbEl.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            dragState.active = true;
+            dragState.offsetY = e.clientY - thumbEl.getBoundingClientRect().top;
+            thumbEl.classList.add('dragging');
+        });
+        track.addEventListener('mousedown', function(e) {
+            if (thumbEl.contains(e.target)) return;
+            e.preventDefault();
+            dragState.active = true;
+            dragState.offsetY = (thumbEl.offsetHeight || 16) / 2;
+            scrollFromClientY(e.clientY, dragState.offsetY);
+            thumbEl.classList.add('dragging');
+        });
+        document.addEventListener('mousemove', function(e) {
+            if (!dragState.active) return;
+            e.preventDefault();
+            scrollFromClientY(e.clientY, dragState.offsetY);
+        });
+        document.addEventListener('mouseup', stopDrag);
+        track._interactiveBound = true;
+    }
+    if (!list._upIndicatorBound) {
+        list.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+        list._upIndicatorBound = true;
+    }
+    list._upIndicatorUpdate = update;
+    setTimeout(update, 0);
+    setTimeout(update, 120);
+};
+window._refreshSessionsPanelScrollbarIndicators = function() {
+    window._attachAlwaysVisibleScrollIndicator('sessions-up-results-wrap', 'sessions-up-results', 'rgba(0,255,213,0.34)');
+    window._attachAlwaysVisibleScrollIndicator('projects-up-results-wrap', 'projects-up-results', 'rgba(0,255,65,0.34)');
+};
+window._mountLegacySessionsPanelScrollButtons = function(sessCol, projCol) {
+    var sessionsList = document.getElementById('sessions-up-results');
+    var projectsList = document.getElementById('projects-up-results');
+    var sessionsWrap = document.getElementById('sessions-up-results-wrap');
+    var projectsWrap = document.getElementById('projects-up-results-wrap');
+    if (sessionsList) {
+        var sessScrollTop = document.createElement('button');
+        sessScrollTop.textContent = '\u25b2 Sessions';
+        sessScrollTop.style.cssText = 'background:rgba(0,255,213,0.18);border:1px solid rgba(0,255,213,0.7);color:var(--cyan);padding:5px 8px;cursor:pointer;font-size:12px;font-family:Orbitron,sans-serif;font-weight:700;';
+        sessScrollTop.onclick = function() { window._scrollSessionsPanelList('sessions-up-results', -180); };
+        var sessScrollBottom = document.createElement('button');
+        sessScrollBottom.textContent = '\u25bc Sessions';
+        sessScrollBottom.style.cssText = 'background:rgba(0,255,213,0.18);border:1px solid rgba(0,255,213,0.7);color:var(--cyan);padding:5px 8px;cursor:pointer;font-size:12px;font-family:Orbitron,sans-serif;font-weight:700;border-top:none;';
+        sessScrollBottom.onclick = function() { window._scrollSessionsPanelList('sessions-up-results', 180); };
+        if (sessionsWrap) {
+            sessionsWrap.insertBefore(sessScrollTop, sessionsList);
+            sessionsWrap.appendChild(sessScrollBottom);
+        } else {
+            sessCol.insertBefore(sessScrollTop, sessionsList);
+            sessCol.insertBefore(sessScrollBottom, sessionsList.nextSibling);
+        }
+    }
+    if (projectsList) {
+        var projScrollTop = document.createElement('button');
+        projScrollTop.textContent = '\u25b2 Projects';
+        projScrollTop.style.cssText = 'background:rgba(0,255,65,0.2);border:1px solid rgba(0,255,65,0.6);color:var(--green);padding:5px 8px;cursor:pointer;font-size:12px;font-family:Orbitron,sans-serif;font-weight:700;';
+        projScrollTop.onclick = function() { window._scrollSessionsPanelList('projects-up-results', -160); };
+        var projScrollBottom = document.createElement('button');
+        projScrollBottom.textContent = '\u25bc Projects';
+        projScrollBottom.style.cssText = 'background:rgba(0,255,65,0.2);border:1px solid rgba(0,255,65,0.6);color:var(--green);padding:5px 8px;cursor:pointer;font-size:12px;font-family:Orbitron,sans-serif;font-weight:700;border-top:none;';
+        projScrollBottom.onclick = function() { window._scrollSessionsPanelList('projects-up-results', 160); };
+        if (projectsWrap) {
+            projectsWrap.insertBefore(projScrollTop, projectsList);
+            projectsWrap.appendChild(projScrollBottom);
+        } else {
+            projCol.insertBefore(projScrollTop, projectsList);
+            projCol.insertBefore(projScrollBottom, projectsList.nextSibling);
+        }
+    }
+};
+window._scrollSessionsPanelList = function(listId, delta) {
+    var el = document.getElementById(listId);
+    if (!el) return;
+    el.scrollBy({ top: delta, behavior: 'smooth' });
+};
+window._assignSessionToProject = function(sessionId, projectId, projectName, opts) {
+    opts = opts || {};
+    if (!sessionId || !projectId) return Promise.resolve({ success: false });
+    var tk = localStorage.getItem('rhodes_user_token');
+    if (!tk) return Promise.resolve({ success: false });
+    return fetch('/api/user/sessions/' + sessionId + '/project', {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + tk, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_id: projectId })
+    }).then(function(r) { return r.json(); }).then(function(d) {
+        if (d && d.success) {
+            if (!opts.silent && typeof window.showToast === 'function') window.showToast('Session assigned to ' + (projectName || 'project'));
+            if (!opts.skipRefresh) {
+                window._projectNameMap = null;
+                window._loadSessionsUp();
+                window._loadProjectsUp();
+            }
+        } else if (!opts.silent && typeof window.showToast === 'function') {
+            window.showToast('Failed to assign session');
+        }
+        return d || { success: false };
+    }).catch(function() {
+        if (!opts.silent && typeof window.showToast === 'function') window.showToast('Error assigning session');
+        return { success: false };
+    });
+};
+window._assignSplitGroupToProject = function(sessionIds, projectId, projectName) {
+    if (!sessionIds || !sessionIds.length) return Promise.resolve({ success: false });
+    var jobs = sessionIds.map(function(sid) { return window._assignSessionToProject(sid, projectId, projectName, { silent: true, skipRefresh: true }); });
+    return Promise.all(jobs).then(function(assignResults) {
+        var anySuccess = assignResults.some(function(r) { return r && r.success; });
+        if (anySuccess) {
+            window._projectNameMap = null;
+            window._loadSessionsUp();
+            window._loadProjectsUp();
+            if (typeof window.showToast === 'function') window.showToast('Split session assigned to ' + (projectName || 'project'));
+            return { success: true };
+        }
+        if (typeof window.showToast === 'function') window.showToast('Failed to assign split session');
+        return { success: false };
+    });
+};
+window._createProjectFromPanel = function() {
+    var token = localStorage.getItem('rhodes_user_token');
+    if (!token) {
+        if (typeof window.showToast === 'function') window.showToast('Login required');
+        return;
+    }
+    var name = window.prompt('New project name:');
+    if (name === null) return;
+    name = name.trim();
+    if (!name) {
+        if (typeof window.showToast === 'function') window.showToast('Project name required');
+        return;
+    }
+    fetch('/api/user/projects', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, description: '' })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+        if (data && data.success) {
+            if (typeof window.showToast === 'function') window.showToast('Project created');
+            window._projectNameMap = null;
+            window._loadProjectsUp();
+            window._loadSessionsUp();
+        } else if (typeof window.showToast === 'function') {
+            window.showToast('Failed to create project');
+        }
+    }).catch(function() {
+        if (typeof window.showToast === 'function') window.showToast('Error creating project');
+    });
 };
 window._loadProjectsUp = function() {
     var results = document.getElementById('projects-up-results');
     if (!results) return;
     var token = localStorage.getItem('rhodes_user_token');
-    if (!token) { results.innerHTML = '<div style="padding:12px;color:var(--dim);font-size:15px;">Login</div>'; return; }
+    if (!token) {
+        results.innerHTML = '<div style="padding:12px;color:var(--dim);font-size:15px;">Login</div>';
+        if (typeof window._refreshSessionsPanelScrollbarIndicators === 'function') setTimeout(window._refreshSessionsPanelScrollbarIndicators, 0);
+        return;
+    }
     fetch('/api/user/projects', { headers: { 'Authorization': 'Bearer ' + token } })
         .then(function(r) { return r.json(); })
         .then(function(data) {
             var projects = data.projects || [];
             results.innerHTML = '';
-            if (!projects.length) { results.innerHTML = '<div style="padding:12px;color:var(--dim);font-size:15px;">No projects</div>'; return; }
+            if (!projects.length) {
+                results.innerHTML = '<div style="padding:12px;color:var(--dim);font-size:15px;">No projects</div>';
+                if (typeof window._refreshSessionsPanelScrollbarIndicators === 'function') setTimeout(window._refreshSessionsPanelScrollbarIndicators, 0);
+                return;
+            }
             var activeProjectId = window.__RHODES_ACTIVE_PROJECT_ID || null;
             projects.forEach(function(p) {
                 var isActive = (activeProjectId !== null && p.id === activeProjectId);
@@ -2388,11 +2653,15 @@ window._loadProjectsUp = function() {
                 div.setAttribute('data-project-id', p.id);
                 div.draggable = true;
                 div.ondragstart = function(e) {
+                    window._projectDragInProgress = true;
                     e.dataTransfer.setData('text/plain', 'project:' + p.id);
                     e.dataTransfer.effectAllowed = 'move';
                     this.style.opacity = '0.5';
                 };
-                div.ondragend = function() { this.style.opacity = '1'; };
+                div.ondragend = function() {
+                    this.style.opacity = '1';
+                    setTimeout(function() { window._projectDragInProgress = false; }, 120);
+                };
                 div.onmouseover = function() { this.style.background = 'rgba(0,255,65,0.15)'; };
                 div.onmouseout = function() { this.style.background = isActive ? 'rgba(0,255,65,0.15)' : 'none'; };
                 // Drop target for sessions
@@ -2403,24 +2672,16 @@ window._loadProjectsUp = function() {
                     this.style.background = isActive ? 'rgba(0,255,65,0.15)' : 'none';
                     this.style.outline = 'none';
                     var payload = e.dataTransfer.getData('text/plain');
-                    if (!payload || !payload.startsWith('session:')) return;
+                    if (!payload) return;
+                    if (payload.indexOf('session-group:') === 0) {
+                        var sessionIds = payload.substring('session-group:'.length).split(',').filter(Boolean);
+                        window._assignSplitGroupToProject(sessionIds, p.id, p.name || 'project');
+                        return;
+                    }
+                    if (payload.indexOf('session:') !== 0) return;
                     var sessionId = payload.split(':').slice(1).join(':');
                     if (!sessionId) return;
-                    var tk = localStorage.getItem('rhodes_user_token');
-                    fetch('/api/user/sessions/' + sessionId + '/project', {
-                        method: 'PUT',
-                        headers: { 'Authorization': 'Bearer ' + tk, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ project_id: p.id })
-                    }).then(function(r) { return r.json(); }).then(function(d) {
-                        if (d.success) {
-                            if (typeof window.showToast === 'function') window.showToast('Session added to ' + (p.name || 'project'));
-                            window._projectNameMap = null;
-                            window._loadSessionsUp();
-                            window._loadProjectsUp();
-                        } else {
-                            if (typeof window.showToast === 'function') window.showToast('Failed to assign session');
-                        }
-                    }).catch(function() { if (typeof window.showToast === 'function') window.showToast('Error assigning session'); });
+                    window._assignSessionToProject(sessionId, p.id, p.name || 'project');
                 };
                 var name = p.name || 'Untitled';
                 var desc = p.description || '';
@@ -2430,19 +2691,31 @@ window._loadProjectsUp = function() {
                 div.innerHTML = '<div style="color:var(--green);font-size:15px;font-weight:700;">' + name + badge + '</div>' +
                     (desc ? '<div style="color:var(--dim);font-size:13px;margin-top:1px;">' + desc + '</div>' : '') +
                     '';
-                div.onclick = function() {
+                div.onclick = function(e) {
+                    if (window._projectDragInProgress) {
+                        e.preventDefault();
+                        return;
+                    }
                     window.location.href = '/projects.html?id=' + p.id;
                 };
                 results.appendChild(div);
             });
+            if (typeof window._refreshSessionsPanelScrollbarIndicators === 'function') setTimeout(window._refreshSessionsPanelScrollbarIndicators, 0);
         })
-        .catch(function() { results.innerHTML = '<div style="padding:12px;color:var(--dim);font-size:15px;">Failed</div>'; });
+        .catch(function() {
+            results.innerHTML = '<div style="padding:12px;color:var(--dim);font-size:15px;">Failed</div>';
+            if (typeof window._refreshSessionsPanelScrollbarIndicators === 'function') setTimeout(window._refreshSessionsPanelScrollbarIndicators, 0);
+        });
 };
 window._loadSessionsUp = function(query) {
     var results = document.getElementById('sessions-up-results');
     if (!results) return;
     var token = localStorage.getItem('rhodes_user_token');
-    if (!token) { results.innerHTML = '<div style="padding:12px;color:var(--dim);font-size:15px;">Login to see sessions</div>'; return; }
+    if (!token) {
+        results.innerHTML = '<div style="padding:12px;color:var(--dim);font-size:15px;">Login to see sessions</div>';
+        if (typeof window._refreshSessionsPanelScrollbarIndicators === 'function') setTimeout(window._refreshSessionsPanelScrollbarIndicators, 0);
+        return;
+    }
     // Fetch both sessions and projects in parallel for project name stickers
     Promise.all([
         fetch('/api/user/sessions/recent', { headers: { 'Authorization': 'Bearer ' + token } }).then(function(r) { return r.json(); }),
@@ -2483,6 +2756,7 @@ window._loadSessionsUp = function(query) {
             results.innerHTML = '';
             if (!normalSessions.length && !groupKeys.length) {
                 results.innerHTML = '<div style="padding:12px;color:var(--dim);font-size:15px;">No sessions</div>';
+                if (typeof window._refreshSessionsPanelScrollbarIndicators === 'function') setTimeout(window._refreshSessionsPanelScrollbarIndicators, 0);
                 return;
             }
             // Render normal sessions first (top = scrolled away in drop-up)
@@ -2508,19 +2782,7 @@ window._loadSessionsUp = function(query) {
                     if (!payload || !payload.startsWith('project:')) return;
                     var projId = parseInt(payload.split(':')[1]);
                     if (isNaN(projId)) return;
-                    var tk = localStorage.getItem('rhodes_user_token');
-                    fetch('/api/user/sessions/' + sid + '/project', {
-                        method: 'PUT',
-                        headers: { 'Authorization': 'Bearer ' + tk, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ project_id: projId })
-                    }).then(function(r) { return r.json(); }).then(function(d) {
-                        if (d.success) {
-                            if (typeof window.showToast === 'function') window.showToast('Session assigned to project');
-                            window._projectNameMap = null;
-                            window._loadSessionsUp();
-                            window._loadProjectsUp();
-                        }
-                    });
+                    window._assignSessionToProject(sid, projId, 'project');
                 }; })(s.session_id);
                 div.onmouseover = function() { this.style.background = 'rgba(0,255,65,0.1)'; };
                 div.onmouseout = function() { this.style.background = 'none'; };
@@ -2547,19 +2809,14 @@ window._loadSessionsUp = function(query) {
                 splitSection.style.cssText = 'border-bottom:1px solid rgba(0,255,213,0.15);margin-bottom:2px;';
                 var splitHeader = document.createElement('div');
                 splitHeader.style.cssText = 'padding:6px 10px;color:var(--cyan);font-size:14px;font-family:Orbitron,sans-serif;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;';
-                splitHeader.innerHTML = '<span class="sg-arrow">\u25bc</span> SPLIT SESSIONS (' + groupKeys.length + ')';
+                var splitExpanded = !!window._splitSessionsPanelExpanded;
+                var splitVisibleIdx = Math.max(0, groupKeys.length - 1);
+                splitHeader.innerHTML = '<span class="sg-arrow">' + (splitExpanded ? '\u25bc' : '\u25b6') + '</span> SPLIT SESSIONS (' + groupKeys.length + ')';
                 var splitBody = document.createElement('div');
                 splitBody.id = 'split-sessions-up-body';
-                splitHeader.onclick = function() {
-                    if (splitBody.style.display === 'none') {
-                        splitBody.style.display = 'block';
-                        splitHeader.querySelector('.sg-arrow').textContent = '\u25bc';
-                    } else {
-                        splitBody.style.display = 'none';
-                        splitHeader.querySelector('.sg-arrow').textContent = '\u25b6';
-                    }
-                };
+                splitBody.style.display = 'block';
                 splitSection.appendChild(splitHeader);
+                var splitGroupRows = [];
                 groupKeys.forEach(function(key, idx) {
                     var group = splitGroups[key];
                     var first = group[0];
@@ -2598,6 +2855,32 @@ window._loadSessionsUp = function(query) {
                     groupDiv.style.cssText = 'padding:4px 10px;border-bottom:1px solid rgba(255,255,255,0.03);';
                     var rowDiv = document.createElement('div');
                     rowDiv.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
+                    rowDiv.draggable = true;
+                    rowDiv.ondragstart = function(e) {
+                        e.dataTransfer.setData('text/plain', 'session-group:' + group.map(function(gs) { return gs.session_id; }).join(','));
+                        e.dataTransfer.effectAllowed = 'move';
+                        groupDiv.style.opacity = '0.6';
+                    };
+                    rowDiv.ondragend = function() { groupDiv.style.opacity = '1'; };
+                    rowDiv.ondragover = function(e) {
+                        e.preventDefault();
+                        rowDiv.style.background = 'rgba(0,255,65,0.16)';
+                        rowDiv.style.outline = '1px dashed var(--green)';
+                    };
+                    rowDiv.ondragleave = function() {
+                        rowDiv.style.background = 'transparent';
+                        rowDiv.style.outline = 'none';
+                    };
+                    rowDiv.ondrop = function(e) {
+                        e.preventDefault();
+                        rowDiv.style.background = 'transparent';
+                        rowDiv.style.outline = 'none';
+                        var payload = e.dataTransfer.getData('text/plain');
+                        if (!payload || payload.indexOf('project:') !== 0) return;
+                        var projId = parseInt(payload.split(':')[1], 10);
+                        if (isNaN(projId)) return;
+                        window._assignSplitGroupToProject(group.map(function(gs) { return gs.session_id; }), projId, 'project');
+                    };
                     var infoDiv = document.createElement('div');
                     infoDiv.style.cssText = 'cursor:pointer;flex:1;';
                     var ssNum = 'SS.' + (idx + 1);
@@ -2651,6 +2934,25 @@ window._loadSessionsUp = function(query) {
                         paneDiv.style.cssText = 'padding:3px 0;font-size:14px;color:var(--text);cursor:pointer;';
                         paneDiv.onmouseover = function() { this.style.color = 'var(--cyan)'; };
                         paneDiv.onmouseout = function() { this.style.color = 'var(--dim)'; };
+                        paneDiv.ondragover = function(e) {
+                            e.preventDefault();
+                            paneDiv.style.background = 'rgba(0,255,65,0.2)';
+                            paneDiv.style.outline = '1px dashed var(--green)';
+                        };
+                        paneDiv.ondragleave = function() {
+                            paneDiv.style.background = 'none';
+                            paneDiv.style.outline = 'none';
+                        };
+                        paneDiv.ondrop = (function(sessionIdRef, paneRef) { return function(e) {
+                            e.preventDefault();
+                            paneRef.style.background = 'none';
+                            paneRef.style.outline = 'none';
+                            var payload = e.dataTransfer.getData('text/plain');
+                            if (!payload || payload.indexOf('project:') !== 0) return;
+                            var projId = parseInt(payload.split(':')[1], 10);
+                            if (isNaN(projId)) return;
+                            window._assignSessionToProject(sessionIdRef, projId, 'project');
+                        }; })(s.session_id, paneDiv);
                         var paneMatch = s.session_id.match(/split-(\d+)/);
                         var paneNum = paneMatch ? paneMatch[1] : '?';
                         var pTitle = s.title || ('Pane ' + paneNum);
@@ -2659,14 +2961,32 @@ window._loadSessionsUp = function(query) {
                         detailDiv.appendChild(paneDiv);
                     });
                     groupDiv.appendChild(detailDiv);
+                    splitGroupRows.push(groupDiv);
                     splitBody.appendChild(groupDiv);
                 });
+                var applySplitVisibility = function() {
+                    splitGroupRows.forEach(function(rowEl, rowIdx) {
+                        rowEl.style.display = (splitExpanded || rowIdx === splitVisibleIdx) ? 'block' : 'none';
+                    });
+                    var arrow = splitHeader.querySelector('.sg-arrow');
+                    if (arrow) arrow.textContent = splitExpanded ? '\u25bc' : '\u25b6';
+                };
+                splitHeader.onclick = function() {
+                    splitExpanded = !splitExpanded;
+                    window._splitSessionsPanelExpanded = splitExpanded;
+                    applySplitVisibility();
+                };
+                applySplitVisibility();
                 splitSection.appendChild(splitBody);
                 results.appendChild(splitSection);
             }
             setTimeout(function() { results.scrollTop = results.scrollHeight; }, 50);
+            if (typeof window._refreshSessionsPanelScrollbarIndicators === 'function') setTimeout(window._refreshSessionsPanelScrollbarIndicators, 80);
         })
-        .catch(function() { results.innerHTML = '<div style="padding:12px;color:var(--dim);font-size:15px;">Failed to load</div>'; });
+        .catch(function() {
+            results.innerHTML = '<div style="padding:12px;color:var(--dim);font-size:15px;">Failed to load</div>';
+            if (typeof window._refreshSessionsPanelScrollbarIndicators === 'function') setTimeout(window._refreshSessionsPanelScrollbarIndicators, 0);
+        });
 };
 document.addEventListener('click', function(e) {
     var panel = document.getElementById('sessions-up-panel');
