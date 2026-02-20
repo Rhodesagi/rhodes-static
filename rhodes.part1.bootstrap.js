@@ -413,7 +413,8 @@ if (window.rhodesIOS.isIOS) {
                 }
                 if (/Mac/.test(platform)) {
                     if (/iPhone|iPad/.test(ua)) return { name: 'iOS', type: 'mobile', downloadKey: 'any' };
-                    if (/Intel/.test(ua)) return { name: 'macOS', type: 'desktop', downloadKey: 'macos_intel' };
+                    // Modern Apple Silicon browsers often expose Intel-compatible UA strings.
+                    // Default to Apple Silicon build to avoid mislabeling M-series Macs as Intel.
                     return { name: 'macOS', type: 'desktop', downloadKey: 'macos' };
                 }
                 if (/Linux/.test(platform)) {
@@ -467,6 +468,9 @@ if (window.rhodesIOS.isIOS) {
         window._renderDownloadCard = function(args, toolResult) {
             var product = (args && args.product) || 'rhodes_code';
             var reason = (args && args.reason) || '';
+            var projectZipUrl = (args && args.project_zip_url) || '';
+            var projectZipLabel = (args && args.project_zip_label) || 'Download Swift project (.zip)';
+            var projectZipPrompt = (args && args.project_zip_prompt) || 'Please export this iOS app as a downloadable .zip Xcode project so I can work on it manually.';
             var reasonLower = String(reason || '').toLowerCase();
             var isIosMacFlow = /ios|xcode|simulator|testflight|app store/.test(reasonLower);
 
@@ -478,6 +482,9 @@ if (window.rhodesIOS.isIOS) {
                         var parsed = JSON.parse(m[1]);
                         product = parsed.product || product;
                         reason = parsed.reason || reason;
+                        projectZipUrl = parsed.project_zip_url || projectZipUrl;
+                        projectZipLabel = parsed.project_zip_label || projectZipLabel;
+                        projectZipPrompt = parsed.project_zip_prompt || projectZipPrompt;
                     } catch(e) {}
                 }
             }
@@ -510,6 +517,18 @@ if (window.rhodesIOS.isIOS) {
             if (primary.note) {
                 cardHtml += '<div class="download-card-note">' + primary.note + '</div>';
             }
+            if (isIosMacFlow) {
+                if (projectZipUrl) {
+                    cardHtml += '<div class="download-card-alts">';
+                    cardHtml += '<a href="' + projectZipUrl + '" class="download-card-alt" target="_blank" rel="noopener">' + projectZipLabel + '</a>';
+                    cardHtml += '</div>';
+                } else {
+                    var zipPromptEsc = projectZipPrompt.replace(/'/g, "\\'");
+                    cardHtml += '<div class="download-card-alts">';
+                    cardHtml += '<button class="download-card-alt" style="background:none;" onclick="window._requestProjectZipFromCard(\'' + zipPromptEsc + '\')">Get Swift project .zip instead</button>';
+                    cardHtml += '</div>';
+                }
+            }
             // Show alternate links for other platforms
             var altKeys = Object.keys(info.links).filter(function(k) { return k !== downloadKey && k !== 'any'; });
             if (isIosMacFlow) {
@@ -533,4 +552,12 @@ if (window.rhodesIOS.isIOS) {
             document.getElementById('chat').appendChild(div);
             var chatEl = document.getElementById('chat');
             chatEl.scrollTop = chatEl.scrollHeight;
+        };
+
+        window._requestProjectZipFromCard = function(promptText) {
+            var inputEl = document.getElementById('input');
+            if (!inputEl) return;
+            inputEl.value = promptText || 'Please export this iOS app as a downloadable .zip Xcode project so I can work on it manually.';
+            inputEl.focus();
+            if (typeof window.send === 'function') window.send();
         };

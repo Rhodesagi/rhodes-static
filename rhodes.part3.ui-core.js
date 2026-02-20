@@ -1473,11 +1473,17 @@ function showDownloads() {
                             resultEmbeds += '<div style="margin:4px 0;"><button onclick="if(typeof window.openHandoffViewer===\'function\'){window.openHandoffViewer(\'' + vu + '\',\'VNC\',\'Remote session\')}else{window.open(\'' + vu + '\',\'rhodes_vnc\',\'width=1024,height=768\')}" style="background:rgba(0,255,65,0.15);border:1px solid var(--green);color:var(--green);padding:4px 12px;cursor:pointer;font-family:Orbitron,monospace;font-size:11px;border-radius:3px;">Open VNC Session</button></div>';
                         }
                         // User-site URL -> preview iframe
-                        const siteMatch = resultStr.match(/https?:\/\/rhodesagi\.com\/user-sites\/[^\s"']+/);
+                        const siteMatch = resultStr.match(/https?:\/\/rhodesagi\.com\/user-sites\/[^\s"'`\)\]]+/);
                         if (siteMatch) {
-                            const su = siteMatch[0];
+                            const su = siteMatch[0].replace(/[),.;!?]+$/g, '');
                             const sn = su.replace(/https?:\/\/rhodesagi\.com\/user-sites\//, '');
-                            resultEmbeds += '<div style="margin:4px 0;border:1px solid var(--cyan);border-radius:4px;overflow:hidden;"><div style="padding:4px 8px;background:rgba(0,191,255,0.08);display:flex;justify-content:space-between;align-items:center;"><a href="' + su + '" target="_blank" style="color:var(--cyan);font-size:11px;">' + sn + '</a><button onclick="var ifr=this.closest(\'div\').parentElement.querySelector(\'iframe\');ifr.style.display=ifr.style.display===\'none\'?\'block\':\'none\'" style="background:none;border:1px solid var(--cyan);color:var(--cyan);padding:2px 8px;cursor:pointer;font-size:10px;border-radius:3px;">Preview</button></div><iframe src="' + su + '" style="width:100%;height:250px;border:none;background:#fff;display:none;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe></div>';
+                            const suPath = su.split('#')[0].split('?')[0].toLowerCase();
+                            const embeddable = !suPath.endsWith('/') && /\.(html?|xhtml|svg)$/.test(suPath);
+                            if (embeddable) {
+                                resultEmbeds += '<div style="margin:4px 0;border:1px solid var(--cyan);border-radius:4px;overflow:hidden;"><div style="padding:4px 8px;background:rgba(0,191,255,0.08);display:flex;justify-content:space-between;align-items:center;"><a href="' + su + '" target="_blank" style="color:var(--cyan);font-size:11px;">' + sn + '</a><button onclick="var ifr=this.closest(\'div\').parentElement.querySelector(\'iframe\');ifr.style.display=ifr.style.display===\'none\'?\'block\':\'none\'" style="background:none;border:1px solid var(--cyan);color:var(--cyan);padding:2px 8px;cursor:pointer;font-size:10px;border-radius:3px;">Preview</button></div><iframe src="' + su + '" style="width:100%;height:250px;border:none;background:#fff;display:none;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe></div>';
+                            } else {
+                                resultEmbeds += '<div style="margin:4px 0;border:1px solid var(--cyan);border-radius:4px;overflow:hidden;background:rgba(0,191,255,0.06);padding:6px 8px;"><a href="' + su + '" target="_blank" style="color:var(--cyan);font-size:11px;">' + sn + '</a><span style="margin-left:8px;color:var(--dim);font-size:10px;">Preview disabled for non-web file</span></div>';
+                            }
                         }
                         // Linkify URLs in the escaped result text
                         resultHtml = resultHtml.replace(/(https?:\/\/[^\s<>&`]+(?:&amp;[^\s<>&`]+)*)/g, '<a href="$1" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:underline;">$1</a>');
@@ -1627,4 +1633,3 @@ function showDownloads() {
                 }
             };
         }
-

@@ -323,7 +323,8 @@ if (window.rhodesIOS.isIOS) {
                 }
                 if (/Mac/.test(platform)) {
                     if (/iPhone|iPad/.test(ua)) return { name: 'iOS', type: 'mobile', downloadKey: 'any' };
-                    if (/Intel/.test(ua)) return { name: 'macOS', type: 'desktop', downloadKey: 'macos_intel' };
+                    // Modern Apple Silicon browsers often expose Intel-compatible UA strings.
+                    // Default to Apple Silicon build to avoid mislabeling M-series Macs as Intel.
                     return { name: 'macOS', type: 'desktop', downloadKey: 'macos' };
                 }
                 if (/Linux/.test(platform)) {
@@ -377,6 +378,9 @@ if (window.rhodesIOS.isIOS) {
         window._renderDownloadCard = function(args, toolResult) {
             var product = (args && args.product) || 'rhodes_code';
             var reason = (args && args.reason) || '';
+            var projectZipUrl = (args && args.project_zip_url) || '';
+            var projectZipLabel = (args && args.project_zip_label) || 'Download Swift project (.zip)';
+            var projectZipPrompt = (args && args.project_zip_prompt) || 'Please export this iOS app as a downloadable .zip Xcode project so I can work on it manually.';
             var reasonLower = String(reason || '').toLowerCase();
             var isIosMacFlow = /ios|xcode|simulator|testflight|app store/.test(reasonLower);
 
@@ -388,6 +392,9 @@ if (window.rhodesIOS.isIOS) {
                         var parsed = JSON.parse(m[1]);
                         product = parsed.product || product;
                         reason = parsed.reason || reason;
+                        projectZipUrl = parsed.project_zip_url || projectZipUrl;
+                        projectZipLabel = parsed.project_zip_label || projectZipLabel;
+                        projectZipPrompt = parsed.project_zip_prompt || projectZipPrompt;
                     } catch(e) {}
                 }
             }
@@ -420,6 +427,18 @@ if (window.rhodesIOS.isIOS) {
             if (primary.note) {
                 cardHtml += '<div class="download-card-note">' + primary.note + '</div>';
             }
+            if (isIosMacFlow) {
+                if (projectZipUrl) {
+                    cardHtml += '<div class="download-card-alts">';
+                    cardHtml += '<a href="' + projectZipUrl + '" class="download-card-alt" target="_blank" rel="noopener">' + projectZipLabel + '</a>';
+                    cardHtml += '</div>';
+                } else {
+                    var zipPromptEsc = projectZipPrompt.replace(/'/g, "\\'");
+                    cardHtml += '<div class="download-card-alts">';
+                    cardHtml += '<button class="download-card-alt" style="background:none;" onclick="window._requestProjectZipFromCard(\'' + zipPromptEsc + '\')">Get Swift project .zip instead</button>';
+                    cardHtml += '</div>';
+                }
+            }
             // Show alternate links for other platforms
             var altKeys = Object.keys(info.links).filter(function(k) { return k !== downloadKey && k !== 'any'; });
             if (isIosMacFlow) {
@@ -443,6 +462,14 @@ if (window.rhodesIOS.isIOS) {
             document.getElementById('chat').appendChild(div);
             var chatEl = document.getElementById('chat');
             chatEl.scrollTop = chatEl.scrollHeight;
+        };
+
+        window._requestProjectZipFromCard = function(promptText) {
+            var inputEl = document.getElementById('input');
+            if (!inputEl) return;
+            inputEl.value = promptText || 'Please export this iOS app as a downloadable .zip Xcode project so I can work on it manually.';
+            inputEl.focus();
+            if (typeof window.send === 'function') window.send();
         };
 
         // ============================================
@@ -1683,6 +1710,26 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
             return text;
         }
 
+        function trimTrailingUrlPunctuation(url) {
+            return (url || '').replace(/[),.;!?]+$/g, '');
+        }
+
+        function isEmbeddableUserSiteUrl(url) {
+            var clean = trimTrailingUrlPunctuation(url);
+            if (!clean) return false;
+            try {
+                var parsed = new URL(clean, window.location.origin);
+                var pathname = (parsed.pathname || '').toLowerCase();
+                if (!pathname.startsWith('/user-sites/')) return false;
+                if (pathname.endsWith('/')) return false;
+                var leaf = pathname.substring(pathname.lastIndexOf('/') + 1);
+                if (!leaf) return false;
+                return /\.(html?|xhtml|svg)$/.test(leaf);
+            } catch (e) {
+                return false;
+            }
+        }
+
         function renderVncAndSiteEmbeds(html) {
             // VNC session URLs -> embedded iframe viewer (not just a clickable link)
             html = html.replace(/(?<!="|'|>)(https?:\/\/[^\s<>"'`]*?cli-vnc\/\d+\/vnc(?:_lite)?\.html[^\s<>"'`]*)/gi, function(match, url) {
@@ -1709,16 +1756,26 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
                     '<iframe src="' + url + '" style="width:100%;height:650px;border:none;background:#000;" allow="clipboard-read; clipboard-write" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe></div>';
             });
             // User-site/sandbox URLs -> embedded iframe preview
-            html = html.replace(/(?<!="|'|>)(https?:\/\/rhodesagi\.com\/user-sites\/[^\s<>"'`]+)/gi, function(match, url) {
+            html = html.replace(/(?<!="|'|>)(https?:\/\/rhodesagi\.com\/user-sites\/[^\s<>"'`\)\]]+)/gi, function(match, rawUrl) {
+                var url = trimTrailingUrlPunctuation(rawUrl);
+                if (!url) return match;
                 var shortName = url.replace(/https?:\/\/rhodesagi\.com\/user-sites\//, '');
-                return '<div class="rhodes-site-embed" style="margin:12px 0;border:1px solid var(--cyan);border-radius:6px;overflow:hidden;background:var(--panel);">' +
+                var cardHeader =
                     '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:rgba(0,191,255,0.08);border-bottom:1px solid var(--cyan);">' +
                         '<a href="' + url + '" target="_blank" rel="noopener" style="color:var(--cyan);font-family:Orbitron,monospace;font-size:11px;text-decoration:underline;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + shortName + '</a>' +
                         '<span style="display:flex;gap:8px;">' +
                             '<button onclick="window.open(\'' + url.replace(/'/g, "\\'") + '\',\'_blank\')" style="background:var(--panel);border:1px solid var(--cyan);color:var(--cyan);padding:3px 10px;cursor:pointer;font-family:Orbitron,monospace;font-size:10px;border-radius:3px;">Open Tab</button>' +
                             '<button onclick="this.closest(\'.rhodes-site-embed\').style.display=\'none\'" style="background:var(--panel);border:1px solid var(--dim);color:var(--dim);padding:3px 10px;cursor:pointer;font-family:Orbitron,monospace;font-size:10px;border-radius:3px;">Close</button>' +
                         '</span>' +
-                    '</div>' +
+                    '</div>';
+                if (!isEmbeddableUserSiteUrl(url)) {
+                    return '<div class="rhodes-site-embed" style="margin:12px 0;border:1px solid var(--cyan);border-radius:6px;overflow:hidden;background:var(--panel);">' +
+                        cardHeader +
+                        '<div style="padding:10px 12px;color:var(--dim);font-size:11px;">Preview disabled for non-web files. Open in a new tab to download or inspect.</div>' +
+                    '</div>';
+                }
+                return '<div class="rhodes-site-embed" style="margin:12px 0;border:1px solid var(--cyan);border-radius:6px;overflow:hidden;background:var(--panel);">' +
+                    cardHeader +
                     '<iframe src="' + url + '" style="width:100%;height:400px;border:none;background:#fff;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>' +
                 '</div>';
             });
@@ -3314,11 +3371,17 @@ function showDownloads() {
                             resultEmbeds += '<div style="margin:4px 0;"><button onclick="if(typeof window.openHandoffViewer===\'function\'){window.openHandoffViewer(\'' + vu + '\',\'VNC\',\'Remote session\')}else{window.open(\'' + vu + '\',\'rhodes_vnc\',\'width=1024,height=768\')}" style="background:rgba(0,255,65,0.15);border:1px solid var(--green);color:var(--green);padding:4px 12px;cursor:pointer;font-family:Orbitron,monospace;font-size:11px;border-radius:3px;">Open VNC Session</button></div>';
                         }
                         // User-site URL -> preview iframe
-                        const siteMatch = resultStr.match(/https?:\/\/rhodesagi\.com\/user-sites\/[^\s"']+/);
+                        const siteMatch = resultStr.match(/https?:\/\/rhodesagi\.com\/user-sites\/[^\s"'`\)\]]+/);
                         if (siteMatch) {
-                            const su = siteMatch[0];
+                            const su = siteMatch[0].replace(/[),.;!?]+$/g, '');
                             const sn = su.replace(/https?:\/\/rhodesagi\.com\/user-sites\//, '');
-                            resultEmbeds += '<div style="margin:4px 0;border:1px solid var(--cyan);border-radius:4px;overflow:hidden;"><div style="padding:4px 8px;background:rgba(0,191,255,0.08);display:flex;justify-content:space-between;align-items:center;"><a href="' + su + '" target="_blank" style="color:var(--cyan);font-size:11px;">' + sn + '</a><button onclick="var ifr=this.closest(\'div\').parentElement.querySelector(\'iframe\');ifr.style.display=ifr.style.display===\'none\'?\'block\':\'none\'" style="background:none;border:1px solid var(--cyan);color:var(--cyan);padding:2px 8px;cursor:pointer;font-size:10px;border-radius:3px;">Preview</button></div><iframe src="' + su + '" style="width:100%;height:250px;border:none;background:#fff;display:none;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe></div>';
+                            const suPath = su.split('#')[0].split('?')[0].toLowerCase();
+                            const embeddable = !suPath.endsWith('/') && /\.(html?|xhtml|svg)$/.test(suPath);
+                            if (embeddable) {
+                                resultEmbeds += '<div style="margin:4px 0;border:1px solid var(--cyan);border-radius:4px;overflow:hidden;"><div style="padding:4px 8px;background:rgba(0,191,255,0.08);display:flex;justify-content:space-between;align-items:center;"><a href="' + su + '" target="_blank" style="color:var(--cyan);font-size:11px;">' + sn + '</a><button onclick="var ifr=this.closest(\'div\').parentElement.querySelector(\'iframe\');ifr.style.display=ifr.style.display===\'none\'?\'block\':\'none\'" style="background:none;border:1px solid var(--cyan);color:var(--cyan);padding:2px 8px;cursor:pointer;font-size:10px;border-radius:3px;">Preview</button></div><iframe src="' + su + '" style="width:100%;height:250px;border:none;background:#fff;display:none;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe></div>';
+                            } else {
+                                resultEmbeds += '<div style="margin:4px 0;border:1px solid var(--cyan);border-radius:4px;overflow:hidden;background:rgba(0,191,255,0.06);padding:6px 8px;"><a href="' + su + '" target="_blank" style="color:var(--cyan);font-size:11px;">' + sn + '</a><span style="margin-left:8px;color:var(--dim);font-size:10px;">Preview disabled for non-web file</span></div>';
+                            }
                         }
                         // Linkify URLs in the escaped result text
                         resultHtml = resultHtml.replace(/(https?:\/\/[^\s<>&`]+(?:&amp;[^\s<>&`]+)*)/g, '<a href="$1" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:underline;">$1</a>');

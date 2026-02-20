@@ -1244,6 +1244,26 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
             return text;
         }
 
+        function trimTrailingUrlPunctuation(url) {
+            return (url || '').replace(/[),.;!?]+$/g, '');
+        }
+
+        function isEmbeddableUserSiteUrl(url) {
+            var clean = trimTrailingUrlPunctuation(url);
+            if (!clean) return false;
+            try {
+                var parsed = new URL(clean, window.location.origin);
+                var pathname = (parsed.pathname || '').toLowerCase();
+                if (!pathname.startsWith('/user-sites/')) return false;
+                if (pathname.endsWith('/')) return false;
+                var leaf = pathname.substring(pathname.lastIndexOf('/') + 1);
+                if (!leaf) return false;
+                return /\.(html?|xhtml|svg)$/.test(leaf);
+            } catch (e) {
+                return false;
+            }
+        }
+
         function renderVncAndSiteEmbeds(html) {
             // VNC session URLs -> embedded iframe viewer (not just a clickable link)
             html = html.replace(/(?<!="|'|>)(https?:\/\/[^\s<>"'`]*?cli-vnc\/\d+\/vnc(?:_lite)?\.html[^\s<>"'`]*)/gi, function(match, url) {
@@ -1270,16 +1290,26 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
                     '<iframe src="' + url + '" style="width:100%;height:650px;border:none;background:#000;" allow="clipboard-read; clipboard-write" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe></div>';
             });
             // User-site/sandbox URLs -> embedded iframe preview
-            html = html.replace(/(?<!="|'|>)(https?:\/\/rhodesagi\.com\/user-sites\/[^\s<>"'`]+)/gi, function(match, url) {
+            html = html.replace(/(?<!="|'|>)(https?:\/\/rhodesagi\.com\/user-sites\/[^\s<>"'`\)\]]+)/gi, function(match, rawUrl) {
+                var url = trimTrailingUrlPunctuation(rawUrl);
+                if (!url) return match;
                 var shortName = url.replace(/https?:\/\/rhodesagi\.com\/user-sites\//, '');
-                return '<div class="rhodes-site-embed" style="margin:12px 0;border:1px solid var(--cyan);border-radius:6px;overflow:hidden;background:var(--panel);">' +
+                var cardHeader =
                     '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:rgba(0,191,255,0.08);border-bottom:1px solid var(--cyan);">' +
                         '<a href="' + url + '" target="_blank" rel="noopener" style="color:var(--cyan);font-family:Orbitron,monospace;font-size:11px;text-decoration:underline;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + shortName + '</a>' +
                         '<span style="display:flex;gap:8px;">' +
                             '<button onclick="window.open(\'' + url.replace(/'/g, "\\'") + '\',\'_blank\')" style="background:var(--panel);border:1px solid var(--cyan);color:var(--cyan);padding:3px 10px;cursor:pointer;font-family:Orbitron,monospace;font-size:10px;border-radius:3px;">Open Tab</button>' +
                             '<button onclick="this.closest(\'.rhodes-site-embed\').style.display=\'none\'" style="background:var(--panel);border:1px solid var(--dim);color:var(--dim);padding:3px 10px;cursor:pointer;font-family:Orbitron,monospace;font-size:10px;border-radius:3px;">Close</button>' +
                         '</span>' +
-                    '</div>' +
+                    '</div>';
+                if (!isEmbeddableUserSiteUrl(url)) {
+                    return '<div class="rhodes-site-embed" style="margin:12px 0;border:1px solid var(--cyan);border-radius:6px;overflow:hidden;background:var(--panel);">' +
+                        cardHeader +
+                        '<div style="padding:10px 12px;color:var(--dim);font-size:11px;">Preview disabled for non-web files. Open in a new tab to download or inspect.</div>' +
+                    '</div>';
+                }
+                return '<div class="rhodes-site-embed" style="margin:12px 0;border:1px solid var(--cyan);border-radius:6px;overflow:hidden;background:var(--panel);">' +
+                    cardHeader +
                     '<iframe src="' + url + '" style="width:100%;height:400px;border:none;background:#fff;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>' +
                 '</div>';
             });
@@ -1481,4 +1511,3 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
             el.innerHTML = formatted + '<span class="streaming-cursor">▌</span>';
             chat.scrollTop = chat.scrollHeight;
         }
-
