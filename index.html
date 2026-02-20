@@ -2361,8 +2361,12 @@ window._openSessionsPanel = function() {
     var projCol = document.createElement('div');
     projCol.style.cssText = 'width:220px;display:flex;flex-direction:column;min-width:0;';
     var projHeader = document.createElement('div');
-    projHeader.style.cssText = 'padding:10px 12px;font-size:14px;font-family:Orbitron,sans-serif;font-weight:700;color:var(--green);border-bottom:1px solid var(--border);';
+    projHeader.style.cssText = 'padding:10px 12px;border-bottom:1px solid var(--border);';
     projHeader.textContent = 'PROJECTS';
+    projHeader.style.fontSize = '14px';
+    projHeader.style.fontFamily = 'Orbitron,sans-serif';
+    projHeader.style.fontWeight = '700';
+    projHeader.style.color = 'var(--green)';
     projCol.appendChild(projHeader);
     var projListWrap = document.createElement('div');
     projListWrap.id = 'projects-up-results-wrap';
@@ -2375,14 +2379,6 @@ window._openSessionsPanel = function() {
     if (window._sessionsPanelLegacyScrollButtons && typeof window._mountLegacySessionsPanelScrollButtons === 'function') {
         window._mountLegacySessionsPanelScrollButtons(sessCol, projCol);
     }
-    var addProjectBtn = document.createElement('button');
-    addProjectBtn.id = 'projects-up-add-btn';
-    addProjectBtn.textContent = '+ Add project';
-    addProjectBtn.style.cssText = 'background:rgba(0,255,65,0.12);border:1px solid var(--green);color:var(--green);padding:8px 10px;cursor:pointer;font-size:13px;font-family:Orbitron,sans-serif;font-weight:700;text-align:left;';
-    addProjectBtn.onclick = function() {
-        if (typeof window._createProjectFromPanel === 'function') window._createProjectFromPanel();
-    };
-    projCol.appendChild(addProjectBtn);
     columns.appendChild(projCol);
     panel.appendChild(columns);
     // Search at bottom (spans full width)
@@ -2455,6 +2451,12 @@ window._attachAlwaysVisibleScrollIndicator = function(wrapperId, listId, thumbCo
         var scrollRange = Math.max(0, scrollHeight - clientHeight);
         var thumbHeight;
         var thumbTop = 2;
+        var hideWhenNoOverflow = (listId === 'projects-up-results');
+        if (scrollRange <= 1 && hideWhenNoOverflow) {
+            track.style.display = 'none';
+            return;
+        }
+        track.style.display = 'block';
         if (scrollRange <= 1) {
             thumbHeight = Math.max(16, Math.round(clientHeight * 0.16));
         } else {
@@ -2639,8 +2641,24 @@ window._loadProjectsUp = function() {
         .then(function(data) {
             var projects = data.projects || [];
             results.innerHTML = '';
+            var appendAddProjectAction = function() {
+                var addRow = document.createElement('div');
+                addRow.style.cssText = 'padding:8px 12px 10px;border-top:1px solid rgba(255,255,255,0.05);text-align:right;';
+                var addBtn = document.createElement('button');
+                addBtn.id = 'projects-up-add-btn';
+                addBtn.textContent = 'Add project';
+                addBtn.style.cssText = 'background:none;border:none;color:var(--green);padding:0;margin:0;cursor:pointer;font-size:12px;font-family:Orbitron,sans-serif;font-weight:700;text-decoration:underline;text-underline-offset:2px;';
+                addBtn.onmouseover = function() { this.style.color = 'var(--cyan)'; };
+                addBtn.onmouseout = function() { this.style.color = 'var(--green)'; };
+                addBtn.onclick = function() {
+                    if (typeof window._createProjectFromPanel === 'function') window._createProjectFromPanel();
+                };
+                addRow.appendChild(addBtn);
+                results.appendChild(addRow);
+            };
             if (!projects.length) {
                 results.innerHTML = '<div style="padding:12px;color:var(--dim);font-size:15px;">No projects</div>';
+                appendAddProjectAction();
                 if (typeof window._refreshSessionsPanelScrollbarIndicators === 'function') setTimeout(window._refreshSessionsPanelScrollbarIndicators, 0);
                 return;
             }
@@ -2700,6 +2718,7 @@ window._loadProjectsUp = function() {
                 };
                 results.appendChild(div);
             });
+            appendAddProjectAction();
             if (typeof window._refreshSessionsPanelScrollbarIndicators === 'function') setTimeout(window._refreshSessionsPanelScrollbarIndicators, 0);
         })
         .catch(function() {
