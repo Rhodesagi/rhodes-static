@@ -87,6 +87,11 @@
             rhodesStorage.setItem('rhodes_username', CURRENT_USERNAME);
             console.log('[AUTH] Cleaned up username, removed LOGIN prefix');
         }
+        if (window.rhodesSessionState && typeof window.rhodesSessionState.migrateLegacySessionPointer === 'function') {
+            const startupIdentity = (USER_TOKEN && CURRENT_USERNAME) ? ('user:' + CURRENT_USERNAME) : 'guest';
+            window.rhodesSessionState.migrateLegacySessionPointer(startupIdentity);
+            window.rhodesSessionState.setLastIdentity(startupIdentity);
+        }
         let IS_GUEST = !(USER_TOKEN && CURRENT_USERNAME);  // Not guest if we have stored credentials
 
         // Check if this IP+browser has ever been used by a logged-in user

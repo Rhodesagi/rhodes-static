@@ -397,7 +397,11 @@ window.installRhodesSessionUi = function installRhodesSessionUi(deps) {
                 showToast('Disconnected - reconnecting...');
                 setWantsNewRhodes(false);
                 setRhodesId(sessionId);
-                rhodesStorage.setItem('rhodes_session_id', sessionId);
+                if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
+                    window.rhodesSessionState.setResumeSessionIdForCurrentIdentity(sessionId);
+                } else {
+                    rhodesStorage.setItem('rhodes_session_id', sessionId);
+                }
                 if (ws) ws.close();
                 connect();
                 return;

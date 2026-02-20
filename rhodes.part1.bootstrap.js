@@ -193,6 +193,93 @@ window.rhodesSessionStorage = (function() {
     };
 })();
 
+
+
+window.rhodesSessionState = (function() {
+    function normalizeIdentity(identity) {
+        const raw = String(identity || 'guest').toLowerCase().trim();
+        if (!raw || raw == 'guest') return 'guest';
+        if (raw.startsWith('user:')) return raw;
+        return 'user:' + raw;
+    }
+
+    function getCurrentIdentity() {
+        const token = window.rhodesStorage && window.rhodesStorage.getItem('rhodes_user_token');
+        const username = window.rhodesStorage && window.rhodesStorage.getItem('rhodes_username');
+        if (token && username) return normalizeIdentity('user:' + username);
+        return 'guest';
+    }
+
+    function keyForIdentity(identity) {
+        const id = normalizeIdentity(identity);
+        if (id === 'guest') return 'rhodes_session_id__guest';
+        const safe = id.replace(/[^a-z0-9:_-]/g, '_');
+        return 'rhodes_session_id__' + safe;
+    }
+
+    function getScopedSessionId(identity) {
+        const key = keyForIdentity(identity);
+        return (window.rhodesStorage && window.rhodesStorage.getItem(key)) || '';
+    }
+
+    function setScopedSessionId(sessionId, identity) {
+        const key = keyForIdentity(identity);
+        if (!sessionId) {
+            if (window.rhodesStorage) window.rhodesStorage.removeItem(key);
+            return;
+        }
+        if (window.rhodesStorage) window.rhodesStorage.setItem(key, sessionId);
+    }
+
+    function migrateLegacySessionPointer(identity) {
+        if (!window.rhodesStorage) return;
+        const legacy = window.rhodesStorage.getItem('rhodes_session_id');
+        if (!legacy) return;
+        if (normalizeIdentity(identity) !== 'guest') {
+            setScopedSessionId(legacy, identity);
+        }
+        window.rhodesStorage.removeItem('rhodes_session_id');
+    }
+
+    function getResumeSessionIdForCurrentIdentity() {
+        const identity = getCurrentIdentity();
+        let scoped = getScopedSessionId(identity);
+        if (scoped) return scoped;
+        migrateLegacySessionPointer(identity);
+        scoped = getScopedSessionId(identity);
+        return scoped || '';
+    }
+
+    function setResumeSessionIdForCurrentIdentity(sessionId) {
+        setScopedSessionId(sessionId, getCurrentIdentity());
+        if (window.rhodesStorage) window.rhodesStorage.removeItem('rhodes_session_id');
+    }
+
+    function clearLegacySessionPointer() {
+        if (window.rhodesStorage) window.rhodesStorage.removeItem('rhodes_session_id');
+    }
+
+    function getLastIdentity() {
+        return (window.rhodesStorage && window.rhodesStorage.getItem('rhodes_last_identity')) || null;
+    }
+
+    function setLastIdentity(identity) {
+        if (!window.rhodesStorage) return;
+        window.rhodesStorage.setItem('rhodes_last_identity', normalizeIdentity(identity));
+    }
+
+    return {
+        normalizeIdentity,
+        getCurrentIdentity,
+        getResumeSessionIdForCurrentIdentity,
+        setResumeSessionIdForCurrentIdentity,
+        migrateLegacySessionPointer,
+        clearLegacySessionPointer,
+        getLastIdentity,
+        setLastIdentity,
+    };
+})();
+
 // iOS Rhodes native bridge
 window.rhodesIOS = (function() {
     const isRhodesIOS = !!window.webkit?.messageHandlers?.rhodes;
@@ -326,6 +413,7 @@ if (window.rhodesIOS.isIOS) {
                 }
                 if (/Mac/.test(platform)) {
                     if (/iPhone|iPad/.test(ua)) return { name: 'iOS', type: 'mobile', downloadKey: 'any' };
+                    if (/Intel/.test(ua)) return { name: 'macOS', type: 'desktop', downloadKey: 'macos_intel' };
                     return { name: 'macOS', type: 'desktop', downloadKey: 'macos' };
                 }
                 if (/Linux/.test(platform)) {
@@ -367,9 +455,9 @@ if (window.rhodesIOS.isIOS) {
                 name: 'Rhodes Code',
                 icon: '\u2B21',
                 links: {
-                    macos: { label: 'Download for macOS', url: 'https://rhodesagi.com/download/rhodes-code-2.0.0-arm64.dmg', note: 'Apple Silicon (.dmg)' },
-                    macos_intel: { label: 'Download for macOS (Intel)', url: 'https://rhodesagi.com/download/rhodes-code-2.0.0-mac-x64.zip', note: 'Intel (.zip)' },
-                    windows: { label: 'Download for Windows', url: 'https://rhodesagi.com/download/rhodes-code-2.0.0-setup.exe', note: 'Windows 10+ (.exe)' },
+                    macos: { label: 'Download for macOS', url: 'https://rhodesagi.com/api/desktop/download/mac-app?arch=arm64', note: 'Apple Silicon (.dmg)' },
+                    macos_intel: { label: 'Download for macOS (Intel)', url: 'https://rhodesagi.com/api/desktop/download/mac-app?arch=x64', note: 'Intel (.zip)' },
+                    windows: { label: 'Download for Windows', url: 'https://rhodesagi.com/download/rhodes-code-2.0.0-setup-x64.exe', note: 'Windows 10+ (.exe)' },
                     linux: { label: 'Download for Linux', url: 'https://rhodesagi.com/download/rhodes-code-2.0.0.AppImage', note: 'AppImage (.AppImage)' },
                     any: { label: 'Download Rhodes Code', url: 'https://rhodesagi.com/account', note: 'Visit account page for downloads' }
                 }
@@ -379,6 +467,8 @@ if (window.rhodesIOS.isIOS) {
         window._renderDownloadCard = function(args, toolResult) {
             var product = (args && args.product) || 'rhodes_code';
             var reason = (args && args.reason) || '';
+            var reasonLower = String(reason || '').toLowerCase();
+            var isIosMacFlow = /ios|xcode|simulator|testflight|app store/.test(reasonLower);
 
             // Parse from tool result if needed
             if (toolResult && typeof toolResult === 'object' && toolResult.display_text) {
@@ -400,13 +490,18 @@ if (window.rhodesIOS.isIOS) {
 
             // Pick the right download for this device
             var downloadKey = SYSTEM_INFO.downloadKey || 'any';
-            var primary = info.links[downloadKey] || info.links.any;
+            if (isIosMacFlow) {
+                downloadKey = (downloadKey === 'macos_intel') ? 'macos_intel' : 'macos';
+            }
+            var primary = info.links[downloadKey] || info.links.macos || info.links.any;
+            var displayIcon = isIosMacFlow ? '\uF8FF' : info.icon;
+            var displayName = isIosMacFlow ? 'Rhodes Code for macOS' : info.name;
 
             // Build card HTML
             var cardHtml = '<div class="download-card">';
             cardHtml += '<div class="download-card-header">';
-            cardHtml += '<span class="download-card-icon">' + info.icon + '</span>';
-            cardHtml += '<span class="download-card-title">' + info.name + '</span>';
+            cardHtml += '<span class="download-card-icon">' + displayIcon + '</span>';
+            cardHtml += '<span class="download-card-title">' + displayName + '</span>';
             cardHtml += '</div>';
             if (reason) {
                 cardHtml += '<div class="download-card-reason">' + reason.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>';
@@ -417,6 +512,9 @@ if (window.rhodesIOS.isIOS) {
             }
             // Show alternate links for other platforms
             var altKeys = Object.keys(info.links).filter(function(k) { return k !== downloadKey && k !== 'any'; });
+            if (isIosMacFlow) {
+                altKeys = [];
+            }
             if (altKeys.length > 0) {
                 cardHtml += '<div class="download-card-alts">';
                 altKeys.forEach(function(k) {
@@ -436,4 +534,3 @@ if (window.rhodesIOS.isIOS) {
             var chatEl = document.getElementById('chat');
             chatEl.scrollTop = chatEl.scrollHeight;
         };
-

@@ -321,7 +321,11 @@ function showDownloads() {
                         }
                     } catch {}
                     // Only show auth modal if no saved credentials (first visit)
-                    const _hasToken = !!(localStorage.getItem('rhodes_user_token') || localStorage.getItem('rhodes_session_id'));
+                    const _hasToken = !!(
+                        localStorage.getItem('rhodes_user_token') ||
+                        (window.rhodesSessionState && window.rhodesSessionState.getResumeSessionIdForCurrentIdentity && window.rhodesSessionState.getResumeSessionIdForCurrentIdentity()) ||
+                        localStorage.getItem('rhodes_session_id')
+                    );
                     if (!_hasToken) {
                         authModal.style.display = 'flex';
                         const debugBtn = document.getElementById('debug-btn');
@@ -349,7 +353,11 @@ function showDownloads() {
                 console.log('WebSocket opened, sending auth request');
                 // Get saved session ID for auto-resume.
                 // IMPORTANT: when starting a brand-new session (?new=1), do not auto-resume the main saved session.
-                const savedSessionId = wantsNewRhodes ? '' : (rhodesStorage.getItem('rhodes_session_id') || '');
+                const savedSessionId = wantsNewRhodes ? '' : (
+                    (window.rhodesSessionState && window.rhodesSessionState.getResumeSessionIdForCurrentIdentity)
+                        ? window.rhodesSessionState.getResumeSessionIdForCurrentIdentity()
+                        : (rhodesStorage.getItem('rhodes_session_id') || '')
+                );
 
                 // When ?new=1, force empty resume to create fresh session
                 // Resume for both logged-in AND guest sessions
@@ -412,6 +420,15 @@ function showDownloads() {
                             return; // Wait for google_login_response
                         }
 
+                        const prevIdentity = (window.rhodesSessionState && window.rhodesSessionState.getLastIdentity)
+                            ? window.rhodesSessionState.getLastIdentity()
+                            : null;
+                        const incomingUsername = ((msg.payload.user && msg.payload.user.username) || '').toLowerCase();
+                        const incomingIdentity = (msg.payload.is_guest || !incomingUsername)
+                            ? 'guest'
+                            : ('user:' + incomingUsername);
+                        const identitySwitched = !!(prevIdentity && prevIdentity !== incomingIdentity);
+
                         IS_GUEST = msg.payload.is_guest || false;
                         RHODES_ID = msg.payload.rhodes_id || null;
                         // Set admin status in config
@@ -424,12 +441,23 @@ function showDownloads() {
                         if (wantsNewRhodes && !didInitialAuth) {
                             chat.innerHTML = '';
                         }
+                        if (identitySwitched) {
+                            chat.innerHTML = '';
+                            CONNECTION_MSG_SHOWN = false;
+                        }
                         didInitialAuth = true;
+                        if (window.rhodesSessionState && window.rhodesSessionState.setLastIdentity) {
+                            window.rhodesSessionState.setLastIdentity(incomingIdentity);
+                        }
 
                         // Save rhodes_id for auto-resume on next visit (both users and guests)
                         // Don't save if this is a temporary new session
                         if (RHODES_ID && !wantsNewRhodes && RHODES_ID.indexOf('split-') === -1) {
-                            if (RHODES_ID.indexOf('split-') === -1) rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
+                            if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
+                                window.rhodesSessionState.setResumeSessionIdForCurrentIdentity(RHODES_ID);
+                            } else {
+                                rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
+                            }
                         }
 
                         // Update session ID display
@@ -457,6 +485,7 @@ function showDownloads() {
                         if (IS_GUEST) {
                             GUEST_MESSAGES_REMAINING = msg.payload.guest_messages_remaining || 3;
                             CURRENT_USERNAME = null;
+                            rhodesStorage.removeItem('rhodes_username');
                             setStatus(true, `GUEST (${GUEST_MESSAGES_REMAINING} msgs left)${instanceLabel}`);
                             try { authModal.style.display = 'none'; } catch {}
                             window._wsConnectAttempts = 0;
@@ -466,6 +495,9 @@ function showDownloads() {
                             const username = msg.payload.user?.username || '';
                             CURRENT_USERNAME = username.toLowerCase();
                         rhodesStorage.setItem('rhodes_username', CURRENT_USERNAME);
+                        if (window.rhodesSessionState && window.rhodesSessionState.setLastIdentity) {
+                            window.rhodesSessionState.setLastIdentity('user:' + CURRENT_USERNAME);
+                        }
                             setStatus(true, username ? `CONNECTED (${username})${instanceLabel}` : `CONNECTED${instanceLabel}`);
                             try { authModal.style.display = 'none'; } catch {}
                             window._wsConnectAttempts = 0;
@@ -875,6 +907,9 @@ function showDownloads() {
                         authModal.style.display = 'none';
                         CURRENT_USERNAME = (msg.payload.username || '').toLowerCase();
                         rhodesStorage.setItem('rhodes_username', CURRENT_USERNAME);
+                        if (window.rhodesSessionState && window.rhodesSessionState.setLastIdentity) {
+                            window.rhodesSessionState.setLastIdentity('user:' + CURRENT_USERNAME);
+                        }
                         setStatus(true, 'CONNECTED (' + msg.payload.username + ')');
                         addMsg('ai', 'Welcome ' + msg.payload.username + '! Your account is ready.');
                         updateHeaderAuth();
@@ -894,7 +929,13 @@ function showDownloads() {
                         // Update session ID from merged session (guest_web_ -> user_N_)
                         if (msg.payload.session_id) {
                             RHODES_ID = msg.payload.session_id;
-                            if (RHODES_ID.indexOf('split-') === -1) rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
+                            if (RHODES_ID.indexOf('split-') === -1) {
+                                if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
+                                    window.rhodesSessionState.setResumeSessionIdForCurrentIdentity(RHODES_ID);
+                                } else {
+                                    rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
+                                }
+                            }
                         }
                         authModal.style.display = 'none';
                         // Redirect to returnTo if specified (e.g., from /download/ page)
@@ -905,6 +946,9 @@ function showDownloads() {
                         // Session already upgraded server-side — update auth state
                         CURRENT_USERNAME = (msg.payload.username || '').toLowerCase();
                         rhodesStorage.setItem('rhodes_username', CURRENT_USERNAME);
+                        if (window.rhodesSessionState && window.rhodesSessionState.setLastIdentity) {
+                            window.rhodesSessionState.setLastIdentity('user:' + CURRENT_USERNAME);
+                        }
                         addMsg('ai', `Welcome back, ${msg.payload.username}!`);
                         setStatus(true, 'CONNECTED (' + msg.payload.username + ')');
                         updateHeaderAuth();
@@ -957,12 +1001,21 @@ function showDownloads() {
                         // Update session ID from merged session (guest_web_ -> user_N_)
                         if (msg.payload.session_id) {
                             RHODES_ID = msg.payload.session_id;
-                            if (RHODES_ID.indexOf('split-') === -1) rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
+                            if (RHODES_ID.indexOf('split-') === -1) {
+                                if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
+                                    window.rhodesSessionState.setResumeSessionIdForCurrentIdentity(RHODES_ID);
+                                } else {
+                                    rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
+                                }
+                            }
                         }
                         authModal.style.display = 'none';
                         // Session already upgraded server-side — update auth state
                         CURRENT_USERNAME = (msg.payload.username || '').toLowerCase();
                         rhodesStorage.setItem('rhodes_username', CURRENT_USERNAME);
+                        if (window.rhodesSessionState && window.rhodesSessionState.setLastIdentity) {
+                            window.rhodesSessionState.setLastIdentity('user:' + CURRENT_USERNAME);
+                        }
                         addMsg('ai', `Welcome, ${msg.payload.username}! Signed in with Google.`);
                         setStatus(true, 'CONNECTED (' + msg.payload.username + ')');
                         updateHeaderAuth();
@@ -989,7 +1042,13 @@ function showDownloads() {
                         const sid = msg.payload.session_id || msg.payload.rhodes_id || '';
                         if (sid) {
                             RHODES_ID = sid;
-                            if (RHODES_ID.indexOf('split-') === -1) rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
+                            if (RHODES_ID.indexOf('split-') === -1) {
+                                if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
+                                    window.rhodesSessionState.setResumeSessionIdForCurrentIdentity(RHODES_ID);
+                                } else {
+                                    rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
+                                }
+                            }
                             const sessionEl = document.getElementById('session-id');
                             if (sessionEl) {
                                 sessionEl.textContent = RHODES_ID;
@@ -1025,7 +1084,13 @@ function showDownloads() {
                         const sid = msg.payload.session_id || '';
                         if (sid) {
                             RHODES_ID = sid;
-                            if (RHODES_ID.indexOf('split-') === -1) rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
+                            if (RHODES_ID.indexOf('split-') === -1) {
+                                if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
+                                    window.rhodesSessionState.setResumeSessionIdForCurrentIdentity(RHODES_ID);
+                                } else {
+                                    rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
+                                }
+                            }
                             const sessionEl = document.getElementById('session-id');
                             if (sessionEl) {
                                 sessionEl.textContent = RHODES_ID;
@@ -1105,7 +1170,13 @@ function showDownloads() {
                     // Backend rotated the session id; keep all tabs in sync.
                     if (msg.payload && msg.payload.new_session_id) {
                         RHODES_ID = msg.payload.new_session_id;
-                        if (RHODES_ID.indexOf('split-') === -1) rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
+                        if (RHODES_ID.indexOf('split-') === -1) {
+                                if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
+                                    window.rhodesSessionState.setResumeSessionIdForCurrentIdentity(RHODES_ID);
+                                } else {
+                                    rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
+                                }
+                            }
                         const sessionEl = document.getElementById('session-id');
                         if (sessionEl) {
                             sessionEl.textContent = RHODES_ID;

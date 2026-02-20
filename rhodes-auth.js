@@ -146,10 +146,21 @@ window.installRhodesAuthUi = function installRhodesAuthUi(deps) {
     function logout() {
         rhodesStorage.removeItem('rhodes_user_token');
         rhodesStorage.removeItem('rhodes_token');
+        rhodesStorage.removeItem('rhodes_username');
+        if (window.rhodesSessionState && window.rhodesSessionState.clearLegacySessionPointer) {
+            window.rhodesSessionState.clearLegacySessionPointer();
+        } else {
+            rhodesStorage.removeItem('rhodes_session_id');
+        }
+        if (window.rhodesSessionState && window.rhodesSessionState.setLastIdentity) {
+            window.rhodesSessionState.setLastIdentity('guest');
+        }
         setUserToken('');
         setToken('');
         setIsGuest(true);
         setCurrentUsername(null);
+        const chatEl = document.getElementById('chat');
+        if (chatEl) chatEl.innerHTML = '';
         updateHeaderAuth();
         const voiceBar = document.getElementById('voice-bar');
         if (voiceBar) voiceBar.style.display = 'none';
