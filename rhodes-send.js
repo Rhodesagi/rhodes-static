@@ -43,24 +43,24 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
 
         if (options.enableRVersionSwitch) {
             if (options.enableRVersionNumericSuffix) {
-                const rMatch = s.match(/^\/(?:r|ds)(\d+\.\d+)g?([abcdef])(\d{0,2})(\.c[abcdef][012]?)?(\s+.*)?$/);
+                const rMatch = s.match(/^\/(?:r|ds|p)(\d+\.\d+)g?([abcdef])(\d{0,2})(\.c[abcdef][012]?)?(\s+.*)?$/);
                 if (rMatch) {
                     const version = rMatch[1];
                     const variant = rMatch[2];
                     const suffix = rMatch[3] || '';
                     const rest = (rMatch[4] || '').trim();
-                    const model = (s.startsWith('/ds') ? 'ds' : 'r') + version + variant + suffix + (rMatch[4] || '');
+                    const model = (s.startsWith('/ds') ? 'ds' : s.startsWith('/p') ? 'p' : 'r') + version + variant + suffix + (rMatch[4] || '');
                     const flag = model;
                     console.log('[parseModelSwitchPrefix] matched rX.Y format:', { flag, model, rest });
                     return { flag, model, rest };
                 }
             } else {
-                const rMatch = s.match(/^\/(?:r|ds)(\d+\.\d+)g?([abcdef])(\.c[abcdef][012]?)?(\s+.*)?$/);
+                const rMatch = s.match(/^\/(?:r|ds|p)(\d+\.\d+)g?([abcdef])(\.c[abcdef][012]?)?(\s+.*)?$/);
                 if (rMatch) {
                     const version = rMatch[1];
                     const variant = rMatch[2];
                     const rest = (rMatch[3] || '').trim();
-                    const model = (s.startsWith('/ds') ? 'ds' : 'r') + version + variant + (rMatch[3] || '');
+                    const model = (s.startsWith('/ds') ? 'ds' : s.startsWith('/p') ? 'p' : 'r') + version + variant + (rMatch[3] || '');
                     const flag = model;
                     console.log('[parseModelSwitchPrefix] matched rX.Y format:', { flag, model, rest });
                     return { flag, model, rest };

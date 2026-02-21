@@ -2781,7 +2781,7 @@ window._loadSessionsUp = function(query) {
             // Render normal sessions first (top = scrolled away in drop-up)
             normalSessions.forEach(function(s, idx) {
                 var div = document.createElement('div');
-                div.style.cssText = 'padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:grab;color:var(--text);font-size:15px;position:relative;';
+                div.style.cssText = 'padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:grab;color:var(--text);font-size:15px;position:relative;overflow:hidden;';
                 div.draggable = true;
                 div.setAttribute('data-session-id', s.session_id);
                 div.ondragstart = function(e) {
@@ -2816,7 +2816,7 @@ window._loadSessionsUp = function(query) {
                     }
                 });
                 var sNum = s.session_number ? ('S' + s.session_number) : ('S' + (idx + 1));
-                div.innerHTML = '<div style="color:var(--cyan);font-size:16px;">' + title + projSticker + '</div><div style="font-size:14px;margin-top:1px;"><span style="color:var(--cyan);font-weight:700;margin-right:4px;">' + sNum + '</span><span style="color:var(--dim);">' + date + '</span> <span style="color:var(--green);font-weight:700;">' + (s.message_count||0) + ' msgs</span></div>';
+                div.innerHTML = '<div style="color:var(--cyan);font-size:16px;word-wrap:break-word;overflow-wrap:break-word;">' + title + projSticker + '</div><div style="font-size:14px;margin-top:1px;"><span style="color:var(--cyan);font-weight:700;margin-right:4px;">' + sNum + '</span><span style="color:var(--dim);">' + date + '</span> <span style="color:var(--green);font-weight:700;">' + (s.message_count||0) + ' msgs</span></div>';
                 div.onclick = function() {
                     window.location.href = '/?resume=' + s.session_id;
                 };

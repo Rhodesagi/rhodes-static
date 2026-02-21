@@ -46,8 +46,18 @@ if ! command -v python3 &>/dev/null; then
 fi
 
 echo "  Installing Python dependencies..."
-python3 -m pip install websockets pywebview --quiet 2>/dev/null || \
-python3 -m pip install websockets pywebview --quiet --user 2>/dev/null || true
+python3 -m pip install websockets --quiet 2>/dev/null || \
+python3 -m pip install websockets --quiet --user 2>/dev/null || true
+
+# pywebview is optional - provides native window, falls back to browser if unavailable
+PY_MINOR=$(python3 -c "import sys; print(sys.version_info.minor)" 2>/dev/null || echo "0")
+if [ "$PY_MINOR" -lt 14 ]; then
+    python3 -m pip install pywebview --quiet 2>/dev/null || \
+    python3 -m pip install pywebview --quiet --user 2>/dev/null || \
+    echo "  [NOTE] pywebview not installed - will use browser mode"
+else
+    echo "  [NOTE] Python 3.14+ detected - skipping pywebview (will use browser mode)"
+fi
 
 echo "  Downloading RHODES_CODE..."
 curl -so ~/.rhodes/rhodes-desktop.py https://rhodesagi.com/download/rhodes-desktop.py

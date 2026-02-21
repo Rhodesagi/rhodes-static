@@ -164,7 +164,7 @@
 
             // Handle model switch slash commands (don't show in chat, just switch)
             const lowerMsg = message.toLowerCase();
-            const modelSwitchPattern = /^\/(?:rhodes-|rhodesia-)?(?:alpha|beta|ada|delta|epsilon|opus|sonnet|haiku|deepseek|kimi|grok|zeta)(?:-format-?\d+(?:\.\d+)?)?$|^\/(?:r|ds)\d+\.\d+g?[abcdef](?:[012p]|21)?(?:\.c[abcdef][012]?)?$|^\/[abcdef]\d+(?:\.\d+)?$/;
+            const modelSwitchPattern = /^\/(?:rhodes-|rhodesia-)?(?:alpha|beta|ada|delta|epsilon|opus|sonnet|haiku|deepseek|kimi|grok|zeta)(?:-format-?\d+(?:\.\d+)?)?$|^\/(?:r|ds|p)\d+\.\d+g?[abcdef](?:[012p]|21)?(?:\.c[abcdef][012]?)?$|^\/[abcdef]\d+(?:\.\d+)?$/;
             console.log("[SPLIT-DEBUG] pattern test:", lowerMsg, modelSwitchPattern.test(lowerMsg)); if (modelSwitchPattern.test(lowerMsg)) {
                 if (!paneWs || paneWs.readyState !== WebSocket.OPEN) {
                     showToast('Pane ' + instanceNum + ' not connected');

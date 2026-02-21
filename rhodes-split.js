@@ -1763,7 +1763,7 @@ window.sendToInstance = function(paneNum, text) {
     // Handle model switch slash commands (pattern-based for future compatibility)
     // Matches: /a2.2, /b2.2, /c2.2, /d2.2, /rhodes-alpha-format-2, /delta-format-3, /alpha, /beta, etc.
     const lowerText = processedText.toLowerCase();
-    const modelSwitchPattern = /^\/(?:rhodes-|rhodesia-)?(?:alpha|beta|ada|delta|opus|sonnet|haiku|deepseek)(?:-format-?\d+(?:\.\d+)?)?$|^\/(?:r|ds)\d+\.\d+[abcdef](?:[012p]|21)?(?:\.c[abcdef][012]?)?$|^\/[abcd]\d+(?:\.\d+)?$/;
+    const modelSwitchPattern = /^\/(?:rhodes-|rhodesia-)?(?:alpha|beta|ada|delta|opus|sonnet|haiku|deepseek)(?:-format-?\d+(?:\.\d+)?)?$|^\/(?:r|ds|p)\d+\.\d+[abcdef](?:[012p]|21)?(?:\.c[abcdef][012]?)?$|^\/[abcd]\d+(?:\.\d+)?$/;
     if (modelSwitchPattern.test(lowerText)) {
         if (!paneWs || paneWs.readyState !== WebSocket.OPEN) {
             showToast('Pane ' + paneNum + ' not connected');
@@ -2309,7 +2309,7 @@ window.removeInstanceAttachment = function(instanceNum, index) {
         }
 
         // Handle model switch slash commands - don't send to AI, just switch model
-        var modelSwitchPattern = /^\/(?:rhodes-|rhodesia-)?(?:alpha|beta|ada|delta|opus|sonnet|haiku|deepseek)(?:-format-?\d+(?:\.\d+)?)?$|^\/(?:r|ds)\d+\.\d+[abcdef](?:[012p]|21)?(?:\.c[abcdef][012]?)?$|^\/[abcd]\d+(?:\.\d+)?$/;
+        var modelSwitchPattern = /^\/(?:rhodes-|rhodesia-)?(?:alpha|beta|ada|delta|opus|sonnet|haiku|deepseek)(?:-format-?\d+(?:\.\d+)?)?$|^\/(?:r|ds|p)\d+\.\d+[abcdef](?:[012p]|21)?(?:\.c[abcdef][012]?)?$|^\/[abcd]\d+(?:\.\d+)?$/;
         if (text && modelSwitchPattern.test(text.trim().toLowerCase())) {
             var paneWs = window.paneConnections[instanceNum];
             if (!paneWs || paneWs.readyState !== WebSocket.OPEN) {
