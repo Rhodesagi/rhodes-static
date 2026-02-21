@@ -1,6 +1,6 @@
 #!/bin/bash
-# RHODES_CODE Installer for Linux
-
+# RHODES_CODE — Linux Installer (curl | bash)
+# Downloads the Electron app directly to ~/.rhodes/app/
 
 echo ""
 echo "====================================="
@@ -8,129 +8,93 @@ echo "  RHODES_CODE INSTALLER (Linux)"
 echo "====================================="
 echo ""
 
-# ── Step 1: Install system dependencies FIRST ──────────────────────
-echo "  Installing system dependencies..."
+INSTALL_DIR="$HOME/.rhodes/app"
+ICON_DIR="$HOME/.local/share/icons"
+DESKTOP_DIR="$HOME/.local/share/applications"
+BIN_DIR="$HOME/.local/bin"
+CONFIG_DIR="$HOME/.rhodes"
+URL="https://rhodesagi.com/download/rhodes-code-2.0.1-x64.tar.gz"
 
-install_system_deps() {
-    if command -v apt-get &>/dev/null; then
-        sudo apt-get update -qq 2>/dev/null
-        sudo apt-get install -y \
-            python3-gi gir1.2-webkit2-4.1 gir1.2-webkit2-4.0 \
-            libgirepository1.0-dev libwebkit2gtk-4.1-dev libwebkit2gtk-4.0-dev \
-            gtk3 xvfb xdotool xclip imagemagick x11-utils 2>/dev/null || true
-    elif command -v dnf &>/dev/null; then
-        # Try webkit2gtk4.1 first (Fedora 38+), fall back to 4.0, then 3
-        sudo dnf install -y \
-            python3-gobject gobject-introspection-devel \
-            gtk3-devel \
-            xorg-x11-server-Xvfb xdotool xclip ImageMagick xdpyinfo \
-            2>/dev/null || true
-        # webkit2gtk — try every known package name until one works
-        sudo dnf install -y webkit2gtk4.1-devel 2>/dev/null || \
-        sudo dnf install -y webkit2gtk4.0-devel 2>/dev/null || \
-        sudo dnf install -y webkit2gtk3-devel 2>/dev/null || \
-        sudo dnf install -y webkitgtk4-devel 2>/dev/null || \
-        sudo dnf install -y webkitgtk6.0-devel 2>/dev/null || \
-        echo "  [WARN] Could not find webkit2gtk package"
-    elif command -v pacman &>/dev/null; then
-        sudo pacman -S --noconfirm --needed \
-            python-gobject webkit2gtk webkit2gtk-4.1 \
-            gtk3 xorg-server-xvfb xdotool xclip imagemagick xorg-xdpyinfo \
-            2>/dev/null || true
-    elif command -v zypper &>/dev/null; then
-        sudo zypper install -y \
-            python3-gobject typelib-1_0-WebKit2-4_1 typelib-1_0-WebKit2-4_0 \
-            gtk3-devel xvfb xdotool xclip ImageMagick \
-            2>/dev/null || true
-    fi
-}
-
-install_system_deps
-echo "  [OK] System dependencies installed"
-
-# ── Step 2: Python ──────────────────────────────────────────────────
-echo "  Checking Python..."
-
-RHODES_PYTHON=""
-
-if command -v python3.13 &>/dev/null; then
-    RHODES_PYTHON="python3.13"
-    echo "  [OK] Found python3.13"
-elif command -v python3 &>/dev/null; then
-    PY_VER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null)
-    PY_MINOR=$(python3 -c "import sys; print(sys.version_info.minor)" 2>/dev/null)
-    if [ "$PY_MINOR" -le 13 ] && [ "$PY_MINOR" -ge 10 ]; then
-        RHODES_PYTHON="python3"
-        echo "  [OK] Found python3 ($PY_VER)"
-    else
-        echo "  [WARN] System python3 is $PY_VER (need 3.10-3.13)"
-    fi
+if [ -n "${RHODES_TOKEN:-}" ]; then
+    URL="${URL}?token=${RHODES_TOKEN}"
 fi
 
-if [ -z "$RHODES_PYTHON" ]; then
-    echo "  Installing Python 3.13..."
-    if command -v apt-get &>/dev/null; then
-        if ! apt-cache show python3.13 &>/dev/null 2>&1; then
-            sudo apt-get update -qq
-            sudo apt-get install -y software-properties-common
-            sudo add-apt-repository -y ppa:deadsnakes/ppa
-            sudo apt-get update -qq
+# ── Download & extract directly to install dir ────────────
+mkdir -p "$INSTALL_DIR"
+echo "  Downloading & installing RHODES_CODE (99 MB)..."
+if ! curl -fSL "$URL" 2>/dev/null | tar xz -C "$INSTALL_DIR" --strip-components=0; then
+    echo "  [ERROR] Download or extraction failed."
+    echo "  Check your connection or visit https://rhodesagi.com/download/"
+    exit 1
+fi
+
+chmod +x "$INSTALL_DIR/rhodes-desktop"
+chmod +x "$INSTALL_DIR/chrome_crashpad_handler" 2>/dev/null || true
+chmod 4755 "$INSTALL_DIR/chrome-sandbox" 2>/dev/null || true
+echo "  [OK] App installed to $INSTALL_DIR"
+
+# ── Icon ──────────────────────────────────────────────────
+mkdir -p "$ICON_DIR"
+cp "$INSTALL_DIR/rhodes-icon.png" "$ICON_DIR/rhodes-code.png" 2>/dev/null || true
+echo "  [OK] Icon installed"
+
+# ── Desktop entry ─────────────────────────────────────────
+mkdir -p "$DESKTOP_DIR"
+cat > "$DESKTOP_DIR/rhodes-code.desktop" << DESKTOPEOF
+[Desktop Entry]
+Name=RHODES_CODE
+Comment=Rhodes AGI Desktop Client
+Exec=$INSTALL_DIR/rhodes-desktop --no-sandbox %U
+Icon=$ICON_DIR/rhodes-code.png
+Terminal=false
+Type=Application
+Categories=Network;Chat;Development;
+Keywords=rhodes;agi;ai;chat;code;
+StartupNotify=true
+StartupWMClass=rhodes-desktop
+DESKTOPEOF
+chmod +x "$DESKTOP_DIR/rhodes-code.desktop"
+update-desktop-database "$DESKTOP_DIR" 2>/dev/null || true
+echo "  [OK] Desktop entry created"
+
+# ── Desktop shortcut ──────────────────────────────────────
+if [ -d "$HOME/Desktop" ]; then
+    cp "$DESKTOP_DIR/rhodes-code.desktop" "$HOME/Desktop/rhodes-code.desktop"
+    chmod +x "$HOME/Desktop/rhodes-code.desktop"
+    gio set "$HOME/Desktop/rhodes-code.desktop" metadata::trusted true 2>/dev/null || true
+    echo "  [OK] Desktop shortcut created"
+fi
+
+# ── CLI commands ──────────────────────────────────────────
+mkdir -p "$BIN_DIR"
+for cmd_name in rhodes RHODES_CODE; do
+    cat > "$BIN_DIR/$cmd_name" << CMDEOF
+#!/bin/bash
+exec "$INSTALL_DIR/rhodes-desktop" --no-sandbox "\$@"
+CMDEOF
+    chmod +x "$BIN_DIR/$cmd_name"
+done
+echo "  [OK] CLI commands: rhodes, RHODES_CODE"
+
+if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
+    SHELL_RC=""
+    [ -f "$HOME/.bashrc" ] && SHELL_RC="$HOME/.bashrc"
+    [ -f "$HOME/.zshrc" ] && SHELL_RC="$HOME/.zshrc"
+    if [ -n "$SHELL_RC" ]; then
+        if ! grep -q '.local/bin' "$SHELL_RC" 2>/dev/null; then
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$SHELL_RC"
+            echo "  [OK] Added ~/.local/bin to PATH in $SHELL_RC"
         fi
-        sudo apt-get install -y python3.13 python3.13-venv python3.13-dev
-    elif command -v dnf &>/dev/null; then
-        sudo dnf install -y python3.13 || sudo dnf install -y python3.12 || sudo dnf install -y python3.11
-    elif command -v pacman &>/dev/null; then
-        sudo pacman -S --noconfirm python
     fi
-
-    for pybin in python3.13 python3.12 python3.11 python3; do
-        if command -v "$pybin" &>/dev/null; then
-            RHODES_PYTHON="$pybin"
-            echo "  [OK] Using $pybin"
-            break
-        fi
-    done
-
-    if [ -z "$RHODES_PYTHON" ]; then
-        echo "  [ERROR] Could not install Python 3.10+"
-        echo "    Ubuntu/Debian: sudo apt install python3.13"
-        echo "    Fedora: sudo dnf install python3.13"
-        exit 1
-    fi
+    export PATH="$BIN_DIR:$PATH"
 fi
 
-# ── Step 3: pip dependencies ────────────────────────────────────────
-$RHODES_PYTHON -m ensurepip --default-pip 2>/dev/null || true
-
-echo "  Installing Python packages..."
-$RHODES_PYTHON -m pip install websockets pywebview --quiet 2>/dev/null || \
-$RHODES_PYTHON -m pip install websockets pywebview --quiet --user 2>/dev/null || \
-$RHODES_PYTHON -m pip install websockets pywebview --quiet --break-system-packages 2>/dev/null || true
-
-# ── Verify GUI backend is importable from chosen python ───────────
-GI_OK=$($RHODES_PYTHON -c "import gi; gi.require_version('Gtk','3.0'); print('ok')" 2>/dev/null || echo "fail")
-if [ "$GI_OK" != "ok" ]; then
-    echo "  [WARN] gi module not found for $RHODES_PYTHON"
-    # Fall back to system python3 which has the dnf-installed gi bindings
-    SYS_GI=$(python3 -c "import gi; gi.require_version('Gtk','3.0'); print('ok')" 2>/dev/null || echo "fail")
-    if [ "$SYS_GI" = "ok" ]; then
-        echo "  [OK] Falling back to system python3 (has gi bindings)"
-        RHODES_PYTHON="python3"
-        # Re-install pip deps for system python
-        $RHODES_PYTHON -m pip install websockets pywebview --quiet --user 2>/dev/null ||         $RHODES_PYTHON -m pip install websockets pywebview --quiet --break-system-packages 2>/dev/null || true
-    else
-        echo "  [WARN] No python with gi bindings found — UI may not open"
-        echo "  Try: sudo dnf install python3-gobject webkit2gtk4.1-devel"
-    fi
-fi
-
-# ── Step 5: Handle authentication ──────────────────────────────────
-mkdir -p ~/.rhodes
-
-if [ -n "$RHODES_TOKEN" ]; then
-    echo "  Token detected - will auto-login"
-    echo "{\"token\": \"$RHODES_TOKEN\"}" > ~/.rhodes/config.json
-elif [ ! -f ~/.rhodes/config.json ]; then
+# ── Auth ──────────────────────────────────────────────────
+mkdir -p "$CONFIG_DIR"
+if [ -n "${RHODES_TOKEN:-}" ]; then
+    echo "{\"token\": \"$RHODES_TOKEN\"}" > "$CONFIG_DIR/config.json"
+    echo "  [OK] Token saved — auto-login enabled"
+elif [ ! -f "$CONFIG_DIR/config.json" ]; then
     echo ""
     echo "  Login to Rhodes (or press Enter to skip)"
     echo ""
@@ -142,106 +106,29 @@ elif [ ! -f ~/.rhodes/config.json ]; then
         RESPONSE=$(curl -s -X POST https://rhodesagi.com/api/user/login \
             -H "Content-Type: application/json" \
             -d "{\"username\":\"$RHODES_USER\",\"password\":\"$RHODES_PASS\"}" 2>/dev/null || echo "")
-        TOKEN=$(echo "$RESPONSE" | $RHODES_PYTHON -c "import sys,json; d=json.load(sys.stdin); print(d.get('token',''))" 2>/dev/null || echo "")
+        TOKEN=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('token',''))" 2>/dev/null || echo "")
         if [ -n "$TOKEN" ] && [ "$TOKEN" != "null" ]; then
-            echo "{\"token\": \"$TOKEN\"}" > ~/.rhodes/config.json
+            echo "{\"token\": \"$TOKEN\"}" > "$CONFIG_DIR/config.json"
             echo "  [OK] Logged in successfully"
         else
-            echo "  [WARN] Login failed - you can login later in the app"
+            echo "  [WARN] Login failed — you can login later in the app"
         fi
     else
         echo "  [SKIP] Will prompt for login in app"
     fi
 fi
 
-# ── Step 6: Download app files ─────────────────────────────────────
-echo "  Downloading RHODES_CODE..."
-curl -so ~/.rhodes/rhodes-desktop.py https://rhodesagi.com/download/rhodes-desktop.py
-chmod +x ~/.rhodes/rhodes-desktop.py
-
-echo "  Downloading Computer Use module..."
-curl -so ~/.rhodes/computer-use.py https://rhodesagi.com/download/computer-use-linux.py
-chmod +x ~/.rhodes/computer-use.py
-
-echo "$RHODES_PYTHON" > ~/.rhodes/.python_path
-
-# ── Step 7: Install commands ───────────────────────────────────────
-rm -f ~/.local/bin/rhodes ~/.local/bin/RHODES_CODE ~/.local/bin/rhodes-ui ~/.local/bin/rhodes-bg ~/.local/bin/rhodes-stop 2>/dev/null || true
-
-mkdir -p ~/.local/bin
-
-for cmd_name in rhodes RHODES_CODE; do
-    cat > ~/.local/bin/$cmd_name << CMDEOF
-#!/bin/bash
-$RHODES_PYTHON ~/.rhodes/rhodes-desktop.py "\$@"
-CMDEOF
-    chmod +x ~/.local/bin/$cmd_name
-done
-
-cat > ~/.local/bin/rhodes-ui << CMDEOF
-#!/bin/bash
-$RHODES_PYTHON ~/.rhodes/rhodes-desktop.py --ui
-CMDEOF
-
-cat > ~/.local/bin/rhodes-bg << CMDEOF
-#!/bin/bash
-$RHODES_PYTHON ~/.rhodes/rhodes-desktop.py -b
-CMDEOF
-
-cat > ~/.local/bin/rhodes-stop << CMDEOF
-#!/bin/bash
-$RHODES_PYTHON ~/.rhodes/rhodes-desktop.py --stop
-CMDEOF
-
-cat > ~/.local/bin/rhodes-computer-use << CMDEOF
-#!/bin/bash
-$RHODES_PYTHON ~/.rhodes/computer-use.py "\$@"
-CMDEOF
-
-chmod +x ~/.local/bin/rhodes-ui ~/.local/bin/rhodes-bg ~/.local/bin/rhodes-stop ~/.local/bin/rhodes-computer-use
-
-# Also install to /usr/local/bin if we can
-if [ -w /usr/local/bin ] || sudo cp ~/.local/bin/rhodes /usr/local/bin/rhodes 2>/dev/null; then
-    sudo cp ~/.local/bin/RHODES_CODE /usr/local/bin/RHODES_CODE 2>/dev/null || true
-    sudo cp ~/.local/bin/rhodes-ui /usr/local/bin/rhodes-ui 2>/dev/null || true
-    sudo cp ~/.local/bin/rhodes-bg /usr/local/bin/rhodes-bg 2>/dev/null || true
-    sudo cp ~/.local/bin/rhodes-stop /usr/local/bin/rhodes-stop 2>/dev/null || true
-    sudo cp ~/.local/bin/rhodes-computer-use /usr/local/bin/rhodes-computer-use 2>/dev/null || true
-    echo "  [OK] Commands installed to /usr/local/bin"
-else
-    echo "  [OK] Commands installed to ~/.local/bin"
-    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-        # Add to PATH automatically
-        SHELL_RC=""
-        if [ -f ~/.bashrc ]; then SHELL_RC=~/.bashrc; fi
-        if [ -f ~/.zshrc ]; then SHELL_RC=~/.zshrc; fi
-        if [ -n "$SHELL_RC" ]; then
-            if ! grep -q 'rhodes' "$SHELL_RC" 2>/dev/null; then
-                echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$SHELL_RC"
-                echo "  [OK] Added ~/.local/bin to PATH in $SHELL_RC"
-            fi
-        fi
-        export PATH="$HOME/.local/bin:$PATH"
-    fi
-fi
-
-# ── Step 8: Desktop shortcut ──────────────────────────────────────
-mkdir -p ~/.local/share/applications
-curl -so ~/.local/share/applications/rhodes.desktop https://rhodesagi.com/download/rhodes.desktop 2>/dev/null || true
-chmod +x ~/.local/share/applications/rhodes.desktop 2>/dev/null || true
-update-desktop-database ~/.local/share/applications 2>/dev/null || true
-
 echo ""
 echo "====================================="
 echo "  INSTALLATION COMPLETE"
 echo "====================================="
 echo ""
-echo "  Commands:"
-echo "    rhodes              Launch RHODES_CODE"
-echo "    rhodes -b           Run in background"
-echo "    rhodes-computer-use Browser automation"
+echo "  Launch:  rhodes"
+echo "  Or:      Click 'RHODES_CODE' in your app launcher"
+echo "  Or:      Double-click the desktop shortcut"
 echo ""
 echo "  Launching RHODES_CODE..."
 echo ""
 
-rhodes --ui 2>/dev/null &
+nohup "$INSTALL_DIR/rhodes-desktop" --no-sandbox > /dev/null 2>&1 &
+disown
