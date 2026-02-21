@@ -40,24 +40,65 @@ fi
 
 echo ""
 echo "  Checking Python..."
-if ! command -v python3 &>/dev/null; then
-    echo "  Python3 not found. Please install python3 first."
-    exit 1
+
+# We need Python 3.13 specifically (pywebview doesn't support 3.14+)
+RHODES_PYTHON=""
+
+# Check if python3.13 is already available
+if command -v python3.13 &>/dev/null; then
+    RHODES_PYTHON="python3.13"
+    echo "  [OK] Found python3.13"
+elif command -v python3 &>/dev/null; then
+    PY_VER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null)
+    PY_MINOR=$(python3 -c "import sys; print(sys.version_info.minor)" 2>/dev/null)
+    if [ "$PY_MINOR" -le 13 ] && [ "$PY_MINOR" -ge 10 ]; then
+        RHODES_PYTHON="python3"
+        echo "  [OK] Found python3 ($PY_VER)"
+    else
+        echo "  [WARN] System python3 is $PY_VER (need <=3.13)"
+    fi
 fi
+
+# Install python3.13 if we don't have a suitable version
+if [ -z "$RHODES_PYTHON" ]; then
+    echo "  Installing Python 3.13..."
+    if command -v apt-get &>/dev/null; then
+        # Debian/Ubuntu - use deadsnakes PPA
+        if ! apt-cache show python3.13 &>/dev/null 2>&1; then
+            echo "  Adding deadsnakes PPA..."
+            sudo apt-get update -qq
+            sudo apt-get install -y software-properties-common
+            sudo add-apt-repository -y ppa:deadsnakes/ppa
+            sudo apt-get update -qq
+        fi
+        sudo apt-get install -y python3.13 python3.13-venv python3.13-dev
+    elif command -v dnf &>/dev/null; then
+        # Fedora/RHEL
+        sudo dnf install -y python3.13
+    elif command -v pacman &>/dev/null; then
+        # Arch
+        sudo pacman -S --noconfirm python313 || sudo pacman -S --noconfirm python
+    fi
+
+    if command -v python3.13 &>/dev/null; then
+        RHODES_PYTHON="python3.13"
+        echo "  [OK] Python 3.13 installed"
+    else
+        echo "  [ERROR] Could not install Python 3.13"
+        echo "  Please install Python 3.13 manually:"
+        echo "    Ubuntu/Debian: sudo apt install python3.13"
+        echo "    Fedora: sudo dnf install python3.13"
+        echo "    Or download from https://python.org"
+        exit 1
+    fi
+fi
+
+# Ensure pip is available
+$RHODES_PYTHON -m ensurepip --default-pip 2>/dev/null || true
 
 echo "  Installing Python dependencies..."
-python3 -m pip install websockets --quiet 2>/dev/null || \
-python3 -m pip install websockets --quiet --user 2>/dev/null || true
-
-# pywebview is optional - provides native window, falls back to browser if unavailable
-PY_MINOR=$(python3 -c "import sys; print(sys.version_info.minor)" 2>/dev/null || echo "0")
-if [ "$PY_MINOR" -lt 14 ]; then
-    python3 -m pip install pywebview --quiet 2>/dev/null || \
-    python3 -m pip install pywebview --quiet --user 2>/dev/null || \
-    echo "  [NOTE] pywebview not installed - will use browser mode"
-else
-    echo "  [NOTE] Python 3.14+ detected - skipping pywebview (will use browser mode)"
-fi
+$RHODES_PYTHON -m pip install websockets pywebview --quiet 2>/dev/null || \
+$RHODES_PYTHON -m pip install websockets pywebview --quiet --user 2>/dev/null || true
 
 echo "  Downloading RHODES_CODE..."
 curl -so ~/.rhodes/rhodes-desktop.py https://rhodesagi.com/download/rhodes-desktop.py
@@ -67,33 +108,36 @@ echo "  Downloading Computer Use module..."
 curl -so ~/.rhodes/computer-use.py https://rhodesagi.com/download/computer-use-linux.py
 chmod +x ~/.rhodes/computer-use.py
 
+# Save which python to use
+echo "$RHODES_PYTHON" > ~/.rhodes/.python_path
+
 # Clean up old wrappers that may point to wrong files
 rm -f ~/.local/bin/rhodes ~/.local/bin/RHODES_CODE ~/.local/bin/rhodes-ui ~/.local/bin/rhodes-bg ~/.local/bin/rhodes-stop 2>/dev/null || true
 
-# Create command scripts
-cat > /tmp/rhodes-cmd << 'CMDEOF'
+# Create command scripts (using the correct python)
+cat > /tmp/rhodes-cmd << CMDEOF
 #!/bin/bash
-python3 ~/.rhodes/rhodes-desktop.py "$@"
+$RHODES_PYTHON ~/.rhodes/rhodes-desktop.py "\$@"
 CMDEOF
 
-cat > /tmp/rhodes-ui << 'CMDEOF'
+cat > /tmp/rhodes-ui << CMDEOF
 #!/bin/bash
-python3 ~/.rhodes/rhodes-desktop.py --ui
+$RHODES_PYTHON ~/.rhodes/rhodes-desktop.py --ui
 CMDEOF
 
-cat > /tmp/rhodes-bg << 'CMDEOF'
+cat > /tmp/rhodes-bg << CMDEOF
 #!/bin/bash
-python3 ~/.rhodes/rhodes-desktop.py -b
+$RHODES_PYTHON ~/.rhodes/rhodes-desktop.py -b
 CMDEOF
 
-cat > /tmp/rhodes-stop << 'CMDEOF'
+cat > /tmp/rhodes-stop << CMDEOF
 #!/bin/bash
-python3 ~/.rhodes/rhodes-desktop.py --stop
+$RHODES_PYTHON ~/.rhodes/rhodes-desktop.py --stop
 CMDEOF
 
-cat > /tmp/rhodes-computer-use << 'CMDEOF'
+cat > /tmp/rhodes-computer-use << CMDEOF
 #!/bin/bash
-python3 ~/.rhodes/computer-use.py "$@"
+$RHODES_PYTHON ~/.rhodes/computer-use.py "\$@"
 CMDEOF
 
 chmod +x /tmp/rhodes-cmd /tmp/rhodes-ui /tmp/rhodes-bg /tmp/rhodes-stop /tmp/rhodes-computer-use
@@ -156,6 +200,7 @@ echo "====================================="
 echo "  INSTALLATION COMPLETE!"
 echo "====================================="
 echo ""
+echo "  Python: $RHODES_PYTHON"
 echo "  Commands: rhodes, RHODES_CODE"
 echo "    rhodes              Launch RHODES_CODE"
 echo "    rhodes -b           Run in background"
