@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RHODES Admin - LLM Flaws Dataset</title>
+  <style>
+:root {
+  --bg: #0b1020; --panel: #121a33; --text: #e7ecff; --muted: #aab4e6;
+  --border: #27325c; --ok: #4ade80; --bad: #ff5a6b; --warn: #fbbf24;
+  --btn: #1d2a5a; --btn2: #25336a; --accent: #6366f1;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  background: var(--bg); color: var(--text); min-height: 100vh;
+}
+header {
+  padding: 12px 20px; border-bottom: 1px solid var(--border);
+  background: rgba(11,16,32,0.95); position: sticky; top: 0;
+  backdrop-filter: blur(8px); z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+}
+header h1 { font-size: 15px; font-weight: 600; }
+header .nav { display: flex; gap: 8px; align-items: center; }
+header a {
+  color: var(--muted); text-decoration: none; font-size: 12px;
+  padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
+}
+header a:hover { border-color: var(--accent); color: var(--text); }
+.pill { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: var(--btn); }
+.pill-ok { background: #1a3d2a; color: var(--ok); }
+button {
+  background: var(--btn); color: var(--text); border: 1px solid var(--border);
+  padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;
+}
+button:hover { background: var(--btn2); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button.primary { background: var(--accent); border-color: var(--accent); }
+button.primary:hover { opacity: 0.9; }
+button.danger { background: #4a1525; border-color: #ff5a6b; color: #ff5a6b; }
+button.success { background: #1a3d2a; border-color: var(--ok); color: var(--ok); }
+select, input[type="text"], input[type="number"] {
+  background: var(--bg); color: var(--text); border: 1px solid var(--border);
+  padding: 6px 10px; border-radius: 6px; font-size: 12px;
+}
+textarea {
+  background: var(--bg); color: var(--text); border: 1px solid var(--border);
+  padding: 8px 10px; border-radius: 6px; font-size: 12px; font-family: var(--mono);
+  line-height: 1.5; resize: vertical;
+}
+.toolbar {
+  padding: 12px 20px; display: flex; gap: 10px; align-items: center;
+  border-bottom: 1px solid var(--border); flex-wrap: wrap;
+}
+.toolbar input { flex: 1; max-width: 300px; }
+
+/* Stats bar */
+.stats-bar {
+  display: flex; gap: 12px; padding: 14px 20px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border); background: var(--panel);
+}
+.stat-card {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 16px; min-width: 100px;
+}
+.stat-card .label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-card .value { font-size: 22px; font-weight: 700; margin-top: 2px; }
+.stat-card .breakdown { font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+/* Table */
+.flaw-table { width: 100%; border-collapse: collapse; }
+.flaw-table th {
+  text-align: left; padding: 8px 12px; font-size: 11px; color: var(--muted);
+  border-bottom: 1px solid var(--border); background: var(--panel);
+  text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0;
+}
+.flaw-table td {
+  padding: 10px 12px; font-size: 12px; border-bottom: 1px solid rgba(39,50,92,0.5);
+  vertical-align: top; max-width: 300px;
+}
+.flaw-table tr { cursor: pointer; transition: background 0.1s; }
+.flaw-table tr:hover { background: rgba(99,102,241,0.08); }
+.flaw-table .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; display: block; }
+
+.badge { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+.badge-critical { background: #4a1525; color: #ff5a6b; }
+.badge-high { background: #4a3215; color: #fbbf24; }
+.badge-medium { background: #1e3a5f; color: #7dd3fc; }
+.badge-low { background: #1a3d2a; color: #86efac; }
+
+/* Login */
+.login-card {
+  max-width: 360px; margin: 80px auto; background: var(--panel);
+  border: 1px solid var(--border); border-radius: 12px; padding: 24px;
+}
+.login-card input {
+  width: 100%; background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px;
+  font-size: 13px; margin: 8px 0 12px;
+}
+
+/* Modal */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85); z-index: 200; backdrop-filter: blur(4px);
+  justify-content: center; align-items: flex-start; padding: 40px 20px;
+  overflow-y: auto;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+  width: 100%; max-width: 740px;
+}
+.modal-box .mheader {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+}
+.modal-box .mheader .title { font-size: 14px; font-weight: 600; }
+.modal-box .mbody { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.modal-box .mfooter {
+  padding: 12px 20px; border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: 11px; color: var(--muted); }
+.field-row { display: flex; gap: 12px; }
+.field-row .field { flex: 1; }
+
+.status-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; padding: 6px 20px;
+  background: var(--panel); border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--muted); z-index: 50;
+  display: flex; justify-content: space-between;
+}
+.empty-state { padding: 60px 20px; text-align: center; color: var(--muted); }
+.tag { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 3px; background: var(--btn); color: var(--muted); margin: 1px 2px; }
+  </style>
+</head>
+<body>
+
+<div id="loginView">
+  <div class="login-card">
+    <h2 style="font-size:15px;margin-bottom:4px">LLM Flaws Dataset</h2>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:16px">Admin authentication required</div>
+    <input id="loginPw" type="password" placeholder="Admin password" autofocus>
+    <button onclick="doLogin()" style="width:100%" class="primary">Login</button>
+    <div id="loginError" style="color:var(--bad);font-size:11px;margin-top:8px"></div>
+  </div>
+</div>
+
+<div id="mainApp" style="display:none">
+  <header>
+    <h1>RHODES &mdash; LLM Flaws Dataset</h1>
+    <div class="nav">
+      <a href="admin-prompts.html">Prompts</a>
+      <a href="admin-control.html">Control Panel</a>
+      <span class="pill pill-ok" id="flawCount">0 flaws</span>
+    </div>
+  </header>
+
+  <div class="stats-bar" id="statsBar"></div>
+
+  <div class="toolbar">
+    <input id="searchInput" type="text" placeholder="Search queries, responses, descriptions...">
+    <select id="filterType"><option value="">All types</option></select>
+    <select id="filterSeverity">
+      <option value="">All severities</option>
+      <option value="critical">Critical</option>
+      <option value="high">High</option>
+      <option value="medium">Medium</option>
+      <option value="low">Low</option>
+    </select>
+    <select id="filterModel">
+      <option value="">All models</option>
+      <option value="opus">Opus</option>
+      <option value="sonnet">Sonnet</option>
+      <option value="haiku">Haiku</option>
+      <option value="deepseek">DeepSeek</option>
+      <option value="kimi">Kimi</option>
+      <option value="grok">Grok</option>
+      <option value="gpt-4">GPT-4</option>
+      <option value="gpt-4o">GPT-4o</option>
+      <option value="gemini">Gemini</option>
+      <option value="other">Other</option>
+    </select>
+    <button onclick="loadFlaws()">&#8635; Refresh</button>
+    <button class="primary" onclick="openNewModal()">+ New Flaw</button>
+  </div>
+
+  <div id="tableContainer">
+    <table class="flaw-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Date</th>
+          <th>Model</th>
+          <th>Severity</th>
+          <th>Type</th>
+          <th>Query</th>
+          <th>Flaw</th>
+          <th>Tags</th>
+        </tr>
+      </thead>
+      <tbody id="flawBody"></tbody>
+    </table>
+    <div class="empty-state" id="emptyState" style="display:none">No flaws recorded yet. Click "+ New Flaw" to add one.</div>
+  </div>
+
+  <div style="padding:12px 20px;display:flex;gap:8px;align-items:center" id="pagination">
+    <button onclick="prevPage()" id="prevBtn" disabled>&laquo; Prev</button>
+    <span id="pageInfo" style="font-size:11px;color:var(--muted)">Page 1</span>
+    <button onclick="nextPage()" id="nextBtn" disabled>Next &raquo;</button>
+  </div>
+
+  <!-- New/Edit Modal -->
+  <div class="modal-overlay" id="flawModal">
+    <div class="modal-box">
+      <div class="mheader">
+        <div class="title" id="modalTitle">New LLM Flaw</div>
+        <button class="danger" onclick="closeModal()">&times; Close</button>
+      </div>
+      <div class="mbody">
+        <div class="field-row">
+          <div class="field">
+            <label>Model *</label>
+            <select id="fModel">
+              <option value="opus">Opus</option>
+              <option value="sonnet">Sonnet</option>
+              <option value="haiku">Haiku</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="kimi">Kimi</option>
+              <option value="grok">Grok</option>
+              <option value="gpt-4">GPT-4</option>
+              <option value="gpt-4o">GPT-4o</option>
+              <option value="gemini">Gemini</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Severity *</label>
+            <select id="fSeverity">
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Source</label>
+            <select id="fSource">
+              <option value="manual">Manual review</option>
+              <option value="user_report">User report</option>
+              <option value="automated">Automated</option>
+              <option value="research">Research</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Flaw Type *</label>
+          <input type="text" id="fType" placeholder="e.g. cultural_salience_override, hallucination, sycophancy, instruction_ignored" list="typeList">
+          <datalist id="typeList"></datalist>
+        </div>
+        <div class="field">
+          <label>User Query *</label>
+          <textarea id="fQuery" rows="3" placeholder="What the user asked"></textarea>
+        </div>
+        <div class="field">
+          <label>Model Response * (the flawed output or relevant excerpt)</label>
+          <textarea id="fResponse" rows="5" placeholder="What the model said"></textarea>
+        </div>
+        <div class="field">
+          <label>Flaw Description * (what went wrong)</label>
+          <textarea id="fDescription" rows="3" placeholder="Plain English explanation of the flaw"></textarea>
+        </div>
+        <div class="field">
+          <label>Corrected Response (optional &mdash; what the answer should have been)</label>
+          <textarea id="fCorrected" rows="3" placeholder=""></textarea>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Tags (comma-separated)</label>
+            <input type="text" id="fTags" placeholder="e.g. ranking, bias, numeric">
+          </div>
+          <div class="field">
+            <label>Session ID (optional)</label>
+            <input type="number" id="fSession" placeholder="">
+          </div>
+        </div>
+      </div>
+      <div class="mfooter">
+        <button id="deleteBtn" class="danger" onclick="deleteFlaw()" style="display:none;margin-right:auto">Delete</button>
+        <button onclick="closeModal()">Cancel</button>
+        <button class="primary" onclick="saveFlaw()" id="saveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal-box" style="max-width:800px">
+      <div class="mheader">
+        <div class="title" id="detailTitle">Flaw Details</div>
+        <div style="display:flex;gap:8px">
+          <button onclick="editFromDetail()">Edit</button>
+          <button class="danger" onclick="closeDetail()">&times; Close</button>
+        </div>
+      </div>
+      <div class="mbody" id="detailBody" style="font-size:12px;line-height:1.6"></div>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <span id="statusLeft">Connected</span>
+    <span id="statusRight"></span>
+  </div>
+</div>
+
+<script>
+let TOKEN = localStorage.getItem('rhodes_admin_token') || '';
+let ALL_FLAWS = [];
+let FLAW_TYPES = [];
+let CURRENT_PAGE = 0;
+let TOTAL = 0;
+const PER_PAGE = 50;
+let EDITING_ID = null;
+let DETAIL_FLAW = null;
+
+const $ = id => document.getElementById(id);
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function api(url, opts={}) {
+  const headers = {...(opts.headers||{}), 'Content-Type':'application/json'};
+  if (TOKEN) headers['X-Rhodes-Admin-Token'] = TOKEN;
+  const resp = await fetch(url, {...opts, headers});
+  if (resp.status === 401) {
+    TOKEN = ''; localStorage.removeItem('rhodes_admin_token');
+    $('mainApp').style.display = 'none';
+    $('loginView').style.display = 'block';
+    throw new Error('Session expired');
+  }
+  return resp.json();
+}
+
+async function doLogin() {
+  const pw = $('loginPw').value.trim();
+  if (!pw) return;
+  try {
+    const resp = await fetch('/api/admin/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({password:pw})
+    });
+    const data = await resp.json();
+    if (data.token) {
+      TOKEN = data.token;
+      localStorage.setItem('rhodes_admin_token', TOKEN);
+      $('loginView').style.display = 'none';
+      $('mainApp').style.display = 'block';
+      init();
+    } else {
+      $('loginError').textContent = data.error || 'Login failed';
+    }
+  } catch(e) { $('loginError').textContent = e.message; }
+}
+$('loginPw').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
+
+async function loadStats() {
+  try {
+    const data = await api('/api/admin/llm-flaws/stats');
+    let html = `<div class="stat-card"><div class="label">Total Flaws</div><div class="value">${data.total}</div></div>`;
+    if (data.by_severity.length) {
+      let bd = data.by_severity.map(s => `<span class="badge badge-${s.severity}">${s.severity}: ${s.count}</span>`).join(' ');
+      html += `<div class="stat-card"><div class="label">By Severity</div><div class="breakdown" style="margin-top:6px">${bd}</div></div>`;
+    }
+    if (data.by_model.length) {
+      let bd = data.by_model.map(m => `${m.model}: ${m.count}`).join(', ');
+      html += `<div class="stat-card"><div class="label">By Model</div><div class="breakdown" style="margin-top:6px">${bd}</div></div>`;
+    }
+    if (data.by_type.length) {
+      let bd = data.by_type.slice(0,5).map(t => `${t.flaw_type}: ${t.count}`).join(', ');
+      html += `<div class="stat-card"><div class="label">Top Flaw Types</div><div class="breakdown" style="margin-top:6px">${bd}</div></div>`;
+    }
+    $('statsBar').innerHTML = html;
+  } catch(e) { console.error('stats error', e); }
+}
+
+async function loadFlaws() {
+  const search = $('searchInput').value.trim();
+  const flaw_type = $('filterType').value;
+  const severity = $('filterSeverity').value;
+  const model = $('filterModel').value;
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  if (flaw_type) params.set('flaw_type', flaw_type);
+  if (severity) params.set('severity', severity);
+  if (model) params.set('model', model);
+  params.set('limit', PER_PAGE);
+  params.set('offset', CURRENT_PAGE * PER_PAGE);
+
+  try {
+    const data = await api('/api/admin/llm-flaws?' + params.toString());
+    ALL_FLAWS = data.flaws || [];
+    TOTAL = data.total || 0;
+    FLAW_TYPES = data.flaw_types || [];
+
+    $('flawCount').textContent = TOTAL + ' flaws';
+    updateTypeFilter();
+    renderTable();
+    updatePagination();
+  } catch(e) {
+    $('flawBody').innerHTML = `<tr><td colspan="8" style="color:var(--bad)">Error: ${esc(e.message)}</td></tr>`;
+  }
+}
+
+function updateTypeFilter() {
+  const sel = $('filterType');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">All types</option>';
+  FLAW_TYPES.forEach(t => {
+    sel.innerHTML += `<option value="${esc(t)}"${t===cur?' selected':''}>${esc(t)}</option>`;
+  });
+  // Also update datalist in modal
+  const dl = $('typeList');
+  dl.innerHTML = '';
+  FLAW_TYPES.forEach(t => { dl.innerHTML += `<option value="${esc(t)}">`; });
+}
+
+function renderTable() {
+  if (ALL_FLAWS.length === 0) {
+    $('flawBody').innerHTML = '';
+    $('emptyState').style.display = 'block';
+    return;
+  }
+  $('emptyState').style.display = 'none';
+  let html = '';
+  ALL_FLAWS.forEach(f => {
+    const date = f.created_at ? new Date(f.created_at).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '—';
+    const tags = (f.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+    html += `<tr onclick="showDetail(${f.id})">
+      <td style="color:var(--muted)">#${f.id}</td>
+      <td style="white-space:nowrap">${date}</td>
+      <td>${esc(f.model)}</td>
+      <td><span class="badge badge-${f.severity}">${f.severity}</span></td>
+      <td style="font-family:var(--mono);font-size:11px">${esc(f.flaw_type)}</td>
+      <td><span class="truncate">${esc(f.user_query)}</span></td>
+      <td><span class="truncate">${esc(f.flaw_description)}</span></td>
+      <td>${tags}</td>
+    </tr>`;
+  });
+  $('flawBody').innerHTML = html;
+}
+
+function updatePagination() {
+  const maxPage = Math.max(0, Math.ceil(TOTAL / PER_PAGE) - 1);
+  $('prevBtn').disabled = CURRENT_PAGE <= 0;
+  $('nextBtn').disabled = CURRENT_PAGE >= maxPage;
+  $('pageInfo').textContent = `Page ${CURRENT_PAGE+1} of ${maxPage+1} (${TOTAL} total)`;
+}
+
+function prevPage() { if (CURRENT_PAGE > 0) { CURRENT_PAGE--; loadFlaws(); } }
+function nextPage() { CURRENT_PAGE++; loadFlaws(); }
+
+// Detail modal
+function showDetail(id) {
+  const f = ALL_FLAWS.find(x => x.id === id);
+  if (!f) return;
+  DETAIL_FLAW = f;
+  $('detailTitle').textContent = `Flaw #${f.id} — ${f.flaw_type}`;
+  const tags = (f.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join(' ') || '<span style="color:var(--muted)">none</span>';
+  $('detailBody').innerHTML = `
+    <div class="field-row" style="margin-bottom:8px">
+      <div><strong>Model:</strong> ${esc(f.model)}</div>
+      <div><strong>Severity:</strong> <span class="badge badge-${f.severity}">${f.severity}</span></div>
+      <div><strong>Source:</strong> ${esc(f.source)}</div>
+      ${f.session_id ? `<div><strong>Session:</strong> #${f.session_id}</div>` : ''}
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label style="font-size:11px;color:var(--muted)">User Query</label>
+      <div style="background:var(--bg);padding:10px;border-radius:6px;font-family:var(--mono);font-size:12px;white-space:pre-wrap">${esc(f.user_query)}</div>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label style="font-size:11px;color:var(--muted)">Model Response (flawed)</label>
+      <div style="background:#1a0a0a;padding:10px;border-radius:6px;border-left:3px solid var(--bad);font-family:var(--mono);font-size:12px;white-space:pre-wrap;max-height:300px;overflow-y:auto">${esc(f.model_response)}</div>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label style="font-size:11px;color:var(--muted)">Flaw Description</label>
+      <div style="background:var(--bg);padding:10px;border-radius:6px;font-size:12px;white-space:pre-wrap">${esc(f.flaw_description)}</div>
+    </div>
+    ${f.corrected_response ? `<div class="field" style="margin-bottom:12px">
+      <label style="font-size:11px;color:var(--muted)">Corrected Response</label>
+      <div style="background:#0a1a0a;padding:10px;border-radius:6px;border-left:3px solid var(--ok);font-family:var(--mono);font-size:12px;white-space:pre-wrap;max-height:300px;overflow-y:auto">${esc(f.corrected_response)}</div>
+    </div>` : ''}
+    <div><strong>Tags:</strong> ${tags}</div>
+    <div style="font-size:10px;color:var(--muted);margin-top:8px">Created: ${f.created_at || '—'} | Updated: ${f.updated_at || '—'}</div>
+  `;
+  $('detailModal').classList.add('open');
+}
+function closeDetail() { $('detailModal').classList.remove('open'); }
+function editFromDetail() { closeDetail(); if (DETAIL_FLAW) openEditModal(DETAIL_FLAW); }
+
+// New/Edit modal
+function openNewModal() {
+  EDITING_ID = null;
+  $('modalTitle').textContent = 'New LLM Flaw';
+  $('deleteBtn').style.display = 'none';
+  $('fModel').value = 'opus';
+  $('fSeverity').value = 'medium';
+  $('fSource').value = 'manual';
+  $('fType').value = '';
+  $('fQuery').value = '';
+  $('fResponse').value = '';
+  $('fDescription').value = '';
+  $('fCorrected').value = '';
+  $('fTags').value = '';
+  $('fSession').value = '';
+  $('flawModal').classList.add('open');
+}
+
+function openEditModal(f) {
+  EDITING_ID = f.id;
+  $('modalTitle').textContent = `Edit Flaw #${f.id}`;
+  $('deleteBtn').style.display = 'inline-block';
+  $('fModel').value = f.model || 'other';
+  $('fSeverity').value = f.severity || 'medium';
+  $('fSource').value = f.source || 'manual';
+  $('fType').value = f.flaw_type || '';
+  $('fQuery').value = f.user_query || '';
+  $('fResponse').value = f.model_response || '';
+  $('fDescription').value = f.flaw_description || '';
+  $('fCorrected').value = f.corrected_response || '';
+  $('fTags').value = (f.tags||[]).join(', ');
+  $('fSession').value = f.session_id || '';
+  $('flawModal').classList.add('open');
+}
+
+function closeModal() { $('flawModal').classList.remove('open'); }
+
+async function saveFlaw() {
+  const payload = {
+    model: $('fModel').value,
+    severity: $('fSeverity').value,
+    source: $('fSource').value,
+    flaw_type: $('fType').value.trim(),
+    user_query: $('fQuery').value.trim(),
+    model_response: $('fResponse').value.trim(),
+    flaw_description: $('fDescription').value.trim(),
+    corrected_response: $('fCorrected').value.trim() || null,
+    tags: $('fTags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    session_id: $('fSession').value ? parseInt($('fSession').value) : null,
+  };
+
+  if (!payload.flaw_type || !payload.user_query || !payload.model_response || !payload.flaw_description) {
+    alert('Please fill in all required fields (marked with *)');
+    return;
+  }
+
+  $('saveBtn').disabled = true;
+  try {
+    if (EDITING_ID) {
+      await api(`/api/admin/llm-flaws/${EDITING_ID}`, { method:'PUT', body: JSON.stringify(payload) });
+    } else {
+      await api('/api/admin/llm-flaws', { method:'POST', body: JSON.stringify(payload) });
+    }
+    closeModal();
+    loadFlaws();
+    loadStats();
+  } catch(e) {
+    alert('Error saving: ' + e.message);
+  } finally {
+    $('saveBtn').disabled = false;
+  }
+}
+
+async function deleteFlaw() {
+  if (!EDITING_ID) return;
+  if (!confirm(`Delete flaw #${EDITING_ID}? This cannot be undone.`)) return;
+  try {
+    await api(`/api/admin/llm-flaws/${EDITING_ID}`, { method:'DELETE' });
+    closeModal();
+    loadFlaws();
+    loadStats();
+  } catch(e) { alert('Error deleting: ' + e.message); }
+}
+
+// Search debounce
+let searchTimer;
+$('searchInput').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { CURRENT_PAGE = 0; loadFlaws(); }, 300);
+});
+$('filterType').addEventListener('change', () => { CURRENT_PAGE = 0; loadFlaws(); });
+$('filterSeverity').addEventListener('change', () => { CURRENT_PAGE = 0; loadFlaws(); });
+$('filterModel').addEventListener('change', () => { CURRENT_PAGE = 0; loadFlaws(); });
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if ($('flawModal').classList.contains('open')) closeModal();
+    else if ($('detailModal').classList.contains('open')) closeDetail();
+  }
+});
+
+function init() {
+  loadStats();
+  loadFlaws();
+}
+
+// Auto-login if token exists
+if (TOKEN) {
+  $('loginView').style.display = 'none';
+  $('mainApp').style.display = 'block';
+  init();
+}
+</script>
+</body>
+</html>
