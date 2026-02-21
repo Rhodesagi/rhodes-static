@@ -1,6 +1,6 @@
 #!/bin/bash
 # RHODES_CODE — Linux Installer (curl | bash)
-# Downloads the Electron app directly to ~/.rhodes/app/
+# Downloads the correct Electron app for your architecture.
 
 echo ""
 echo "====================================="
@@ -13,15 +13,34 @@ ICON_DIR="$HOME/.local/share/icons"
 DESKTOP_DIR="$HOME/.local/share/applications"
 BIN_DIR="$HOME/.local/bin"
 CONFIG_DIR="$HOME/.rhodes"
-URL="https://rhodesagi.com/download/rhodes-code-2.0.1-x64.tar.gz"
+BASE_URL="https://rhodesagi.com/download"
 
+# ── Detect architecture ───────────────────────────────────
+ARCH=$(uname -m)
+case "$ARCH" in
+    x86_64|amd64)
+        TARBALL="rhodes-code-2.0.1-x64.tar.gz"
+        echo "  Architecture: x86_64"
+        ;;
+    aarch64|arm64)
+        TARBALL="rhodes-code-2.0.1-arm64.tar.gz"
+        echo "  Architecture: arm64"
+        ;;
+    *)
+        echo "  [ERROR] Unsupported architecture: $ARCH"
+        echo "  Supported: x86_64, aarch64"
+        exit 1
+        ;;
+esac
+
+URL="${BASE_URL}/${TARBALL}"
 if [ -n "${RHODES_TOKEN:-}" ]; then
     URL="${URL}?token=${RHODES_TOKEN}"
 fi
 
 # ── Download & extract directly to install dir ────────────
 mkdir -p "$INSTALL_DIR"
-echo "  Downloading & installing RHODES_CODE (99 MB)..."
+echo "  Downloading RHODES_CODE..."
 if ! curl -fSL "$URL" 2>/dev/null | tar xz -C "$INSTALL_DIR" --strip-components=0; then
     echo "  [ERROR] Download or extraction failed."
     echo "  Check your connection or visit https://rhodesagi.com/download/"
