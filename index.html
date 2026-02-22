@@ -761,7 +761,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
     <div id="chat"></div>
 
     <div id="voice-bar">
-        <button id="voice-mode-btn" title="Toggle hands-free mode" onclick="if(typeof VoiceChat!=='undefined')VoiceChat.toggleMode()">🎤 VOICE</button>
+        <button id="voice-mode-btn" title="Toggle hands-free mode" onclick="if(typeof VoiceChat!=='undefined')VoiceChat.toggleMode()" style="display:none;">🎤 VOICE</button>
         <div style="position:relative;display:flex;">
             <button id="split-view-btn" onclick="toggleSplitModeDropdown()" title="Split mode">⊞ SPLIT ▲</button>
             <div id="split-mode-options" style="display:none;position:absolute;bottom:100%;left:0;background:var(--bg);border:1px solid var(--border);border-radius:3px;min-width:140px;z-index:1000;margin-bottom:5px;">
