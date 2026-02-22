@@ -2165,8 +2165,6 @@
             #input {
                 padding: 16px 16px 16px 16px !important;
                 font-size: 16px !important;
-                height: 52px;
-                min-height: 52px;
             }
 
             #image-btn {
@@ -3162,4 +3160,19 @@ body.light-mode #downloads-link {
 body.light-mode #downloads-link:hover {
     background: #008833 !important;
     box-shadow: 0 3px 12px rgba(0,100,0,0.4);
+}
+
+
+/* Textarea auto-expand: start 1 line, grow to ~5 lines (220px max) */
+textarea#input {
+    resize: none !important;
+    overflow-wrap: break-word !important;
+    word-wrap: break-word !important;
+    white-space: pre-wrap !important;
+    min-height: 44px !important;
+    max-height: 220px !important;
+    line-height: 1.4 !important;
+    display: block !important;
+    box-sizing: border-box !important;
+    overflow-y: hidden !important;
 }

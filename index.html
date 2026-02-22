@@ -115,7 +115,7 @@ function toggleSplitView() {
     <!-- Firebase Auth for Google Sign-In -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-    <link rel="stylesheet" href="/rhodes.css?v=20260220-mobilemenu2">
+    <link rel="stylesheet" href="/rhodes.css?v=20260222-grow4">
 <script>const params=new URLSearchParams(window.location.search);
 if(params.get("nologo")==="1"){document.write(`<style>.logo{visibility:hidden!important}
     /* Slash command autocomplete dropdown */
@@ -776,7 +776,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
         <div class="input-group">
             <div class="input-with-attachment" style="position:relative;">
                 <span class="prompt" aria-hidden="true">&gt;</span>
-                <input type="text" id="input" placeholder="enter message..." autocomplete="off">
+                <textarea id="input" placeholder="enter message..." autocomplete="off" rows="1"></textarea>
                 <button type="button" id="attach-btn" onclick="document.getElementById('image-input').click()" title="Attach files">📎</button>
                 <button type="button" id="send-inline" onclick="send()" title="Send message">➤</button>
             </div>
@@ -2161,9 +2161,16 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
 (function() {
     if (new URLSearchParams(window.location.search).get('mobile') === '1') {
         var style = document.createElement('style');
-        style.textContent = '#split-view-btn, #split-mode-options { display: none !important; }';
+        style.textContent = '#split-view-btn, #split-mode-options { display: none !important; } #downloads-link { display: none !important; } ' +
+            '#input-area > div:first-child { display: none !important; } ' +
+            '#input-area .input-group { max-width: 100% !important; } ' +
+            '#input-area { padding: 8px 10px !important; } ' +
+            '#input { font-size: 17px !important; min-height: 44px !important; max-height: 220px !important; padding: 10px 44px 10px 34px !important; line-height: 1.4 !important; resize: none !important; white-space: pre-wrap !important; word-wrap: break-word !important; overflow-wrap: break-word !important; overflow-y: hidden !important; } ' +
+            'header { padding: 6px 12px 4px 12px !important; } ';
         document.head.appendChild(style);
         window.__RHODES_MOBILE_APP__ = true;
+
+
     }
 })();
 </script>
@@ -3110,6 +3117,47 @@ OVERLAY JS DISABLED */
 
     // Language courses hover dropdown (same mechanism as account)
     setupFixedDropdown('#lang-hover-trigger', '#languages-dropdown', false);
+})();
+</script>
+
+<script>
+// Textarea auto-grow using shadow div (works on all WebKit)
+(function() {
+    var ta = document.getElementById('input');
+    if (!ta || ta.tagName !== 'TEXTAREA') return;
+    
+    // Create hidden mirror div
+    var mirror = document.createElement('div');
+    mirror.style.cssText = 'position:absolute;top:-9999px;left:-9999px;visibility:hidden;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:break-word;box-sizing:border-box;';
+    document.body.appendChild(mirror);
+    
+    function copyStyle() {
+        var cs = window.getComputedStyle(ta);
+        mirror.style.width = cs.width;
+        mirror.style.font = cs.font;
+        mirror.style.fontSize = cs.fontSize;
+        mirror.style.fontFamily = cs.fontFamily;
+        mirror.style.lineHeight = cs.lineHeight;
+        mirror.style.padding = cs.padding;
+        mirror.style.border = cs.border;
+        mirror.style.letterSpacing = cs.letterSpacing;
+    }
+    
+    function grow() {
+        copyStyle();
+        // Use textContent + extra newline to account for cursor line
+        mirror.textContent = ta.value + '
+';
+        var h = Math.max(44, Math.min(mirror.scrollHeight, 220));
+        ta.style.setProperty('height', h + 'px', 'important');
+        ta.style.overflow = mirror.scrollHeight > 220 ? 'auto' : 'hidden';
+    }
+    
+    ta.addEventListener('input', grow);
+    // Also run on focus in case content changed externally
+    ta.addEventListener('focus', grow);
+    // Initial size
+    setTimeout(grow, 100);
 })();
 </script>
 </body>
