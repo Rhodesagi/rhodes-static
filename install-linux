@@ -1,6 +1,6 @@
 #!/bin/bash
 # RHODES_CODE — Linux Installer (curl | bash)
-# Downloads the correct Electron app for your architecture.
+# Downloads and installs the Rhodes Code desktop app.
 
 echo ""
 echo "====================================="
@@ -19,11 +19,11 @@ BASE_URL="https://rhodesagi.com/download"
 ARCH=$(uname -m)
 case "$ARCH" in
     x86_64|amd64)
-        TARBALL="rhodes-code-2.0.1-x64.tar.gz"
+        TARBALL="rhodes-code-2.0.0-x64.tar.gz"
         echo "  Architecture: x86_64"
         ;;
     aarch64|arm64)
-        TARBALL="rhodes-code-2.0.1-arm64.tar.gz"
+        TARBALL="rhodes-code-2.0.0-arm64.tar.gz"
         echo "  Architecture: arm64"
         ;;
     *)
@@ -38,39 +38,45 @@ if [ -n "${RHODES_TOKEN:-}" ]; then
     URL="${URL}?token=${RHODES_TOKEN}"
 fi
 
-# ── Download & extract directly to install dir ────────────
+# ── Download & extract ────────────────────────────────────
 mkdir -p "$INSTALL_DIR"
 echo "  Downloading RHODES_CODE..."
-if ! curl -fSL "$URL" 2>/dev/null | tar xz -C "$INSTALL_DIR" --strip-components=0; then
+if ! curl -fSL "$URL" 2>/dev/null | tar xz -C "$INSTALL_DIR" --strip-components=1; then
     echo "  [ERROR] Download or extraction failed."
     echo "  Check your connection or visit https://rhodesagi.com/download/"
     exit 1
 fi
 
-chmod +x "$INSTALL_DIR/rhodes-desktop"
+chmod +x "$INSTALL_DIR/rhodes-code"
 chmod +x "$INSTALL_DIR/chrome_crashpad_handler" 2>/dev/null || true
 chmod 4755 "$INSTALL_DIR/chrome-sandbox" 2>/dev/null || true
 echo "  [OK] App installed to $INSTALL_DIR"
 
 # ── Icon ──────────────────────────────────────────────────
 mkdir -p "$ICON_DIR"
-cp "$INSTALL_DIR/rhodes-icon.png" "$ICON_DIR/rhodes-code.png" 2>/dev/null || true
+# Try multiple possible icon names
+for icon in rhodes-icon.png icon.png rhodes-code.png; do
+    if [ -f "$INSTALL_DIR/$icon" ]; then
+        cp "$INSTALL_DIR/$icon" "$ICON_DIR/rhodes-code.png"
+        break
+    fi
+done
 echo "  [OK] Icon installed"
 
 # ── Desktop entry ─────────────────────────────────────────
 mkdir -p "$DESKTOP_DIR"
 cat > "$DESKTOP_DIR/rhodes-code.desktop" << DESKTOPEOF
 [Desktop Entry]
-Name=RHODES_CODE
+Name=Rhodes Code
 Comment=Rhodes AGI Desktop Client
-Exec=$INSTALL_DIR/rhodes-desktop --no-sandbox %U
+Exec=$INSTALL_DIR/rhodes-code --no-sandbox %U
 Icon=$ICON_DIR/rhodes-code.png
 Terminal=false
 Type=Application
 Categories=Network;Chat;Development;
 Keywords=rhodes;agi;ai;chat;code;
 StartupNotify=true
-StartupWMClass=rhodes-desktop
+StartupWMClass=rhodes-code
 DESKTOPEOF
 chmod +x "$DESKTOP_DIR/rhodes-code.desktop"
 update-desktop-database "$DESKTOP_DIR" 2>/dev/null || true
@@ -86,14 +92,14 @@ fi
 
 # ── CLI commands ──────────────────────────────────────────
 mkdir -p "$BIN_DIR"
-for cmd_name in rhodes RHODES_CODE; do
+for cmd_name in rhodes RHODES_CODE rhodes-code; do
     cat > "$BIN_DIR/$cmd_name" << CMDEOF
 #!/bin/bash
-exec "$INSTALL_DIR/rhodes-desktop" --no-sandbox "\$@"
+exec "$INSTALL_DIR/rhodes-code" --no-sandbox "\$@"
 CMDEOF
     chmod +x "$BIN_DIR/$cmd_name"
 done
-echo "  [OK] CLI commands: rhodes, RHODES_CODE"
+echo "  [OK] CLI commands: rhodes, RHODES_CODE, rhodes-code"
 
 if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
     SHELL_RC=""
@@ -143,11 +149,11 @@ echo "  INSTALLATION COMPLETE"
 echo "====================================="
 echo ""
 echo "  Launch:  rhodes"
-echo "  Or:      Click 'RHODES_CODE' in your app launcher"
+echo "  Or:      Click 'Rhodes Code' in your app launcher"
 echo "  Or:      Double-click the desktop shortcut"
 echo ""
 echo "  Launching RHODES_CODE..."
 echo ""
 
-nohup "$INSTALL_DIR/rhodes-desktop" --no-sandbox > /dev/null 2>&1 &
+nohup "$INSTALL_DIR/rhodes-code" --no-sandbox > /dev/null 2>&1 &
 disown
