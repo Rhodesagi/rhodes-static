@@ -3176,3 +3176,41 @@ textarea#input {
     box-sizing: border-box !important;
     overflow-y: hidden !important;
 }
+
+
+/* ============================================
+   MOBILE SESSIONS PANEL
+   ============================================ */
+@media screen and (max-width: 768px) {
+    #sessions-up-panel {
+        left: 8px !important;
+        right: 8px !important;
+        width: auto !important;
+        transform: none !important;
+        bottom: 60px !important;
+        max-height: 70vh !important;
+        z-index: 5010 !important;
+    }
+    #sessions-up-panel input[type="text"] {
+        font-size: 16px !important; /* prevent iOS zoom */
+    }
+}
+
+
+/* Hide desktop session controls on mobile — accessible via hamburger menu */
+@media screen and (max-width: 768px) {
+    .session-controls {
+        display: none !important;
+    }
+    /* Hide the +NEW / ▲ bar above input on mobile */
+    #input-area > div:first-child:has(#sessions-up-btn) {
+        display: none !important;
+    }
+    #sessions-up-btn {
+        display: none !important;
+    }
+    /* Also hide via parent — the div containing +NEW and ▲ */
+    #input-area > div:first-child {
+        display: none !important;
+    }
+}

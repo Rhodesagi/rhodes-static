@@ -4,9 +4,9 @@
 <script>
 // Immediately hide Google sign-in on localhost (desktop app)
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    document.write('<style>#google-signin-btn,button[onclick*=signInWithGoogle],[onclick*=signInWithGoogle]{display:none!important;}</style>');
-#courses-panel, #courses-link, #languages-dropdown, #languages-link { display: none !important; }
+    document.write('<style>#google-signin-btn,button[onclick*=signInWithGoogle],[onclick*=signInWithGoogle]{display:none!important;} #courses-panel, #courses-link, #languages-dropdown, #languages-link { display: none !important; }</style>');
 }
+// Google sign-in works in iOS app via popup overlay with Safari user-agent
 </script>
 
 
@@ -638,7 +638,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
             <a href="#" class="mobile-menu-item" onclick="openRoomsMenu(); closeMobileMenu(); return false;">ROOMS</a>
             <!-- Session controls in mobile menu (hidden for guests) -->
             <a href="#" id="mobile-new-session" class="mobile-menu-item" style="display:none;border-color:var(--green);color:var(--green);" onclick="startNewSession(); closeMobileMenu(); return false;">+ NEW SESSION</a>
-            <a href="#" id="mobile-sessions-list" class="mobile-menu-item" style="display:none;border-color:var(--green);color:var(--green);" onclick="toggleSessionDropdown(event); closeMobileMenu(); return false;">SESSIONS</a>
+            <a href="#" id="mobile-sessions-list" class="mobile-menu-item" style="display:none;border-color:var(--green);color:var(--green);" onclick="try { console.log("SESSIONS clicked, _openSessionsPanel type:", typeof window._openSessionsPanel); window._openSessionsPanel(); } catch(e) { alert("Sessions error: " + e.message); console.error(e); } closeMobileMenu(); return false;">SESSIONS</a>
             <!-- Guest: LOGIN link -->
             <a href="#" id="mobile-login-link" class="mobile-menu-item" onclick="showAuth('register'); closeMobileMenu();">SIGN UP</a>
             <!-- Logged in: Account submenu (hidden by default) -->
@@ -2162,6 +2162,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
     if (new URLSearchParams(window.location.search).get('mobile') === '1') {
         var style = document.createElement('style');
         style.textContent = '#split-view-btn, #split-mode-options { display: none !important; } #downloads-link { display: none !important; } ' +
+            '.session-controls { display: none !important; } ' +
             '#input-area > div:first-child { display: none !important; } ' +
             '#input-area .input-group { max-width: 100% !important; } ' +
             '#input-area { padding: 8px 10px !important; } ' +
@@ -2344,15 +2345,33 @@ window._openSessionsPanel = function() {
     }
     panel = document.createElement('div');
     panel.id = 'sessions-up-panel';
-    panel.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);width:620px;max-height:48vh;z-index:2000;background:var(--panel);border:1px solid var(--cyan);border-radius:4px;display:flex;flex-direction:column;box-shadow:0 4px 12px rgba(0,0,0,0.5);';
+    var isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+        panel.style.cssText = 'position:fixed;bottom:60px;left:8px;right:8px;max-height:70vh;z-index:5010;background:var(--panel);border:1px solid var(--cyan);border-radius:4px;display:flex;flex-direction:column;box-shadow:0 4px 12px rgba(0,0,0,0.5);';
+        panel.classList.add('sessions-panel-mobile');
+    } else {
+        panel.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);width:620px;max-height:48vh;z-index:2000;background:var(--panel);border:1px solid var(--cyan);border-radius:4px;display:flex;flex-direction:column;box-shadow:0 4px 12px rgba(0,0,0,0.5);';
+    }
     // Two-column body
     var columns = document.createElement('div');
-    columns.style.cssText = 'display:flex;flex:1;overflow:hidden;min-height:0;';
+    if (isMobile) {
+        columns.style.cssText = 'display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;';
+    } else {
+        columns.style.cssText = 'display:flex;flex:1;overflow:hidden;min-height:0;';
+    }
     // Left: sessions
     var sessCol = document.createElement('div');
-    sessCol.style.cssText = 'flex:1;display:flex;flex-direction:column;border-right:1px solid var(--border);min-width:0;';
+    if (isMobile) {
+        sessCol.style.cssText = 'flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;';
+    } else {
+        sessCol.style.cssText = 'flex:1;display:flex;flex-direction:column;border-right:1px solid var(--border);min-width:0;';
+    }
     var sessHeader = document.createElement('div');
-    sessHeader.style.cssText = 'padding:10px 12px;font-size:14px;font-family:Orbitron,sans-serif;font-weight:700;color:var(--cyan);border-bottom:1px solid var(--border);';
+    if (isMobile) {
+        sessHeader.style.cssText = 'display:none;';
+    } else {
+        sessHeader.style.cssText = 'padding:10px 12px;font-size:14px;font-family:Orbitron,sans-serif;font-weight:700;color:var(--cyan);border-bottom:1px solid var(--border);';
+    }
     sessHeader.textContent = 'SESSIONS';
     sessCol.appendChild(sessHeader);
     var sessListWrap = document.createElement('div');
@@ -2363,10 +2382,29 @@ window._openSessionsPanel = function() {
     results.style.cssText = 'position:relative;overflow-y:auto;overflow-x:hidden;height:100%;padding-right:10px;box-sizing:border-box;-ms-overflow-style:none;scrollbar-width:none;';
     sessListWrap.appendChild(results);
     sessCol.appendChild(sessListWrap);
+    if (isMobile) {
+        // Mobile: close button at top
+        var closeBar = document.createElement('div');
+        closeBar.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0;';
+        var closeTitle = document.createElement('span');
+        closeTitle.textContent = 'SESSIONS & PROJECTS';
+        closeTitle.style.cssText = 'font-family:Orbitron,sans-serif;font-size:13px;font-weight:700;color:var(--cyan);';
+        var closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕';
+        closeBtn.style.cssText = 'background:transparent;border:1px solid var(--red);color:var(--red);padding:4px 10px;cursor:pointer;font-size:14px;border-radius:3px;';
+        closeBtn.onclick = function() { panel.style.display = 'none'; };
+        closeBar.appendChild(closeTitle);
+        closeBar.appendChild(closeBtn);
+        panel.appendChild(closeBar);
+    }
     columns.appendChild(sessCol);
     // Right: projects
     var projCol = document.createElement('div');
-    projCol.style.cssText = 'width:220px;display:flex;flex-direction:column;min-width:0;';
+    if (isMobile) {
+        projCol.style.cssText = 'width:100%;max-height:120px;display:flex;flex-direction:column;min-width:0;border-top:1px solid var(--border);flex-shrink:0;';
+    } else {
+        projCol.style.cssText = 'width:220px;display:flex;flex-direction:column;min-width:0;';
+    }
     var projHeader = document.createElement('div');
     projHeader.style.cssText = 'padding:10px 12px;border-bottom:1px solid var(--border);';
     projHeader.textContent = 'PROJECTS';
@@ -2383,6 +2421,22 @@ window._openSessionsPanel = function() {
     projResults.style.cssText = 'position:relative;overflow-y:auto;overflow-x:hidden;height:100%;padding-right:10px;box-sizing:border-box;-ms-overflow-style:none;scrollbar-width:none;';
     projListWrap.appendChild(projResults);
     projCol.appendChild(projListWrap);
+    // Mobile: make projects collapsible
+    if (isMobile) {
+        projHeader.style.cursor = 'pointer';
+        projHeader.innerHTML = 'PROJECTS ▾';
+        projHeader.onclick = function() {
+            if (projListWrap.style.display === 'none') {
+                projListWrap.style.display = 'block';
+                projHeader.innerHTML = 'PROJECTS ▾';
+                projCol.style.maxHeight = '120px';
+            } else {
+                projListWrap.style.display = 'none';
+                projHeader.innerHTML = 'PROJECTS ▸';
+                projCol.style.maxHeight = '38px';
+            }
+        };
+    }
     if (window._sessionsPanelLegacyScrollButtons && typeof window._mountLegacySessionsPanelScrollButtons === 'function') {
         window._mountLegacySessionsPanelScrollButtons(sessCol, projCol);
     }
