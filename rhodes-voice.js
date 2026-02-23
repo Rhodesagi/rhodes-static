@@ -29,6 +29,10 @@ const VoiceChat = {
             setStatus: function(state) {
                 const status = document.getElementById('takeover-status');
                 if (!status) return;
+                // If already processing and asked to process again, don't reset timer
+                if (state === 'processing' && this._processingTimer) {
+                    return;
+                }
                 status.classList.remove('hidden', 'listening', 'processing', 'speaking', 'waiting');
                 // Clear any existing processing timer
                 if (this._processingTimer) {
