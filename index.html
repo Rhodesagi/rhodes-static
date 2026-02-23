@@ -638,7 +638,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
             <a href="#" class="mobile-menu-item" onclick="openRoomsMenu(); closeMobileMenu(); return false;">ROOMS</a>
             <!-- Session controls in mobile menu (hidden for guests) -->
             <a href="#" id="mobile-new-session" class="mobile-menu-item" style="display:none;border-color:var(--green);color:var(--green);" onclick="startNewSession(); closeMobileMenu(); return false;">+ NEW SESSION</a>
-            <a href="#" id="mobile-sessions-list" class="mobile-menu-item" style="display:none;border-color:var(--green);color:var(--green);" onclick="try { console.log("SESSIONS clicked, _openSessionsPanel type:", typeof window._openSessionsPanel); window._openSessionsPanel(); } catch(e) { alert("Sessions error: " + e.message); console.error(e); } closeMobileMenu(); return false;">SESSIONS</a>
+            <a href="#" id="mobile-sessions-list" class="mobile-menu-item" style="display:none;border-color:var(--green);color:var(--green);" onclick="window._openSessionsPanel(); closeMobileMenu(); return false;">SESSIONS</a>
             <!-- Guest: LOGIN link -->
             <a href="#" id="mobile-login-link" class="mobile-menu-item" onclick="showAuth('register'); closeMobileMenu();">SIGN UP</a>
             <!-- Logged in: Account submenu (hidden by default) -->
