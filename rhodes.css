@@ -3227,3 +3227,28 @@ textarea#input {
         overflow-y: auto !important;
     }
 }
+
+/* iOS safe area - push header below Dynamic Island / notch */
+@supports (padding-top: env(safe-area-inset-top)) {
+    @media screen and (max-width: 768px) {
+        header {
+            padding-top: max(env(safe-area-inset-top), 48px) !important;
+        }
+    }
+}
+
+/* Fix share button overlapping message text on mobile */
+@media screen and (max-width: 768px) {
+    .qa-share-btn {
+        min-width: 32px !important;
+        min-height: 32px !important;
+        font-size: 9px !important;
+        padding: 2px 5px !important;
+        opacity: 0.5 !important;
+        z-index: 2;
+    }
+    .msg.ai {
+        position: relative;
+        padding-right: 40px !important;
+    }
+}

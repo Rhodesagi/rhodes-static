@@ -71,7 +71,7 @@ function toggleSplitView() {
     </script>
 
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -115,7 +115,7 @@ function toggleSplitView() {
     <!-- Firebase Auth for Google Sign-In -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-    <link rel="stylesheet" href="/rhodes.css?v=1771870580">
+    <link rel="stylesheet" href="/rhodes.css?v=1771874638">
 <script>const params=new URLSearchParams(window.location.search);
 if(params.get("nologo")==="1"){document.write(`<style>.logo{visibility:hidden!important}
     /* Slash command autocomplete dropdown */
@@ -2167,7 +2167,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
             '#input-area .input-group { max-width: 100% !important; } ' +
             '#input-area { padding: 8px 10px !important; } ' +
             '#input { font-size: 17px !important; min-height: 44px !important; max-height: 220px !important; padding: 10px 44px 10px 34px !important; line-height: 1.4 !important; resize: none !important; white-space: pre-wrap !important; word-wrap: break-word !important; overflow-wrap: break-word !important; overflow-y: hidden !important; } ' +
-            'header { padding: 6px 12px 4px 12px !important; } ';
+            'header { padding: 6px 12px 4px 12px !important; padding-top: max(env(safe-area-inset-top, 12px), 48px) !important; } ';
         document.head.appendChild(style);
         window.__RHODES_MOBILE_APP__ = true;
 
