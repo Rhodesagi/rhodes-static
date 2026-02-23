@@ -3121,41 +3121,30 @@ OVERLAY JS DISABLED */
 </script>
 
 <script>
-// Textarea auto-grow using shadow div (works on all WebKit)
+// Textarea auto-grow: reset to min, measure scrollHeight, clamp to 44-220px
 (function() {
     var ta = document.getElementById('input');
     if (!ta || ta.tagName !== 'TEXTAREA') return;
-    
-    // Create hidden mirror div
-    var mirror = document.createElement('div');
-    mirror.style.cssText = 'position:absolute;top:-9999px;left:-9999px;visibility:hidden;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:break-word;box-sizing:border-box;';
-    document.body.appendChild(mirror);
-    
-    function copyStyle() {
-        var cs = window.getComputedStyle(ta);
-        mirror.style.width = cs.width;
-        mirror.style.font = cs.font;
-        mirror.style.fontSize = cs.fontSize;
-        mirror.style.fontFamily = cs.fontFamily;
-        mirror.style.lineHeight = cs.lineHeight;
-        mirror.style.padding = cs.padding;
-        mirror.style.border = cs.border;
-        mirror.style.letterSpacing = cs.letterSpacing;
-    }
-    
+    var minH = 44, maxH = 220;
+
     function grow() {
-        copyStyle();
-        // Use textContent + extra newline to account for cursor line
-        mirror.textContent = ta.value + '
-';
-        var h = Math.max(44, Math.min(mirror.scrollHeight, 220));
+        // 1. Collapse to single row so scrollHeight reports natural content height
+        ta.style.setProperty('height', minH + 'px', 'important');
+        ta.style.setProperty('overflow-y', 'hidden', 'important');
+        // 2. Force layout reflow so scrollHeight updates
+        void ta.offsetHeight;
+        // 3. Read the natural scroll height
+        var sh = ta.scrollHeight;
+        // 4. Clamp between min and max
+        var h = Math.max(minH, Math.min(sh, maxH));
         ta.style.setProperty('height', h + 'px', 'important');
-        ta.style.overflow = mirror.scrollHeight > 220 ? 'auto' : 'hidden';
+        // 5. Show scrollbar only when content exceeds max
+        ta.style.setProperty('overflow-y', sh > maxH ? 'auto' : 'hidden', 'important');
     }
-    
+
     ta.addEventListener('input', grow);
-    // Also run on focus in case content changed externally
     ta.addEventListener('focus', grow);
+    ta.addEventListener('change', grow);
     // Initial size
     setTimeout(grow, 100);
 })();
