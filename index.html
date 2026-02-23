@@ -75,7 +75,7 @@ function toggleSplitView() {
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta name="version" content="2.0.1-delta">
+    <meta name="version" content="2.0.2-delta-1771870001">
     <title>RHODES AGI - Autonomous AI System</title>
 
     <!-- SEO Meta Tags -->
@@ -115,7 +115,7 @@ function toggleSplitView() {
     <!-- Firebase Auth for Google Sign-In -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-    <link rel="stylesheet" href="/rhodes.css?v=20260222-grow4">
+    <link rel="stylesheet" href="/rhodes.css?v=1771870580">
 <script>const params=new URLSearchParams(window.location.search);
 if(params.get("nologo")==="1"){document.write(`<style>.logo{visibility:hidden!important}
     /* Slash command autocomplete dropdown */
@@ -2376,10 +2376,18 @@ window._openSessionsPanel = function() {
     sessCol.appendChild(sessHeader);
     var sessListWrap = document.createElement('div');
     sessListWrap.id = 'sessions-up-results-wrap';
-    sessListWrap.style.cssText = 'position:relative;flex:1;min-height:0;';
+    if (isMobile) {
+        sessListWrap.style.cssText = 'position:relative;flex:1;min-height:0;overflow:hidden;';
+    } else {
+        sessListWrap.style.cssText = 'position:relative;flex:1;min-height:0;';
+    }
     var results = document.createElement('div');
     results.id = 'sessions-up-results';
-    results.style.cssText = 'position:relative;overflow-y:auto;overflow-x:hidden;height:100%;padding-right:10px;box-sizing:border-box;-ms-overflow-style:none;scrollbar-width:none;';
+    if (isMobile) {
+        results.style.cssText = 'overflow-y:scroll;overflow-x:hidden;max-height:calc(70vh - 160px);padding:0 10px;box-sizing:border-box;-webkit-overflow-scrolling:touch;';
+    } else {
+        results.style.cssText = 'position:relative;overflow-y:auto;overflow-x:hidden;height:100%;padding-right:10px;box-sizing:border-box;-ms-overflow-style:none;scrollbar-width:none;';
+    }
     sessListWrap.appendChild(results);
     sessCol.appendChild(sessListWrap);
     if (isMobile) {
@@ -2418,7 +2426,7 @@ window._openSessionsPanel = function() {
     projListWrap.style.cssText = 'position:relative;flex:1;min-height:0;';
     var projResults = document.createElement('div');
     projResults.id = 'projects-up-results';
-    projResults.style.cssText = 'position:relative;overflow-y:auto;overflow-x:hidden;height:100%;padding-right:10px;box-sizing:border-box;-ms-overflow-style:none;scrollbar-width:none;';
+    projResults.style.cssText = 'position:relative;overflow-y:auto;overflow-x:hidden;height:100%;padding-right:10px;box-sizing:border-box;-ms-overflow-style:none;scrollbar-width:none;-webkit-overflow-scrolling:touch;';
     projListWrap.appendChild(projResults);
     projCol.appendChild(projListWrap);
     // Mobile: make projects collapsible

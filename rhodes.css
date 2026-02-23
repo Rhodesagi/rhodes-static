@@ -3214,3 +3214,16 @@ textarea#input {
         display: none !important;
     }
 }
+
+/* Disable custom scroll indicators on mobile — use native touch scroll */
+@media screen and (max-width: 768px) {
+    #sessions-up-results-wrap .sessions-up-scroll-track,
+    #projects-up-results-wrap .sessions-up-scroll-track {
+        display: none !important;
+    }
+    #sessions-up-results,
+    #projects-up-results {
+        -webkit-overflow-scrolling: touch !important;
+        overflow-y: auto !important;
+    }
+}
