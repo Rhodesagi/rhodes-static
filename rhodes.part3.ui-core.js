@@ -1267,6 +1267,8 @@ function showDownloads() {
                     }
                 } else if (msg.msg_type === 'injection_debug') {
                     showInjectionDebug(msg.payload);
+                } else if (msg.msg_type === 'thought_sub_debug') {
+                    showThoughtSubDebug(msg.payload);
                 
                 } else if (msg.msg_type === 'handoff_notify') {
                     // Server-push: social CLI hit CAPTCHA, open VNC viewer immediately

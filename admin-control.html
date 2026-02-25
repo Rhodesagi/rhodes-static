@@ -1501,6 +1501,17 @@
                 out.push('<details style="cursor:pointer"><summary style="color:#0ff">INJECTION [' + lines.length + ' lines] click to expand</summary>');
                 out.push('<pre style="color:#888;white-space:pre-wrap;max-height:300px;overflow:auto">' + inj.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre></details>');
               }
+              // Show thought substitution if present in metadata
+              if (meta.thought_sub) {
+                const ts = meta.thought_sub;
+                const matchInfo = ts.match_type === 'semantic'
+                  ? 'semantic (sim=' + (ts.semantic_sim ? ts.semantic_sim.toFixed(3) : '?') + ')'
+                  : 'keyword';
+                const qInfo = ts.semantic_question ? ' matched: "' + ts.semantic_question + '"' : '';
+                out.push('');
+                out.push('<details style="cursor:pointer"><summary style="color:#ff00ff;font-weight:bold;">THOUGHT SUBSTITUTION · pattern: ' + esc(ts.pattern_name || '?') + ' · ' + matchInfo + qInfo + ' · ' + (ts.injection_length || 0) + ' chars</summary>');
+                out.push('<pre style="color:#c9a0dc;white-space:pre-wrap;max-height:400px;overflow:auto;background:rgba(255,0,255,0.04);padding:8px;border-left:3px solid #ff00ff;">' + (ts.injection_text || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre></details>');
+              }
             } catch(e) {}
           }
           out.push('');

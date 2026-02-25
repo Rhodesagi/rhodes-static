@@ -93,6 +93,15 @@
             <button class="btn" onclick="changePassword()">Change Password</button>
         </div>
     </div>
+        <div class="section" style="border-top: 1px solid #ff4444; margin-top: 40px; padding-top: 20px;">
+            <h2 style="color: #ff4444;">Delete Account</h2>
+            <p style="color: #888; font-family: monospace; font-size: 13px; margin-bottom: 16px;">
+                Permanently delete your account and all associated data including conversations, files, and profile information.
+                This action cannot be undone.
+            </p>
+            <a href="/delete-data.html" style="display:inline-block;padding:12px 24px;background:#ff4444;color:#000;text-decoration:none;font-family:monospace;font-weight:bold;border-radius:4px;">DELETE MY ACCOUNT</a>
+        </div>
+
 
     <script>
         const USER_TOKEN = localStorage.getItem('rhodes_user_token') || '';

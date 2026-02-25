@@ -703,6 +703,43 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
             document.body.appendChild(popup);
         }
 
+        function showThoughtSubDebug(data) {
+            if (!window.RHODES_CONFIG || !window.RHODES_CONFIG.isAdmin) return;
+
+            const existing = document.getElementById('thought-sub-debug-popup');
+            if (existing) existing.remove();
+
+            const popup = document.createElement('div');
+            popup.id = 'thought-sub-debug-popup';
+            popup.style.cssText = 'position:fixed;top:12px;left:12px;background:#0d1117;border:1px solid #ff00ff;border-radius:6px;padding:12px 16px;z-index:10001;font-family:"Share Tech Mono",monospace;font-size:12px;color:#c9d1d9;max-width:500px;max-height:80vh;overflow-y:auto;box-shadow:0 0 20px rgba(255,0,255,0.15);';
+
+            let html = '<div style="color:#ff00ff;font-weight:bold;margin-bottom:6px;font-size:11px;text-transform:uppercase;letter-spacing:1px;">THOUGHT SUBSTITUTION</div>';
+
+            html += '<div style="color:#8b949e;margin-bottom:4px;">Pattern: <span style="color:#ff00ff;">' + (data.pattern_name || '?') + '</span></div>';
+            html += '<div style="color:#8b949e;margin-bottom:4px;">Match: <span style="color:#00ffd5;">' + (data.match_type || '?') + '</span>';
+            if (data.semantic_sim) html += ' (sim=' + data.semantic_sim.toFixed(3) + ')';
+            html += '</div>';
+            html += '<div style="color:#8b949e;margin-bottom:6px;">Injection: ' + (data.injection_length || 0) + ' chars (prefill total: ' + (data.prefill_total_length || 0) + ')</div>';
+
+            if (data.semantic_question) {
+                html += '<div style="margin:4px 0;padding:4px 6px;background:#161b22;border-left:2px solid #00ffd5;border-radius:2px;">';
+                html += '<div style="color:#8b949e;font-size:10px;">Matched question:</div>';
+                html += '<div style="color:#e6edf3;">' + data.semantic_question + '</div>';
+                html += '</div>';
+            }
+
+            if (data.full_injection) {
+                html += '<details style="margin-top:8px;"><summary style="cursor:pointer;color:#ff00ff;font-size:11px;">Show full injection</summary>';
+                html += '<pre style="white-space:pre-wrap;word-break:break-word;margin:4px 0 0 0;padding:8px;background:#161b22;border:1px solid rgba(255,0,255,0.2);border-radius:4px;font-size:11px;line-height:1.4;max-height:300px;overflow-y:auto;">' + (data.full_injection || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre>';
+                html += '</details>';
+            }
+
+            popup.innerHTML = html;
+            popup.addEventListener('click', function(e) { if (e.target === popup || e.target.tagName === 'DIV' && !e.target.closest('details')) popup.remove(); });
+            setTimeout(function() { if (popup.parentNode) popup.remove(); }, 30000);
+            document.body.appendChild(popup);
+        }
+
         // Toggle debug panel and show info
         function toggleDebugPanel() {
             const panel = document.getElementById('debug-panel');
