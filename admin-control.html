@@ -1424,12 +1424,10 @@
         const sessionId = $("sessOpenLabel").textContent.trim();
         if (!sessionId) { $("sessShareResult").textContent = "No session open"; return; }
         try {
-          const resp = await fetch("/api/share-session", {
+          const data = await api("/api/share-session", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ session_id: sessionId })
           });
-          const data = await resp.json();
           if (data.success) {
             const url = "https://rhodesagi.com/qa/" + data.id;
             $("sessShareResult").innerHTML = "<a href='" + url + "' target='_blank'>" + url + "</a>";
@@ -2056,8 +2054,16 @@
           const formData = new FormData();
           formData.append('audio', audioBlob, 'recording.webm');
           
+          const t = token();
+          const transcribeHeaders = {};
+          if (t && localStorage.getItem('rhodes_user_token')) {
+            transcribeHeaders['Authorization'] = 'Bearer ' + t;
+          } else if (t) {
+            transcribeHeaders['X-Rhodes-Admin-Token'] = t;
+          }
           const resp = await fetch('/api/transcribe', {
             method: 'POST',
+            headers: transcribeHeaders,
             body: formData
           });
           
@@ -2106,8 +2112,7 @@
         
         try {
           const url = '/api/admin/insights' + (filter ? '?topic=' + encodeURIComponent(filter) : '');
-          const res = await fetch(url, {headers: {'X-Rhodes-Key': ADMIN_KEY}});
-          const data = await res.json();
+          const data = await api(url);
           
           if (!data.insights || data.insights.length === 0) {
             list.innerHTML = '<div class="muted" style="text-align:center;padding:20px;">No insights found</div>';
@@ -2172,8 +2177,7 @@
 
       async function loadCompactionConfig() {
         try {
-          const res = await fetch("/api/admin/compaction/status", {headers: {"X-Rhodes-Key": ADMIN_KEY}});
-          const data = await res.json();
+          const data = await api("/api/admin/compaction/status");
 
           $("compactionStatus").textContent = data.config.enabled ? "Active" : "Inactive";
           $("compactionStatus").style.color = data.config.enabled ? "var(--ok)" : "var(--muted)";
@@ -2208,12 +2212,10 @@
             cooldown_after_swap: parseInt($("compactionCooldown").value)
           };
 
-          const res = await fetch("/api/admin/compaction/config", {
+          const data = await api("/api/admin/compaction/config", {
             method: "POST",
-            headers: {"Content-Type": "application/json", "X-Rhodes-Key": ADMIN_KEY},
             body: JSON.stringify(config)
           });
-          const data = await res.json();
 
           if (data.error) {
             alert("Error: " + data.error);

@@ -115,7 +115,7 @@ function toggleSplitView() {
     <!-- Firebase Auth for Google Sign-In -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js?v=1771899160"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js?v=1771899160"></script>
-    <link rel="stylesheet" href="/rhodes.css?v=1772050650">
+    <link rel="stylesheet" href="/rhodes.css?v=1772056759">
 <script>const params=new URLSearchParams(window.location.search);
 if(params.get("nologo")==="1"){document.write(`<style>.logo{visibility:hidden!important}
     /* Slash command autocomplete dropdown */
@@ -605,7 +605,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
                         <a href="/api.html">API</a>
                         <a href="/donate.html">Donate</a>
                         <div class="account-dropdown-divider"></div>
-                        <a href="/admin-control.html" id="admin-link" style="display:none;">Control Panel</a>
+                        <a href="/admin-control.html?v=1772056759" id="admin-link" style="display:none;">Control Panel</a>
                         <a href="#" id="logout-link" onclick="logout(); return false;">Logout</a>
                     </div>
                 </div>
@@ -651,7 +651,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
                     <a href="/upgrade.html" class="mobile-submenu-item" onclick="closeMobileMenu()">Upgrade Plan</a>
                     <a href="/api.html" class="mobile-submenu-item" onclick="closeMobileMenu()">API</a>
                     <a href="/donate.html" class="mobile-submenu-item" onclick="closeMobileMenu()">Donate</a>
-                    <a href="/admin-control.html" id="mobile-admin-link" class="mobile-submenu-item" style="display:none;" onclick="closeMobileMenu()">Control Panel</a>
+                    <a href="/admin-control.html?v=1772056759" id="mobile-admin-link" class="mobile-submenu-item" style="display:none;" onclick="closeMobileMenu()">Control Panel</a>
                     <a href="#" class="mobile-submenu-item" onclick="logout(); closeMobileMenu(); return false;">Logout</a>
                 </div>
             </div>
