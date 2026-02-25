@@ -259,10 +259,31 @@ function showDownloads() {
                 }
             } catch {}
 
-             // Show auth modal if no credentials AND first time (let guest try)
+             // Re-read tokens from localStorage in case closure vars went stale
+            // (fixes +New session opening as guest for logged-in users)
+            const _freshUserToken = rhodesStorage.getItem('rhodes_user_token') || '';
+            const _freshToken = rhodesStorage.getItem('rhodes_token') || '';
+            if (_freshUserToken && _freshUserToken.length > 10 && !USER_TOKEN) {
+                USER_TOKEN = _freshUserToken;
+                console.log('[TOKEN-REFRESH] Restored USER_TOKEN from localStorage, len=' + _freshUserToken.length);
+            }
+            if (_freshToken && _freshToken.length > 10 && !TOKEN) {
+                TOKEN = _freshToken;
+                console.log('[TOKEN-REFRESH] Restored TOKEN from localStorage, len=' + _freshToken.length);
+            }
+            // Also refresh username if token was restored
+            if (USER_TOKEN && !CURRENT_USERNAME) {
+                const _storedName = rhodesStorage.getItem('rhodes_username');
+                if (_storedName) {
+                    CURRENT_USERNAME = _storedName;
+                    IS_GUEST = false;
+                    console.log('[TOKEN-REFRESH] Restored username:', _storedName);
+                }
+            }
+
             const hasUserToken = USER_TOKEN && (USER_TOKEN || "").length > 10;
             const hasToken = TOKEN && (TOKEN || "").length > 10;
-            console.log('Token check - USER_TOKEN:', USER_TOKEN, 'length:', (USER_TOKEN || "").length, 'hasUserToken:', hasUserToken);
+            console.log('Token check - USER_TOKEN:', USER_TOKEN ? (USER_TOKEN.substring(0,20) + '...') : 'EMPTY', 'length:', (USER_TOKEN || "").length, 'hasUserToken:', hasUserToken, 'fromStorage:', _freshUserToken.length);
             console.log('Token check - TOKEN:', TOKEN ? 'present' : 'empty', 'length:', (TOKEN || "").length, 'hasToken:', hasToken);
 
             // Auto-connect as guest or with saved credentials
