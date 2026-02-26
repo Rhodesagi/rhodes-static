@@ -127,8 +127,21 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
 
         return false;
     }
+    function clearInputAndResize(inputEl) {
+        if (!inputEl) return;
+        inputEl.value = '';
+        try {
+            inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+        } catch (e) {
+            // Fallback for older webviews
+            var evt = document.createEvent('Event');
+            evt.initEvent('input', true, true);
+            inputEl.dispatchEvent(evt);
+        }
+    }
 
     function send() {
+
         const input = getInput();
         if (!input) {
             console.error('[SEND] Missing #input element');
@@ -143,7 +156,7 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
 
         const lowerCmd = text.toLowerCase();
         if (lowerCmd === '/stop' || lowerCmd === '/interrupt') {
-            input.value = '';
+            clearInputAndResize(input);
             if (isSocketReady()) {
                 const ws = getWs();
                 ws.send(JSON.stringify({
@@ -161,7 +174,7 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
         }
 
         if (lowerCmd === '/model' || lowerCmd === '/models') {
-            input.value = '';
+            clearInputAndResize(input);
             addMsg('ai', '**Available models:**\n' +
                 '`/alpha` or `/r1.0a` \u2014 Claude Opus\n' +
                 '`/beta` or `/r1.0b` \u2014 Claude Sonnet\n' +
@@ -180,7 +193,7 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
             const cmd = parts[0].toLowerCase();
             const args = parts.slice(1).join(' ');
             if (window._slashCommands[cmd]) {
-                input.value = '';
+                clearInputAndResize(input);
                 const result = window._slashCommands[cmd](args);
                 if (result) showToast(result);
                 return;
@@ -189,7 +202,7 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
 
         const desktopCmds = ['clear-cache', 'clearcache', 'refresh-assets'];
         if (lowerCmd.startsWith('/') && desktopCmds.includes(lowerCmd.slice(1))) {
-            input.value = '';
+            clearInputAndResize(input);
             if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.execute_command === 'function') {
                 const cmdName = lowerCmd.slice(1);
                 window.pywebview.api.execute_command(cmdName, '').then(result => {
@@ -231,7 +244,7 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
                 ws.send(JSON.stringify(modelSetObj));
                 showToast('Switching model...');
             }
-            input.value = '';
+            clearInputAndResize(input);
             return;
         }
 
@@ -262,7 +275,7 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
             }
             const seenRoomMsgIds = getSeenRoomMsgIds();
             if (!isPersonal && seenRoomMsgIds) seenRoomMsgIds.add(msgId);
-            input.value = '';
+            clearInputAndResize(input);
 
             const messageObj = {
                 msg_type: isPersonal ? 'room_personal_ai_request' : 'room_message_request',
@@ -311,13 +324,13 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
                 showToast(`Entering ${modelCmd.flag.toUpperCase()} mode...`);
             }
 
-            input.value = '';
+            clearInputAndResize(input);
             return;
         }
 
         // Safety: never forward raw slash commands as chat content.
         if (text.startsWith('/')) {
-            input.value = '';
+            clearInputAndResize(input);
             showToast('Slash command not recognized locally. Not sent to model.');
             return;
         }
@@ -344,7 +357,7 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
         addMsg('user', maskPasswords(text) + fileIndicator + mediaHtml);
         markGuestActivity();
         if (typeof clearToolCalls === 'function') clearToolCalls();
-        input.value = '';
+        clearInputAndResize(input);
 
         // Prepend voice failure context if set
         if (window._voiceFailedContext) {

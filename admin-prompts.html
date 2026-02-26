@@ -428,7 +428,19 @@ async function api(url, opts={}) {
     $('loginView').style.display = 'block';
     throw new Error('Session expired');
   }
-  return resp.json();
+  const raw = await resp.text();
+  let data = null;
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    const preview = (raw || '').slice(0, 200).replace(/\s+/g, ' ').trim();
+    throw new Error(`Invalid JSON response (${resp.status}): ${preview || 'empty body'}`);
+  }
+  if (!resp.ok) {
+    const err = (data && (data.error || data.message)) || `HTTP ${resp.status}`;
+    throw new Error(String(err));
+  }
+  return data;
 }
 
 async function doLogin() {
