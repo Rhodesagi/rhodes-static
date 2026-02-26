@@ -87,6 +87,13 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
     else if (s === '/zeta' || s.startsWith('/zeta ')) flag = 'zeta';
 
         if (!flag) {
+            const generic = s.match(/^\/([a-z][a-z0-9._-]{0,63})(?:\s+(.*))?$/);
+            if (generic) {
+                const genericFlag = generic[1].toLowerCase();
+                const genericRest = (generic[2] || '').trim();
+                console.log('[parseModelSwitchPrefix] generic slash match:', { flag: genericFlag, model: genericFlag, rest: genericRest });
+                return { flag: genericFlag, model: genericFlag, rest: genericRest };
+            }
             console.log('[parseModelSwitchPrefix] no flag match');
             return null;
         }
@@ -208,18 +215,23 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
         }
 
         if (isFormatModeCommand(lowerCmd)) {
-            input.value = '';
-            if (isSocketReady()) {
+            const token = (text.split(/\s+/, 1)[0] || '').replace(/^\//, '').toLowerCase();
+            const modelSetObj = {
+                msg_type: 'model_set_request',
+                msg_id: generateUUID(),
+                timestamp: new Date().toISOString(),
+                payload: { model: token }
+            };
+            if (!isSocketReady()) {
+                queueOutboundMessage(modelSetObj);
+                showToast('Reconnecting to switch model...');
+                connect();
+            } else {
                 const ws = getWs();
-                ws.send(JSON.stringify({
-                    msg_type: 'user_message',
-                    msg_id: generateUUID(),
-                    timestamp: new Date().toISOString(),
-                    payload: { content: text }
-                }));
-                return;
+                ws.send(JSON.stringify(modelSetObj));
+                showToast('Switching model...');
             }
-            showToast('Not connected');
+            input.value = '';
             return;
         }
 
@@ -299,12 +311,15 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
                 showToast(`Entering ${modelCmd.flag.toUpperCase()} mode...`);
             }
 
-            if (!modelCmd.rest) {
-                input.value = '';
-                return;
-            }
+            input.value = '';
+            return;
+        }
 
-            text = modelCmd.rest;
+        // Safety: never forward raw slash commands as chat content.
+        if (text.startsWith('/')) {
+            input.value = '';
+            showToast('Slash command not recognized locally. Not sent to model.');
+            return;
         }
 
         pendingImages = getPendingImagesSafe();

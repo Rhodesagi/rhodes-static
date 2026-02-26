@@ -3707,19 +3707,28 @@ function showDownloads() {
             const paneConnections = window.paneConnections || {};
             const paneWs = paneConnections[instanceNum];
 
-            // Handle model switch slash commands (don't show in chat, just switch)
+            // Slash commands are control-only in split mode; never forward as chat content.
             const lowerMsg = message.toLowerCase();
-            const modelSwitchPattern = /^\/(?:rhodes-|rhodesia-)?(?:alpha|beta|ada|delta|epsilon|opus|sonnet|haiku|deepseek|kimi|grok|zeta)(?:-format-?\d+(?:\.\d+)?)?$|^\/(?:r|ds|p)\d+\.\d+g?[abcdef](?:[012p]|21)?(?:\.c[abcdef][012]?)?$|^\/[abcdef]\d+(?:\.\d+)?$/;
-            console.log("[SPLIT-DEBUG] pattern test:", lowerMsg, modelSwitchPattern.test(lowerMsg)); if (modelSwitchPattern.test(lowerMsg)) {
+            if (lowerMsg.startsWith('/')) {
+                const cmdMatch = lowerMsg.match(/^\/([a-z][a-z0-9._-]{0,63})(?:\s+(.*))?$/);
                 if (!paneWs || paneWs.readyState !== WebSocket.OPEN) {
                     showToast('Pane ' + instanceNum + ' not connected');
                     return;
                 }
-                paneWs.send(JSON.stringify({ msg_type: 'user_message', payload: { content: message } }));
+                if (!cmdMatch) {
+                    showToast('Pane ' + instanceNum + ': invalid slash command');
+                    return;
+                }
+                const modelToken = cmdMatch[1];
+                paneWs.send(JSON.stringify({
+                    msg_type: 'model_set_request',
+                    msg_id: generateUUID(),
+                    timestamp: new Date().toISOString(),
+                    payload: { model: modelToken }
+                }));
+                showToast('Pane ' + instanceNum + ': switching to ' + modelToken.toUpperCase());
                 const input = document.getElementById('instance-' + instanceNum + '-input');
                 if (input) input.value = '';
-                const cmdName = lowerMsg.substring(1).replace('rhodes-', '').toUpperCase();
-                showToast('Pane ' + instanceNum + ': ' + cmdName);
                 return;
             }
 
