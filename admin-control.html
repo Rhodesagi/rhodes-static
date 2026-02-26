@@ -314,6 +314,7 @@
         <a href="/rhodes-french/" style="color: #4ade80; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">🇫🇷 French Course</a>
         <a href="/admin-alliance.html" style="color: #4ade80; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">🤝 Alliance</a>
         <a href="/admin-townhall.html" style="color: #60a5fa; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">🏛️ Town Hall</a>
+        <a href="/admin-prompts.html" style="color: #c4b5fd; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">📝 System Prompts</a>
       </div>
     </header>
     <main>
@@ -571,7 +572,10 @@
       <div class="card">
         <div class="row" style="justify-content: space-between;">
           <div class="muted">System prompt</div>
-          <div class="muted">Current + historical (by sha256)</div>
+          <div class="row" style="gap:8px;">
+            <div class="muted">Current + historical (by sha256)</div>
+            <a href="/admin-prompts.html" style="font-size:12px;color:var(--ok);text-decoration:none;">All prompts workspace ↗</a>
+          </div>
         </div>
         <div class="row" style="margin-top: 8px;">
           <label>Source
@@ -611,6 +615,8 @@
               </optgroup>
             </select>
           </label>
+          <button id="promptSourceRefreshBtn">Refresh sources</button>
+          <span class="pill" id="promptSourceState">static list</span>
           <label class="grow">Historical sha256 (optional)
             <input id="promptSha" type="text" placeholder="64-hex sha256 (from sessions.db rounds)" />
           </label>
@@ -1172,6 +1178,7 @@
 
       let ALL_TOOLS = [];
       let ALWAYS_ENABLED = new Set(['message', 'respond']);
+      let ALL_PROMPT_SOURCES = [];
 
       let PROMPT_LOADED = {
         mode: null, // 'file' | 'history'
@@ -1210,6 +1217,68 @@
         if (PROMPT_LOADED.truncated) hints.push('Loaded prompt is truncated — increase max chars before editing.');
         if (editOn && PROMPT_LOADED.mode === 'file' && !dirty) hints.push('No changes yet.');
         $('promptEditHint').textContent = hints.join(' ');
+      }
+
+      function promptSourceLabel(p) {
+        const chars = Number(p?.chars || 0) || 0;
+        const size = chars >= 1000 ? `${(chars / 1000).toFixed(1)}k` : String(chars);
+        const missing = p?.exists === false ? ' [missing]' : '';
+        return `${String(p?.source || '')} (${size} chars)${missing}`;
+      }
+
+      function promptSourceGroupKey(p) {
+        const source = String(p?.source || '');
+        if (p?.combined) return 'combined';
+        if (source.startsWith('format_')) return 'format';
+        return 'base';
+      }
+
+      function renderPromptSourceOptions(prompts) {
+        const select = $('promptSource');
+        if (!select) return;
+        const prev = String(select.value || '').trim();
+        const groups = { combined: [], base: [], format: [] };
+        for (const p of (prompts || [])) {
+          const key = promptSourceGroupKey(p);
+          if (!groups[key]) groups[key] = [];
+          groups[key].push(p);
+        }
+
+        const order = [
+          { key: 'combined', label: 'Combined prompts (runtime)' },
+          { key: 'base', label: 'Base prompts (files)' },
+          { key: 'format', label: 'Format-only prompts' },
+        ];
+        const html = [];
+        for (const group of order) {
+          const items = (groups[group.key] || []).slice().sort((a, b) => String(a?.source || '').localeCompare(String(b?.source || '')));
+          if (!items.length) continue;
+          html.push(`<optgroup label="${esc(group.label)}">`);
+          for (const p of items) {
+            const source = String(p?.source || '');
+            html.push(`<option value="${esc(source)}">${esc(promptSourceLabel(p))}</option>`);
+          }
+          html.push('</optgroup>');
+        }
+        if (!html.length) return;
+        select.innerHTML = html.join('');
+        if (prev && (prompts || []).some((p) => String(p?.source || '') === prev)) {
+          select.value = prev;
+        }
+      }
+
+      async function loadPromptSources() {
+        const status = $('promptSourceState');
+        if (status) status.textContent = 'loading...';
+        try {
+          const data = await api('/api/admin/prompt/list', { method: 'GET' });
+          ALL_PROMPT_SOURCES = Array.isArray(data?.prompts) ? data.prompts : [];
+          renderPromptSourceOptions(ALL_PROMPT_SOURCES);
+          if (status) status.textContent = `${ALL_PROMPT_SOURCES.length} live sources`;
+        } catch (e) {
+          if (status) status.textContent = 'fallback list';
+          throw e;
+        }
       }
 
       function toolIsVisible(name) {
@@ -1740,6 +1809,7 @@
         const st = await refreshStatus();
         fillFromServiceStatus(st);
         cdLoad().catch(() => {});
+        loadPromptSources().catch(() => {});
       }).catch(e => $('actionOut').textContent = e.message));
 
       $('logoutBtn').addEventListener('click', () => { setToken(''); setAuthState(); $('actionOut').textContent = 'logged out'; });
@@ -1814,6 +1884,9 @@
 
       $('promptLoadBtn').addEventListener('click', () => loadPrompt().catch(e => $('actionOut').textContent = e.message));
       $('promptVersionsBtn').addEventListener('click', () => loadPromptVersions().catch(e => $('actionOut').textContent = e.message));
+      $('promptSourceRefreshBtn').addEventListener('click', () => loadPromptSources().then(() => {
+        $('actionOut').textContent = JSON.stringify({ ok: true, prompt_sources: ALL_PROMPT_SOURCES.length }, null, 2);
+      }).catch(e => $('actionOut').textContent = 'prompt source refresh failed: ' + e.message));
       $('promptClearBtn').addEventListener('click', () => {
         $('promptText').value = '';
         $('promptMeta').textContent = '';
@@ -1838,6 +1911,7 @@
         loadTools()
           .then(refreshStatus)
           .then(fillFromServiceStatus)
+          .then(() => loadPromptSources().catch(() => {}))
           .then(() => cdLoad().catch(() => {}))
           .catch(() => {});
       }
