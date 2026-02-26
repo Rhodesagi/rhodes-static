@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="rhodes-course" content="portuguese">
+    <title>Rhodes Portuguese | Vamos!</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/courses-shared/engine/rhodes-theme.css?v=11">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header-wrapper">
+            <header class="header" id="header">
+                <div class="logo">
+                    <div id="titleDisplay"></div>
+                </div>
+                <div id="authSection" style="display:none;">
+                    <span id="userInfo" style="display:none;margin-right:8px;font-size:14px;"></span>
+                    <button id="authBtn" class="btn" style="padding:8px 15px;font-size:14px;">Sign In</button>
+                </div>
+            </header>
+        </div>
+
+        <!-- Hidden Import/Export Elements -->
+        <input type="file" id="importFileInput" style="display:none;" accept=".json">
+        <a id="exportLink" style="display:none;"></a>
+
+        <!-- Mode Selector -->
+        <div class="mode-selector">
+            <button id="linearModeBtn" class="mode-btn active">
+                <span class="mode-icon">&#x1F4D6;</span> Linear
+            </button>
+            <button id="srsModeBtn" class="mode-btn">
+                <span class="mode-icon">&#x1F504;</span> SRS Review
+            </button>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar" id="stats-bar">
+            <div class="stat"><strong>Units:</strong> <span id="unitsComplete">0/30</span></div>
+            <div class="stat"><strong>Vocab:</strong> <span id="vocabLearned">0</span></div>
+            <div class="stat"><strong>Streak:</strong> <span id="currentStreak">0 days</span></div>
+            <div class="stat"><strong>Accuracy:</strong> <span id="accuracy">0%</span></div>
+            <span id="saveIndicator" class="save-indicator">&#x2713; Saved</span>
+        </div>
+
+        <!-- Autopilot -->
+        <div id="autopilotSection" style="margin-bottom:20px;">
+            <button id="justContinueBtn" class="btn btn-autopilot">JUST CONTINUE</button>
+        </div>
+
+        <!-- Linear View -->
+        <div id="linearView">
+            <div id="unitsGrid" class="units-grid"></div>
+        </div>
+
+        <!-- SRS View -->
+        <div id="srsView" style="display:none;">
+            <div class="srs-stats">
+                <div class="srs-stat-card">
+                    <div class="srs-stat-value" id="dueToday">0</div>
+                    <div class="srs-stat-label">Due Today</div>
+                </div>
+                <div class="srs-stat-card">
+                    <div class="srs-stat-value" id="newCards">0</div>
+                    <div class="srs-stat-label">New Cards</div>
+                </div>
+                <div class="srs-stat-card">
+                    <div class="srs-stat-value" id="reviewCards">0</div>
+                    <div class="srs-stat-label">In Review</div>
+                </div>
+                <div class="srs-stat-card">
+                    <div class="srs-stat-value" id="masteredCards">0</div>
+                    <div class="srs-stat-label">Mastered</div>
+                </div>
+            </div>
+            <button id="startSRSBtn" class="btn btn-primary" style="width:100%;margin-top:15px;">Start Review Session</button>
+        </div>
+
+        <!-- Unit Detail View -->
+        <div id="unitDetailView" style="display:none;">
+            <button id="closeUnitBtn" class="btn" style="margin-bottom:15px;">&#x2190; Back to Units</button>
+            <h2 id="unitDetailTitle"></h2>
+
+            <div id="dialogueContent" style="margin:15px 0;"></div>
+            <div style="display:flex;gap:10px;margin-bottom:20px;">
+                <button id="playDialogueBtn" class="btn">&#x25B6; Play Dialogue</button>
+                <button id="practiceDialogueBtn" class="btn btn-primary">Practice Dialogue</button>
+            </div>
+
+            <div id="grammarIntroContent" style="margin:15px 0;"></div>
+
+            <div style="margin:10px 0;">
+                <span id="drillCount"></span> drills in this unit
+            </div>
+            <button id="startDrillsBtn" class="btn btn-primary" style="width:100%;">Start Drills</button>
+        </div>
+
+        <!-- Drill View -->
+        <div id="drillView" class="drill-view">
+            <div class="drill-header">
+                <div>
+                    <span id="drillType" class="drill-type"></span>
+                    <span id="drillProgress" style="margin-left:10px;font-size:14px;color:var(--text-dim);"></span>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <button id="playFrBtn" class="audio-btn" title="Play Portuguese">&#x1F50A;</button>
+                    <button id="playEnBtn" class="audio-btn" title="Play English">&#x1F50A;EN</button>
+                    <button id="fullscreenBtn" class="fullscreen-btn" title="Fullscreen">&#x26F6;</button>
+                    <button id="closeDrillBtn" class="btn" title="Close" style="padding:5px 10px;">&#x2715;</button>
+                </div>
+            </div>
+
+            <!-- Direction Toggle (no register toggle — PT doesn't distinguish formal/informal in writing) -->
+            <div class="register-toggle">
+                <button id="formalBtn" class="register-btn active" style="display:none;">Formal</button>
+                <button id="informalBtn" class="register-btn" style="display:none;">Informal</button>
+                <button id="btn-en-fr" class="direction-btn active">EN &#x2192; PT</button>
+                <button id="btn-fr-en" class="direction-btn">PT &#x2192; EN</button>
+                <button id="btn-fr-fr-text" class="direction-btn">PT &#x2192; PT</button>
+                <button id="btn-fr-fr-dictation" class="direction-btn">DICTATION</button>
+            </div>
+
+            <!-- Grammar Hints -->
+            <div id="grammarHints" style="display:none;padding:10px;background:var(--bg-tertiary);border:1px solid var(--border);margin-bottom:15px;">
+                <div id="hintsContent"></div>
+            </div>
+
+            <!-- Prompt -->
+            <div class="drill-content">
+                <div id="promptEn" class="prompt prompt-en"></div>
+                <div id="promptFr" class="prompt prompt-fr"></div>
+            </div>
+
+            <!-- Hands-free -->
+            <div class="hands-free-toggle">
+                <input type="checkbox" id="handsFreeMode">
+                <label for="handsFreeMode">Hands-free mode</label>
+                <input type="checkbox" id="slowMode" style="margin-left:15px;">
+                <label for="slowMode">Slow</label>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-area">
+                <div class="input-with-mic">
+                    <input type="text" id="userInput" placeholder="Type your answer..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    <button id="micBtn" class="mic-btn" title="Voice input">&#x1F3A4;</button>
+                </div>
+                <div id="voiceStatus" class="voice-status"></div>
+            </div>
+
+            <!-- Accent Keyboard -->
+            <div class="accent-keyboard">
+                <button class="accent-key" data-char="&#x00e0;">&#x00e0;</button>
+                <button class="accent-key" data-char="&#x00e1;">&#x00e1;</button>
+                <button class="accent-key" data-char="&#x00e2;">&#x00e2;</button>
+                <button class="accent-key" data-char="&#x00e3;">&#x00e3;</button>
+                <button class="accent-key" data-char="&#x00e9;">&#x00e9;</button>
+                <button class="accent-key" data-char="&#x00ea;">&#x00ea;</button>
+                <button class="accent-key" data-char="&#x00ed;">&#x00ed;</button>
+                <button class="accent-key" data-char="&#x00f3;">&#x00f3;</button>
+                <button class="accent-key" data-char="&#x00f4;">&#x00f4;</button>
+                <button class="accent-key" data-char="&#x00f5;">&#x00f5;</button>
+                <button class="accent-key" data-char="&#x00fa;">&#x00fa;</button>
+                <button class="accent-key" data-char="&#x00e7;">&#x00e7;</button>
+            </div>
+
+            <!-- Keyboard Hints -->
+            <div class="keyboard-hints">
+                <kbd>Enter</kbd> submit &bull; <kbd>Tab</kbd> hint &bull; <kbd>Esc</kbd> close
+            </div>
+
+            <!-- Feedback -->
+            <div id="feedback" class="feedback">
+                <div id="feedbackTitle" class="feedback-title"></div>
+                <div id="feedbackDetail" class="feedback-detail"></div>
+                <div id="drillLink"></div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls" style="margin-top:15px;">
+                <button id="hintBtn" class="btn">Hint</button>
+                <button id="skipBtn" class="btn">Skip</button>
+                <button id="checkBtn" class="btn btn-primary">Check</button>
+                <button id="nextBtn" class="btn btn-primary" style="display:none;">Next &#x2192;</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- Local Config -->
+    <script src="config.js"></script>
+
+    <!-- Shared Engine Modules -->
+    <script src="/courses-shared/engine/rhodes-error.js"></script>
+    <script src="/courses-shared/engine/rhodes-storage.js"></script>
+    <script src="/courses-shared/engine/rhodes-audio.js"></script>
+    <script src="/courses-shared/engine/rhodes-srs.js"></script>
+    <script src="/courses-shared/engine/rhodes-linear.js"></script>
+    <script src="/courses-shared/engine/rhodes-voice.js"></script>
+    <script src="/courses-shared/engine/rhodes-ui.js"></script>
+    <script src="/courses-shared/engine/rhodes-autopilot.js?v=11"></script>
+    <script src="/courses-shared/engine/rhodes-engine.js?v=11"></script>
+
+    <!-- Shared Auth -->
+    <script src="/courses-shared/fsi-auth.js"></script>
+</body>
+</html>
