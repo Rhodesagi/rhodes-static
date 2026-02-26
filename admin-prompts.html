@@ -145,6 +145,52 @@ select {
   background: var(--panel); color: var(--text); border: 1px solid var(--border);
   padding: 6px 12px; border-radius: 6px; font-size: 12px; flex: 1; max-width: 300px;
 }
+.multi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
+}
+.multi-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 360px;
+}
+.multi-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted);
+}
+.multi-panel textarea {
+  flex: 1;
+  border: none;
+  background: #080e1a;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 10px;
+  resize: none;
+  outline: none;
+}
+.diff-output {
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow: auto;
+  padding: 12px;
+  background: #080e1a;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
 </style>
 </head>
 <body>
@@ -172,11 +218,12 @@ select {
     <div class="tabs">
       <a class="tab active" data-tab="prompts" href="#prompts" onclick="switchTab('prompts');return false">All Prompts</a>
       <a class="tab" data-tab="assignments" href="#assignments" onclick="switchTab('assignments');return false">Assignments</a>
+      <a class="tab" data-tab="clones" href="#clones" onclick="switchTab('clones');return false">Model Clones</a>
       <a class="tab" data-tab="test" href="#test" onclick="switchTab('test');return false">Test</a>
     </div>
 
     <div class="tab-content active" id="tab-prompts">
-      <div class="toolbar">
+      <div class="toolbar" style="flex-wrap:wrap">
         <input id="promptFilter" type="text" placeholder="Filter prompts..." oninput="filterPrompts()">
         <select id="promptTypeFilter" onchange="filterPrompts()">
           <option value="">All types</option>
@@ -184,6 +231,10 @@ select {
           <option value="format">Format only</option>
           <option value="combined">Combined</option>
         </select>
+        <select id="newPromptTemplate" title="Template source" style="min-width:180px"></select>
+        <input id="newPromptSource" type="text" placeholder="custom_new_prompt" style="max-width:200px">
+        <button class="primary" onclick="createPrompt()">+ New Prompt</button>
+        <button onclick="openMultiView()">Multi-View</button>
         <button onclick="loadAllPrompts()">↻ Refresh</button>
       </div>
       <div class="prompt-grid" id="promptGrid">
@@ -208,16 +259,42 @@ select {
       </div>
     </div>
 
+    <div class="tab-content" id="tab-clones">
+      <div class="assignments-container">
+        <div style="font-size:14px;font-weight:600;margin-bottom:8px">Model Clones</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px">
+          Clone a model runtime profile (thinking mode, injections, routing) under a new alias, with optional prompt override.
+        </div>
+        <div class="assignment-row">
+          <span class="label">Alias:</span>
+          <input id="cloneAlias" type="text" placeholder="x" style="width:120px">
+          <span class="label">Base model:</span>
+          <input id="cloneBaseModel" type="text" placeholder="p1.12e" style="width:140px">
+          <span class="label">Slash:</span>
+          <input id="cloneSlash" type="text" placeholder="/x" style="width:100px">
+          <span class="label">Prompt:</span>
+          <select id="clonePromptSource" style="min-width:220px"></select>
+          <button class="primary" onclick="saveClone()">Save Clone</button>
+          <button onclick="loadModelClones()">↻ Refresh</button>
+        </div>
+        <div id="cloneList" style="margin-top:12px;color:var(--muted)">Loading...</div>
+      </div>
+    </div>
+
     <div class="tab-content" id="tab-test">
       <div class="test-container">
         <div style="font-size:14px;font-weight:600;margin-bottom:12px">Test System Prompt</div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:12px">
-          Send a test message with a specific prompt to verify it works. Uses DeepSeek chat model.
+          Send a test message with a specific prompt and model/provider to verify runtime routing.
         </div>
         <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end">
           <label style="font-size:11px;color:var(--muted)">
             Prompt source
-            <select id="testSource" style="display:block;margin-top:4px"></select>
+            <select id="testSource" style="display:block;margin-top:4px" onchange="syncTestModelToSource()"></select>
+          </label>
+          <label style="font-size:11px;color:var(--muted)">
+            Model
+            <select id="testModel" style="display:block;margin-top:4px;min-width:220px"></select>
           </label>
           <label style="font-size:11px;color:var(--muted);flex:1;min-width:250px">
             Test message
@@ -276,6 +353,47 @@ select {
       </div>
     </div>
 
+
+    <div class="modal-overlay" id="compareModal">
+      <div class="modal-header">
+        <div>
+          <div class="title" id="compareTitle">Prompt Comparison</div>
+          <div class="meta" id="compareMeta"></div>
+        </div>
+        <div class="actions">
+          <button class="danger" onclick="closeCompare()">Close</button>
+        </div>
+      </div>
+      <div class="modal-body" style="padding:16px;overflow:auto">
+        <pre class="diff-output" id="compareDiff"></pre>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="multiViewModal">
+      <div class="modal-header">
+        <div>
+          <div class="title">Multi Prompt View</div>
+          <div class="meta">Select up to 4 prompts and view them side-by-side</div>
+        </div>
+        <div class="actions">
+          <button onclick="loadMultiViewSelection()">Load Selected</button>
+          <button class="danger" onclick="closeMultiView()">Close</button>
+        </div>
+      </div>
+      <div class="modal-body" style="padding:16px;overflow:auto">
+        <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px">
+          <select id="multiPromptSelect" multiple size="8" style="min-width:340px;max-width:480px"></select>
+          <div style="font-size:11px;color:var(--muted);max-width:460px">
+            Hold Cmd/Ctrl to select multiple prompts. Use this to compare base/format variants quickly.
+            You can also add from cards via "Add Multi".
+          </div>
+        </div>
+        <div class="multi-grid" id="multiViewGrid">
+          <div style="color:var(--muted)">No prompts loaded yet.</div>
+        </div>
+      </div>
+    </div>
+
     <div class="status-bar">
       <span id="statusLeft">Connected</span>
       <span id="statusRight"></span>
@@ -288,6 +406,8 @@ let TOKEN = localStorage.getItem('rhodes_admin_token') || '';
 let ALL_PROMPTS = [];
 let EDITOR_STATE = {source:null, sha256:null, originalText:'', path:null, truncated:false, combined:false};
 let ASSIGNMENTS = [];
+let MODEL_CLONES = [];
+let MULTI_PICK = new Set();
 
 const $ = id => document.getElementById(id);
 
@@ -352,6 +472,10 @@ async function loadAllPrompts() {
     $('promptCount').textContent = ALL_PROMPTS.length + ' prompts';
     renderPromptGrid();
     populateTestSourceDropdown();
+    populateTestModelDropdown();
+    populateClonePromptSourceDropdown();
+    populateNewPromptTemplateDropdown();
+    populateMultiPromptSelect();
   } catch(e) {
     $('promptGrid').innerHTML = `<div style="color:var(--bad);padding:20px">Error: ${e.message}</div>`;
   }
@@ -381,13 +505,18 @@ function renderPromptGrid() {
     const preview = esc(p.preview||'');
     const missing = p.exists===false ? '<span style="color:var(--bad)">MISSING</span>' : '';
     const sha = p.sha256 ? 'sha:'+p.sha256.slice(0,8) : '';
+    const selected = MULTI_PICK.has(p.source);
     return `<div class="prompt-card" onclick="openEditor('${esc(p.source)}')">
       <div class="name">${badge} ${esc(p.source)}</div>
       <div class="meta"><span>${size} chars</span>${sha ? `<span>${sha}</span>` : ''}${missing}</div>
       <div class="preview">${preview}</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:10px">
+        <button style="font-size:11px;padding:4px 8px" onclick="event.stopPropagation();toggleMultiPrompt('${esc(p.source)}')">${selected ? 'Remove Multi' : 'Add Multi'}</button>
+      </div>
     </div>`;
   }).join('');
 }
+
 function filterPrompts() { renderPromptGrid(); }
 
 // ---- Full-page Editor ----
@@ -493,33 +622,82 @@ document.addEventListener('keydown', e => {
 });
 
 // ---- Versions ----
+function _formatTs(ts) {
+  if (!ts) return '?';
+  const n = Number(ts);
+  if (!Number.isNaN(n) && n > 100000) return new Date(n * 1000).toLocaleString();
+  const d = new Date(ts);
+  return Number.isNaN(d.getTime()) ? String(ts) : d.toLocaleString();
+}
+
 async function showVersions() {
   if (!EDITOR_STATE.source) return;
   $('versionsModal').classList.add('open');
   $('versionsTitle').textContent = 'Versions: ' + EDITOR_STATE.source;
   $('versionsList').innerHTML = '<div style="color:var(--muted)">Loading...</div>';
   try {
-    const data = await api('/api/admin/prompt/versions?source=' + encodeURIComponent(EDITOR_STATE.source) + '&limit=50');
+    const data = await api('/api/admin/prompt/versions?source=' + encodeURIComponent(EDITOR_STATE.source) + '&limit=80');
     const versions = data.versions || [];
     if (!versions.length) {
       $('versionsList').innerHTML = '<div style="color:var(--muted)">No version history</div>';
       return;
     }
     $('versionsList').innerHTML = versions.map(v => {
-      const date = v.created_at ? new Date(Number(v.created_at)*1000).toLocaleString() : '?';
+      const date = _formatTs(v.created_at);
       const active = v.sha256 === EDITOR_STATE.sha256;
       const border = active ? 'var(--ok)' : 'var(--border)';
-      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--panel);border:1px solid ${border};border-radius:8px;margin-bottom:6px;cursor:pointer" onclick="loadVersion('${v.sha256}')">
+      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--panel);border:1px solid ${border};border-radius:8px;margin-bottom:6px">
         <div style="flex:1">
           <div style="font-size:12px;font-family:var(--mono)">${v.sha256.slice(0,16)}...</div>
-          <div style="font-size:11px;color:var(--muted)">${date} \u00b7 ${v.chars||'?'} chars \u00b7 ${v.uses||0} uses</div>
+          <div style="font-size:11px;color:var(--muted)">${date} · ${v.chars||'?'} chars · ${v.uses||0} uses</div>
         </div>
         ${active ? '<span class="pill pill-ok">current</span>' : ''}
-        <button style="font-size:11px" onclick="event.stopPropagation();loadVersion('${v.sha256}')">Load</button>
+        <button style="font-size:11px" onclick="loadVersion('${v.sha256}')">Load</button>
+        <button style="font-size:11px" onclick="compareVersion('${v.sha256}')">Compare</button>
       </div>`;
     }).join('');
   } catch(e) {
     $('versionsList').innerHTML = `<div style="color:var(--bad)">Error: ${e.message}</div>`;
+  }
+}
+
+function _simpleLineDiff(a, b, labelA='current', labelB='selected') {
+  const aa = String(a || '').split('\n');
+  const bb = String(b || '').split('\n');
+  const max = Math.max(aa.length, bb.length);
+  const out = [`--- ${labelA}`, `+++ ${labelB}`];
+  for (let i = 0; i < max; i++) {
+    const av = aa[i];
+    const bv = bb[i];
+    if (av === bv) out.push(' ' + (av ?? ''));
+    else {
+      if (av !== undefined) out.push('-' + av);
+      if (bv !== undefined) out.push('+' + bv);
+    }
+  }
+  return out.join('\n');
+}
+
+async function compareVersion(sha256) {
+  try {
+    const current = await api('/api/admin/prompt?source=' + encodeURIComponent(EDITOR_STATE.source) + '&max_chars=500000');
+    const hist = await api('/api/admin/prompt/history?sha256=' + encodeURIComponent(sha256) + '&max_chars=500000');
+    let diffText = '';
+    if (current.sha256 && sha256 && current.sha256 !== sha256) {
+      try {
+        const d = await api('/api/admin/prompt/diff?a=' + encodeURIComponent(current.sha256) + '&b=' + encodeURIComponent(sha256) + '&max_chars=500000');
+        diffText = d.diff || '';
+      } catch(_) {}
+    }
+    if (!diffText) {
+      diffText = _simpleLineDiff(current.text || '', hist.text || '', `${EDITOR_STATE.source} (current)`, `${sha256.slice(0,12)} (version)`);
+    }
+    $('compareTitle').textContent = `Compare: ${EDITOR_STATE.source}`;
+    $('compareMeta').textContent = `current ${String(current.sha256 || '').slice(0,12)} vs ${sha256.slice(0,12)}`;
+    $('compareDiff').textContent = diffText || '(no differences)';
+    $('compareModal').classList.add('open');
+  } catch(e) {
+    alert('Compare failed: ' + e.message);
   }
 }
 
@@ -533,6 +711,7 @@ async function loadVersion(sha256) {
   } catch(e) { alert('Error loading version: ' + e.message); }
 }
 function closeVersions() { $('versionsModal').classList.remove('open'); }
+function closeCompare() { $('compareModal').classList.remove('open'); }
 
 // ---- Assignments ----
 async function loadAssignments() {
@@ -598,31 +777,306 @@ async function saveAssignments() {
   } catch(e) { alert('Error: ' + e.message); }
 }
 
+// ---- Model Clones ----
+async function loadModelClones() {
+  try {
+    const data = await api('/api/admin/model-clones');
+    MODEL_CLONES = data.clones || [];
+    renderModelClones();
+    populateTestModelDropdown();
+  } catch(e) {
+    $('cloneList').innerHTML = `<div style="color:var(--bad)">Error: ${e.message}</div>`;
+  }
+}
+
+function renderModelClones() {
+  if (!MODEL_CLONES.length) {
+    $('cloneList').innerHTML = '<div style="color:var(--muted);padding:8px 0">No model clones configured.</div>';
+    return;
+  }
+  $('cloneList').innerHTML = MODEL_CLONES.map(c => {
+    const enabled = c.enabled !== false;
+    const baseInput = c.base_model_input || c.base_model || '';
+    const resolvedBase = c.resolved_base_model || c.base_model || '';
+    const promptInfo = c.prompt_exists ? `${c.prompt_chars || 0} chars` : 'no override prompt';
+    const resolvedNote = (baseInput && resolvedBase && baseInput !== resolvedBase)
+      ? `resolves: ${resolvedBase}`
+      : '';
+    return `<div class="assignment-row">
+      <span class="badge ${enabled ? 'badge-combined' : 'badge-format'}">${enabled ? 'active' : 'disabled'}</span>
+      <span style="font-size:12px;font-family:var(--mono)">${esc(c.alias || '')}</span>
+      <span style="font-size:11px;color:var(--muted)">→ ${esc(baseInput)}</span>
+      <span style="font-size:11px;color:var(--muted)">${esc(resolvedNote)}</span>
+      <span style="font-size:11px;color:var(--muted)">${esc(c.slash_command || '')}</span>
+      <span style="font-size:11px;color:var(--muted)">${esc(promptInfo)}</span>
+      <button style="padding:4px 8px;font-size:11px" onclick="prefillClone('${esc(c.alias || '')}','${esc(baseInput)}','${esc(c.slash_command || '')}','${esc(c.prompt_source || '')}')">Edit</button>
+      <button class="danger" style="padding:4px 8px;font-size:11px" onclick="deleteClone('${esc(c.alias || '')}')">Delete</button>
+    </div>`;
+  }).join('');
+}
+
+function prefillClone(alias, baseModel, slash, promptSource) {
+  $('cloneAlias').value = alias || '';
+  $('cloneBaseModel').value = baseModel || '';
+  $('cloneSlash').value = slash || '';
+  $('clonePromptSource').value = promptSource || '';
+}
+
+async function saveClone() {
+  const alias = ($('cloneAlias').value || '').trim().toLowerCase();
+  const base_model = ($('cloneBaseModel').value || '').trim().toLowerCase();
+  const slash_command = ($('cloneSlash').value || '').trim().toLowerCase();
+  const prompt_source = ($('clonePromptSource').value || '').trim().toLowerCase();
+  if (!alias || !base_model) {
+    alert('Alias and base model are required.');
+    return;
+  }
+  try {
+    const payload = {alias, base_model};
+    if (slash_command) payload.slash_command = slash_command;
+    if (prompt_source) payload.prompt_source = prompt_source;
+    const data = await api('/api/admin/model-clones', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    if (!data.success) {
+      alert('Save failed: ' + (data.error || 'unknown'));
+      return;
+    }
+    setStatus('Saved clone ' + alias);
+    loadAllPrompts();
+    loadModelClones();
+  } catch(e) {
+    alert('Save failed: ' + e.message);
+  }
+}
+
+async function deleteClone(alias) {
+  if (!alias) return;
+  if (!confirm('Delete clone "' + alias + '"?')) return;
+  try {
+    const data = await api('/api/admin/model-clones', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'delete', alias}),
+    });
+    if (!data.success) {
+      alert('Delete failed: ' + (data.error || 'unknown'));
+      return;
+    }
+    setStatus('Deleted clone ' + alias);
+    loadAllPrompts();
+    loadModelClones();
+  } catch(e) {
+    alert('Delete failed: ' + e.message);
+  }
+}
+
+function populateNewPromptTemplateDropdown() {
+  const opts = ['<option value="">(blank template)</option>']
+    .concat(ALL_PROMPTS.filter(p => !p.combined).map(p => `<option value="${p.source}">${p.source}</option>`));
+  $('newPromptTemplate').innerHTML = opts.join('');
+}
+
+function _normalizePromptSource(input) {
+  let s = (input || '').trim().toLowerCase().replace(/\s+/g, '_');
+  s = s.replace(/^custom[-_]?/, '');
+  s = s.replace(/[^a-z0-9._-]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+  if (!s) return '';
+  return 'custom_' + s;
+}
+
+async function createPrompt() {
+  const source = _normalizePromptSource(($('newPromptSource').value || ''));
+  if (!source) {
+    alert('Enter a prompt name. Example: custom_policy_v2');
+    return;
+  }
+  if (!/^custom_[a-z0-9._-]{1,64}$/.test(source)) {
+    alert('Prompt source must match custom_[a-z0-9._-]{1,64}.');
+    return;
+  }
+  const exists = ALL_PROMPTS.some(p => p.source === source);
+  if (exists) {
+    if (!confirm('Prompt already exists. Open it?')) return;
+    openEditor(source);
+    return;
+  }
+
+  let text = `# ${source}
+
+`;
+  const template = ($('newPromptTemplate').value || '').trim();
+  if (template) {
+    try {
+      const td = await api('/api/admin/prompt?source=' + encodeURIComponent(template) + '&max_chars=500000');
+      text = td.text || text;
+    } catch (e) {
+      alert('Template load failed: ' + e.message);
+      return;
+    }
+  }
+
+  try {
+    const res = await api('/api/admin/prompt', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({source, text}),
+    });
+    if (!res.success) {
+      alert('Create failed: ' + (res.error || 'unknown'));
+      return;
+    }
+    $('newPromptSource').value = source;
+    setStatus('Created ' + source);
+    await loadAllPrompts();
+    openEditor(source);
+  } catch(e) {
+    alert('Create failed: ' + e.message);
+  }
+}
+
+function toggleMultiPrompt(source) {
+  if (!source) return;
+  if (MULTI_PICK.has(source)) MULTI_PICK.delete(source);
+  else {
+    if (MULTI_PICK.size >= 4) {
+      alert('Multi-view supports up to 4 prompts at once.');
+      return;
+    }
+    MULTI_PICK.add(source);
+  }
+  renderPromptGrid();
+  populateMultiPromptSelect();
+}
+
+function populateMultiPromptSelect() {
+  const sel = $('multiPromptSelect');
+  if (!sel) return;
+  const opts = ALL_PROMPTS.map(p => {
+    const selected = MULTI_PICK.has(p.source) ? ' selected' : '';
+    return `<option value="${p.source}"${selected}>${p.source}</option>`;
+  }).join('');
+  sel.innerHTML = opts;
+}
+
+function openMultiView() {
+  $('multiViewModal').classList.add('open');
+  populateMultiPromptSelect();
+  if (MULTI_PICK.size) loadMultiViewSelection();
+}
+
+function closeMultiView() {
+  $('multiViewModal').classList.remove('open');
+}
+
+async function loadMultiViewSelection() {
+  const sel = $('multiPromptSelect');
+  if (!sel) return;
+  const picks = Array.from(sel.selectedOptions || []).map(o => o.value).slice(0, 4);
+  MULTI_PICK = new Set(picks);
+  renderPromptGrid();
+  if (!picks.length) {
+    $('multiViewGrid').innerHTML = '<div style="color:var(--muted)">No prompts selected.</div>';
+    return;
+  }
+  $('multiViewGrid').innerHTML = '<div style="color:var(--muted)">Loading selected prompts...</div>';
+  try {
+    const items = await Promise.all(picks.map(async source => {
+      const data = await api('/api/admin/prompt?source=' + encodeURIComponent(source) + '&max_chars=500000');
+      return {source, data};
+    }));
+    $('multiViewGrid').innerHTML = items.map(({source, data}) => {
+      const sha = (data.sha256 || '').slice(0, 12);
+      const chars = data.chars || 0;
+      return `<div class="multi-panel">
+        <div class="multi-panel-header">
+          <span>${esc(source)}</span>
+          <span>${chars} chars · ${sha}</span>
+        </div>
+        <textarea readonly>${esc(data.text || '')}</textarea>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    $('multiViewGrid').innerHTML = `<div style="color:var(--bad)">Load failed: ${e.message}</div>`;
+  }
+}
+
 // ---- Test ----
 function populateTestSourceDropdown() {
   $('testSource').innerHTML = ALL_PROMPTS.map(p =>
     `<option value="${p.source}">${p.source} (${p.chars?(p.chars/1000).toFixed(1)+'k':'?'})</option>`
   ).join('');
+  syncTestModelToSource();
+}
+
+function syncTestModelToSource() {
+  const sourceSel = $('testSource');
+  const modelSel = $('testModel');
+  if (!sourceSel || !modelSel) return;
+  const source = (sourceSel.value || "").trim().toLowerCase();
+  if (!source.startsWith("clone_")) return;
+  const alias = source.slice(6);
+  const hasAlias = Array.from(modelSel.options || []).some(opt => opt.value === alias);
+  if (!hasAlias) return;
+  if (!modelSel.value || modelSel.value === "deepseek-chat") modelSel.value = alias;
+}
+
+function populateClonePromptSourceDropdown() {
+  const opts = ['<option value="">(keep base model prompt)</option>']
+    .concat(ALL_PROMPTS.filter(p => !p.combined).map(p =>
+      `<option value="${p.source}">${p.source}</option>`
+    ));
+  $('clonePromptSource').innerHTML = opts.join('');
+}
+
+function populateTestModelDropdown() {
+  const sel = $('testModel');
+  if (!sel) return;
+  const defaults = [
+    ['deepseek-chat', 'DeepSeek (chat)'],
+    ['r1.0a', 'Claude Opus (r1.0a)'],
+    ['r1.0b', 'Claude Sonnet (r1.0b)'],
+    ['r1.0c', 'Claude Haiku (r1.0c)'],
+    ['r1.12e', 'Kimi (r1.12e)'],
+    ['r1.12f', 'Grok (r1.12f)'],
+  ];
+  const cloneOpts = (MODEL_CLONES || [])
+    .filter(c => c && c.alias)
+    .map(c => [String(c.alias), `Clone ${String(c.alias)} (${String(c.base_model_input || c.base_model || '')})`]);
+  const merged = [];
+  const seen = new Set();
+  for (const [v, label] of defaults.concat(cloneOpts)) {
+    if (seen.has(v)) continue;
+    seen.add(v);
+    merged.push([v, label]);
+  }
+  const current = sel.value || 'deepseek-chat';
+  sel.innerHTML = merged.map(([v,label]) => `<option value="${v}">${label}</option>`).join('');
+  if (seen.has(current)) sel.value = current;
+  syncTestModelToSource();
 }
 
 async function runPromptTest() {
   const source = $('testSource').value;
+  const model = ($('testModel').value || 'deepseek-chat').trim();
   const message = $('testMessage').value.trim();
   if (!source || !message) return;
   const btn = $('testRunBtn');
   btn.disabled = true; btn.textContent = 'Testing...';
-  $('testStatus').textContent = 'Sending test with prompt: ' + source;
+  $('testStatus').textContent = 'Sending test with prompt: ' + source + ' · model: ' + model;
   $('testOutput').textContent = '(waiting...)';
   try {
     const promptData = await api('/api/admin/prompt?source=' + encodeURIComponent(source) + '&max_chars=500000');
     $('testPreview').textContent = promptData.text || '(empty)';
     const data = await api('/api/admin/prompt/test', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({source, message})
+      body: JSON.stringify({source, message, model})
     });
     $('testOutput').textContent = data.response || data.error || JSON.stringify(data,null,2);
     $('testStatus').textContent = data.success
-      ? '\u2713 Response (' + (data.model||'?') + ', ' + (data.tokens||'?') + ' tokens, ' + (data.duration_ms||'?') + 'ms)'
+      ? '\u2713 Response (' + (data.provider||'?') + ' / ' + (data.model||'?') + ', ' + (data.tokens||'?') + ' tokens, ' + (data.duration_ms||'?') + 'ms)'
       : '\u2717 Failed: ' + (data.error||'unknown');
   } catch(e) {
     $('testOutput').textContent = 'Error: ' + e.message;
@@ -638,6 +1092,7 @@ function setStatus(msg) {
 async function init() {
   await loadAllPrompts();
   loadAssignments().catch(() => {});
+  loadModelClones().catch(() => {});
   // Handle hash-based tab navigation
   const hash = window.location.hash.replace('#', '');
   if (hash && document.querySelector('.tab[data-tab="' + hash + '"]')) {
