@@ -5402,7 +5402,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // ── Open the handoff viewer ──────────────────────────────────────────────
 
-    window.openHandoffViewer = function(novncUrl, cliName, reason) {
+    // Internal function that actually opens the viewer with a known-good URL
+    function _doOpenHandoff(novncUrl, cliName, reason) {
         // Close any existing handoff viewer before opening new one
         if (_handoffPopup && !_handoffPopup.closed) {
             try { _handoffPopup.close(); } catch(e) {}
@@ -5416,12 +5417,11 @@ document.addEventListener("DOMContentLoaded", function() {
             try { _handoffModal.remove(); } catch(e) {}
             _handoffModal = null;
         }
-        // Remove old status banner
         var oldBanner = document.getElementById('handoff-status-banner');
         if (oldBanner) oldBanner.remove();
 
         _handoffCliName = cliName;
-        const title = (cliName || 'CLI').toUpperCase() + ' — Solve CAPTCHA';
+        const title = (cliName || 'CLI').toUpperCase() + ' — Human Handoff';
 
         // Try popup first
         try {
@@ -5429,19 +5429,51 @@ document.addEventListener("DOMContentLoaded", function() {
                 'width=1024,height=768,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes');
             if (_handoffPopup && !_handoffPopup.closed) {
                 _handoffPopup.document.title = title;
-                // Show toast
-                if (typeof showToast === 'function') showToast('CAPTCHA handoff opened in popup');
-                // Add in-chat status indicator
+                if (typeof showToast === 'function') showToast('Browser session opened in popup');
                 _addHandoffStatusBanner(cliName, reason, true);
                 return;
             }
-        } catch(e) {
-            // popup blocked or cross-origin
-        }
+        } catch(e) {}
 
         // Fallback: in-chat iframe modal
         _handoffPopup = null;
         _createIframeModal(novncUrl, cliName, reason);
+    }
+
+    window.openHandoffViewer = function(novncUrl, cliName, reason) {
+        // Extract user_id and platform from the CLI name to look up fresh URL
+        // Map CLI names to platform keys used by the backend
+        var platformMap = {
+            'twitter_browser': 'twitter', 'facebook_browser': 'facebook',
+            'discord_browser': 'discord', 'reddit_browser': 'reddit',
+            'substack_browser': 'substack', 'google_voice_browser': 'gvoice',
+            'dsl_forum_browser': 'dsl', 'google_search_browser': 'google',
+        };
+        var platform = platformMap[(cliName || '').toLowerCase()] || null;
+        // Read username from localStorage (CURRENT_USERNAME is in a different IIFE scope)
+        var username = null;
+        try { username = localStorage.getItem('rhodes_username') || sessionStorage.getItem('rhodes_username'); } catch(e) {}
+
+        // If we can identify the session, fetch the CURRENT bridge URL from the API
+        if (platform && username) {
+            fetch('/api/vnc/lookup?username=' + encodeURIComponent(username) + '&platform=' + platform)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data && data.novnc_url) {
+                        _doOpenHandoff(data.novnc_url, cliName, reason);
+                    } else {
+                        // API says no active bridge — use the URL we were given
+                        _doOpenHandoff(novncUrl, cliName, reason);
+                    }
+                })
+                .catch(function() {
+                    // API unreachable — use the URL we were given
+                    _doOpenHandoff(novncUrl, cliName, reason);
+                });
+        } else {
+            // Can't look up — use URL as-is
+            _doOpenHandoff(novncUrl, cliName, reason);
+        }
     };
 
     // ── Close the handoff viewer ─────────────────────────────────────────────
@@ -5584,21 +5616,43 @@ document.addEventListener("DOMContentLoaded", function() {
         iframe.setAttribute('allow', 'clipboard-read; clipboard-write');
         _handoffModal.appendChild(iframe);
 
-        // Status bar at bottom
+        // Status bar at bottom with Finished button
         const statusBar = document.createElement('div');
         statusBar.id = 'handoff-status-bar';
         statusBar.style.cssText = [
-            'padding:6px 16px',
+            'padding:8px 16px',
             'background:linear-gradient(135deg, #0a0e14, #131a24)',
             'border-top:1px solid rgba(0,255,213,0.3)',
-            'font-size:11px',
+            'font-size:12px',
             'color:var(--dim,#8b949e)',
             'display:flex',
             'align-items:center',
-            'gap:8px',
+            'justify-content:space-between',
             'flex-shrink:0'
         ].join(';');
-        statusBar.innerHTML = '<span class="handoff-pulse" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f0883e;animation:handoff-pulse 1.5s ease-in-out infinite;"></span> Waiting for you to complete the task...';
+
+        var statusLeft = document.createElement('div');
+        statusLeft.style.cssText = 'display:flex;align-items:center;gap:8px;';
+        statusLeft.innerHTML = '<span class="handoff-pulse" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f0883e;animation:handoff-pulse 1.5s ease-in-out infinite;"></span> Waiting for you to complete the task...';
+
+        var finishedBtn = document.createElement('button');
+        finishedBtn.textContent = 'Finished?';
+        finishedBtn.style.cssText = 'background:rgba(63,185,80,0.15);border:1px solid var(--green,#3fb950);color:var(--green,#3fb950);padding:6px 20px;cursor:pointer;font-family:Orbitron,monospace;font-size:12px;font-weight:700;border-radius:4px;transition:all 0.15s;flex-shrink:0;';
+        finishedBtn.onmouseenter = function() { this.style.background = 'rgba(63,185,80,0.3)'; };
+        finishedBtn.onmouseleave = function() { this.style.background = 'rgba(63,185,80,0.15)'; };
+        finishedBtn.onclick = function() {
+            // Notify the model the user is done (not shown as a chat message)
+            if (window.ws && window.ws.readyState === WebSocket.OPEN) {
+                window.ws.send(JSON.stringify({
+                    msg_type: 'handoff_user_done',
+                    payload: { cli_name: cliName || 'browser' }
+                }));
+            }
+            window.closeHandoffViewer();
+        };
+
+        statusBar.appendChild(statusLeft);
+        statusBar.appendChild(finishedBtn);
         _handoffModal.appendChild(statusBar);
 
         _handoffOverlay.appendChild(_handoffModal);
