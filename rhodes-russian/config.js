@@ -379,6 +379,16 @@ window.COURSE_CONFIG = {
         { title: 'Stress', desc: 'Russian stress is unpredictable. Unstressed \u041e \u2192 [\u0430], unstressed \u0415 \u2192 [\u0438]' }
       ]
     },
+        {
+      id: 1,
+      volume: 1,
+      title_target: 'Алфавит',
+      title_source: 'The Russian Alphabet',
+      title_ru: 'Алфавит',
+      title_en: 'The Russian Alphabet',
+      dialogue: [],
+      grammar: []
+    },
     {
       id: 2,
       volume: 1,
@@ -650,6 +660,16 @@ window.COURSE_CONFIG = {
         { title: 'Genitive with Quantities', desc: '\u0431\u0443\u0442\u044b\u043b\u043a\u0430 \u0432\u043e\u0434\u044b, \u0447\u0430\u0448\u043a\u0430 \u0447\u0430\u044f' }
       ]
     },
+        {
+      id: 17,
+      volume: 2,
+      title_target: 'Повседневная речь',
+      title_source: 'Everyday Speech',
+      title_ru: 'Повседневная речь',
+      title_en: 'Everyday Speech',
+      dialogue: [],
+      grammar: []
+    },
     {
       id: 18,
       volume: 3,
@@ -668,6 +688,16 @@ window.COURSE_CONFIG = {
         { title: 'Irregular Past', desc: '\u0438\u0434\u0442\u0438 \u2192 \u0448\u0451\u043b/\u0448\u043b\u0430, \u0435\u0441\u0442\u044c \u2192 \u0435\u043b/\u0435\u043b\u0430' }
       ]
     },
+        {
+      id: 19,
+      volume: 2,
+      title_target: 'Совершенный вид',
+      title_source: 'Perfective Aspect',
+      title_ru: 'Совершенный вид',
+      title_en: 'Perfective Aspect',
+      dialogue: [],
+      grammar: []
+    },
     {
       id: 20,
       volume: 3,
@@ -684,6 +714,46 @@ window.COURSE_CONFIG = {
         { title: 'Verbal Aspect', desc: 'Imperfective (process): \u043f\u043e\u043a\u0443\u043f\u0430\u0442\u044c | Perfective (result): \u043a\u0443\u043f\u0438\u0442\u044c' },
         { title: 'Aspect Pairs', desc: '\u0434\u0435\u043b\u0430\u0442\u044c/\u0441\u0434\u0435\u043b\u0430\u0442\u044c, \u043f\u043e\u043a\u0443\u043f\u0430\u0442\u044c/\u043a\u0443\u043f\u0438\u0442\u044c, \u0438\u0441\u043a\u0430\u0442\u044c/\u043d\u0430\u0439\u0442\u0438' }
       ]
+    },
+        {
+      id: 21,
+      volume: 3,
+      title_target: 'Глаголы движения',
+      title_source: 'Verbs of Motion I',
+      title_ru: 'Глаголы движения',
+      title_en: 'Verbs of Motion I',
+      dialogue: [],
+      grammar: []
+    },
+        {
+      id: 22,
+      volume: 3,
+      title_target: 'Глаголы движения II',
+      title_source: 'Verbs of Motion II',
+      title_ru: 'Глаголы движения II',
+      title_en: 'Verbs of Motion II',
+      dialogue: [],
+      grammar: []
+    },
+        {
+      id: 23,
+      volume: 3,
+      title_target: 'Транспорт и условные',
+      title_source: 'Transport & Conditionals',
+      title_ru: 'Транспорт и условные',
+      title_en: 'Transport & Conditionals',
+      dialogue: [],
+      grammar: []
+    },
+        {
+      id: 24,
+      volume: 3,
+      title_target: 'Условное наклонение',
+      title_source: 'Conditional Mood',
+      title_ru: 'Условное наклонение',
+      title_en: 'Conditional Mood',
+      dialogue: [],
+      grammar: []
     },
     {
       id: 25,
@@ -704,6 +774,46 @@ window.COURSE_CONFIG = {
         { title: 'Prefixed Motion', desc: '\u043f\u043e- (set off), \u043f\u0440\u0438- (arrive), \u0443- (leave)' }
       ]
     },
+        {
+      id: 26,
+      volume: 3,
+      title_target: 'Время',
+      title_source: 'Telling Time',
+      title_ru: 'Время',
+      title_en: 'Telling Time',
+      dialogue: [],
+      grammar: []
+    },
+        {
+      id: 27,
+      volume: 3,
+      title_target: 'Расписание',
+      title_source: 'Schedules & Half-Hours',
+      title_ru: 'Расписание',
+      title_en: 'Schedules & Half-Hours',
+      dialogue: [],
+      grammar: []
+    },
+        {
+      id: 28,
+      volume: 3,
+      title_target: 'По телефону',
+      title_source: 'On the Phone',
+      title_ru: 'По телефону',
+      title_en: 'On the Phone',
+      dialogue: [],
+      grammar: []
+    },
+        {
+      id: 29,
+      volume: 3,
+      title_target: 'Телефонные звонки',
+      title_source: 'Phone Calls & Messages',
+      title_ru: 'Телефонные звонки',
+      title_en: 'Phone Calls & Messages',
+      dialogue: [],
+      grammar: []
+    },
     {
       id: 30,
       volume: 3,
@@ -721,7 +831,7 @@ window.COURSE_CONFIG = {
         { title: 'Key Skills', desc: 'All 6 cases, conjugation, aspect, motion verbs, past/present/future tenses' }
       ],
       noDrills: true
-    },
+    }
   ],
 };
 
