@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Musket Duel - Two Player</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; background: #000; font-family: 'Georgia', serif; }
+        #game-container { position: relative; width: 100vw; height: 100vh; }
+        #gameCanvas { display: block; width: 100%; height: 100%; }
+        #center-marker { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 24px; color: rgba(255, 215, 0, 0.8); pointer-events: none; z-index: 10; }
+        .control-hint { position: absolute; bottom: 20px; background: rgba(0, 0, 0, 0.7); border: 2px solid rgba(139, 69, 19, 0.8); border-radius: 8px; padding: 15px 20px; color: #d4c5a5; font-size: 13px; pointer-events: none; z-index: 100; }
+        .control-hint h3 { margin-bottom: 8px; font-size: 16px; text-transform: uppercase; letter-spacing: 2px; }
+        .control-hint p { margin: 3px 0; font-family: monospace; }
+        #p1-hint { left: 20px; border-color: rgba(139, 0, 0, 0.8); }
+        #p1-hint h3 { color: #cd5c5c; }
+        #p2-hint { right: 20px; border-color: rgba(25, 25, 112, 0.8); text-align: right; }
+        #p2-hint h3 { color: #6495ed; }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="p1-hint" class="control-hint">
+            <h3>PLAYER 1</h3>
+            <p>WASD - Move</p>
+            <p>Q/E - Turn Musket</p>
+            <p>X - Aim (Iron Sights)</p>
+            <p>F - Fire</p>
+            <p>R - Reload</p>
+        </div>
+        <div id="p2-hint" class="control-hint">
+            <h3>PLAYER 2</h3>
+            <p>IJKL - Move</p>
+            <p>U/O - Turn Musket</p>
+            <p>P - Aim (Iron Sights)</p>
+            <p>Enter - Fire</p>
+            <p>Space - Reload</p>
+        </div>
+        <div id="center-marker">⚔</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const gameState = {
+            p1: { x: -10, z: 0, rot: Math.PI/2, aiming: false, reloading: false, loaded: true, reloadStage: 0, reloadTimer: 0, score: 0 },
+            p2: { x: 10, z: 0, rot: -Math.PI/2, aiming: false, reloading: false, loaded: true, reloadStage: 0, reloadTimer: 0, score: 0 },
+            projectiles: [], particles: []
+        };
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
+
+        const canvas = document.getElementById('gameCanvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+        scene.add(ambientLight);
+
+        const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        sunLight.position.set(50, 100, 50);
+        sunLight.castShadow = true;
+        sunLight.shadow.camera.left = -50;
+        sunLight.shadow.camera.right = 50;
+        sunLight.shadow.camera.top = 50;
+        sunLight.shadow.camera.bottom = -50;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        scene.add(sunLight);
+
+        const groundGeometry = new THREE.PlaneGeometry(200, 200);
+        const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x3d5c28 });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        function createTree(x, z) {
+            const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, 3, 8);
+            const trunkMat = new THREE.MeshLambertMaterial({ color: 0x4a3728 });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.set(x, 1.5, z);
+            trunk.castShadow = true;
+            const leavesGeo = new THREE.ConeGeometry(2, 5, 8);
+            const leavesMat = new THREE.MeshLambertMaterial({ color: 0x1a4a1a });
+            const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+            leaves.position.set(x, 5, z);
+            leaves.castShadow = true;
+            scene.add(trunk);
+            scene.add(leaves);
+        }
+
+        for (let i = 0; i < 20; i++) {
+            const angle = (i / 20) * Math.PI * 2;
+            const dist = 40 + Math.random() * 20;
+            createTree(Math.cos(angle) * dist, Math.sin(angle) * dist);
+        }
+
+        function createMusket() {
+            const musketGroup = new THREE.Group();
+            const stockGeo = new THREE.BoxGeometry(0.12, 0.08, 1.2);
+            const woodMat = new THREE.MeshLambertMaterial({ color: 0x4a3728 });
+            const stock = new THREE.Mesh(stockGeo, woodMat);
+            stock.position.z = 0.3;
+            musketGroup.add(stock);
+            const barrelGeo = new THREE.CylinderGeometry(0.025, 0.025, 1.0, 12);
+            const metalMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.3, metalness: 0.8 });
+            const barrel = new THREE.Mesh(barrelGeo, metalMat);
+            barrel.rotation.x = Math.PI / 2;
+            barrel.position.z = -0.2;
+            musketGroup.add(barrel);
+            for (let i = 0; i < 3; i++) {
+                const bandGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.05, 8);
+                const band = new THREE.Mesh(bandGeo, metalMat);
+                band.rotation.x = Math.PI / 2;
+                band.position.z = -0.5 + i * 0.35;
+                musketGroup.add(band);
+            }
+            const lockGeo = new THREE.BoxGeometry(0.08, 0.12, 0.15);
+            const lock = new THREE.Mesh(lockGeo, metalMat);
+            lock.position.set(0.08, 0.05, 0.15);
+            musketGroup.add(lock);
+            const hammerGeo = new THREE.BoxGeometry(0.04, 0.15, 0.04);
+            const hammer = new THREE.Mesh(hammerGeo, metalMat);
+            hammer.position.set(0.08, 0.15, 0.08);
+            hammer.rotation.x = -0.3;
+            musketGroup.add(hammer);
+            const frizzenGeo = new THREE.BoxGeometry(0.02, 0.1, 0.08);
+            const frizzen = new THREE.Mesh(frizzenGeo, metalMat);
+            frizzen.position.set(0.1, 0.08, 0.22);
+            musketGroup.add(frizzen);
+            const guardGeo = new THREE.TorusGeometry(0.05, 0.008, 6, 12, Math.PI);
+            const guard = new THREE.Mesh(guardGeo, metalMat);
+            guard.rotation.z = Math.PI / 2;
+            guard.position.set(0, -0.02, 0.35);
+            musketGroup.add(guard);
+            const triggerGeo = new THREE.BoxGeometry(0.01, 0.04, 0.02);
+            const trigger = new THREE.Mesh(triggerGeo, metalMat);
+            trigger.position.set(0, -0.02, 0.35);
+            musketGroup.add(trigger);
+            const sightGeo = new THREE.BoxGeometry(0.01, 0.04, 0.01);
+            const sight = new THREE.Mesh(sightGeo, metalMat);
+            sight.position.set(0, 0.055, -0.7);
+            musketGroup.add(sight);
+            const rearSightGeo = new THREE.BoxGeometry(0.02, 0.02, 0.01);
+            const rearSight = new THREE.Mesh(rearSightGeo, metalMat);
+            rearSight.position.set(0, 0.055, -0.1);
+            musketGroup.add(rearSight);
+            return musketGroup;
+        }
+
+        function createPlayerModel(color) {
+            const group = new THREE.Group();
+            const bodyGeo = new THREE.BoxGeometry(0.5, 1.4, 0.3);
+            const bodyMat = new THREE.MeshLambertMaterial({ color: color });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.7;
+            body.castShadow = true;
+            group.add(body);
+            const headGeo = new THREE.BoxGeometry(0.3, 0.35, 0.3);
+            const skinMat = new THREE.MeshLambertMaterial({ color: 0xd4a373 });
+            const head = new THREE.Mesh(headGeo, skinMat);
+            head.position.y = 1.5;
+            head.castShadow = true;
+            group.add(head);
+            const hatGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.15, 3);
+            const hatMat = new THREE.MeshLambertMaterial({ color: 0x1a1a2e });
+            const hat = new THREE.Mesh(hatGeo, hatMat);
+            hat.position.y = 1.75;
+            hat.castShadow = true;
+            group.add(hat);
+            const musket = createMusket();
+            musket.position.set(0.3, 1.1, 0.4);
+            musket.rotation.y = -0.2;
+            group.add(musket);
+            return { group, musket };
+        }
+
+        const p1Model = createPlayerModel(0x8B0000);
+        const p2Model = createPlayerModel(0x191970);
+        p1Model.group.position.set(gameState.p1.x, 0, gameState.p1.z);
+        p2Model.group.position.set(gameState.p2.x, 0, gameState.p2.z);
+        scene.add(p1Model.group);
+        scene.add(p2Model.group);
+
+        const p1Camera = new THREE.PerspectiveCamera(75, (window.innerWidth / 2) / window.innerHeight, 0.1, 1000);
+        const p2Camera = new THREE.PerspectiveCamera(75, (window.innerWidth / 2) / window.innerHeight, 0.1, 1000);
+
+        const keys = {};
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            if (e.key.toLowerCase() === 'x') gameState.p1.aiming = true;
+            if (e.key.toLowerCase() === 'f' && gameState.p1.loaded && !gameState.p1.reloading) fireShot(1);
+            if (e.key.toLowerCase() === 'r' && !gameState.p1.reloading && !gameState.p1.loaded) startReload(1);
+            if (e.key.toLowerCase() === 'p') gameState.p2.aiming = true;
+            if (e.key === 'Enter' && gameState.p2.loaded && !gameState.p2.reloading) fireShot(2);
+            if (e.key === ' ' && !gameState.p2.reloading && !gameState.p2.loaded) startReload(2);
+        });
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+            if (e.key.toLowerCase() === 'x') gameState.p1.aiming = false;
+            if (e.key.toLowerCase() === 'p') gameState.p2.aiming = false;
+        });
+
+        function fireShot(player) {
+            const state = player === 1 ? gameState.p1 : gameState.p2;
+            const model = player === 1 ? p1Model : p2Model;
+            state.loaded = false;
+            createMuzzleFlash(model.group.position.x + Math.cos(state.rot) * 0.8, 1.3, model.group.position.z + Math.sin(state.rot) * 0.8);
+            createSmoke(model.group.position.x + Math.cos(state.rot) * 0.5, 1.2, model.group.position.z + Math.sin(state.rot) * 0.5);
+            model.musket.children[6].rotation.x = 0.5;
+            setTimeout(() => { model.musket.children[6].rotation.x = -0.3; }, 500);
+            const velocity = 60;
+            const spread = state.aiming ? 0.01 : 0.08;
+            const dx = Math.cos(state.rot) + (Math.random() - 0.5) * spread;
+            const dz = Math.sin(state.rot) + (Math.random() - 0.5) * spread;
+            gameState.projectiles.push({
+                x: model.group.position.x + Math.cos(state.rot) * 0.8, y: 1.3, z: model.group.position.z + Math.sin(state.rot) * 0.8,
+                vx: dx * velocity * 0.016, vz: dz * velocity * 0.016, owner: player, life: 60
+            });
+        }
+
+        function startReload(player) {
+            const state = player === 1 ? gameState.p1 : gameState.p2;
+            state.reloading = true; state.reloadStage = 0; state.reloadTimer = 0;
+        }
+
+        const reloadStages = [
+            { name: "Open Pan", time: 40 }, { name: "Pour Powder", time: 80 },
+            { name: "Charge Barrel", time: 100 }, { name: "Ram Cartridge", time: 120 },
+            { name: "Prime Pan", time: 60 }, { name: "Close Pan & Cock", time: 50 }
+        ];
+
+        function updateReload(dt) {
+            [gameState.p1, gameState.p2].forEach((state, idx) => {
+                if (!state.reloading) return;
+                const player = idx + 1;
+                const model = player === 1 ? p1Model : p2Model;
+                state.reloadTimer += dt * 60;
+                const currentStage = reloadStages[state.reloadStage];
+                const progress = state.reloadTimer / currentStage.time;
+                switch(state.reloadStage) {
+                    case 0: model.musket.rotation.x = -0.3 * progress; model.musket.children[5].rotation.x = -0.5 * progress; break;
+                    case 1: model.musket.rotation.z = Math.sin(progress * Math.PI * 4) * 0.05; break;
+                    case 2: model.musket.rotation.x = -0.8 * Math.sin(progress * Math.PI); model.musket.rotation.z = 0; break;
+                    case 3: model.musket.position.z = 0.4 + Math.sin(progress * Math.PI) * 0.1; model.musket.rotation.x = 0; break;
+                    case 4: model.musket.rotation.x = -0.2 * progress; break;
+                    case 5: model.musket.rotation.x = 0; model.musket.children[5].rotation.x = -0.5 * (1 - progress); model.musket.children[6].rotation.x = -0.3 - 0.8 * progress; model.musket.position.z = 0.4; break;
+                }
+                if (state.reloadTimer >= currentStage.time) {
+                    state.reloadStage++; state.reloadTimer = 0;
+                    if (state.reloadStage >= reloadStages.length) {
+                        state.reloading = false; state.loaded = true; state.reloadStage = 0;
+                        model.musket.rotation.set(0, -0.2, 0);
+                        model.musket.position.set(0.3, 1.1, 0.4);
+                    }
+                }
+            });
+        }
+
+        function createMuzzleFlash(x, y, z) {
+            const flashGeo = new THREE.SphereGeometry(0.3, 8, 8);
+            const flashMat = new THREE.MeshBasicMaterial({ color: 0xffffaa, transparent: true, opacity: 1 });
+            const flash = new THREE.Mesh(flashGeo, flashMat);
+            flash.position.set(x, y, z);
+            scene.add(flash);
+            const light = new THREE.PointLight(0xffaa00, 2, 10);
+            light.position.set(x, y, z);
+            scene.add(light);
+            gameState.particles.push({ mesh: flash, light: light, life: 5, type: 'flash' });
+        }
+
+        function createSmoke(x, y, z) {
+            for (let i = 0; i < 8; i++) {
+                const size = 0.1 + Math.random() * 0.2;
+                const smokeGeo = new THREE.SphereGeometry(size, 6, 6);
+                const smokeMat = new THREE.MeshBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.6 });
+                const smoke = new THREE.Mesh(smokeGeo, smokeMat);
+                smoke.position.set(x + (Math.random() - 0.5) * 0.3, y + (Math.random() - 0.5) * 0.2, z + (Math.random() - 0.5) * 0.3);
+                scene.add(smoke);
+                gameState.particles.push({ mesh: smoke, vx: (Math.random() - 0.5) * 0.02, vy: 0.02 + Math.random() * 0.02, vz: (Math.random() - 0.5) * 0.02, life: 60 + Math.random() * 40, type: 'smoke' });
+            }
+        }
+
+        function createBlood(x, y, z) {
+            for (let i = 0; i < 10; i++) {
+                const bloodGeo = new THREE.SphereGeometry(0.05 + Math.random() * 0.05, 4, 4);
+                const bloodMat = new THREE.MeshBasicMaterial({ color: 0x8B0000 });
+                const blood = new THREE.Mesh(bloodGeo, bloodMat);
+                blood.position.set(x, y, z);
+                scene.add(blood);
+                gameState.particles.push({ mesh: blood, vx: (Math.random() - 0.5) * 0.3, vy: 0.2 + Math.random() * 0.2, vz: (Math.random() - 0.5) * 0.3, life: 30, type: 'blood' });
+            }
+        }
+
+        function updateParticles() {
+            for (let i = gameState.particles.length - 1; i >= 0; i--) {
+                const p = gameState.particles[i];
+                p.life--;
+                if (p.type === 'flash') {
+                    p.mesh.scale.multiplyScalar(0.85);
+                    p.mesh.material.opacity = p.life / 5;
+                    if (p.light) p.light.intensity = p.life / 5 * 2;
+                } else if (p.type === 'smoke') {
+                    p.mesh.position.x += p.vx; p.mesh.position.y += p.vy; p.mesh.position.z += p.vz;
+                    p.mesh.scale.multiplyScalar(1.01);
+                    p.mesh.material.opacity = (p.life / 100) * 0.6;
+                } else if (p.type === 'blood') {
+                    p.mesh.position.x += p.vx; p.mesh.position.y += p.vy; p.mesh.position.z += p.vz;
+                    p.vy -= 0.015;
+                    if (p.mesh.position.y < 0.05) { p.mesh.position.y = 0.05; p.vy = 0; p.vx *= 0.5; p.vz *= 0.5; }
+                }
+                if (p.life <= 0) {
+                    scene.remove(p.mesh);
+                    if (p.light) scene.remove(p.light);
+                    gameState.particles.splice(i, 1);
+                }
+            }
+        }
+
+        function updateCameras() {
+            const p1 = gameState.p1;
+            p1Camera.position.set(p1.x + Math.cos(p1.rot) * (p1.aiming ? 0.4 : 0.2), p1.aiming ? 1.45 : 1.6, p1.z + Math.sin(p1.rot) * (p1.aiming ? 0.4 : 0.2));
+            p1Camera.lookAt(p1.x + Math.cos(p1.rot) * 50, p1.aiming ? 1.4 : 1.5, p1.z + Math.sin(p1.rot) * 50);
+            const p2 = gameState.p2;
+            p2Camera.position.set(p2.x + Math.cos(p2.rot) * (p2.aiming ? 0.4 : 0.2), p2.aiming ? 1.45 : 1.6, p2.z + Math.sin(p2.rot) * (p2.aiming ? 0.4 : 0.2));
+            p2Camera.lookAt(p2.x + Math.cos(p2.rot) * 50, p2.aiming ? 1.4 : 1.5, p2.z + Math.sin(p2.rot) * 50);
+        }
+
+        function update(dt) {
+            const moveSpeed = 4 * dt;
+            const turnSpeed = 2 * dt;
+            if (keys['w']) { gameState.p1.x += Math.cos(gameState.p1.rot) * moveSpeed; gameState.p1.z += Math.sin(gameState.p1.rot) * moveSpeed; }
+            if (keys['s']) { gameState.p1.x -= Math.cos(gameState.p1.rot) * moveSpeed; gameState.p1.z -= Math.sin(gameState.p1.rot) * moveSpeed; }
+            if (keys['a']) { gameState.p1.x += Math.cos(gameState.p1.rot - Math.PI/2) * moveSpeed; gameState.p1.z += Math.sin(gameState.p1.rot - Math.PI/2) * moveSpeed; }
+            if (keys['d']) { gameState.p1.x += Math.cos(gameState.p1.rot + Math.PI/2) * moveSpeed; gameState.p1.z += Math.sin(gameState.p1.rot + Math.PI/2) * moveSpeed; }
+            if (keys['q']) gameState.p1.rot -= turnSpeed;
+            if (keys['e']) gameState.p1.rot += turnSpeed;
+            if (keys['i']) { gameState.p2.x += Math.cos(gameState.p2.rot) * moveSpeed; gameState.p2.z += Math.sin(gameState.p2.rot) * moveSpeed; }
+            if (keys['k']) { gameState.p2.x -= Math.cos(gameState.p2.rot) * moveSpeed; gameState.p2.z -= Math.sin(gameState.p2.rot) * moveSpeed; }
+            if (keys['j']) { gameState.p2.x += Math.cos(gameState.p2.rot - Math.PI/2) * moveSpeed; gameState.p2.z += Math.sin(gameState.p2.rot - Math.PI/2) * moveSpeed; }
+            if (keys['l']) { gameState.p2.x += Math.cos(gameState.p2.rot + Math.PI/2) * moveSpeed; gameState.p2.z += Math.sin(gameState.p2.rot + Math.PI/2) * moveSpeed; }
+            if (keys['u']) gameState.p2.rot -= turnSpeed;
+            if (keys['o']) gameState.p2.rot += turnSpeed;
+            p1Model.group.position.set(gameState.p1.x, 0, gameState.p1.z);
+            p1Model.group.rotation.y = -gameState.p1.rot - Math.PI/2;
+            p2Model.group.position.set(gameState.p2.x, 0, gameState.p2.z);
+            p2Model.group.rotation.y = -gameState.p2.rot - Math.PI/2;
+            updateReload(dt);
+            for (let i = gameState.projectiles.length - 1; i >= 0; i--) {
+                const proj = gameState.projectiles[i];
+                proj.x += proj.vx; proj.z += proj.vz; proj.life--;
+                const p1Dist = Math.sqrt((proj.x - gameState.p1.x) ** 2 + (proj.z - gameState.p1.z) ** 2);
+                const p2Dist = Math.sqrt((proj.x - gameState.p2.x) ** 2 + (proj.z - gameState.p2.z) ** 2);
+                if (proj.owner !== 1 && p1Dist < 0.4 && proj.y > 0.5 && proj.y < 2) {
+                    createBlood(gameState.p1.x, 1.2, gameState.p1.z);
+                    gameState.p2.score++;
+                    gameState.p1.x = -10 + (Math.random() - 0.5) * 5; gameState.p1.z = (Math.random() - 0.5) * 10;
+                    gameState.p1.rot = Math.PI/2; gameState.p1.loaded = true; gameState.p1.reloading = false;
+                    gameState.projectiles.splice(i, 1); continue;
+                }
+                if (proj.owner !== 2 && p2Dist < 0.4 && proj.y > 0.5 && proj.y < 2) {
+                    createBlood(gameState.p2.x, 1.2, gameState.p2.z);
+                    gameState.p1.score++;
+                    gameState.p2.x = 10 + (Math.random() - 0.5) * 5; gameState.p2.z = (Math.random() - 0.5) * 10;
+                    gameState.p2.rot = -Math.PI/2; gameState.p2.loaded = true; gameState.p2.reloading = false;
+                    gameState.projectiles.splice(i, 1); continue;
+                }
+                if (proj.life <= 0) gameState.projectiles.splice(i, 1);
+            }
+            updateParticles();
+            updateCameras();
+        }
+
+        function render() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const halfWidth = width / 2;
+            renderer.setScissorTest(true);
+            renderer.setViewport(0, 0, halfWidth, height);
+            renderer.setScissor(0, 0, halfWidth, height);
+            renderer.render(scene, p1Camera);
+            renderer.setViewport(halfWidth, 0, halfWidth, height);
+            renderer.setScissor(halfWidth, 0, halfWidth, height);
+            renderer.render(scene, p2Camera);
+            renderer.setScissorTest(false);
+        }
+
+        let lastTime = performance.now();
+        function gameLoop() {
+            const currentTime = performance.now();
+            const dt = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+            update(dt);
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.addEventListener('resize', () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const halfWidth = width / 2;
+            p1Camera.aspect = halfWidth / height;
+            p1Camera.updateProjectionMatrix();
+            p2Camera.aspect = halfWidth / height;
+            p2Camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>
