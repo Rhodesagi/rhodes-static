@@ -557,7 +557,7 @@ class Game {
         this.state = GameState.GAME_OVER;
         document.exitPointerLock();
         const winMsg = document.getElementById('winMessage');
-        winMsg.textContent = Player \${winner} Victorious!;
+        winMsg.textContent = `Player ${winner} Victorious!`;
         winMsg.style.display = 'block';
         
         setTimeout(() => {
