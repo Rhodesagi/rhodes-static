@@ -1,0 +1,179 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #000;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+}
+
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+#game-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+#ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.hud {
+    position: absolute;
+    bottom: 20px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid #8B4513;
+    border-radius: 5px;
+    min-width: 280px;
+}
+
+.hud.left {
+    left: 20px;
+    border-left: 5px solid #4a90d9;
+}
+
+.hud.right {
+    right: 20px;
+    border-right: 5px solid #d94a4a;
+    text-align: right;
+}
+
+.player-label {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.hud.left .player-label {
+    color: #4a90d9;
+}
+
+.hud.right .player-label {
+    color: #d94a4a;
+}
+
+.controls {
+    font-size: 11px;
+    color: #aaa;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.status {
+    font-size: 14px;
+    font-weight: bold;
+    color: #0f0;
+}
+
+.status.reloading {
+    color: #ff0;
+}
+
+.status.aiming {
+    color: #0ff;
+}
+
+#start-screen, #winner-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+#start-screen h1, #winner-screen h1 {
+    font-size: 48px;
+    letter-spacing: 8px;
+    margin-bottom: 20px;
+    text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+    color: #d4af37;
+}
+
+.subtitle {
+    font-size: 20px;
+    color: #aaa;
+    margin-bottom: 30px;
+}
+
+.instructions {
+    text-align: center;
+    margin-bottom: 30px;
+    max-width: 600px;
+}
+
+.instructions p {
+    margin: 10px 0;
+    font-size: 16px;
+}
+
+.warning {
+    color: #ff6b6b;
+    font-weight: bold;
+}
+
+button {
+    padding: 15px 40px;
+    font-size: 20px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    background: #8B4513;
+    color: #fff;
+    border: 3px solid #d4af37;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+button:hover {
+    background: #d4af37;
+    color: #1a1a2e;
+    transform: scale(1.05);
+}
+
+.ghost-warning {
+    margin-top: 30px;
+    font-size: 12px;
+    color: #666;
+    max-width: 500px;
+    text-align: center;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Center divider line for split screen */
+#ui-layer::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, #d4af37, transparent);
+    transform: translateX(-50%);
+    pointer-events: none;
+}

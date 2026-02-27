@@ -1,8 +1,15 @@
+/**
+ * Dual Keyboard Input Handler
+ * Player 1: WASD (move), Q/E (turn musket), R (reload), X (aim), F (fire)
+ * Player 2: IJKL (move), U/O (turn musket), P (reload), N (aim), M (fire)
+ */
+
 class InputHandler {
     constructor() {
         this.keys = {};
-        this.keysPressed = {};
+        this.keysPressed = {}; // For single-press detection
         
+        // Player 1 key mapping
         this.p1 = {
             forward: 'KeyW',
             backward: 'KeyS',
@@ -15,6 +22,7 @@ class InputHandler {
             fire: 'KeyF'
         };
         
+        // Player 2 key mapping
         this.p2 = {
             forward: 'KeyI',
             backward: 'KeyK',
@@ -53,6 +61,7 @@ class InputHandler {
         return false;
     }
     
+    // Player 1 state
     getP1State() {
         return {
             moveForward: this.isDown(this.p1.forward),
@@ -68,6 +77,7 @@ class InputHandler {
         };
     }
     
+    // Player 2 state
     getP2State() {
         return {
             moveForward: this.isDown(this.p2.forward),
@@ -84,4 +94,5 @@ class InputHandler {
     }
 }
 
+// Global input instance
 const input = new InputHandler();

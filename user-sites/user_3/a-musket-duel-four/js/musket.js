@@ -1,3 +1,9 @@
+/**
+ * Musket Class
+ * Accurate 18th-century flintlock musket simulation
+ * 11-step reloading process with animations
+ */
+
 const ReloadState = {
     READY: 'READY',
     EMPTY: 'EMPTY',
@@ -17,18 +23,19 @@ const ReloadState = {
 
 class Musket {
     constructor() {
-        this.state = ReloadState.EMPTY;
+        this.state = ReloadState.READY;
         this.progress = 0;
         this.loaded = false;
         this.primed = false;
-        this.cocked = false;
+        this.cocked = false; // 'half', 'full', or false
         this.aiming = false;
-        this.musketAngle = 0;
+        this.musketAngle = 0; // Horizontal rotation offset
         
+        // Timing for each step (milliseconds)
         this.timings = {
             [ReloadState.PRIMING_PAN]: 800,
             [ReloadState.POURING_POWDER]: 1200,
-            [ReloadState.RAMMING]: 2000,
+            [ReloadState.RAMMING]: 2000, // Multiple rams
             [ReloadState.RETURNING_RAMROD]: 1000,
             [ReloadState.HALF_COCKING]: 300,
             [ReloadState.FULL_COCKING]: 300,
@@ -39,12 +46,14 @@ class Musket {
         this.ramCount = 0;
         this.maxRams = 3;
         
+        // Visual mesh references
         this.mesh = null;
         this.panCover = null;
         this.frizzen = null;
         this.hammer = null;
         this.ramrod = null;
         
+        // Callbacks
         this.onStateChange = null;
         this.onFire = null;
     }
@@ -52,6 +61,7 @@ class Musket {
     createMesh() {
         const group = new THREE.Group();
         
+        // Main barrel (long cylinder)
         const barrelGeo = new THREE.CylinderGeometry(0.04, 0.06, 1.4, 12);
         const barrelMat = new THREE.MeshStandardMaterial({ 
             color: 0x2a2a2a,
@@ -63,6 +73,7 @@ class Musket {
         barrel.position.z = -0.3;
         group.add(barrel);
         
+        // Stock (wood)
         const stockGeo = new THREE.BoxGeometry(0.12, 0.15, 1.0);
         const stockMat = new THREE.MeshStandardMaterial({ 
             color: 0x4a3728,
@@ -72,11 +83,13 @@ class Musket {
         stock.position.set(0, -0.08, 0.3);
         group.add(stock);
         
+        // Butt
         const buttGeo = new THREE.BoxGeometry(0.14, 0.25, 0.3);
         const butt = new THREE.Mesh(buttGeo, stockMat);
         butt.position.set(0, 0.02, 0.85);
         group.add(butt);
         
+        // Flintlock mechanism
         const lockGeo = new THREE.BoxGeometry(0.08, 0.15, 0.2);
         const lockMat = new THREE.MeshStandardMaterial({ 
             color: 0x333333,
@@ -86,23 +99,27 @@ class Musket {
         lock.position.set(0.08, 0.05, -0.2);
         group.add(lock);
         
+        // Pan (priming powder holder)
         const panGeo = new THREE.BoxGeometry(0.06, 0.02, 0.06);
         const pan = new THREE.Mesh(panGeo, lockMat);
         pan.position.set(0.08, 0.12, -0.25);
         group.add(pan);
         
+        // Pan cover (animated)
         const coverGeo = new THREE.BoxGeometry(0.07, 0.01, 0.07);
         this.panCover = new THREE.Mesh(coverGeo, lockMat);
         this.panCover.position.set(0.08, 0.135, -0.25);
         this.panCover.userData.closed = true;
         group.add(this.panCover);
         
+        // Frizzen (striking plate, animated)
         const frizzenGeo = new THREE.BoxGeometry(0.02, 0.1, 0.08);
         this.frizzen = new THREE.Mesh(frizzenGeo, lockMat);
         this.frizzen.position.set(0.12, 0.15, -0.22);
         this.frizzen.userData.open = false;
         group.add(this.frizzen);
         
+        // Hammer (cock, animated)
         const hammerGeo = new THREE.BoxGeometry(0.03, 0.12, 0.04);
         this.hammer = new THREE.Mesh(hammerGeo, lockMat);
         this.hammer.position.set(0.08, 0.2, -0.18);
@@ -110,6 +127,7 @@ class Musket {
         this.hammer.userData.position = 'down';
         group.add(this.hammer);
         
+        // Ramrod (animated)
         const ramrodGeo = new THREE.CylinderGeometry(0.008, 0.008, 0.8, 6);
         const ramrodMat = new THREE.MeshStandardMaterial({ 
             color: 0x666666,
@@ -121,12 +139,14 @@ class Musket {
         this.ramrod.userData.drawn = false;
         group.add(this.ramrod);
         
+        // Front sight
         const frontSightGeo = new THREE.BoxGeometry(0.005, 0.03, 0.01);
         const sightMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
         const frontSight = new THREE.Mesh(frontSightGeo, sightMat);
         frontSight.position.set(0, 0.08, -1.0);
         group.add(frontSight);
         
+        // Rear sight (notch)
         const rearSightGeo = new THREE.BoxGeometry(0.02, 0.02, 0.01);
         const rearSight = new THREE.Mesh(rearSightGeo, sightMat);
         rearSight.position.set(0, 0.06, -0.5);
@@ -137,6 +157,7 @@ class Musket {
     }
     
     update(deltaTime, inputState) {
+        // Handle musket turning
         if (inputState.turnMusketLeft) {
             this.musketAngle += 1.5 * deltaTime;
         }
@@ -144,18 +165,24 @@ class Musket {
             this.musketAngle -= 1.5 * deltaTime;
         }
         
+        // Clamp musket angle
         this.musketAngle = Math.max(-0.5, Math.min(0.5, this.musketAngle));
+        
+        // Handle aiming
         this.aiming = inputState.aim;
         
+        // Handle firing
         if (inputState.firePressed && this.canFire()) {
             this.fire();
             return;
         }
         
+        // Handle reload input
         if (inputState.reloadPressed || inputState.reloadHeld) {
             this.processReload(inputState.reloadHeld, deltaTime);
         }
         
+        // Update animations
         this.updateAnimations(deltaTime);
     }
     
@@ -173,15 +200,18 @@ class Musket {
         this.primed = false;
         this.loaded = false;
         
+        // Animate hammer fall
         if (this.hammer) {
             this.hammer.rotation.z = 0;
             this.hammer.userData.position = 'down';
         }
         
+        // Trigger callback
         if (this.onFire) {
             this.onFire();
         }
         
+        // Return to empty state
         setTimeout(() => {
             this.state = ReloadState.EMPTY;
             if (this.onStateChange) {
@@ -201,12 +231,14 @@ class Musket {
                     this.animatePanCover(true);
                 }
                 break;
+                
             case ReloadState.OPENING_PAN:
                 if (isHeld) {
                     this.state = ReloadState.PRIMING_PAN;
                     this.currentStepStart = now;
                 }
                 break;
+                
             case ReloadState.PRIMING_PAN:
                 if (now - this.currentStepStart >= this.timings[ReloadState.PRIMING_PAN]) {
                     this.primed = true;
@@ -216,18 +248,21 @@ class Musket {
                     }
                 }
                 break;
+                
             case ReloadState.CLOSING_PAN:
                 if (!isHeld) {
                     this.state = ReloadState.OPENING_FRIZZEN;
                     this.animateFrizzen(true);
                 }
                 break;
+                
             case ReloadState.OPENING_FRIZZEN:
                 if (isHeld) {
                     this.state = ReloadState.POURING_POWDER;
                     this.currentStepStart = now;
                 }
                 break;
+                
             case ReloadState.POURING_POWDER:
                 if (now - this.currentStepStart >= this.timings[ReloadState.POURING_POWDER]) {
                     if (!isHeld) {
@@ -235,6 +270,7 @@ class Musket {
                     }
                 }
                 break;
+                
             case ReloadState.INSERTING_BALL:
                 if (!isHeld) {
                     this.state = ReloadState.RAMMING;
@@ -242,19 +278,28 @@ class Musket {
                     this.animateRamrod(true);
                 }
                 break;
+                
             case ReloadState.RAMMING:
                 if (!isHeld) {
                     this.ramCount++;
                     if (this.ramCount >= this.maxRams) {
                         this.loaded = true;
-                        this.state = ReloadState.RETURNING_RAMROD;
-                        this.animateRamrod(false);
+                        if (isHeld) {
+                            this.state = ReloadState.RETURNING_RAMROD;
+                            this.animateRamrod(false);
+                        }
                     }
                 }
                 break;
+                
             case ReloadState.RETURNING_RAMROD:
-                this.state = ReloadState.HALF_COCKING;
+                if (now - this.currentStepStart >= this.timings[ReloadState.RETURNING_RAMROD]) {
+                    if (!isHeld) {
+                        this.state = ReloadState.HALF_COCKING;
+                    }
+                }
                 break;
+                
             case ReloadState.HALF_COCKING:
                 if (!isHeld) {
                     this.cocked = 'half';
@@ -262,6 +307,7 @@ class Musket {
                     this.state = ReloadState.FULL_COCKING;
                 }
                 break;
+                
             case ReloadState.FULL_COCKING:
                 if (!isHeld) {
                     this.cocked = 'full';
@@ -328,12 +374,17 @@ class Musket {
             this.hammer.rotation.z += (this.hammer.userData.targetRotation - this.hammer.rotation.z) * speed;
         }
         
+        // Update mesh rotation for musket angle
         if (this.mesh) {
             this.mesh.rotation.y = this.musketAngle;
+            
+            // Raise musket when aiming
             const targetY = this.aiming ? -0.15 : -0.3;
             const targetX = this.aiming ? 0 : 0.1;
             this.mesh.position.y += (targetY - this.mesh.position.y) * speed;
             this.mesh.position.x += (targetX - this.mesh.position.x) * speed;
+            
+            // Rotate to aim down sights
             const targetRotX = this.aiming ? 0 : 0.1;
             this.mesh.rotation.x += (targetRotX - this.mesh.rotation.x) * speed;
         }

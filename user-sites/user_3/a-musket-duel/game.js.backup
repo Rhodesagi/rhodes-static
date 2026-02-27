@@ -1,0 +1,741 @@
+// A MUSKET DUEL - Two Player FPS
+// Iron sights only, no overlays, realistic reloading
+
+class Player {
+    constructor(id, startPos, startRot) {
+        this.id = id;
+        this.position = startPos.clone();
+        this.rotation = startRot;
+        this.health = 100;
+        this.musketRotation = 0; // Left/right aim
+        this.musketVertical = 0; // Up/down aim
+        this.isAiming = false;
+        this.isReloading = false;
+        this.reloadStage = 0;
+        this.reloadTimer = 0;
+        this.loaded = true;
+        this.primed = true;
+        this.moveSpeed = 3;
+        this.turnSpeed = 1.5;
+        
+        // Reload stage timing (milliseconds)
+        this.reloadStages = [
+            { name: "Shouldering...", duration: 800 },
+            { name: "Pour powder...", duration: 1200 },
+            { name: "Insert ball...", duration: 1000 },
+            { name: "Ram home...", duration: 2000 },
+            { name: "Prime pan...", duration: 1000 },
+            { name: "Shoulder arms", duration: 500 }
+        ];
+        
+        this.camera = null;
+        this.musket = null;
+        this.scene = null;
+        this.renderer = null;
+        this.projectiles = [];
+    }
+}
+
+class MusketGame {
+    constructor() {
+        this.players = [];
+        this.keys = {};
+        this.lastTime = 0;
+        this.projectiles = [];
+        this.gameActive = false;
+        
+        this.init();
+    }
+    
+    init() {
+        // Player 1 starts at south end, facing north
+        const p1 = new Player(1, new THREE.Vector3(0, 1.6, 20), Math.PI);
+        // Player 2 starts at north end, facing south
+        const p2 = new Player(2, new THREE.Vector3(0, 1.6, -20), 0);
+        
+        this.players = [p1, p2];
+        
+        this.setupScene(p1, 'canvas1');
+        this.setupScene(p2, 'canvas2');
+        
+        this.setupInput();
+        this.createArena();
+        
+        requestAnimationFrame((t) => this.gameLoop(t));
+    }
+    
+    setupScene(player, canvasId) {
+        const canvas = document.getElementById(canvasId);
+        const container = canvas.parentElement;
+        
+        // Scene
+        player.scene = new THREE.Scene();
+        player.scene.fog = new THREE.Fog(0x87CEEB, 10, 100);
+        player.scene.background = new THREE.Color(0x87CEEB);
+        
+        // Camera
+        player.camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+        
+        // Renderer
+        player.renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+        player.renderer.setSize(container.clientWidth, container.clientHeight);
+        player.renderer.shadowMap.enabled = true;
+        
+        // Lighting
+        const ambient = new THREE.AmbientLight(0x404040, 0.6);
+        player.scene.add(ambient);
+        
+        const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+        sun.position.set(50, 100, 50);
+        sun.castShadow = true;
+        player.scene.add(sun);
+        
+        // Create player model (visible to other player)
+        this.createPlayerModel(player);
+        
+        // Create musket model for this player
+        this.createMusketModel(player);
+        
+        // Handle resize
+        window.addEventListener('resize', () => {
+            player.camera.aspect = container.clientWidth / container.clientHeight;
+            player.camera.updateProjectionMatrix();
+            player.renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+    }
+    
+    createPlayerModel(player) {
+        const group = new THREE.Group();
+        
+        // Body
+        const bodyGeo = new THREE.CylinderGeometry(0.3, 0.3, 1.6, 8);
+        const bodyMat = new THREE.MeshLambertMaterial({ color: player.id === 1 ? 0x8B4513 : 0x2F4F4F });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 0.8;
+        body.castShadow = true;
+        group.add(body);
+        
+        // Head
+        const headGeo = new THREE.SphereGeometry(0.25, 8, 8);
+        const headMat = new THREE.MeshLambertMaterial({ color: 0xFFDBAC });
+        const head = new THREE.Mesh(headGeo, headMat);
+        head.position.y = 1.7;
+        head.castShadow = true;
+        group.add(head);
+        
+        // Hat
+        const hatGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 8);
+        const hatMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+        const hat = new THREE.Mesh(hatGeo, hatMat);
+        hat.position.y = 1.95;
+        group.add(hat);
+        
+        player.model = group;
+        player.model.position.copy(player.position);
+        
+        // Add to both scenes
+        this.players.forEach(p => {
+            if (p !== player) {
+                p.scene.add(player.model.clone());
+            }
+        });
+    }
+    
+    createMusketModel(player) {
+        const musket = new THREE.Group();
+        
+        // Stock (wood)
+        const stockGeo = new THREE.BoxGeometry(0.12, 0.2, 1.4);
+        const stockMat = new THREE.MeshLambertMaterial({ color: 0x654321 });
+        const stock = new THREE.Mesh(stockGeo, stockMat);
+        stock.position.set(0, -0.1, 0.2);
+        musket.add(stock);
+        
+        // Butt
+        const buttGeo = new THREE.BoxGeometry(0.15, 0.25, 0.4);
+        const butt = new THREE.Mesh(buttGeo, stockMat);
+        butt.position.set(0, -0.05, 0.9);
+        musket.add(butt);
+        
+        // Barrel (metal)
+        const barrelGeo = new THREE.CylinderGeometry(0.03, 0.03, 1.2, 8);
+        const barrelMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, metalness: 0.8, roughness: 0.3 });
+        const barrel = new THREE.Mesh(barrelGeo, barrelMat);
+        barrel.rotation.x = Math.PI / 2;
+        barrel.position.set(0, 0.05, -0.4);
+        musket.add(barrel);
+        
+        // Rear sight (notch)
+        const rearSightGeo = new THREE.BoxGeometry(0.04, 0.04, 0.02);
+        const sightMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.9 });
+        const rearSight = new THREE.Mesh(rearSightGeo, sightMat);
+        rearSight.position.set(0, 0.15, -0.2);
+        musket.add(rearSight);
+        
+        // Front sight (post)
+        const frontSightGeo = new THREE.BoxGeometry(0.02, 0.06, 0.02);
+        const frontSight = new THREE.Mesh(frontSightGeo, sightMat);
+        frontSight.position.set(0, 0.17, -0.9);
+        musket.add(frontSight);
+        
+        // Lock mechanism
+        const lockGeo = new THREE.BoxGeometry(0.08, 0.1, 0.15);
+        const lock = new THREE.Mesh(lockGeo, barrelMat);
+        lock.position.set(0.06, 0.02, 0);
+        musket.add(lock);
+        
+        // Flint
+        const flintGeo = new THREE.BoxGeometry(0.03, 0.05, 0.03);
+        const flintMat = new THREE.MeshStandardMaterial({ color: 0x444444 });
+        const flint = new THREE.Mesh(flintGeo, flintMat);
+        flint.position.set(0.1, 0.08, -0.05);
+        musket.add(flint);
+        
+        // Frizzen
+        const frizzenGeo = new THREE.BoxGeometry(0.02, 0.08, 0.06);
+        const frizzen = new THREE.Mesh(frizzenGeo, barrelMat);
+        frizzen.position.set(0.1, 0.08, 0.02);
+        musket.add(frizzen);
+        
+        // Pan
+        const panGeo = new THREE.BoxGeometry(0.04, 0.02, 0.06);
+        const pan = new THREE.Mesh(panGeo, new THREE.MeshStandardMaterial({ color: 0x1a1a1a }));
+        pan.position.set(0.08, 0.05, 0);
+        musket.add(pan);
+        
+        // Ramrod (tucked under barrel)
+        const ramrodGeo = new THREE.CylinderGeometry(0.008, 0.008, 1.0, 6);
+        const ramrodMat = new THREE.MeshStandardMaterial({ color: 0x4a3728 });
+        const ramrod = new THREE.Mesh(ramrodGeo, ramrodMat);
+        ramrod.rotation.x = Math.PI / 2;
+        ramrod.position.set(0, -0.05, -0.3);
+        musket.add(ramrod);
+        
+        // Ramrod thimbles
+        for (let i = 0; i < 3; i++) {
+            const thimbleGeo = new THREE.TorusGeometry(0.025, 0.003, 4, 8);
+            const thimble = new THREE.Mesh(thimbleGeo, barrelMat);
+            thimble.rotation.y = Math.PI / 2;
+            thimble.position.set(0, -0.05, -0.1 - i * 0.35);
+            musket.add(thimble);
+        }
+        
+        // Bands
+        for (let i = 0; i < 3; i++) {
+            const bandGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.04, 8);
+            const band = new THREE.Mesh(bandGeo, barrelMat);
+            band.rotation.x = Math.PI / 2;
+            band.position.set(0, 0.05, -0.2 - i * 0.4);
+            musket.add(band);
+        }
+        
+        // Trigger guard
+        const triggerGuardGeo = new THREE.TorusGeometry(0.06, 0.005, 4, 12, Math.PI);
+        const triggerGuard = new THREE.Mesh(triggerGuardGeo, barrelMat);
+        triggerGuard.position.set(0, -0.15, 0.3);
+        triggerGuard.rotation.z = Math.PI;
+        musket.add(triggerGuard);
+        
+        // Trigger
+        const triggerGeo = new THREE.BoxGeometry(0.01, 0.04, 0.01);
+        const trigger = new THREE.Mesh(triggerGeo, barrelMat);
+        trigger.position.set(0, -0.12, 0.28);
+        trigger.rotation.x = -0.3;
+        musket.add(trigger);
+        
+        // Store for animation
+        player.musket = musket;
+        player.barrel = barrel;
+        player.ramrod = ramrod;
+        player.lock = lock;
+        player.flint = flint;
+        player.frizzen = frizzen;
+        
+        // Initial position (hip fire)
+        this.updateMusketPosition(player);
+    }
+    
+    updateMusketPosition(player) {
+        const musket = player.musket;
+        
+        if (player.isAiming) {
+            // Iron sight position - shouldered and aligned
+            musket.position.set(0, -0.15, -0.4);
+            musket.rotation.set(0, 0, 0);
+            
+            // Camera adjustment for sight picture
+            player.camera.position.copy(player.position);
+            player.camera.position.y += 1.6;
+            player.camera.rotation.order = 'YXZ';
+            player.camera.rotation.y = player.rotation + player.musketRotation;
+            player.camera.rotation.x = player.musketVertical * 0.3;
+        } else {
+            // Hip fire position
+            musket.position.set(0.3, -0.4, -0.3);
+            musket.rotation.set(0, 0, -0.2);
+            
+            player.camera.position.copy(player.position);
+            player.camera.position.y += 1.6;
+            player.camera.rotation.order = 'YXZ';
+            player.camera.rotation.y = player.rotation + player.musketRotation;
+            player.camera.rotation.x = 0;
+        }
+        
+        // Apply musket rotation
+        musket.rotation.y = player.musketRotation;
+        musket.rotation.x += player.musketVertical;
+        
+        player.camera.add(musket);
+    }
+    
+    createArena() {
+        // Ground
+        const groundGeo = new THREE.PlaneGeometry(200, 200);
+        const groundMat = new THREE.MeshLambertMaterial({ color: 0x3d5c2d });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        
+        this.players.forEach(p => p.scene.add(ground.clone()));
+        
+        // Dueling field markers
+        for (let i = -10; i <= 10; i += 5) {
+            const markerGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.5, 8);
+            const markerMat = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            
+            const marker1 = new THREE.Mesh(markerGeo, markerMat);
+            marker1.position.set(i, 0.25, 0);
+            
+            this.players.forEach(p => p.scene.add(marker1.clone()));
+        }
+        
+        // Trees for cover
+        for (let i = 0; i < 20; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 30 + Math.random() * 50;
+            const x = Math.cos(angle) * dist;
+            const z = Math.sin(angle) * dist;
+            this.createTree(x, z);
+        }
+        
+        // Rocks
+        for (let i = 0; i < 15; i++) {
+            const x = (Math.random() - 0.5) * 80;
+            const z = (Math.random() - 0.5) * 80;
+            if (Math.abs(x) < 5 && Math.abs(z) < 5) continue; // Clear center
+            this.createRock(x, z);
+        }
+    }
+    
+    createTree(x, z) {
+        const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, 4, 8);
+        const trunkMat = new THREE.MeshLambertMaterial({ color: 0x4a3728 });
+        const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+        trunk.position.set(x, 2, z);
+        trunk.castShadow = true;
+        
+        const leavesGeo = new THREE.ConeGeometry(3, 6, 8);
+        const leavesMat = new THREE.MeshLambertMaterial({ color: 0x1a4a1a });
+        const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+        leaves.position.set(x, 6, z);
+        leaves.castShadow = true;
+        
+        this.players.forEach(p => {
+            p.scene.add(trunk.clone());
+            p.scene.add(leaves.clone());
+        });
+    }
+    
+    createRock(x, z) {
+        const rockGeo = new THREE.DodecahedronGeometry(1 + Math.random());
+        const rockMat = new THREE.MeshLambertMaterial({ color: 0x666666 });
+        const rock = new THREE.Mesh(rockGeo, rockMat);
+        rock.position.set(x, 0.5, z);
+        rock.rotation.set(Math.random(), Math.random(), Math.random());
+        rock.castShadow = true;
+        
+        this.players.forEach(p => p.scene.add(rock.clone()));
+    }
+    
+    setupInput() {
+        document.addEventListener('keydown', (e) => {
+            this.keys[e.code] = true;
+            
+            // Prevent default for game keys
+            const gameKeys = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyR', 'KeyX', 'KeyF',
+                             'KeyI', 'KeyJ', 'KeyK', 'KeyL', 'KeyU', 'KeyO', 'KeyP', 'KeyM', 'Enter'];
+            if (gameKeys.includes(e.code)) {
+                e.preventDefault();
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            this.keys[e.code] = false;
+        });
+    }
+    
+    update(dt) {
+        if (!this.gameActive) return;
+        
+        const dtSeconds = dt / 1000;
+        
+        this.players.forEach(player => {
+            this.updatePlayer(player, dtSeconds);
+            this.updateReload(player, dt);
+        });
+        
+        this.updateProjectiles(dtSeconds);
+        this.checkCollisions();
+    }
+    
+    updatePlayer(player, dt) {
+        if (player.id === 1) {
+            // Player 1: WASD movement
+            const forward = this.keys['KeyW'] ? 1 : (this.keys['KeyS'] ? -1 : 0);
+            const strafe = this.keys['KeyA'] ? -1 : (this.keys['KeyD'] ? 1 : 0);
+            
+            if (forward !== 0) {
+                player.position.x += Math.sin(player.rotation) * forward * player.moveSpeed * dt;
+                player.position.z += Math.cos(player.rotation) * forward * player.moveSpeed * dt;
+            }
+            if (strafe !== 0) {
+                player.position.x += Math.cos(player.rotation) * strafe * player.moveSpeed * dt * 0.6;
+                player.position.z -= Math.sin(player.rotation) * strafe * player.moveSpeed * dt * 0.6;
+            }
+            
+            // Q/E musket rotation
+            if (this.keys['KeyQ']) player.musketRotation += player.turnSpeed * dt;
+            if (this.keys['KeyE']) player.musketRotation -= player.turnSpeed * dt;
+            
+            // X aim
+            player.isAiming = this.keys['KeyX'];
+            
+            // R reload
+            if (this.keys['KeyR'] && !player.isReloading && !player.loaded) {
+                this.startReload(player);
+            }
+            
+            // F fire
+            if (this.keys['KeyF'] && !player.isReloading && player.loaded && player.primed) {
+                this.fire(player);
+            }
+        } else {
+            // Player 2: IJKL movement
+            const forward = this.keys['KeyI'] ? 1 : (this.keys['KeyK'] ? -1 : 0);
+            const strafe = this.keys['KeyJ'] ? -1 : (this.keys['KeyL'] ? 1 : 0);
+            
+            if (forward !== 0) {
+                player.position.x += Math.sin(player.rotation) * forward * player.moveSpeed * dt;
+                player.position.z += Math.cos(player.rotation) * forward * player.moveSpeed * dt;
+            }
+            if (strafe !== 0) {
+                player.position.x += Math.cos(player.rotation) * strafe * player.moveSpeed * dt * 0.6;
+                player.position.z -= Math.sin(player.rotation) * strafe * player.moveSpeed * dt * 0.6;
+            }
+            
+            // U/O musket rotation
+            if (this.keys['KeyU']) player.musketRotation += player.turnSpeed * dt;
+            if (this.keys['KeyO']) player.musketRotation -= player.turnSpeed * dt;
+            
+            // M aim
+            player.isAiming = this.keys['KeyM'];
+            
+            // P reload
+            if (this.keys['KeyP'] && !player.isReloading && !player.loaded) {
+                this.startReload(player);
+            }
+            
+            // Enter fire
+            if (this.keys['Enter'] && !player.isReloading && player.loaded && player.primed) {
+                this.fire(player);
+            }
+        }
+        
+        // Clamp musket rotation
+        player.musketRotation = Math.max(-0.5, Math.min(0.5, player.musketRotation));
+        
+        // Bounds
+        player.position.x = Math.max(-95, Math.min(95, player.position.x));
+        player.position.z = Math.max(-95, Math.min(95, player.position.z));
+        
+        // Update visual model position
+        if (player.model) {
+            player.model.position.copy(player.position);
+            player.model.rotation.y = player.rotation + player.musketRotation;
+        }
+        
+        this.updateMusketPosition(player);
+    }
+    
+    startReload(player) {
+        player.isReloading = true;
+        player.reloadStage = 0;
+        player.reloadTimer = 0;
+        this.updateReloadUI(player);
+    }
+    
+    updateReload(player, dt) {
+        if (!player.isReloading) return;
+        
+        player.reloadTimer += dt;
+        
+        const stage = player.reloadStages[player.reloadStage];
+        
+        if (player.reloadTimer >= stage.duration) {
+            player.reloadTimer = 0;
+            player.reloadStage++;
+            
+            // Animate ramrod during ram home stage
+            if (player.reloadStage === 3 && player.ramrod) {
+                this.animateRamrod(player);
+            }
+            
+            if (player.reloadStage >= player.reloadStages.length) {
+                player.isReloading = false;
+                player.loaded = true;
+                player.primed = true;
+                document.getElementById(`status${player.id}`).textContent = 'Ready';
+                document.getElementById(`reload${player.id}`).textContent = '';
+            } else {
+                this.updateReloadUI(player);
+            }
+        }
+    }
+    
+    animateRamrod(player) {
+        // Visual animation of ramming
+        let progress = 0;
+        const animate = () => {
+            progress += 0.05;
+            if (progress <= 1) {
+                // Ramrod goes forward
+                player.ramrod.position.z = -0.3 + progress * 0.5;
+                requestAnimationFrame(animate);
+            } else if (progress <= 2) {
+                // Ramrod returns
+                player.ramrod.position.z = 0.2 - (progress - 1) * 0.5;
+                requestAnimationFrame(animate);
+            } else {
+                player.ramrod.position.z = -0.3;
+            }
+        };
+        animate();
+    }
+    
+    updateReloadUI(player) {
+        const stage = player.reloadStages[player.reloadStage];
+        document.getElementById(`status${player.id}`).textContent = 'Reloading...';
+        document.getElementById(`reload${player.id}`).textContent = stage.name;
+    }
+    
+    fire(player) {
+        player.loaded = false;
+        player.primed = false;
+        
+        // Muzzle position calculation
+        const barrelTip = new THREE.Vector3(0, 0.05, -1.0);
+        barrelTip.applyEuler(player.musket.rotation);
+        barrelTip.add(player.camera.position);
+        
+        // Direction with spread based on aiming
+        const spread = player.isAiming ? 0.01 : 0.05;
+        const direction = new THREE.Vector3(
+            Math.sin(player.rotation + player.musketRotation) + (Math.random() - 0.5) * spread,
+            player.musketVertical + (Math.random() - 0.5) * spread,
+            Math.cos(player.rotation + player.musketRotation) + (Math.random() - 0.5) * spread
+        ).normalize();
+        
+        // Create projectile
+        const projectile = {
+            position: barrelTip.clone(),
+            velocity: direction.multiplyScalar(150), // Musket ball velocity
+            gravity: 9.8,
+            owner: player.id,
+            mesh: null
+        };
+        
+        // Visual projectile (small sphere)
+        const ballGeo = new THREE.SphereGeometry(0.02, 4, 4);
+        const ballMat = new THREE.MeshBasicMaterial({ color: 0x1a1a1a });
+        projectile.mesh = new THREE.Mesh(ballGeo, ballMat);
+        projectile.mesh.position.copy(barrelTip);
+        
+        this.players.forEach(p => p.scene.add(projectile.mesh.clone()));
+        
+        this.projectiles.push(projectile);
+        
+        // Muzzle flash
+        this.showMuzzleFlash(player);
+        
+        // Recoil
+        player.musketVertical += 0.1;
+        setTimeout(() => { player.musketVertical -= 0.1; }, 100);
+        
+        document.getElementById(`status${player.id}`).textContent = 'Empty';
+    }
+    
+    showMuzzleFlash(player) {
+        const flash = document.getElementById(`flash${player.id}`);
+        flash.style.opacity = '0.8';
+        flash.style.transition = 'none';
+        
+        // Add point light
+        const light = new THREE.PointLight(0xffaa00, 2, 10);
+        light.position.set(0, 0.05, -1.0);
+        player.musket.add(light);
+        
+        setTimeout(() => {
+            flash.style.transition = 'opacity 0.1s';
+            flash.style.opacity = '0';
+            player.musket.remove(light);
+        }, 50);
+    }
+    
+    updateProjectiles(dt) {
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+            const proj = this.projectiles[i];
+            
+            // Apply gravity
+            proj.velocity.y -= proj.gravity * dt;
+            
+            // Update position
+            proj.position.add(proj.velocity.clone().multiplyScalar(dt));
+            
+            if (proj.mesh) {
+                proj.mesh.position.copy(proj.position);
+            }
+            
+            // Ground collision
+            if (proj.position.y <= 0) {
+                this.removeProjectile(i);
+                continue;
+            }
+            
+            // Range limit
+            if (proj.position.distanceTo(new THREE.Vector3(0, 0, 0)) > 200) {
+                this.removeProjectile(i);
+            }
+        }
+    }
+    
+    removeProjectile(index) {
+        const proj = this.projectiles[index];
+        if (proj.mesh) {
+            this.players.forEach(p => {
+                p.scene.children = p.scene.children.filter(c => c !== proj.mesh);
+            });
+        }
+        this.projectiles.splice(index, 1);
+    }
+    
+    checkCollisions() {
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+            const proj = this.projectiles[i];
+            
+            for (const player of this.players) {
+                if (player.id === proj.owner) continue;
+                
+                const dist = proj.position.distanceTo(player.position);
+                if (dist < 0.5) {
+                    // Hit!
+                    player.health -= 50;
+                    document.getElementById(`health${player.id}`).textContent = Math.max(0, player.health);
+                    
+                    // Blood effect
+                    this.showBlood(player);
+                    
+                    if (player.health <= 0) {
+                        this.gameOver(proj.owner);
+                    }
+                    
+                    this.removeProjectile(i);
+                    break;
+                }
+            }
+        }
+    }
+    
+    showBlood(player) {
+        const bloodGeo = new THREE.SphereGeometry(0.3, 6, 6);
+        const bloodMat = new THREE.MeshBasicMaterial({ color: 0x8b0000, transparent: true, opacity: 0.8 });
+        const blood = new THREE.Mesh(bloodGeo, bloodMat);
+        blood.position.copy(player.position);
+        blood.position.y += 1;
+        
+        this.players.forEach(p => p.scene.add(blood.clone()));
+        
+        setTimeout(() => {
+            this.players.forEach(p => {
+                p.scene.children = p.scene.children.filter(c => c !== blood);
+            });
+        }, 2000);
+    }
+    
+    gameOver(winnerId) {
+        this.gameActive = false;
+        
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            color: #c4a574;
+            font-family: Georgia, serif;
+        `;
+        overlay.innerHTML = `
+            <h1 style="font-size: 64px; margin-bottom: 20px;">PLAYER ${winnerId} WINS!</h1>
+            <button onclick="location.reload()" style="
+                padding: 15px 40px;
+                font-size: 20px;
+                background: #5a4028;
+                color: #c4a574;
+                border: 2px solid #8b7355;
+                cursor: pointer;
+                font-family: Georgia, serif;
+            ">DUEL AGAIN</button>
+        `;
+        
+        document.body.appendChild(overlay);
+    }
+    
+    render() {
+        this.players.forEach(player => {
+            player.renderer.render(player.scene, player.camera);
+        });
+    }
+    
+    gameLoop(timestamp) {
+        const dt = timestamp - this.lastTime;
+        this.lastTime = timestamp;
+        
+        this.update(dt);
+        this.render();
+        
+        requestAnimationFrame((t) => this.gameLoop(t));
+    }
+}
+
+let game;
+
+function startGame() {
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('game-container').style.display = 'flex';
+    
+    if (!game) {
+        game = new MusketGame();
+    }
+    game.gameActive = true;
+}
+
+// Handle window focus
+window.addEventListener('blur', () => {
+    if (game) game.keys = {};
+});

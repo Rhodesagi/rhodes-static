@@ -1,0 +1,420 @@
+class Musket {
+    constructor(scene, playerId) {
+        this.scene = scene;
+        this.playerId = playerId;
+        this.loaded = false;
+        this.primed = false;
+        this.cocked = false;
+        this.reloading = false;
+        this.aiming = false;
+        this.musketAngle = 0; // Rotation offset
+        this.reloadStage = 0;
+        this.reloadTimer = 0;
+        
+        // Reload sequence timing (in seconds)
+        this.reloadStages = [
+            { name: 'Half Cock', duration: 0.5 },
+            { name: 'Open Pan', duration: 0.4 },
+            { name: 'Pour Powder', duration: 0.8 },
+            { name: 'Close Pan', duration: 0.3 },
+            { name: 'Ramrod Out', duration: 0.6 },
+            { name: 'Load Ball', duration: 0.5 },
+            { name: 'Ram Home', duration: 1.0 },
+            { name: 'Return Rod', duration: 0.6 },
+            { name: 'Prime Pan', duration: 0.7 },
+            { name: 'Full Cock', duration: 0.6 }
+        ];
+        
+        this.totalReloadTime = this.reloadStages.reduce((sum, s) => sum + s.duration, 0);
+        this.currentStageTime = 0;
+        
+        this.createMusketModel();
+        this.createProjectile();
+    }
+    
+    createMusketModel() {
+        // Main musket group
+        this.musketGroup = new THREE.Group();
+        
+        // Materials
+        const woodMat = new THREE.MeshStandardMaterial({ 
+            color: 0x5d4037, 
+            roughness: 0.8,
+            metalness: 0.1
+        });
+        const metalMat = new THREE.MeshStandardMaterial({ 
+            color: 0x4a4a4a, 
+            roughness: 0.4,
+            metalness: 0.8
+        });
+        const brassMat = new THREE.MeshStandardMaterial({
+            color: 0xc9a86c,
+            roughness: 0.3,
+            metalness: 0.7
+        });
+        
+        // Stock (main body)
+        const stockGeom = new THREE.BoxGeometry(0.12, 0.15, 1.2);
+        // Taper the stock
+        const stockPositions = stockGeom.attributes.position;
+        for (let i = 0; i < stockPositions.count; i++) {
+            const z = stockPositions.getZ(i);
+            if (z < -0.3) {
+                const factor = 1 + (z + 0.3) * 0.5;
+                stockPositions.setX(i, stockPositions.getX(i) * factor);
+                stockPositions.setY(i, stockPositions.getY(i) * factor);
+            }
+        }
+        stockGeom.computeVertexNormals();
+        this.stock = new THREE.Mesh(stockGeom, woodMat);
+        this.stock.position.set(0, 0, 0.1);
+        this.stock.castShadow = true;
+        this.musketGroup.add(this.stock);
+        
+        // Buttplate
+        const buttGeom = new THREE.BoxGeometry(0.14, 0.17, 0.05);
+        this.butt = new THREE.Mesh(buttGeom, metalMat);
+        this.butt.position.set(0, 0, 0.72);
+        this.musketGroup.add(this.butt);
+        
+        // Barrel
+        const barrelGeom = new THREE.CylinderGeometry(0.025, 0.035, 1.4, 16);
+        this.barrel = new THREE.Mesh(barrelGeom, metalMat);
+        this.barrel.rotation.x = Math.PI / 2;
+        this.barrel.position.set(0, 0.08, -0.55);
+        this.barrel.castShadow = true;
+        this.musketGroup.add(this.barrel);
+        
+        // Barrel bands
+        for (let i = 0; i < 3; i++) {
+            const band = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.038, 0.038, 0.06, 16),
+                brassMat
+            );
+            band.rotation.x = Math.PI / 2;
+            band.position.set(0, 0.08, -0.2 - i * 0.45);
+            this.musketGroup.add(band);
+        }
+        
+        // Rear sight (notch)
+        const rearSight = new THREE.Mesh(
+            new THREE.BoxGeometry(0.03, 0.04, 0.02),
+            metalMat
+        );
+        rearSight.position.set(0, 0.14, -0.15);
+        this.musketGroup.add(rearSight);
+        
+        // Front sight (blade)
+        const frontSight = new THREE.Mesh(
+            new THREE.BoxGeometry(0.02, 0.05, 0.015),
+            metalMat
+        );
+        frontSight.position.set(0, 0.15, -1.25);
+        this.musketGroup.add(frontSight);
+        
+        // Lock mechanism (flintlock)
+        this.lockGroup = new THREE.Group();
+        
+        // Lock plate
+        const lockPlate = new THREE.Mesh(
+            new THREE.BoxGeometry(0.08, 0.15, 0.02),
+            metalMat
+        );
+        lockPlate.position.set(0.07, 0.05, -0.1);
+        lockPlate.rotation.z = 0.1;
+        this.lockGroup.add(lockPlate);
+        
+        // Hammer (cock)
+        this.hammer = new THREE.Mesh(
+            new THREE.BoxGeometry(0.03, 0.1, 0.04),
+            metalMat
+        );
+        this.hammer.position.set(0.08, 0.12, -0.08);
+        this.hammer.rotation.z = 0.5; // Uncocked position
+        this.lockGroup.add(this.hammer);
+        
+        // Frizzen (pan cover)
+        this.frizzen = new THREE.Mesh(
+            new THREE.BoxGeometry(0.04, 0.08, 0.03),
+            metalMat
+        );
+        this.frizzen.position.set(0.08, 0.05, -0.05);
+        this.frizzen.rotation.z = 0.3;
+        this.lockGroup.add(this.frizzen);
+        
+        // Pan
+        const pan = new THREE.Mesh(
+            new THREE.BoxGeometry(0.04, 0.02, 0.04),
+            metalMat
+        );
+        pan.position.set(0.08, 0.03, -0.05);
+        this.lockGroup.add(pan);
+        
+        // Flash in pan (hidden by default)
+        this.flash = new THREE.PointLight(0xffaa00, 0, 2);
+        this.flash.position.set(0.08, 0.05, -0.05);
+        this.lockGroup.add(this.flash);
+        
+        this.musketGroup.add(this.lockGroup);
+        
+        // Trigger guard
+        const triggerGuard = new THREE.Mesh(
+            new THREE.TorusGeometry(0.04, 0.008, 8, 16, Math.PI),
+            metalMat
+        );
+        triggerGuard.rotation.z = Math.PI;
+        triggerGuard.position.set(0, -0.05, 0.15);
+        this.musketGroup.add(triggerGuard);
+        
+        // Trigger
+        this.trigger = new THREE.Mesh(
+            new THREE.BoxGeometry(0.01, 0.05, 0.02),
+            metalMat
+        );
+        this.trigger.position.set(0, -0.02, 0.15);
+        this.musketGroup.add(this.trigger);
+        
+        // Ramrod
+        this.ramrod = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.008, 0.008, 1.3, 8),
+            metalMat
+        );
+        this.ramrod.rotation.x = Math.PI / 2;
+        this.ramrod.position.set(0.06, 0.02, -0.55);
+        this.musketGroup.add(this.ramrod);
+        
+        // Ramrod thimbles
+        for (let i = 0; i < 2; i++) {
+            const thimble = new THREE.Mesh(
+                new THREE.TorusGeometry(0.015, 0.005, 8, 16),
+                brassMat
+            );
+            thimble.rotation.y = Math.PI / 2;
+            thimble.position.set(0.06, 0.02, -0.3 - i * 0.5);
+            this.musketGroup.add(thimble);
+        }
+        
+        this.scene.add(this.musketGroup);
+    }
+    
+    createProjectile() {
+        this.projectile = new THREE.Mesh(
+            new THREE.SphereGeometry(0.015, 8, 8),
+            new THREE.MeshStandardMaterial({ color: 0x2a2a2a })
+        );
+        this.projectile.visible = false;
+        this.scene.add(this.projectile);
+        
+        this.projectileVelocity = new THREE.Vector3();
+        this.projectileActive = false;
+    }
+    
+    update(delta, playerPos, playerRot) {
+        // Update musket position relative to player
+        const offset = new THREE.Vector3(0.15, -0.1, -0.3);
+        offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), playerRot + this.musketAngle);
+        
+        this.musketGroup.position.copy(playerPos).add(offset);
+        this.musketGroup.rotation.y = playerRot + this.musketAngle;
+        
+        // Aiming modifies position/rotation
+        if (this.aiming) {
+            const aimOffset = new THREE.Vector3(0, 0.05, -0.15);
+            aimOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), playerRot + this.musketAngle);
+            this.musketGroup.position.add(aimOffset);
+            this.musketGroup.rotation.x = -0.05; // Slight upward tilt for sight picture
+        } else {
+            this.musketGroup.rotation.x = 0.1; // Lowered position
+        }
+        
+        // Reload animation
+        if (this.reloading) {
+            this.updateReload(delta);
+        }
+        
+        // Update projectile
+        if (this.projectileActive) {
+            this.projectile.position.add(this.projectileVelocity.clone().multiplyScalar(delta));
+            this.projectileVelocity.y -= 9.8 * delta * 0.1; // Gravity
+            
+            // Check if hit ground or went too far
+            if (this.projectile.position.y < 0 || this.projectile.position.distanceTo(playerPos) > 100) {
+                this.projectileActive = false;
+                this.projectile.visible = false;
+            }
+        }
+    }
+    
+    updateReload(delta) {
+        this.currentStageTime += delta;
+        const stage = this.reloadStages[this.reloadStage];
+        
+        if (this.currentStageTime >= stage.duration) {
+            this.currentStageTime = 0;
+            this.reloadStage++;
+            
+            // Perform stage action
+            this.performStageAction(this.reloadStage - 1);
+            
+            if (this.reloadStage >= this.reloadStages.length) {
+                this.finishReload();
+            }
+        }
+        
+        // Update UI
+        const progress = this.getReloadProgress();
+        const stageName = this.reloadStage < this.reloadStages.length ? 
+            this.reloadStages[this.reloadStage].name : 'Ready';
+        
+        updateReloadUI(this.playerId, progress, stageName);
+        
+        // Animation offsets during reload
+        this.animateReloadMotion(delta);
+    }
+    
+    performStageAction(stageIndex) {
+        switch (stageIndex) {
+            case 0: // Half Cock
+                this.hammer.rotation.z = 0.3;
+                break;
+            case 1: // Open Pan
+                this.frizzen.rotation.z = -0.5;
+                break;
+            case 4: // Ramrod Out
+                // Animate ramrod out
+                break;
+            case 7: // Return Rod
+                break;
+            case 8: // Prime Pan
+                break;
+            case 9: // Full Cock
+                this.hammer.rotation.z = -0.2;
+                this.cocked = true;
+                break;
+        }
+    }
+    
+    animateReloadMotion(delta) {
+        // Subtle motion during reload
+        const time = Date.now() * 0.001;
+        const stage = this.reloadStages[this.reloadStage];
+        
+        if (stage.name.includes('Ram')) {
+            // Ramming motion
+            this.musketGroup.position.y += Math.sin(time * 10) * 0.001;
+        } else if (stage.name.includes('Pour')) {
+            // Tilting for powder
+            this.musketGroup.rotation.z = Math.sin(time * 3) * 0.05;
+        } else {
+            this.musketGroup.rotation.z = 0;
+        }
+    }
+    
+    getReloadProgress() {
+        let elapsed = 0;
+        for (let i = 0; i < this.reloadStage; i++) {
+            elapsed += this.reloadStages[i].duration;
+        }
+        elapsed += this.currentStageTime;
+        return (elapsed / this.totalReloadTime) * 100;
+    }
+    
+    startReload() {
+        if (this.loaded || this.reloading) return false;
+        
+        this.reloading = true;
+        this.reloadStage = 0;
+        this.currentStageTime = 0;
+        this.cocked = false;
+        this.primed = false;
+        return true;
+    }
+    
+    finishReload() {
+        this.reloading = false;
+        this.loaded = true;
+        this.primed = true;
+        this.cocked = true;
+        this.frizzen.rotation.z = 0; // Close pan
+        updateReloadUI(this.playerId, 100, 'READY TO FIRE');
+        updateStatusUI(this.playerId, 'READY');
+    }
+    
+    fire() {
+        if (!this.loaded || !this.cocked || this.reloading) return false;
+        
+        // Flash effect
+        this.flash.intensity = 2;
+        setTimeout(() => { this.flash.intensity = 0; }, 100);
+        
+        // Fire the projectile
+        const barrelEnd = new THREE.Vector3(0, 0.08, -1.3);
+        barrelEnd.applyEuler(this.musketGroup.rotation);
+        barrelEnd.add(this.musketGroup.position);
+        
+        this.projectile.position.copy(barrelEnd);
+        this.projectile.visible = true;
+        this.projectileActive = true;
+        
+        // Calculate velocity based on aim
+        const direction = new THREE.Vector3(0, 0, -1);
+        direction.applyEuler(this.musketGroup.rotation);
+        direction.normalize();
+        
+        // Add some spread based on whether aiming
+        const spread = this.aiming ? 0.01 : 0.05;
+        direction.x += (Math.random() - 0.5) * spread;
+        direction.y += (Math.random() - 0.5) * spread;
+        direction.normalize();
+        
+        this.projectileVelocity = direction.multiplyScalar(80); // Musket ball velocity
+        
+        // Reset state
+        this.loaded = false;
+        this.cocked = false;
+        this.primed = false;
+        this.hammer.rotation.z = 0.5; // Fallen hammer
+        
+        updateStatusUI(this.playerId, 'EMPTY - RELOAD');
+        updateReloadUI(this.playerId, 0, 'EMPTY');
+        
+        return {
+            position: this.projectile.position.clone(),
+            velocity: this.projectileVelocity.clone(),
+            mesh: this.projectile
+        };
+    }
+    
+    setAiming(aiming) {
+        this.aiming = aiming;
+        updateAimUI(this.playerId, aiming);
+    }
+    
+    rotateMusket(dir) {
+        if (this.reloading) return; // Can't rotate while reloading
+        this.musketAngle += dir * 0.05;
+        this.musketAngle = Math.max(-0.5, Math.min(0.5, this.musketAngle));
+    }
+    
+    getProjectileData() {
+        if (!this.projectileActive) return null;
+        return {
+            position: this.projectile.position.clone(),
+            mesh: this.projectile
+        };
+    }
+    
+    reset() {
+        this.loaded = false;
+        this.primed = false;
+        this.cocked = false;
+        this.reloading = false;
+        this.reloadStage = 0;
+        this.currentStageTime = 0;
+        this.projectileActive = false;
+        this.projectile.visible = false;
+        this.hammer.rotation.z = 0.5;
+        this.frizzen.rotation.z = 0;
+        this.musketGroup.rotation.z = 0;
+    }
+}

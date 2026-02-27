@@ -62,6 +62,7 @@ canvas {
     display: block;
 }
 
+/* No crosshair - iron sights only! */
 .crosshair {
     display: none !important;
 }
@@ -137,6 +138,7 @@ h1 {
     margin: 3px 0;
 }
 
+/* Reload indicator - minimal, at bottom of view */
 .reload-status {
     position: absolute;
     bottom: 30px;
@@ -152,6 +154,7 @@ h1 {
     border-radius: 3px;
 }
 
+/* Hit flash effect */
 .hit-flash {
     position: absolute;
     top: 0;
@@ -169,6 +172,7 @@ h1 {
     opacity: 1;
 }
 
+/* Muzzle flash */
 .muzzle-flash {
     position: absolute;
     top: 50%;

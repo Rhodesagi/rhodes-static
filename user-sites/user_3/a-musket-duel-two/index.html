@@ -6,13 +6,13 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; color: #8b7355; }
-        #gameCanvas { width: 100vw; height: 100vh; display: block; }
+        canvas { display: block; }
         #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         .instructions { position: absolute; bottom: 20px; font-size: 12px; background: rgba(0,0,0,0.7); padding: 10px; border: 1px solid #5c4a3a; }
         #p1-instruct { left: 20px; }
         #p2-instruct { right: 20px; text-align: right; }
         .center-line { position: absolute; left: 50%; top: 0; width: 2px; height: 100%; background: #5c4a3a; transform: translateX(-50%); }
-        .reload-status { position: absolute; top: 50%; transform: translateY(-50%); font-size: 14px; color: #c4a574; text-shadow: 2px 2px 4px #000; background: rgba(0,0,0,0.6); padding: 8px 12px; border: 1px solid #5c4a3a; display: none; }
+        .reload-status { position: absolute; top: 50%; transform: translateY(-50%); font-size: 14px; color: #c4a574; background: rgba(0,0,0,0.6); padding: 8px 12px; border: 1px solid #5c4a3a; display: none; }
         #p1-reload { left: 25%; }
         #p2-reload { right: 25%; }
         .ammo { position: absolute; top: 30px; font-size: 18px; color: #c4a574; background: rgba(0,0,0,0.6); padding: 8px 15px; border: 1px solid #5c4a3a; }
@@ -20,10 +20,10 @@
         #p2-ammo { right: 30px; }
         .ready { color: #5a8a5a; }
         .reloading { color: #8a6a4a; }
-        .aim-indicator { position: absolute; top: 60%; font-size: 11px; color: #666; display: none; }
+        .aim-indicator { position: absolute; top: 60%; font-size: 11px; color: #aaa; display: none; background: rgba(0,0,0,0.5); padding: 5px; }
         #p1-aim { left: 25%; transform: translateX(-50%); }
         #p2-aim { right: 25%; transform: translateX(50%); }
-        #victory { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px; color: #c4a574; text-shadow: 3px 3px 6px #000; display: none; text-align: center; background: rgba(0,0,0,0.8); padding: 40px 60px; border: 2px solid #5c4a3a; }
+        #victory { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px; color: #c4a574; text-shadow: 3px 3px 6px #000; display: none; text-align: center; background: rgba(0,0,0,0.8); padding: 40px 60px; border: 2px solid #5c4a3a; z-index: 100; }
         #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, #1a1510 0%, #0d0a08 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
         h1 { font-size: 64px; color: #c4a574; text-shadow: 4px 4px 8px #000; margin-bottom: 20px; letter-spacing: 8px; }
         .subtitle { font-size: 18px; color: #8b7355; margin-bottom: 40px; }
@@ -58,7 +58,7 @@
                 <div><span class="key">P</span> - Reload Step</div>
             </div>
         </div>
-        <button id="start-btn">ENTER THE FIELD</button>
+        <button id="start-btn" type="button">ENTER THE FIELD</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -78,15 +78,12 @@
     <script>
         var canvas = document.getElementById('gameCanvas');
         var ctx = canvas.getContext('2d');
-        
-        function setCanvasSize() {
-            canvas.width = window.innerWidth || 800;
-            canvas.height = window.innerHeight || 600;
-        }
-        setCanvasSize();
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
         var game = { started: false, winner: null, smoke: [], flash: [] };
 
+        // Map - walls are 1, floor is 0
         var map = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
@@ -106,104 +103,104 @@
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ];
 
+        // 11 reload steps
         var reloadSteps = ["Half-cock...","Open frizzen...","Pour powder...","Place ball...","Ram down...","Ram down...","Ram down...","Close frizzen...","Prime pan...","Full cock...","Shoulder..."];
 
         function Player(x, y, angle, color, controls) {
             this.x = x; this.y = y; this.angle = angle; this.color = color; this.controls = controls;
             this.health = 100; this.musketAngle = angle; this.aiming = false; this.loaded = true;
             this.reloading = false; this.reloadStep = 0; this.reloadTimer = 0;
-            this.moveSpeed = 0.08; this.musketRotSpeed = 0.04; this.keys = {};
+            this.moveSpeed = 0.06; this.musketRotSpeed = 0.035; this.keys = {};
         }
 
         Player.prototype.update = function() {
             if (this.health <= 0) return;
-            if (this.keys[this.controls.forward]) { var nx = this.x + Math.cos(this.angle)*this.moveSpeed, ny = this.y + Math.sin(this.angle)*this.moveSpeed; if (map[Math.floor(ny)][Math.floor(nx)]===0) { this.x=nx; this.y=ny; }}
-            if (this.keys[this.controls.back]) { var nx = this.x - Math.cos(this.angle)*this.moveSpeed, ny = this.y - Math.sin(this.angle)*this.moveSpeed; if (map[Math.floor(ny)][Math.floor(nx)]===0) { this.x=nx; this.y=ny; }}
-            if (this.keys[this.controls.left]) { var nx = this.x + Math.cos(this.angle-Math.PI/2)*this.moveSpeed, ny = this.y + Math.sin(this.angle-Math.PI/2)*this.moveSpeed; if (map[Math.floor(ny)][Math.floor(nx)]===0) { this.x=nx; this.y=ny; }}
-            if (this.keys[this.controls.right]) { var nx = this.x + Math.cos(this.angle+Math.PI/2)*this.moveSpeed, ny = this.y + Math.sin(this.angle+Math.PI/2)*this.moveSpeed; if (map[Math.floor(ny)][Math.floor(nx)]===0) { this.x=nx; this.y=ny; }}
+            if (this.keys[this.controls.forward]) { var nx = this.x + Math.cos(this.angle)*this.moveSpeed; var ny = this.y + Math.sin(this.angle)*this.moveSpeed; if (!map[Math.floor(ny)][Math.floor(nx)]) { this.x=nx; this.y=ny; }}
+            if (this.keys[this.controls.back]) { var nx = this.x - Math.cos(this.angle)*this.moveSpeed; var ny = this.y - Math.sin(this.angle)*this.moveSpeed; if (!map[Math.floor(ny)][Math.floor(nx)]) { this.x=nx; this.y=ny; }}
+            if (this.keys[this.controls.left]) { var nx = this.x + Math.cos(this.angle-Math.PI/2)*this.moveSpeed; var ny = this.y + Math.sin(this.angle-Math.PI/2)*this.moveSpeed; if (!map[Math.floor(ny)][Math.floor(nx)]) { this.x=nx; this.y=ny; }}
+            if (this.keys[this.controls.right]) { var nx = this.x + Math.cos(this.angle+Math.PI/2)*this.moveSpeed; var ny = this.y + Math.sin(this.angle+Math.PI/2)*this.moveSpeed; if (!map[Math.floor(ny)][Math.floor(nx)]) { this.x=nx; this.y=ny; }}
             if (this.keys[this.controls.musketLeft]) this.musketAngle -= this.musketRotSpeed;
             if (this.keys[this.controls.musketRight]) this.musketAngle += this.musketRotSpeed;
             var ad = this.musketAngle - this.angle; while (ad > Math.PI) ad -= Math.PI*2; while (ad < -Math.PI) ad += Math.PI*2;
-            if (ad > Math.PI/3) this.musketAngle = this.angle + Math.PI/3;
-            if (ad < -Math.PI/3) this.musketAngle = this.angle - Math.PI/3;
+            if (ad > Math.PI/2.5) this.musketAngle = this.angle + Math.PI/2.5;
+            if (ad < -Math.PI/2.5) this.musketAngle = this.angle - Math.PI/2.5;
             this.aiming = !!this.keys[this.controls.aim];
             if (this.keys[this.controls.fire] && this.loaded && !this.reloading) this.fire();
             if (this.keys[this.controls.reload] && !this.loaded && !this.reloading) { this.reloading = true; this.reloadStep = 0; this.reloadTimer = 0; }
-            if (this.reloading) { this.reloadTimer++; if (this.reloadTimer > 25) { this.reloadTimer = 0; this.reloadStep++; if (this.reloadStep >= reloadSteps.length) { this.reloading = false; this.loaded = true; }}}
+            if (this.reloading) { this.reloadTimer++; if (this.reloadTimer > 30) { this.reloadTimer = 0; this.reloadStep++; if (this.reloadStep >= reloadSteps.length) { this.reloading = false; this.loaded = true; }}}
         };
 
         Player.prototype.fire = function() {
             this.loaded = false;
-            game.flash.push({x: this.x, y: this.y, life: 5, angle: this.musketAngle});
-            for (var i = 0; i < 8; i++) game.smoke.push({x: this.x + Math.cos(this.musketAngle)*0.5, y: this.y + Math.sin(this.musketAngle)*0.5, vx: Math.cos(this.musketAngle+(Math.random()-0.5))*0.08, vy: Math.sin(this.musketAngle+(Math.random()-0.5))*0.08, life: 60+Math.random()*30, size: 0.1+Math.random()*0.1});
-            var rx = this.x, ry = this.y, acc = this.aiming ? 0.005 : 0.08, sa = this.musketAngle + (Math.random()-0.5)*acc;
-            for (var i = 0; i < 50; i++) { rx += Math.cos(sa)*0.1; ry += Math.sin(sa)*0.1; if (map[Math.floor(ry)][Math.floor(rx)]===1) break; var o = this===player1?player2:player1, dx=rx-o.x, dy=ry-o.y; if (Math.sqrt(dx*dx+dy*dy) < 0.3) { o.health -= 50; if (o.health <= 0 && !game.winner) game.winner = this===player1?"PLAYER ONE":"PLAYER TWO"; break; }}
+            game.flash.push({x: this.x, y: this.y, life: 6, angle: this.musketAngle});
+            for (var i = 0; i < 10; i++) game.smoke.push({x: this.x + Math.cos(this.musketAngle)*0.5, y: this.y + Math.sin(this.musketAngle)*0.5, vx: Math.cos(this.musketAngle+(Math.random()-0.5)*0.5)*0.1, vy: Math.sin(this.musketAngle+(Math.random()-0.5)*0.5)*0.1, life: 80+Math.random()*40, size: 0.15+Math.random()*0.15});
+            var rx = this.x, ry = this.y, sa = this.musketAngle + (Math.random()-0.5)*(this.aiming?0.003:0.06);
+            for (var i = 0; i < 60; i++) { rx += Math.cos(sa)*0.08; ry += Math.sin(sa)*0.08; if (map[Math.floor(ry)] && map[Math.floor(ry)][Math.floor(rx)]) break; var o = this===player1?player2:player1, dx=rx-o.x, dy=ry-o.y; if (dx*dx+dy*dy < 0.15) { o.health -= 50; if (o.health <= 0 && !game.winner) game.winner = this===player1?"PLAYER ONE":"PLAYER TWO"; break; }}
         };
 
-        var player1 = new Player(2.5, 2.5, Math.PI/4, '#8b4513', {forward:'w',back:'s',left:'a',right:'d',musketLeft:'q',musketRight:'e',aim:'x',fire:'f',reload:'r'});
-        var player2 = new Player(13.5, 13.5, -3*Math.PI/4, '#4a3728', {forward:'i',back:'k',left:'j',right:'l',musketLeft:'u',musketRight:'o',aim:'m',fire:'n',reload:'p'});
+        var player1 = new Player(2.5, 2.5, 0.785, '#8b4513', {forward:'w',back:'s',left:'a',right:'d',musketLeft:'q',musketRight:'e',aim:'x',fire:'f',reload:'r'});
+        var player2 = new Player(13.5, 13.5, -2.356, '#4a3728', {forward:'i',back:'k',left:'j',right:'l',musketLeft:'u',musketRight:'o',aim:'m',fire:'n',reload:'p'});
 
         window.addEventListener('keydown', function(e) { player1.keys[e.key.toLowerCase()] = true; player2.keys[e.key.toLowerCase()] = true; });
         window.addEventListener('keyup', function(e) { player1.keys[e.key.toLowerCase()] = false; player2.keys[e.key.toLowerCase()] = false; });
-        window.addEventListener('resize', setCanvasSize);
 
-        function castRay(px, py, angle) {
-            var rx = px, ry = py, dist = 0;
-            while (dist < 20) {
-                rx += Math.cos(angle) * 0.05;
-                ry += Math.sin(angle) * 0.05;
-                dist += 0.05;
-                var mx = Math.floor(rx), my = Math.floor(ry);
-                if (my < 0 || my >= 16 || mx < 0 || mx >= 16) return {dist: dist, hit: true};
-                if (map[my][mx] === 1) return {dist: dist, hit: true};
-            }
-            return {dist: dist, hit: false};
-        }
-
+        // Simplified render - draw based on player position and angle
         function renderViewport(x, y, w, h, player) {
-            // Fill with solid colors first
-            ctx.fillStyle = '#0d1b2a';  // Dark blue sky
+            // Sky
+            ctx.fillStyle = '#1a2332';
             ctx.fillRect(x, y, w, h/2);
-            ctx.fillStyle = '#3d2817';  // Brown ground
+            // Ground
+            ctx.fillStyle = '#3d2817';
             ctx.fillRect(x, y + h/2, w, h/2);
 
-            var fov = player.aiming ? Math.PI/8 : Math.PI/3;
-            var stripWidth = 2;
-            var numRays = Math.floor(w / stripWidth);
+            // Simple wall visualization based on surrounding walls
+            var px = Math.floor(player.x);
+            var py = Math.floor(player.y);
+            var fov = player.aiming ? 0.35 : 1.05;
             
-            for (var i = 0; i < numRays; i++) {
-                var rayAngle = player.musketAngle - fov/2 + (i / numRays) * fov;
-                var hit = castRay(player.x, player.y, rayAngle);
-                if (hit.hit) {
-                    var perpDist = hit.dist * Math.cos(rayAngle - player.musketAngle);
-                    if (perpDist < 0.1) perpDist = 0.1;
-                    var wallHeight = (h / perpDist) * 0.6;
-                    if (wallHeight > h) wallHeight = h;
-                    var wallTop = y + (h - wallHeight) / 2;
-                    var brightness = Math.floor(Math.max(80, 200 - perpDist * 8));
-                    ctx.fillStyle = 'rgb(' + brightness + ',' + Math.floor(brightness*0.6) + ',' + Math.floor(brightness*0.3) + ')';
-                    ctx.fillRect(x + i * stripWidth, wallTop, stripWidth + 1, wallHeight);
+            // Check walls in front of player
+            for (var dist = 1; dist < 8; dist++) {
+                var wx = Math.floor(player.x + Math.cos(player.musketAngle) * dist);
+                var wy = Math.floor(player.y + Math.sin(player.musketAngle) * dist);
+                if (wx >= 0 && wx < 16 && wy >= 0 && wy < 16 && map[wy][wx]) {
+                    // Draw wall
+                    var wallH = (h / dist) * 0.6;
+                    var shade = Math.floor(200 - dist * 20);
+                    ctx.fillStyle = 'rgb(' + shade + ',' + Math.floor(shade*0.6) + ',' + Math.floor(shade*0.3) + ')';
+                    ctx.fillRect(x + w/2 - wallH/2, y + h/2 - wallH/2, wallH, wallH);
+                    break;
+                }
+            }
+            
+            // Side walls (simplified)
+            for (var angle = -fov/2; angle <= fov/2; angle += 0.1) {
+                for (var dist = 1; dist < 10; dist++) {
+                    var wx = Math.floor(player.x + Math.cos(player.musketAngle + angle) * dist);
+                    var wy = Math.floor(player.y + Math.sin(player.musketAngle + angle) * dist);
+                    if (wx >= 0 && wx < 16 && wy >= 0 && wy < 16 && map[wy][wx]) {
+                        var screenX = x + w/2 + (angle / fov) * w;
+                        var wallH = (h / dist) * 0.4;
+                        var shade = Math.floor(180 - dist * 15);
+                        ctx.fillStyle = 'rgb(' + shade + ',' + Math.floor(shade*0.6) + ',' + Math.floor(shade*0.3) + ')';
+                        ctx.fillRect(screenX - 5, y + h/2 - wallH/2, 10, wallH);
+                        break;
+                    }
                 }
             }
         }
 
-        function drawWeapon(x, y, w, h, player) {
+        function drawMusket(x, y, w, h, player) {
             var cx = x + w/2;
             if (player.aiming) {
-                ctx.fillStyle = '#6b4a3a';
-                ctx.fillRect(cx - 30, h - 140, 60, 120);
-                ctx.fillStyle = '#3a2a1a';
-                ctx.fillRect(cx - 25, h - 180, 50, 5);
-                ctx.fillRect(cx - 3, h - 190, 6, 15);
-                ctx.fillRect(cx - 2, h - 280, 4, 60);
-                var grad = ctx.createRadialGradient(cx, h/2, 50, cx, h/2, w/2);
-                grad.addColorStop(0, 'rgba(0,0,0,0)');
-                grad.addColorStop(1, 'rgba(0,0,0,0.3)');
-                ctx.fillStyle = grad;
-                ctx.fillRect(x, y, w, h);
+                ctx.fillStyle = '#5d4030';
+                ctx.fillRect(cx - 35, h - 160, 70, 140);
+                ctx.fillStyle = '#2a1a0a';
+                ctx.fillRect(cx - 30, h - 200, 60, 8);
+                ctx.fillRect(cx - 3, h - 210, 6, 15);
+                ctx.fillRect(cx - 2, h - 280, 4, 70);
             } else {
-                ctx.fillStyle = '#5a3a2a';
-                ctx.fillRect(cx - 12, h - 100, 24, 80);
+                ctx.fillStyle = '#4a3020';
+                ctx.fillRect(cx - 15, h - 110, 30, 90);
             }
         }
 
@@ -224,13 +221,14 @@
         function gameLoop() {
             if (!game.started) return;
             player1.update(); player2.update();
-            for (var i = game.smoke.length - 1; i >= 0; i--) { var s = game.smoke[i]; s.x += s.vx; s.y += s.vy; s.vx *= 0.98; s.vy *= 0.98; s.life--; s.size *= 1.01; if (s.life <= 0) game.smoke.splice(i, 1); }
+            for (var i = game.smoke.length - 1; i >= 0; i--) { var s = game.smoke[i]; s.x += s.vx; s.y += s.vy; s.vx *= 0.97; s.vy *= 0.97; s.life--; s.size *= 1.015; if (s.life <= 0) game.smoke.splice(i, 1); }
             for (var i = game.flash.length - 1; i >= 0; i--) { game.flash[i].life--; if (game.flash[i].life <= 0) game.flash.splice(i, 1); }
             var hw = Math.floor(canvas.width / 2);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             renderViewport(0, 0, hw, canvas.height, player1);
             renderViewport(hw, 0, canvas.width - hw, canvas.height, player2);
-            drawWeapon(0, 0, hw, canvas.height, player1);
-            drawWeapon(hw, 0, canvas.width - hw, canvas.height, player2);
+            drawMusket(0, 0, hw, canvas.height, player1);
+            drawMusket(hw, 0, canvas.width - hw, canvas.height, player2);
             updateUI();
             requestAnimationFrame(gameLoop);
         }

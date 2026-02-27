@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Musket Duel - Two</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #000; 
+            overflow: hidden; 
+            font-family: 'Courier New', monospace;
+            color: #8b7355;
+        }
+        #gameCanvas { 
+            width: 100vw; 
+            height: 100vh; 
+            display: block;
+        }
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            font-size: 12px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border: 1px solid #5c4a3a;
+        }
+        #p1-instruct { left: 20px; }
+        #p2-instruct { right: 20px; text-align: right; }
+        .center-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: #5c4a3a;
+            transform: translateX(-50%);
+        }
+        .reload-status {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+            color: #c4a574;
+            text-shadow: 2px 2px 4px #000;
+            background: rgba(0,0,0,0.6);
+            padding: 8px 12px;
+            border: 1px solid #5c4a3a;
+            display: none;
+        }
+        #p1-reload { left: 25%; }
+        #p2-reload { right: 25%; }
+        .ammo {
+            position: absolute;
+            top: 30px;
+            font-size: 18px;
+            color: #c4a574;
+            background: rgba(0,0,0,0.6);
+            padding: 8px 15px;
+            border: 1px solid #5c4a3a;
+        }
+        #p1-ammo { left: 30px; }
+        #p2-ammo { right: 30px; }
+        .ready { color: #5a8a5a; }
+        .reloading { color: #8a6a4a; }
+        .aim-indicator {
+            position: absolute;
+            top: 60%;
+            font-size: 11px;
+            color: #666;
+            display: none;
+        }
+        #p1-aim { left: 25%; transform: translateX(-50%); }
+        #p2-aim { right: 25%; transform: translateX(50%); }
+        #victory {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: #c4a574;
+            text-shadow: 3px 3px 6px #000;
+            display: none;
+            text-align: center;
+            background: rgba(0,0,0,0.8);
+            padding: 40px 60px;
+            border: 2px solid #5c4a3a;
+        }
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #1a1510 0%, #0d0a08 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        h1 {
+            font-size: 64px;
+            color: #c4a574;
+            text-shadow: 4px 4px 8px #000;
+            margin-bottom: 20px;
+            letter-spacing: 8px;
+        }
+        .subtitle {
+            font-size: 18px;
+            color: #8b7355;
+            margin-bottom: 40px;
+        }
+        .controls-box {
+            display: flex;
+            gap: 60px;
+            margin-bottom: 40px;
+        }
+        .player-controls {
+            background: rgba(0,0,0,0.5);
+            padding: 20px 30px;
+            border: 1px solid #5c4a3a;
+        }
+        .player-controls h3 {
+            color: #c4a574;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .player-controls div {
+            font-size: 13px;
+            line-height: 1.8;
+            color: #8b7355;
+        }
+        .key {
+            color: #c4a574;
+            font-weight: bold;
+        }
+        #start-btn {
+            padding: 15px 50px;
+            font-size: 20px;
+            background: #3a2a1a;
+            color: #c4a574;
+            border: 2px solid #5c4a3a;
+            cursor: pointer;
+            font-family: inherit;
+            letter-spacing: 3px;
+        }
+        #start-btn:hover {
+            background: #4a3a2a;
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen">
+        <h1>A MUSKET DUEL</h1>
+        <div class="subtitle">Honor. Powder. Lead.</div>
+        <div class="controls-box">
+            <div class="player-controls">
+                <h3>PLAYER ONE</h3>
+                <div><span class="key">W A S D</span> - Move</div>
+                <div><span class="key">Q / E</span> - Turn Musket</div>
+                <div><span class="key">X</span> - Iron Sights</div>
+                <div><span class="key">F</span> - Fire</div>
+                <div><span class="key">R</span> - Reload Step</div>
+            </div>
+            <div class="player-controls">
+                <h3>PLAYER TWO</h3>
+                <div><span class="key">I J K L</span> - Move</div>
+                <div><span class="key">U / O</span> - Turn Musket</div>
+                <div><span class="key">M</span> - Iron Sights</div>
+                <div><span class="key">N</span> - Fire</div>
+                <div><span class="key">P</span> - Reload Step</div>
+            </div>
+        </div>
+        <button id="start-btn">ENTER THE FIELD</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui">
+        <div class="center-line"></div>
+        <div class="ammo" id="p1-ammo">READY</div>
+        <div class="ammo" id="p2-ammo">READY</div>
+        <div class="reload-status" id="p1-reload"></div>
+        <div class="reload-status" id="p2-reload"></div>
+        <div class="aim-indicator" id="p1-aim">[IRON SIGHTS]</div>
+        <div class="aim-indicator" id="p2-aim">[IRON SIGHTS]</div>
+        <div class="instructions" id="p1-instruct">
+            P1: WASD Move | Q/E Turn | X Aim | F Fire | R Reload
+        </div>
+        <div class="instructions" id="p2-instruct">
+            P2: IJKL Move | U/O Turn | M Aim | N Fire | P Reload
+        </div>
+        <div id="victory"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Game state
+        const game = {
+            started: false,
+            winner: null,
+            smoke: [],
+            flash: []
+        };
+
+        // Map - 1 = wall, 0 = floor
+        const mapSize = 16;
+        const map = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,0,0,0,0,1,1,0,0,0,0,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,1,1,0,0,0,0,1,1,0,0,0,1],
+            [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
+            [1,0,0,0,1,1,0,0,0,0,1,1,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,0,0,0,0,1,1,0,0,0,0,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        // Reload steps
+        const reloadSteps = [
+            "Half-cock...",
+            "Open frizzen...",
+            "Pour powder...",
+            "Place ball...",
+            "Ram down...",
+            "Ram down...",
+            "Ram down...",
+            "Close frizzen...",
+            "Prime pan...",
+            "Full cock...",
+            "Shoulder..."
+        ];
+
+        class Player {
+            constructor(x, y, angle, color, controls) {
+                this.x = x;
+                this.y = y;
+                this.angle = angle;
+                this.color = color;
+                this.controls = controls;
+                this.health = 100;
+                this.musketAngle = angle;
+                this.aiming = false;
+                this.loaded = true;
+                this.reloading = false;
+                this.reloadStep = 0;
+                this.reloadTimer = 0;
+                this.moveSpeed = 0.08;
+                this.rotSpeed = 0.03;
+                this.musketRotSpeed = 0.04;
+                this.keys = {};
+            }
+
+            update() {
+                if (this.health <= 0) return;
+
+                const oldX = this.x;
+                const oldY = this.y;
+
+                // Movement
+                if (this.keys[this.controls.forward]) {
+                    const newX = this.x + Math.cos(this.angle) * this.moveSpeed;
+                    const newY = this.y + Math.sin(this.angle) * this.moveSpeed;
+                    if (map[Math.floor(newY)][Math.floor(newX)] === 0) {
+                        this.x = newX;
+                        this.y = newY;
+                    }
+                }
+                if (this.keys[this.controls.back]) {
+                    const newX = this.x - Math.cos(this.angle) * this.moveSpeed;
+                    const newY = this.y - Math.sin(this.angle) * this.moveSpeed;
+                    if (map[Math.floor(newY)][Math.floor(newX)] === 0) {
+                        this.x = newX;
+                        this.y = newY;
+                    }
+                }
+                if (this.keys[this.controls.left]) {
+                    const newX = this.x + Math.cos(this.angle - Math.PI/2) * this.moveSpeed;
+                    const newY = this.y + Math.sin(this.angle - Math.PI/2) * this.moveSpeed;
+                    if (map[Math.floor(newY)][Math.floor(newX)] === 0) {
+                        this.x = newX;
+                        this.y = newY;
+                    }
+                }
+                if (this.keys[this.controls.right]) {
+                    const newX = this.x + Math.cos(this.angle + Math.PI/2) * this.moveSpeed;
+                    const newY = this.y + Math.sin(this.angle + Math.PI/2) * this.moveSpeed;
+                    if (map[Math.floor(newY)][Math.floor(newX)] === 0) {
+                        this.x = newX;
+                        this.y = newY;
+                    }
+                }
+
+                // Turn musket independently
+                if (this.keys[this.controls.musketLeft]) {
+                    this.musketAngle -= this.musketRotSpeed;
+                }
+                if (this.keys[this.controls.musketRight]) {
+                    this.musketAngle += this.musketRotSpeed;
+                }
+
+                // Keep musket angle within reasonable bounds of body
+                let angleDiff = this.musketAngle - this.angle;
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                
+                if (angleDiff > Math.PI/3) this.musketAngle = this.angle + Math.PI/3;
+                if (angleDiff < -Math.PI/3) this.musketAngle = this.angle - Math.PI/3;
+
+                // Aiming
+                if (this.keys[this.controls.aim]) {
+                    this.aiming = true;
+                } else {
+                    this.aiming = false;
+                }
+
+                // Firing
+                if (this.keys[this.controls.fire] && this.loaded && !this.reloading) {
+                    this.fire();
+                }
+
+                // Reloading
+                if (this.keys[this.controls.reload] && !this.loaded && !this.reloading) {
+                    this.reloading = true;
+                    this.reloadStep = 0;
+                    this.reloadTimer = 0;
+                }
+
+                if (this.reloading) {
+                    this.reloadTimer++;
+                    if (this.reloadTimer > 25) { // Step duration
+                        this.reloadTimer = 0;
+                        this.reloadStep++;
+                        if (this.reloadStep >= reloadSteps.length) {
+                            this.reloading = false;
+                            this.loaded = true;
+                        }
+                    }
+                }
+            }
+
+            fire() {
+                this.loaded = false;
+                game.flash.push({
+                    x: this.x,
+                    y: this.y,
+                    life: 5,
+                    angle: this.musketAngle
+                });
+                
+                // Add smoke
+                for (let i = 0; i < 8; i++) {
+                    game.smoke.push({
+                        x: this.x + Math.cos(this.musketAngle) * 0.5,
+                        y: this.y + Math.sin(this.musketAngle) * 0.5,
+                        vx: Math.cos(this.musketAngle + (Math.random() - 0.5)) * 0.08,
+                        vy: Math.sin(this.musketAngle + (Math.random() - 0.5)) * 0.08,
+                        life: 60 + Math.random() * 30,
+                        size: 0.1 + Math.random() * 0.1
+                    });
+                }
+
+                // Raycast for hit
+                let rx = this.x;
+                let ry = this.y;
+                let accuracy = this.aiming ? 0.005 : 0.08;
+                const shootAngle = this.musketAngle + (Math.random() - 0.5) * accuracy;
+                
+                for (let i = 0; i < 50; i++) {
+                    rx += Math.cos(shootAngle) * 0.1;
+                    ry += Math.sin(shootAngle) * 0.1;
+
+                    // Check wall
+                    if (map[Math.floor(ry)][Math.floor(rx)] === 1) break;
+
+                    // Check hit on other player
+                    const other = this === player1 ? player2 : player1;
+                    const dx = rx - other.x;
+                    const dy = ry - other.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 0.3) {
+                        other.health -= 50;
+                        if (other.health <= 0 && !game.winner) {
+                            game.winner = this === player1 ? "PLAYER ONE" : "PLAYER TWO";
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Create players
+        const player1 = new Player(2.5, 2.5, Math.PI/4, '#8b4513', {
+            forward: 'w', back: 's', left: 'a', right: 'd',
+            musketLeft: 'q', musketRight: 'e',
+            aim: 'x', fire: 'f', reload: 'r'
+        });
+
+        const player2 = new Player(13.5, 13.5, -3*Math.PI/4, '#4a3728', {
+            forward: 'i', back: 'k', left: 'j', right: 'l',
+            musketLeft: 'u', musketRight: 'o',
+            aim: 'm', fire: 'n', reload: 'p'
+        });
+
+        // Input handling
+        window.addEventListener('keydown', (e) => {
+            player1.keys[e.key.toLowerCase()] = true;
+            player2.keys[e.key.toLowerCase()] = true;
+        });
+
+        window.addEventListener('keyup', (e) => {
+            player1.keys[e.key.toLowerCase()] = false;
+            player2.keys[e.key.toLowerCase()] = false;
+        });
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Raycasting render
+        function castRay(px, py, angle, maxDist = 20) {
+            let rx = px;
+            let ry = py;
+            let dist = 0;
+            
+            while (dist < maxDist) {
+                rx += Math.cos(angle) * 0.01;
+                ry += Math.sin(angle) * 0.01;
+                dist += 0.01;
+                
+                const mx = Math.floor(rx);
+                const my = Math.floor(ry);
+                
+                if (mx < 0 || mx >= mapSize || my < 0 || my >= mapSize || map[my][mx] === 1) {
+                    return { dist, hit: true, x: rx, y: ry };
+                }
+            }
+            return { dist, hit: false, x: rx, y: ry };
+        }
+
+        function renderViewport(x, y, width, height, player, isLeft) {
+            const fov = player.aiming ? Math.PI / 8 : Math.PI / 3;
+            const stripWidth = Math.max(1, Math.floor(width / 120));
+            
+            // Sky
+            ctx.fillStyle = '#1a1510';
+            ctx.fillRect(x, y, width, height/2);
+            
+            // Ground
+            ctx.fillStyle = '#0d0a08';
+            ctx.fillRect(x, y + height/2, width, height/2);
+
+            // Cast rays
+            for (let i = 0; i < width; i += stripWidth) {
+                const rayAngle = player.musketAngle - fov/2 + (i / width) * fov;
+                const hit = castRay(player.x, player.y, rayAngle);
+                
+                if (hit.hit) {
+                    // Calculate perpendicular distance to avoid fisheye
+                    const perpDist = hit.dist * Math.cos(rayAngle - player.musketAngle);
+                    const wallHeight = Math.min(height, (height / perpDist) * 0.8);
+                    const wallTop = y + (height - wallHeight) / 2;
+                    
+                    // Wall shading based on distance
+                    const brightness = Math.max(0.1, 1 - hit.dist / 15);
+                    const r = Math.floor(60 * brightness);
+                    const g = Math.floor(45 * brightness);
+                    const b = Math.floor(30 * brightness);
+                    
+                    ctx.fillStyle = `rgb(${r},${g},${b})`;
+                    ctx.fillRect(x + i, wallTop, stripWidth, wallHeight);
+                    
+                    // Wall edge detail
+                    if (hit.dist < 8) {
+                        ctx.fillStyle = `rgba(0,0,0,${0.3 * brightness})`;
+                        ctx.fillRect(x + i, wallTop + wallHeight - 3, stripWidth, 3);
+                    }
+                }
+            }
+
+            // Draw other player if visible
+            const other = player === player1 ? player2 : player1;
+            const dx = other.x - player.x;
+            const dy = other.y - player.y;
+            const distToOther = Math.sqrt(dx*dx + dy*dy);
+            const angleToOther = Math.atan2(dy, dx);
+            
+            let angleDiff = angleToOther - player.musketAngle;
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            
+            if (Math.abs(angleDiff) < fov/2 && distToOther < 15) {
+                // Check line of sight
+                const los = castRay(player.x, player.y, angleToOther, distToOther);
+                if (!los.hit || los.dist >= distToOther - 0.5) {
+                    const screenX = x + width/2 + (angleDiff / fov) * width;
+                    const size = Math.min(height/3, (height / distToOther) * 0.4);
+                    const screenY = y + height/2;
+                    
+                    // Draw opponent
+                    ctx.fillStyle = other.color;
+                    ctx.fillRect(screenX - size/4, screenY - size/2, size/2, size);
+                    
+                    // Head
+                    ctx.fillStyle = '#d4a574';
+                    ctx.fillRect(screenX - size/6, screenY - size/2 - size/4, size/3, size/4);
+                }
+            }
+
+            // Draw smoke
+            game.smoke.forEach(s => {
+                const sdx = s.x - player.x;
+                const sdy = s.y - player.y;
+                const sDist = Math.sqrt(sdx*sdx + sdy*sdy);
+                const sAngle = Math.atan2(sdy, sdx);
+                
+                let sAngleDiff = sAngle - player.musketAngle;
+                while (sAngleDiff > Math.PI) sAngleDiff -= Math.PI * 2;
+                while (sAngleDiff < -Math.PI) sAngleDiff += Math.PI * 2;
+                
+                if (Math.abs(sAngleDiff) < fov/2 && sDist < 12) {
+                    const screenX = x + width/2 + (sAngleDiff / fov) * width;
+                    const screenY = y + height/2;
+                    const size = (height / sDist) * s.size;
+                    
+                    const alpha = (s.life / 90) * 0.4;
+                    ctx.fillStyle = `rgba(100,100,100,${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
+            // Draw flash
+            game.flash.forEach(f => {
+                const fdx = f.x - player.x;
+                const fdy = f.y - player.y;
+                const fDist = Math.sqrt(fdx*fdx + fdy*fdy);
+                const fAngle = Math.atan2(fdy, fdx);
+                
+                let fAngleDiff = fAngle - player.musketAngle;
+                while (fAngleDiff > Math.PI) fAngleDiff -= Math.PI * 2;
+                while (fAngleDiff < -Math.PI) fAngleDiff += Math.PI * 2;
+                
+                if (Math.abs(fAngleDiff) < fov/2 && fDist < 10) {
+                    const screenX = x + width/2 + (fAngleDiff / fov) * width;
+                    const screenY = y + height/2;
+                    const size = (height / fDist) * 0.3 * (f.life / 5);
+                    
+                    ctx.fillStyle = `rgba(255,200,100,${f.life/10})`;
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+        }
+
+        function drawIronSights(x, y, width, height, player) {
+            const cx = x + width / 2;
+            const cy = y + height / 2;
+            
+            if (player.aiming) {
+                // Draw musket stock
+                ctx.fillStyle = '#4a3728';
+                ctx.fillRect(cx - 20, y + height - 100, 40, 80);
+                
+                // Rear sight (notch)
+                ctx.strokeStyle = '#2a1a0a';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(cx - 15, y + height - 150);
+                ctx.lineTo(cx - 5, y + height - 150);
+                ctx.moveTo(cx + 5, y + height - 150);
+                ctx.lineTo(cx + 15, y + height - 150);
+                ctx.stroke();
+                
+                // Front sight (post)
+                ctx.fillStyle = '#1a0a05';
+                ctx.fillRect(cx - 1, y + height - 220, 2, 40);
+                
+                // Barrel blur at edges
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(x, y, 60, height);
+                ctx.fillRect(x + width - 60, y, 60, height);
+                
+                // Vignette
+                const grad = ctx.createRadialGradient(cx, cy, 50, cx, cy, width/2);
+                grad.addColorStop(0, 'rgba(0,0,0,0)');
+                grad.addColorStop(1, 'rgba(0,0,0,0.4)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(x, y, width, height);
+            } else {
+                // Musket visible at bottom when not aiming
+                ctx.fillStyle = '#3a2a1a';
+                ctx.fillRect(cx - 8, y + height - 60, 16, 50);
+                ctx.fillStyle = '#2a1a0a';
+                ctx.fillRect(cx - 12, y + height - 20, 24, 20);
+            }
+        }
+
+        function updateUI() {
+            // P1 ammo status
+            const p1Ammo = document.getElementById('p1-ammo');
+            if (player1.loaded) {
+                p1Ammo.textContent = 'READY';
+                p1Ammo.className = 'ammo ready';
+            } else if (player1.reloading) {
+                p1Ammo.textContent = 'RELOADING';
+                p1Ammo.className = 'ammo reloading';
+            } else {
+                p1Ammo.textContent = 'EMPTY';
+                p1Ammo.className = 'ammo';
+            }
+
+            // P2 ammo status
+            const p2Ammo = document.getElementById('p2-ammo');
+            if (player2.loaded) {
+                p2Ammo.textContent = 'READY';
+                p2Ammo.className = 'ammo ready';
+            } else if (player2.reloading) {
+                p2Ammo.textContent = 'RELOADING';
+                p2Ammo.className = 'ammo reloading';
+            } else {
+                p2Ammo.textContent = 'EMPTY';
+                p2Ammo.className = 'ammo';
+            }
+
+            // Reload status
+            const p1Reload = document.getElementById('p1-reload');
+            if (player1.reloading) {
+                p1Reload.style.display = 'block';
+                p1Reload.textContent = reloadSteps[player1.reloadStep] || '';
+            } else {
+                p1Reload.style.display = 'none';
+            }
+
+            const p2Reload = document.getElementById('p2-reload');
+            if (player2.reloading) {
+                p2Reload.style.display = 'block';
+                p2Reload.textContent = reloadSteps[player2.reloadStep] || '';
+            } else {
+                p2Reload.style.display = 'none';
+            }
+
+            // Aim indicators
+            document.getElementById('p1-aim').style.display = player1.aiming ? 'block' : 'none';
+            document.getElementById('p2-aim').style.display = player2.aiming ? 'block' : 'none';
+
+            // Victory
+            if (game.winner) {
+                document.getElementById('victory').style.display = 'block';
+                document.getElementById('victory').textContent = game.winner + ' WINS';
+            }
+        }
+
+        function gameLoop() {
+            if (!game.started) return;
+
+            // Update players
+            player1.update();
+            player2.update();
+
+            // Update smoke
+            game.smoke = game.smoke.filter(s => {
+                s.x += s.vx;
+                s.y += s.vy;
+                s.vx *= 0.98;
+                s.vy *= 0.98;
+                s.life--;
+                s.size *= 1.01;
+                return s.life > 0;
+            });
+
+            // Update flash
+            game.flash = game.flash.filter(f => {
+                f.life--;
+                return f.life > 0;
+            });
+
+            // Render
+            const halfWidth = canvas.width / 2;
+            renderViewport(0, 0, halfWidth, canvas.height, player1, true);
+            renderViewport(halfWidth, 0, halfWidth, canvas.height, player2, false);
+
+            // Draw iron sights
+            drawIronSights(0, 0, halfWidth, canvas.height, player1);
+            drawIronSights(halfWidth, 0, halfWidth, canvas.height, player2);
+
+            // Update UI
+            updateUI();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            document.getElementById('start-screen').style.display = 'none';
+            game.started = true;
+            gameLoop();
+        });
+    </script>
+</body>
+</html>

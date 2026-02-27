@@ -23,7 +23,7 @@
             border: 2px solid #3d2817;
         }
         .player-view:first-child { border-right: 4px solid #2a1a0f; }
-        #game-canvas { display: block; width: 100%; height: 100%; }
+        canvas { display: block; width: 100%; height: 100%; }
         
         .reload-indicator {
             position: absolute;
@@ -38,7 +38,6 @@
             text-align: center;
             opacity: 0;
             transition: opacity 0.3s;
-            pointer-events: none;
         }
         .reload-indicator.active { opacity: 1; }
         .reload-step { color: #D2691E; font-weight: bold; }
@@ -53,7 +52,6 @@
             font-size: 11px;
             line-height: 1.4;
             color: #D2691E;
-            pointer-events: none;
         }
         
         #start-screen {
@@ -133,8 +131,8 @@
         </div>
         <button onclick="startGame()">ENTER THE FIELD</button>
         <div style="margin-top: 40px; color: #5d3a1f; font-size: 12px;">
-            Player 1: WASD | Q/E turn | X aim | F fire | R reload<br>
-            Player 2: IJKL | U/O turn | M aim | PERIOD fire | COMMA reload
+            Player 1: WASD | Q/E tilt | X aim | F fire | R reload<br>
+            Player 2: IJKL | U/O tilt | M aim | . fire | , reload
         </div>
     </div>
 
@@ -145,11 +143,11 @@
 
     <div id="game-container" style="display: none;">
         <div class="player-view" id="p1-view">
-            <canvas id="game-canvas"></canvas>
+            <canvas id="canvas1"></canvas>
             <div class="controls-help">
                 <strong>PLAYER 1</strong><br>
                 WASD - Move<br>
-                Q/E - Turn<br>
+                Q/E - Tilt Musket<br>
                 X - Aim (Iron Sights)<br>
                 F - Fire<br>
                 R - Reload
@@ -159,13 +157,14 @@
             <div class="hit-flash" id="p1-hit"></div>
         </div>
         <div class="player-view" id="p2-view">
+            <canvas id="canvas2"></canvas>
             <div class="controls-help">
                 <strong>PLAYER 2</strong><br>
                 IJKL - Move<br>
-                U/O - Turn<br>
+                U/O - Tilt Musket<br>
                 M - Aim (Iron Sights)<br>
-                PERIOD - Fire<br>
-                COMMA - Reload
+                . - Fire<br>
+                , - Reload
             </div>
             <div class="score-display" id="p2-score">0</div>
             <div class="reload-indicator" id="p2-reload"></div>

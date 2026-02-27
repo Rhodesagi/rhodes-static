@@ -1,0 +1,189 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #000;
+    color: #d4c4a0;
+    font-family: 'Georgia', serif;
+    overflow: hidden;
+    height: 100vh;
+}
+
+#start-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, #1a1510 0%, #0d0a08 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+#start-screen h1 {
+    font-size: 4rem;
+    letter-spacing: 0.3em;
+    text-shadow: 0 0 20px rgba(212, 196, 160, 0.5);
+    margin-bottom: 0.5rem;
+}
+
+#start-screen p {
+    font-size: 1.2rem;
+    opacity: 0.7;
+    margin-bottom: 2rem;
+}
+
+.controls {
+    display: flex;
+    gap: 4rem;
+    margin-bottom: 2rem;
+}
+
+.player-controls {
+    background: rgba(255,255,255,0.05);
+    padding: 1.5rem 2rem;
+    border: 1px solid rgba(212, 196, 160, 0.3);
+    border-radius: 4px;
+}
+
+.player-controls h3 {
+    margin-bottom: 1rem;
+    color: #e8dcc0;
+    text-align: center;
+}
+
+.player-controls p {
+    margin: 0.5rem 0;
+    font-size: 0.95rem;
+}
+
+.key {
+    display: inline-block;
+    background: #2a2520;
+    border: 1px solid #5a5040;
+    border-radius: 3px;
+    padding: 2px 8px;
+    margin: 0 2px;
+    font-family: monospace;
+    font-size: 0.85rem;
+}
+
+#start-btn {
+    padding: 1rem 3rem;
+    font-size: 1.3rem;
+    background: #4a4030;
+    color: #d4c4a0;
+    border: 2px solid #6a6050;
+    cursor: pointer;
+    font-family: 'Georgia', serif;
+    letter-spacing: 0.2em;
+    transition: all 0.2s;
+}
+
+#start-btn:hover {
+    background: #5a5040;
+    box-shadow: 0 0 15px rgba(212, 196, 160, 0.3);
+}
+
+.hint {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    opacity: 0.5;
+}
+
+#game-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+#ui-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    display: none;
+    justify-content: space-between;
+    padding: 20px;
+}
+
+.player-status {
+    width: 200px;
+}
+
+#p2-status {
+    text-align: right;
+}
+
+.status-bar {
+    background: rgba(0,0,0,0.7);
+    padding: 10px 15px;
+    border: 1px solid rgba(212, 196, 160, 0.3);
+    margin-bottom: 5px;
+}
+
+.health {
+    color: #c04040;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.ammo {
+    color: #40a040;
+    font-size: 0.9rem;
+}
+
+.ammo.empty {
+    color: #a04040;
+}
+
+.ammo.reloading {
+    color: #c0a040;
+}
+
+.reload-step {
+    background: rgba(0,0,0,0.7);
+    padding: 8px 12px;
+    border: 1px solid rgba(212, 196, 160, 0.2);
+    font-size: 0.75rem;
+    color: #a09070;
+    min-height: 30px;
+}
+
+#winner-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    z-index: 2000;
+}
+
+#winner-overlay h2 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+#winner-overlay button {
+    padding: 0.8rem 2rem;
+    font-size: 1.1rem;
+    background: #4a4030;
+    color: #d4c4a0;
+    border: 2px solid #6a6050;
+    cursor: pointer;
+    font-family: 'Georgia', serif;
+}
