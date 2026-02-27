@@ -473,6 +473,8 @@ if (window.rhodesIOS.isIOS) {
         let ws = null;
         let wsEpoch = 0; // monotonically increases; ignore stale socket events
         let activeReqId = null; // last user_message msg_id we sent (for filtering late events)
+        const pendingInjectionDebugByReqId = new Map();
+        let pendingInjectionDebugFallback = null;
         let autoGuestAttempted = false;
         let connectionInProgress = false;
         // WebSocket server selection
@@ -1162,6 +1164,146 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
             setTimeout(function() { if (popup.parentNode) popup.remove(); }, 8000);
 
             document.body.appendChild(popup);
+        }
+
+        function normalizeInjectionDebugPayload(data) {
+            if (!data || typeof data !== 'object') return null;
+            const injected = Array.isArray(data.injected) ? data.injected : [];
+            const out = [];
+            const seen = new Set();
+            injected.forEach((item) => {
+                if (!item || typeof item !== 'object') return;
+                const id = String(item.id || item.article_id || '').trim();
+                const title = String(item.title || id || 'injected article').trim();
+                const domain = String(item.domain || '').trim();
+                const urlRaw = String(item.url || item.source_url || '').trim();
+                const url = /^https?:\/\//i.test(urlRaw) ? urlRaw : '';
+                const key = id + '|' + title;
+                if (seen.has(key)) return;
+                seen.add(key);
+                out.push({
+                    id: id || null,
+                    title: title || null,
+                    domain: domain || null,
+                    url: url || null,
+                    sim: item.sim,
+                    boosted: item.boosted,
+                    stage: item.stage || null
+                });
+            });
+            return {
+                req_id: data.req_id ? String(data.req_id) : null,
+                source: data.source || null,
+                gate: data.gate || null,
+                total_candidates: Number.isFinite(Number(data.total_candidates)) ? Number(data.total_candidates) : null,
+                pre_gate: Number.isFinite(Number(data.pre_gate)) ? Number(data.pre_gate) : null,
+                post_gate: Number.isFinite(Number(data.post_gate)) ? Number(data.post_gate) : null,
+                injected: out
+            };
+        }
+
+        function rememberInjectionDebugPayload(data) {
+            const normalized = normalizeInjectionDebugPayload(data);
+            if (!normalized) return;
+            const reqId = normalized.req_id || (activeReqId ? String(activeReqId) : '');
+            if (reqId) {
+                pendingInjectionDebugByReqId.set(reqId, normalized);
+                if (pendingInjectionDebugByReqId.size > 20) {
+                    const firstKey = pendingInjectionDebugByReqId.keys().next().value;
+                    pendingInjectionDebugByReqId.delete(firstKey);
+                }
+            } else {
+                pendingInjectionDebugFallback = normalized;
+            }
+        }
+
+        function takePendingInjectionDebugPayload(reqId) {
+            const key = reqId ? String(reqId) : '';
+            if (key && pendingInjectionDebugByReqId.has(key)) {
+                const value = pendingInjectionDebugByReqId.get(key);
+                pendingInjectionDebugByReqId.delete(key);
+                return value;
+            }
+            if (pendingInjectionDebugFallback) {
+                const fallback = pendingInjectionDebugFallback;
+                pendingInjectionDebugFallback = null;
+                return fallback;
+            }
+            return null;
+        }
+
+        function attachInjectedArticles(msgDiv, payload) {
+            if (!msgDiv || !payload || !Array.isArray(payload.injected) || !payload.injected.length) return;
+            if (!window.RHODES_CONFIG || !window.RHODES_CONFIG.isAdmin) return;
+
+            const root = msgDiv.querySelector('.msg-content') || msgDiv;
+            const details = document.createElement('details');
+            details.className = 'debug-injected-articles';
+            details.style.marginTop = '10px';
+            details.style.borderTop = '1px solid rgba(0,255,213,0.25)';
+            details.style.paddingTop = '8px';
+
+            const summary = document.createElement('summary');
+            const total = payload.total_candidates || payload.injected.length;
+            summary.textContent = `Injected articles (${payload.injected.length}/${total})`;
+            summary.style.cursor = 'pointer';
+            summary.style.color = 'var(--green)';
+            summary.style.fontFamily = "'Orbitron', monospace";
+            summary.style.fontSize = '12px';
+            details.appendChild(summary);
+
+            const list = document.createElement('div');
+            list.style.marginTop = '8px';
+            list.style.display = 'grid';
+            list.style.gap = '8px';
+            payload.injected.forEach((article, idx) => {
+                const card = document.createElement('details');
+                card.style.background = 'rgba(0,0,0,0.25)';
+                card.style.border = '1px solid rgba(0,255,213,0.2)';
+                card.style.borderRadius = '6px';
+                card.style.padding = '6px 8px';
+
+                const cardSummary = document.createElement('summary');
+                cardSummary.style.cursor = 'pointer';
+                cardSummary.style.color = 'var(--cyan)';
+                cardSummary.style.fontSize = '12px';
+                cardSummary.style.fontFamily = "'Share Tech Mono', monospace";
+                const titleText = article.title || article.id || `article ${idx + 1}`;
+                cardSummary.textContent = `${idx + 1}. ${titleText}`;
+                card.appendChild(cardSummary);
+
+                const meta = document.createElement('div');
+                meta.style.marginTop = '6px';
+                meta.style.fontSize = '11px';
+                meta.style.color = 'var(--text)';
+                const bits = [];
+                if (article.id) bits.push(`id: ${article.id}`);
+                if (article.domain) bits.push(`domain: ${article.domain}`);
+                if (article.sim !== undefined && article.sim !== null) bits.push(`sim: ${article.sim}`);
+                if (article.boosted !== undefined && article.boosted !== null) bits.push(`boost: ${article.boosted}`);
+                if (article.stage) bits.push(`stage: ${article.stage}`);
+                meta.textContent = bits.join(' | ');
+                card.appendChild(meta);
+
+                if (article.url) {
+                    const linkWrap = document.createElement('div');
+                    linkWrap.style.marginTop = '6px';
+                    const link = document.createElement('a');
+                    link.href = article.url;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    link.style.color = 'var(--green)';
+                    link.style.textDecoration = 'underline';
+                    link.style.fontSize = '11px';
+                    link.textContent = 'Open source';
+                    linkWrap.appendChild(link);
+                    card.appendChild(linkWrap);
+                }
+
+                list.appendChild(card);
+            });
+            details.appendChild(list);
+            root.appendChild(details);
         }
 
         // Toggle debug panel and show info
@@ -2804,6 +2946,10 @@ function showDownloads() {
                         if (msg.payload.debug_reasoning && window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin) {
                             attachDebugReasoning(node, msg.payload.debug_reasoning);
                         }
+                        if (window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin) {
+                            const injPayload = takePendingInjectionDebugPayload(msg.payload.req_id || activeReqId || null);
+                            if (injPayload) attachInjectedArticles(node, injPayload);
+                        }
                     }
 
                     // Check for screenshot actions and display inline
@@ -3175,7 +3321,10 @@ function showDownloads() {
                         addMsg('ai', msg.payload.content);
                     }
                 } else if (msg.msg_type === 'injection_debug') {
-                    showInjectionDebug(msg.payload);
+                    if (window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin) {
+                        rememberInjectionDebugPayload(msg.payload || {});
+                        showInjectionDebug(msg.payload || {});
+                    }
                 
                 } else if (msg.msg_type === 'handoff_notify') {
                     // Server-push: social CLI hit CAPTCHA, open VNC viewer immediately

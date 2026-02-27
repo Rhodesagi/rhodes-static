@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Musketeers Three</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #000; 
+            overflow: hidden; 
+            font-family: 'Courier New', monospace;
+        }
+        #game-container { 
+            width: 100vw; 
+            height: 100vh; 
+            position: relative;
+        }
+        #instructions {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #8B4513;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border: 2px solid #8B4513;
+            z-index: 100;
+            font-size: 12px;
+            text-align: center;
+        }
+        .player-label {
+            position: absolute;
+            color: #8B4513;
+            font-weight: bold;
+            font-size: 14px;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 10px;
+            z-index: 100;
+        }
+        #p1-label { top: 50px; left: 10px; }
+        #p2-label { top: 50px; right: 10px; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="instructions">
+            P1: WASD=Move | Q/E=Turn Musket | X=Aim | F=Fire | R=Reload<br>
+            P2: IJKL=Move | U/O=Turn Musket | M=Aim | N=Fire | P=Reload
+        </div>
+        <div id="p1-label" class="player-label">PLAYER 1</div>
+        <div id="p2-label" class="player-label">PLAYER 2</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // ===== GAME CONFIGURATION =====
+        const CONFIG = {
+            moveSpeed: 0.15,
+            turnSpeed: 0.03,
+            musketTurnSpeed: 0.02,
+            aimFov: 25,
+            normalFov: 75,
+            bulletSpeed: 2.0,
+            gravity: 0.02,
+            groundSize: 100
+        };
+
+        // ===== RELOAD STEPS (14-step authentic musket drill) =====
+        const RELOAD_STEPS = [
+            { name: "Half-cock", duration: 300 },
+            { name: "Open frizzen", duration: 300 },
+            { name: "Prime pan", duration: 400 },
+            { name: "Shut frizzen", duration: 300 },
+            { name: "Cast about", duration: 500 },
+            { name: "Draw cartridge", duration: 400 },
+            { name: "Tear cartridge", duration: 300 },
+            { name: "Prime pan", duration: 400 },
+            { name: "Shut pan", duration: 300 },
+            { name: "Charge barrel", duration: 500 },
+            { name: "Draw rammer", duration: 400 },
+            { name: "Ram charge", duration: 600 },
+            { name: "Return rammer", duration: 400 },
+            { name: "Full cock", duration: 300 }
+        ];
+
+        // ===== SCENE SETUP =====
+        const container = document.getElementById('game-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.Fog(0x87CEEB, 20, 80);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(50, 100, 50);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        // Ground
+        const groundGeometry = new THREE.PlaneGeometry(CONFIG.groundSize, CONFIG.groundSize);
+        const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x3d5c3d });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // Add some trees/terrain features
+        for (let i = 0; i < 20; i++) {
+            const treeGroup = new THREE.Group();
+            const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, 3, 6);
+            const trunkMat = new THREE.MeshLambertMaterial({ color: 0x4a3728 });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 1.5;
+            treeGroup.add(trunk);
+            
+            const leavesGeo = new THREE.ConeGeometry(2, 5, 8);
+            const leavesMat = new THREE.MeshLambertMaterial({ color: 0x1a4a1a });
+            const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+            leaves.position.y = 4.5;
+            treeGroup.add(leaves);
+            
+            const x = (Math.random() - 0.5) * 80;
+            const z = (Math.random() - 0.5) * 80;
+            if (Math.abs(x) > 5 || Math.abs(z) > 5) {
+                treeGroup.position.set(x, 0, z);
+                scene.add(treeGroup);
+            }
+        }
+
+        // ===== MUSKET CONSTRUCTION =====
+        function createMusket() {
+            const musketGroup = new THREE.Group();
+            
+            // Stock (wood)
+            const stockGeo = new THREE.BoxGeometry(0.15, 0.2, 1.2);
+            const stockMat = new THREE.MeshLambertMaterial({ color: 0x4a3728 });
+            const stock = new THREE.Mesh(stockGeo, stockMat);
+            stock.position.set(0, 0, 0.3);
+            musketGroup.add(stock);
+            
+            // Barrel (metal)
+            const barrelGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.4, 8);
+            const barrelMat = new THREE.MeshStandardMaterial({ 
+                color: 0x2a2a2a, 
+                metalness: 0.8, 
+                roughness: 0.3 
+            });
+            const barrel = new THREE.Mesh(barrelGeo, barrelMat);
+            barrel.rotation.x = Math.PI / 2;
+            barrel.position.set(0, 0.12, -0.2);
+            musketGroup.add(barrel);
+            
+            // Rear sight
+            const rearSightGeo = new THREE.BoxGeometry(0.02, 0.06, 0.02);
+            const rearSight = new THREE.Mesh(rearSightGeo, barrelMat);
+            rearSight.position.set(0, 0.22, 0.2);
+            musketGroup.add(rearSight);
+            
+            // Front sight
+            const frontSightGeo = new THREE.BoxGeometry(0.015, 0.04, 0.015);
+            const frontSight = new THREE.Mesh(frontSightGeo, barrelMat);
+            frontSight.position.set(0, 0.2, -0.8);
+            musketGroup.add(frontSight);
+            
+            // Lock/frizzen mechanism
+            const lockGeo = new THREE.BoxGeometry(0.08, 0.15, 0.1);
+            const lock = new THREE.Mesh(lockGeo, barrelMat);
+            lock.position.set(0.08, 0.1, 0.1);
+            musketGroup.add(lock);
+            
+            // Trigger guard
+            const triggerGuardGeo = new THREE.TorusGeometry(0.06, 0.01, 4, 8, Math.PI);
+            const triggerGuard = new THREE.Mesh(triggerGuardGeo, barrelMat);
+            triggerGuard.rotation.z = Math.PI / 2;
+            triggerGuard.position.set(0, -0.05, 0.5);
+            musketGroup.add(triggerGuard);
+            
+            // Ramrod
+            const ramrodGeo = new THREE.CylinderGeometry(0.015, 0.015, 1.0, 6);
+            const ramrodMat = new THREE.MeshStandardMaterial({ 
+                color: 0x1a1a1a, 
+                metalness: 0.6 
+            });
+            const ramrod = new THREE.Mesh(ramrodGeo, ramrodMat);
+            ramrod.rotation.x = Math.PI / 2;
+            ramrod.position.set(0.1, 0.05, -0.2);
+            musketGroup.add(ramrod);
+            
+            musketGroup.userData = { 
+                rearSight, frontSight, ramrod, barrel,
+                loaded: true,
+                reloading: false,
+                reloadStep: 0,
+                reloadTimer: 0
+            };
+            
+            return musketGroup;
+        }
+
+        // ===== PLAYER SOLDIER =====
+        function createSoldier(color) {
+            const soldier = new THREE.Group();
+            
+            // Body
+            const bodyGeo = new THREE.CylinderGeometry(0.3, 0.25, 1.2, 8);
+            const bodyMat = new THREE.MeshLambertMaterial({ color: color });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.6;
+            soldier.add(body);
+            
+            // Head
+            const headGeo = new THREE.SphereGeometry(0.2, 8, 8);
+            const headMat = new THREE.MeshLambertMaterial({ color: 0xffdbac });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 1.4;
+            soldier.add(head);
+            
+            // Tricorn hat
+            const hatGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.15, 3);
+            const hatMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+            const hat = new THREE.Mesh(hatGeo, hatMat);
+            hat.position.y = 1.6;
+            soldier.add(hat);
+            
+            // Arms (simplified)
+            const armGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.6, 6);
+            const leftArm = new THREE.Mesh(armGeo, bodyMat);
+            leftArm.position.set(-0.4, 0.8, 0.2);
+            leftArm.rotation.z = 0.3;
+            soldier.add(leftArm);
+            
+            const rightArm = new THREE.Mesh(armGeo, bodyMat);
+            rightArm.position.set(0.4, 0.8, 0.2);
+            rightArm.rotation.z = -0.3;
+            soldier.add(rightArm);
+            
+            return soldier;
+        }
+
+        // ===== PLAYER CLASS =====
+        class Player {
+            constructor(id, x, z, color, controls) {
+                this.id = id;
+                this.position = new THREE.Vector3(x, 1.6, z);
+                this.rotation = 0;
+                this.musketPitch = 0;
+                this.musketYaw = 0;
+                this.isAiming = false;
+                this.controls = controls;
+                this.color = color;
+                
+                // Create camera
+                this.camera = new THREE.PerspectiveCamera(CONFIG.normalFov, 1, 0.1, 1000);
+                this.camera.position.copy(this.position);
+                
+                // Create musket (visible in view)
+                this.musket = createMusket();
+                this.musket.position.set(0.3, -0.3, -0.5);
+                this.camera.add(this.musket);
+                scene.add(this.camera);
+                
+                // Create visible soldier for other player
+                this.soldier = createSoldier(color);
+                this.soldier.position.set(x, 0, z);
+                scene.add(this.soldier);
+                
+                this.bullets = [];
+                this.hp = 100;
+            }
+            
+            update(input, deltaTime) {
+                // Movement
+                const moveVec = new THREE.Vector3();
+                if (input[this.controls.forward]) moveVec.z -= 1;
+                if (input[this.controls.backward]) moveVec.z += 1;
+                if (input[this.controls.left]) moveVec.x -= 1;
+                if (input[this.controls.right]) moveVec.x += 1;
+                
+                if (moveVec.length() > 0) {
+                    moveVec.normalize().multiplyScalar(CONFIG.moveSpeed);
+                    moveVec.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rotation);
+                    this.position.add(moveVec);
+                    
+                    // Bounds checking
+                    this.position.x = Math.max(-48, Math.min(48, this.position.x));
+                    this.position.z = Math.max(-48, Math.min(48, this.position.z));
+                }
+                
+                // Body rotation
+                if (input[this.controls.turnLeft]) this.rotation += CONFIG.turnSpeed;
+                if (input[this.controls.turnRight]) this.rotation -= CONFIG.turnSpeed;
+                
+                // Musket adjustment (Q/E or U/O)
+                if (input[this.controls.musketLeft]) this.musketYaw += CONFIG.musketTurnSpeed;
+                if (input[this.controls.musketRight]) this.musketYaw -= CONFIG.musketTurnSpeed;
+                
+                // Clamp musket rotation
+                this.musketYaw = Math.max(-0.5, Math.min(0.5, this.musketYaw));
+                
+                // Aiming (X or M)
+                if (input[this.controls.aim] && !this.musket.userData.reloading) {
+                    this.isAiming = true;
+                    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, CONFIG.aimFov, 0.1);
+                } else {
+                    this.isAiming = false;
+                    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, CONFIG.normalFov, 0.1);
+                }
+                this.camera.updateProjectionMatrix();
+                
+                // Fire (F or N)
+                if (input[this.controls.fire] && this.musket.userData.loaded && !this.musket.userData.reloading) {
+                    this.fire();
+                    this.musket.userData.loaded = false;
+                }
+                
+                // Reload (R or P)
+                if (input[this.controls.reload] && !this.musket.userData.loaded && !this.musket.userData.reloading) {
+                    this.startReload();
+                }
+                
+                // Update reload
+                if (this.musket.userData.reloading) {
+                    this.updateReload(deltaTime);
+                }
+                
+                // Update camera position and rotation
+                this.camera.position.copy(this.position);
+                this.camera.rotation.order = 'YXZ';
+                this.camera.rotation.y = this.rotation + this.musketYaw;
+                this.camera.rotation.x = this.musketPitch;
+                
+                // Update musket position based on aim
+                if (this.isAiming) {
+                    this.musket.position.lerp(new THREE.Vector3(0, -0.15, -0.35), 0.1);
+                    this.musket.rotation.z = THREE.MathUtils.lerp(this.musket.rotation.z, 0, 0.1);
+                } else {
+                    this.musket.position.lerp(new THREE.Vector3(0.3, -0.3, -0.5), 0.1);
+                    this.musket.rotation.z = THREE.MathUtils.lerp(this.musket.rotation.z, -0.2, 0.1);
+                }
+                
+                // Update visible soldier
+                this.soldier.position.x = this.position.x;
+                this.soldier.position.z = this.position.z;
+                this.soldier.rotation.y = this.rotation + Math.PI;
+                
+                // Update bullets
+                this.updateBullets();
+            }
+            
+            fire() {
+                // Calculate muzzle position
+                const direction = new THREE.Vector3(0, 0, -1);
+                direction.applyQuaternion(this.camera.quaternion);
+                
+                const bullet = {
+                    position: this.position.clone().add(direction.clone().multiplyScalar(1.5)),
+                    velocity: direction.multiplyScalar(CONFIG.bulletSpeed),
+                    mesh: null
+                };
+                
+                // Create bullet mesh
+                const bulletGeo = new THREE.SphereGeometry(0.05, 6, 6);
+                const bulletMat = new THREE.MeshBasicMaterial({ color: 0x1a1a1a });
+                bullet.mesh = new THREE.Mesh(bulletGeo, bulletMat);
+                bullet.mesh.position.copy(bullet.position);
+                scene.add(bullet.mesh);
+                
+                this.bullets.push(bullet);
+                
+                // Recoil effect
+                this.musketPitch += 0.15;
+                
+                // Muzzle flash
+                const flashGeo = new THREE.PointLight(0xffaa00, 2, 5);
+                flashGeo.position.copy(bullet.position);
+                scene.add(flashGeo);
+                setTimeout(() => scene.remove(flashGeo), 50);
+            }
+            
+            startReload() {
+                this.musket.userData.reloading = true;
+                this.musket.userData.reloadStep = 0;
+                this.musket.userData.reloadTimer = 0;
+            }
+            
+            updateReload(deltaTime) {
+                const step = RELOAD_STEPS[this.musket.userData.reloadStep];
+                this.musket.userData.reloadTimer += deltaTime;
+                
+                // Animate musket based on step
+                const progress = this.musket.userData.reloadTimer / step.duration;
+                
+                if (this.musket.userData.reloadStep === 5) {
+                    // Draw cartridge - tilt musket
+                    this.musket.rotation.x = Math.sin(progress * Math.PI) * 0.5;
+                } else if (this.musket.userData.reloadStep === 11) {
+                    // Ram charge
+                    this.musket.userData.ramrod.position.z = -0.2 + Math.sin(progress * Math.PI * 2) * 0.3;
+                }
+                
+                if (this.musket.userData.reloadTimer >= step.duration) {
+                    this.musket.userData.reloadStep++;
+                    this.musket.userData.reloadTimer = 0;
+                    
+                    if (this.musket.userData.reloadStep >= RELOAD_STEPS.length) {
+                        this.musket.userData.reloading = false;
+                        this.musket.userData.loaded = true;
+                        this.musket.rotation.x = 0;
+                        this.musket.userData.ramrod.position.z = -0.2;
+                    }
+                }
+            }
+            
+            updateBullets() {
+                for (let i = this.bullets.length - 1; i >= 0; i--) {
+                    const bullet = this.bullets[i];
+                    bullet.velocity.y -= CONFIG.gravity;
+                    bullet.position.add(bullet.velocity);
+                    bullet.mesh.position.copy(bullet.position);
+                    
+                    // Ground collision
+                    if (bullet.position.y <= 0) {
+                        scene.remove(bullet.mesh);
+                        this.bullets.splice(i, 1);
+                        continue;
+                    }
+                    
+                    // Check collision with other player
+                    const otherPlayer = this.id === 1 ? player2 : player1;
+                    const dist = bullet.position.distanceTo(otherPlayer.position);
+                    if (dist < 1.0 && bullet.position.y < 2.0) {
+                        otherPlayer.hp -= 25;
+                        scene.remove(bullet.mesh);
+                        this.bullets.splice(i, 1);
+                        
+                        // Blood effect
+                        const bloodGeo = new THREE.SphereGeometry(0.3, 6, 6);
+                        const bloodMat = new THREE.MeshBasicMaterial({ color: 0xaa0000 });
+                        const blood = new THREE.Mesh(bloodGeo, bloodMat);
+                        blood.position.copy(otherPlayer.position);
+                        blood.position.y = 1;
+                        scene.add(blood);
+                        setTimeout(() => scene.remove(blood), 500);
+                    }
+                    
+                    // Remove bullets that go too far
+                    if (bullet.position.distanceTo(this.position) > 200) {
+                        scene.remove(bullet.mesh);
+                        this.bullets.splice(i, 1);
+                    }
+                }
+            }
+        }
+
+        // ===== INPUT HANDLING =====
+        const keys = {};
+        window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
+        window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+        // ===== CREATE PLAYERS =====
+        const player1 = new Player(1, -10, 0, 0x0000aa, {
+            forward: 'w', backward: 's', left: 'a', right: 'd',
+            turnLeft: 'q', turnRight: 'e',
+            musketLeft: 'q', musketRight: 'e',
+            aim: 'x', fire: 'f', reload: 'r'
+        });
+
+        const player2 = new Player(2, 10, 0, 0xaa0000, {
+            forward: 'i', backward: 'k', left: 'j', right: 'l',
+            turnLeft: 'u', turnRight: 'o',
+            musketLeft: 'u', musketRight: 'o',
+            aim: 'm', fire: 'n', reload: 'p'
+        });
+
+        // ===== RENDERER SETUP =====
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setScissorTest(true);
+        container.appendChild(renderer.domElement);
+
+        // ===== SPLIT-SCREEN RENDERING =====
+        function render() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const halfWidth = Math.floor(width / 2);
+            
+            // Player 1 viewport (left half)
+            renderer.setViewport(0, 0, halfWidth, height);
+            renderer.setScissor(0, 0, halfWidth, height);
+            player1.camera.aspect = halfWidth / height;
+            player1.camera.updateProjectionMatrix();
+            renderer.render(scene, player1.camera);
+            
+            // Player 2 viewport (right half)
+            renderer.setViewport(halfWidth, 0, halfWidth, height);
+            renderer.setScissor(halfWidth, 0, halfWidth, height);
+            player2.camera.aspect = halfWidth / height;
+            player2.camera.updateProjectionMatrix();
+            renderer.render(scene, player2.camera);
+        }
+
+        // ===== GAME LOOP =====
+        let lastTime = performance.now();
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const currentTime = performance.now();
+            const deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+            
+            player1.update(keys, deltaTime);
+            player2.update(keys, deltaTime);
+            
+            render();
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start game
+        animate();
+    </script>
+</body>
+</html>

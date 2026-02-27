@@ -434,7 +434,7 @@
           </div>
         </div>
         <div class="muted" style="margin-top: 6px;">
-          Checked = active. Unchecked = inactive. Changes highlighted until applied. Tools <code class="mono">message</code> and <code class="mono">respond</code> are always enabled.
+          Checked = active. Unchecked = inactive. Changes highlighted UNTIL applied. Tools <code class="mono">message</code> and <code class="mono">respond</code> are always enabled.
         </div>
         <div class="tools" id="toolsGrid">(loading tools…)</div>
         <div class="hr"></div>
@@ -564,7 +564,7 @@
               <div class="muted">Session viewer</div>
               <div class="muted" id="sessOpenLabel" style="display:inline;"></div> <button id="sessShareBtn" style="margin-left:10px;padding:4px 10px;" onclick="shareSession()">Share</button> <span id="sessShareResult" style="margin-left:10px;color:#0af;"></span>
             </div>
-            <pre class="mono" id="sessOut">(none)</pre>
+            <div class="mono" id="sessOut" style="white-space:pre-wrap;background:#0f1730;border:1px solid var(--border);border-radius:10px;padding:10px;max-height:520px;overflow:auto;">(none)</div>
           </div>
         </div>
       </div>
@@ -928,11 +928,71 @@
       }
 
       function esc(s) { return String(s || '').replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+      function escAttr(s) { return String(s || '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
       function safeSnippet(snippet) {
         // Sessions are user-generated; escape everything and only re-allow <mark> tags inserted by backend.
         return esc(snippet || '')
           .replaceAll('&lt;mark&gt;', '<mark>')
           .replaceAll('&lt;/mark&gt;', '</mark>');
+      }
+      function parseRoundMeta(raw) {
+        if (!raw) return null;
+        if (typeof raw === 'object') return raw;
+        try { return JSON.parse(raw); } catch { return null; }
+      }
+      function normalizeInjectedArticles(meta, round) {
+        const fromRound = Array.isArray(round?.injected_articles) ? round.injected_articles : [];
+        const fromMeta = Array.isArray(meta?.injected_articles) ? meta.injected_articles : [];
+        const source = fromRound.length ? fromRound : fromMeta;
+        const out = [];
+        const seen = new Set();
+        for (const item of source) {
+          if (!item || typeof item !== 'object') continue;
+          const id = String(item.id || item.article_id || '').trim();
+          const title = String(item.title || id || 'injected article').trim();
+          const domain = String(item.domain || '').trim();
+          const stage = String(item.stage || '').trim();
+          const sim = (item.sim !== undefined && item.sim !== null) ? item.sim : null;
+          const boosted = (item.boosted !== undefined && item.boosted !== null) ? item.boosted : null;
+          const chars = (item.chars !== undefined && item.chars !== null) ? item.chars : null;
+          const urlRaw = String(item.url || item.source_url || '').trim();
+          const url = /^https?:\/\//i.test(urlRaw) ? urlRaw : '';
+          const key = id + '|' + title;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          out.push({ id, title, domain, stage, sim, boosted, chars, url });
+        }
+        return out;
+      }
+      function renderInjectedArticleCards(articles, injDebug) {
+        if (!articles || !articles.length) return '';
+        const total = Number(injDebug?.total_candidates || articles.length) || articles.length;
+        const gate = injDebug?.gate ? ` · gate:${esc(injDebug.gate)}` : '';
+        let html = '';
+        html += `<details style="cursor:pointer;margin-top:8px;"><summary style="color:#0ff;font-weight:bold;">INJECTED ARTICLES [${articles.length}/${total}] click to expand${gate}</summary>`;
+        html += '<div style="margin-top:8px;display:grid;gap:8px;">';
+        articles.forEach((a, idx) => {
+          const metaBits = [];
+          if (a.id) metaBits.push(`id:${esc(a.id)}`);
+          if (a.domain) metaBits.push(`domain:${esc(a.domain)}`);
+          if (a.sim !== null) metaBits.push(`sim:${esc(a.sim)}`);
+          if (a.boosted !== null) metaBits.push(`boost:${esc(a.boosted)}`);
+          if (a.stage) metaBits.push(`stage:${esc(a.stage)}`);
+          if (a.chars !== null) metaBits.push(`chars:${esc(a.chars)}`);
+          const title = esc(a.title || a.id || `article ${idx + 1}`);
+          const clickableTitle = a.url
+            ? `<a href="${escAttr(a.url)}" target="_blank" rel="noopener noreferrer" style="color:#4ade80;text-decoration:underline;">${title}</a>`
+            : `<span style="color:#e7ecff;">${title}</span>`;
+          html += '<details style="border:1px solid rgba(39,50,92,0.7);border-radius:8px;padding:6px 8px;background:rgba(0,0,0,0.15);">';
+          html += `<summary style="cursor:pointer;color:#93c5fd;">${idx + 1}. ${clickableTitle}</summary>`;
+          html += `<div class="mono" style="font-size:11px;color:var(--muted);margin-top:6px;">${metaBits.join(' · ')}</div>`;
+          if (a.url) {
+            html += `<div style="margin-top:6px;"><a href="${escAttr(a.url)}" target="_blank" rel="noopener noreferrer" style="color:#4ade80;font-size:11px;text-decoration:underline;">Open source</a></div>`;
+          }
+          html += '</details>';
+        });
+        html += '</div></details>';
+        return html;
       }
       function fmtEpoch(ts) {
         if (!ts) return '';
@@ -1456,11 +1516,13 @@
           const locStr = r.location ? ` (${r.location})` : '';
           const ipStr = r.ip_address ? ` · IP:${r.ip_address}${locStr}` : '';
           const msgStr = r.message_count ? ` · ${r.message_count} msgs` : '';
+          const injCount = Number(r.injected_articles_count || 0) || 0;
+          const injStr = injCount > 0 ? ` · injected:${injCount}` : '';
           const modelStr = r.model ? ` · model:${r.model}` : '';
           const headerPre = mode === "browse"
             ? `${when} · ${r.session_id} · `
             : `${when} · ${r.session_id} · round ${r.round_num} · `;
-          const headerPost = `${modelStr}${ipStr}${msgStr}`;
+          const headerPost = `${modelStr}${ipStr}${msgStr}${injStr}`;
           item.innerHTML = `
             <div class="mono" style="font-size:12px; margin-bottom:6px;">${esc(headerPre)}<a href="#" class="user-link" style="color:#4ade80;text-decoration:underline;cursor:pointer;">${esc(whoLabel)}</a>${esc(headerPost)}</div>
             <div class="mono">${safeSnippet(r.snippet || '')}</div>
@@ -1522,10 +1584,8 @@
         try {
           const modelByRound = rounds.map(r => {
             let m = '';
-            try {
-              const meta = typeof r.metadata === 'string' ? JSON.parse(r.metadata) : (r.metadata || null);
-              if (meta && meta.model) m = String(meta.model);
-            } catch (e) {}
+            const meta = parseRoundMeta(r.metadata);
+            if (meta && meta.model) m = String(meta.model);
             return m || '';
           });
           const switches = [];
@@ -1545,41 +1605,39 @@
         for (const r of rounds) {
           const who = r.username ? `user:${r.username}` : (r.client_id ? `guest:${r.client_id}` : 'unknown');
           const when = fmtEpoch(r.created_at);
+          const meta = parseRoundMeta(r.metadata);
           let model = 'unknown';
-          try {
-            const meta = typeof r.metadata === 'string' ? JSON.parse(r.metadata) : (r.metadata || null);
-            if (meta && meta.model) model = String(meta.model);
-          } catch (e) {}
+          if (meta && meta.model) model = String(meta.model);
           const ps = r.prompt_source ? ` · ${r.prompt_source}` : '';
           out.push(`== Round ${r.round_num} · ${who} · ${when} · model:${model}${ps} ==`);
           out.push('');
           out.push('USER:');
           out.push(String(r.user_message || '').trimEnd());
+          const injectedArticles = normalizeInjectedArticles(meta, r);
+          if (injectedArticles.length > 0) {
+            out.push('');
+            out.push(renderInjectedArticleCards(injectedArticles, r.injection_debug || meta?.injection_debug || null));
+          }
           // Show injection if present in metadata (collapsible)
-          if (r.metadata) {
-            try {
-              const meta = typeof r.metadata === 'string' ? JSON.parse(r.metadata) : r.metadata;
-              if (meta.injected_content && meta.injected_content !== r.user_message) {
-                const inj = String(meta.injected_content || '');
-                const lines = inj.split("\n");
-                const preview = lines.slice(0, 4).join("\n");
-                const hasMore = lines.length > 4;
-                out.push('');
-                out.push('<details style="cursor:pointer"><summary style="color:#0ff">INJECTION [' + lines.length + ' lines] click to expand</summary>');
-                out.push('<pre style="color:#888;white-space:pre-wrap;max-height:300px;overflow:auto">' + inj.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre></details>');
-              }
-              // Show thought substitution if present in metadata
-              if (meta.thought_sub) {
-                const ts = meta.thought_sub;
-                const matchInfo = ts.match_type === 'semantic'
-                  ? 'semantic (sim=' + (ts.semantic_sim ? ts.semantic_sim.toFixed(3) : '?') + ')'
-                  : 'keyword';
-                const qInfo = ts.semantic_question ? ' matched: "' + ts.semantic_question + '"' : '';
-                out.push('');
-                out.push('<details style="cursor:pointer"><summary style="color:#ff00ff;font-weight:bold;">THOUGHT SUBSTITUTION · pattern: ' + esc(ts.pattern_name || '?') + ' · ' + matchInfo + qInfo + ' · ' + (ts.injection_length || 0) + ' chars</summary>');
-                out.push('<pre style="color:#c9a0dc;white-space:pre-wrap;max-height:400px;overflow:auto;background:rgba(255,0,255,0.04);padding:8px;border-left:3px solid #ff00ff;">' + (ts.injection_text || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre></details>');
-              }
-            } catch(e) {}
+          if (meta) {
+            if (meta.injected_content && meta.injected_content !== r.user_message) {
+              const inj = String(meta.injected_content || '');
+              const lines = inj.split("\n");
+              out.push('');
+              out.push('<details style="cursor:pointer"><summary style="color:#0ff">INJECTION TEXT [' + lines.length + ' lines] click to expand</summary>');
+              out.push('<pre style="color:#888;white-space:pre-wrap;max-height:300px;overflow:auto">' + inj.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre></details>');
+            }
+            // Show thought substitution if present in metadata
+            if (meta.thought_sub) {
+              const ts = meta.thought_sub;
+              const matchInfo = ts.match_type === 'semantic'
+                ? 'semantic (sim=' + (ts.semantic_sim ? ts.semantic_sim.toFixed(3) : '?') + ')'
+                : 'keyword';
+              const qInfo = ts.semantic_question ? ' matched: "' + ts.semantic_question + '"' : '';
+              out.push('');
+              out.push('<details style="cursor:pointer"><summary style="color:#ff00ff;font-weight:bold;">THOUGHT SUBSTITUTION · pattern: ' + esc(ts.pattern_name || '?') + ' · ' + matchInfo + qInfo + ' · ' + (ts.injection_length || 0) + ' chars</summary>');
+              out.push('<pre style="color:#c9a0dc;white-space:pre-wrap;max-height:400px;overflow:auto;background:rgba(255,0,255,0.04);padding:8px;border-left:3px solid #ff00ff;">' + (ts.injection_text || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre></details>');
+            }
           }
           out.push('');
           out.push('AI:');
