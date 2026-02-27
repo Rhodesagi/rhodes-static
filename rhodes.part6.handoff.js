@@ -95,6 +95,10 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     window.openHandoffViewer = function(novncUrl, cliName, reason) {
+        // If modal is already open for the same CLI, skip (avoids refresh on repeated tool calls)
+        if (_handoffModal && _handoffCliName === cliName) {
+            return;
+        }
         _cleanupBeforeHandoff();
         _handoffCliName = cliName;
 

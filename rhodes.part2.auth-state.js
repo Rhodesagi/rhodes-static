@@ -1523,14 +1523,14 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
                 .replace(/\[RHODES_ACTION:[^\]]*$/i, '')
                 .replace(/\[CLIENT_COMMAND:[^\]]*$/i, '');
             // Simple text update with cursor
-            const formatted = linkifyUrls(renderMediaEmbeds(cleanText
+            const formatted = linkifyUrls(renderVncAndSiteEmbeds(renderMediaEmbeds(cleanText
                 .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre>$2</pre>')
                 .replace(/`([^`]+)`/g, '<code>$1</code>')
                 .replace(/\*\*(https?:\/\/[^\s*]+)\*\*/g, '$1')
                 .replace(/'(https?:\/\/[^\s']+)'/g, '$1')
                 .replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>')
                 .replace(/(?<![*])\*([^*]+?)\*(?![*])/g, '<em>$1</em>')
-                .replace(/\n/g, '<br>')));
+                .replace(/\n/g, '<br>'))));
             el.innerHTML = formatted + '<span class="streaming-cursor">▌</span>';
             chat.scrollTop = chat.scrollHeight;
         }
