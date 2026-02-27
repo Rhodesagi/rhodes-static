@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dueling Muskets</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
+        #gameContainer { position: relative; width: 100vw; height: 100vh; }
+        .playerView {
+            position: absolute;
+            width: 100%;
+            height: 50%;
+            overflow: hidden;
+        }
+        #p1View { top: 0; border-bottom: 2px solid #444; }
+        #p2View { bottom: 0; }
+        canvas { display: block; width: 100%; height: 100%; }
+        .hud {
+            position: absolute;
+            padding: 10px 15px;
+            color: #fff;
+            font-size: 14px;
+            text-shadow: 2px 2px 0 #000;
+            pointer-events: none;
+            background: rgba(0,0,0,0.5);
+            border-radius: 5px;
+        }
+        #p1Hud { top: 10px; left: 10px; }
+        #p2Hud { bottom: 10px; left: 10px; }
+        .status { color: #aaa; margin-top: 5px; }
+        .aiming { color: #ff6; }
+        .reloading { color: #f66; }
+        .ready { color: #6f6; }
+        #instructions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 100;
+        }
+        h1 { color: #d4a574; margin-bottom: 20px; }
+        .controls {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .playerControls h3 { color: #d4a574; margin-bottom: 10px; }
+        .playerControls p { margin: 5px 0; font-size: 13px; color: #ccc; }
+        button {
+            background: #d4a574;
+            color: #000;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        button:hover { background: #e5b685; }
+        #winner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            color: #fff;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 101;
+            display: none;
+        }
+        #winner h2 { font-size: 36px; margin-bottom: 20px; }
+        .hitmarker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="p1View" class="playerView">
+            <canvas id="canvas1"></canvas>
+            <div id="p1Hud" class="hud">
+                <div><strong>PLAYER 1</strong></div>
+                <div id="p1Health">Health: 100</div>
+                <div id="p1Status" class="status ready">Ready to fire</div>
+                <div id="p1Ammo">Round in barrel: Yes</div>
+            </div>
+        </div>
+        <div id="p2View" class="playerView">
+            <canvas id="canvas2"></canvas>
+            <div id="p2Hud" class="hud">
+                <div><strong>PLAYER 2</strong></div>
+                <div id="p2Health">Health: 100</div>
+                <div id="p2Status" class="status ready">Ready to fire</div>
+                <div id="p2Ammo">Round in barrel: Yes</div>
+            </div>
+        </div>
+        
+        <div id="instructions">
+            <h1>⚔️ DUELING MUSKETS ⚔️</h1>
+            <p style="color: #888; margin-bottom: 20px;">Iron sights only. No crosshairs. Full reloading simulation.</p>
+            <div class="controls">
+                <div class="playerControls">
+                    <h3>🔵 Player 1 (Top)</h3>
+                    <p><strong>WASD</strong> - Move</p>
+                    <p><strong>Q / E</strong> - Tilt musket</p>
+                    <p><strong>X</strong> - Aim iron sights</p>
+                    <p><strong>F</strong> - Fire</p>
+                    <p><strong>R</strong> - Reload</p>
+                </div>
+                <div class="playerControls">
+                    <h3>🔴 Player 2 (Bottom)</h3>
+                    <p><strong>IJKL</strong> - Move</p>
+                    <p><strong>U / O</strong> - Tilt musket</p>
+                    <p><strong>M</strong> - Aim iron sights</p>
+                    <p><strong>N</strong> - Fire</p>
+                    <p><strong>B</strong> - Reload</p>
+                </div>
+            </div>
+            <p style="color: #666; font-size: 12px; margin-top: 20px;">First to 3 kills wins. Click to start...</p>
+            <button onclick="startGame()">START DUEL</button>
+        </div>
+        
+        <div id="winner">
+            <h2 id="winnerText"></h2>
+            <button onclick="resetGame()">DUEL AGAIN</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

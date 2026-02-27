@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dueling Muskets - Two Player</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            overflow: hidden; 
+            background: #111;
+            font-family: 'Courier New', monospace;
+        }
+        #gameCanvas { display: block; }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #8B4513;
+            font-size: 14px;
+            text-shadow: 1px 1px 2px #000;
+            pointer-events: none;
+        }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #8B4513;
+            font-size: 12px;
+            text-align: center;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .player-label {
+            position: absolute;
+            font-size: 18px;
+            font-weight: bold;
+            color: #8B4513;
+            text-shadow: 2px 2px 4px #000;
+            pointer-events: none;
+        }
+        #p1-label { top: 50px; left: 20px; }
+        #p2-label { bottom: 50px; left: 20px; }
+        #startScreen {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(180deg, #1a0f0a 0%, #2d1f16 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        #startScreen h1 {
+            color: #cd853f;
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px #000;
+        }
+        #startScreen button {
+            padding: 15px 40px;
+            font-size: 24px;
+            background: #8B4513;
+            color: #fff;
+            border: 3px solid #cd853f;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        #startScreen button:hover {
+            background: #cd853f;
+        }
+        .reload-indicator {
+            position: absolute;
+            color: #fff;
+            font-size: 16px;
+            background: rgba(139, 69, 19, 0.8);
+            padding: 5px 15px;
+            border-radius: 3px;
+            pointer-events: none;
+        }
+        #p1-reload { top: 80px; left: 20px; }
+        #p2-reload { bottom: 80px; left: 20px; }
+    </style>
+</head>
+<body>
+    <div id="startScreen">
+        <h1>⚔️ DUELING MUSKETS ⚔️</h1>
+        <p style="color: #cd853f; margin-bottom: 30px;">Two Player - Same Computer</p>
+        <button onclick="startGame()">START DUEL</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    <div id="p1-label" class="player-label">PLAYER 1</div>
+    <div id="p2-label" class="player-label">PLAYER 2</div>
+    <div id="p1-reload" class="reload-indicator" style="display:none;">RELOADING...</div>
+    <div id="p2-reload" class="reload-indicator" style="display:none;">RELOADING...</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/musket.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/bullet.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

@@ -115,7 +115,7 @@ function toggleSplitView() {
     <!-- Firebase Auth for Google Sign-In -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js?v=1771899160"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js?v=1771899160"></script>
-    <link rel="stylesheet" href="/rhodes.css?v=1772058203">
+    <link rel="stylesheet" href="/rhodes.css?v=1772171004">
 <script>const params=new URLSearchParams(window.location.search);
 if(params.get("nologo")==="1"){document.write(`<style>.logo{visibility:hidden!important}
     /* Slash command autocomplete dropdown */
@@ -601,6 +601,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
                         <a href="/projects.html">Projects</a>
                         <div class="account-dropdown-divider"></div>
                         <div class="account-dropdown-divider"></div>
+                        <a href="#" onclick="document.getElementById('cloud-settings-modal').style.display='flex';CloudStorage.refreshStatus();return false;">Cloud Storage</a>
                         <a href="/upgrade.html">Upgrade Plan</a>
                         <a href="/api.html">API</a>
                         <a href="/donate.html">Donate</a>
@@ -777,6 +778,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
             <div class="input-with-attachment" style="position:relative;">
                 <span class="prompt" aria-hidden="true">&gt;</span>
                 <textarea id="input" placeholder="enter message..." autocomplete="off" rows="1"></textarea>
+                <button type="button" id="cloud-attach-btn" onclick="CloudStorage.openBrowser()" title="Cloud files" style="display:none;">☁️</button>
                 <button type="button" id="attach-btn" onclick="document.getElementById('image-input').click()" title="Attach files">📎</button>
                 <button type="button" id="send-inline" onclick="send()" title="Send message">➤</button>
             </div>
@@ -831,6 +833,16 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
     </div>
 
     <!-- Auth Modal - Guest/Register/Login -->
+    <div class="modal" id="cloud-settings-modal" style="display:none;">
+        <div class="modal-content" style="max-width:500px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="margin:0;font-family:'Orbitron',monospace;color:var(--cyan);">CLOUD STORAGE</h3>
+                <button onclick="document.getElementById('cloud-settings-modal').style.display='none'" style="background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;">&times;</button>
+            </div>
+            <p style="color:var(--dim);font-size:13px;margin-bottom:16px;">Connect your cloud storage to let Rhodes read and write your files during conversation.</p>
+            <div id="cloud-connections"></div>
+        </div>
+    </div>
     <div class="modal" id="auth-modal" style="display:none;">
         <div class="modal-box" style="width: 420px; max-width: calc(100% - 32px); min-width: 300px;">
             <h2>// ACCESS RHODES</h2>
@@ -1019,19 +1031,20 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
 
     <!-- Courses Panel -->
 
-    <script src="/credentials-popup.js?v=1771899160"></script>
-    <script src="/rhodes-tools.js?v=1772058203"></script>
-    <script src="/rhodes-sessions.js?v=1772058203"></script>
-    <script src="/rhodes-auth.js?v=1772058203"></script>
-    <script src="/rhodes-share.js?v=1772058203"></script>
-    <script src="/rhodes-ws.js?v=1772058203"></script>
-    <script src="/rhodes-media.js?v=1772058203"></script>
+    <script src="/credentials-popup.js?v=1772171004"></script>
+    <script src="/rhodes-tools.js?v=1772171004"></script>
+    <script src="/rhodes-sessions.js?v=1772171004"></script>
+    <script src="/rhodes-auth.js?v=1772171004"></script>
+    <script src="/rhodes-share.js?v=1772171004"></script>
+    <script src="/rhodes-ws.js?v=1772171004"></script>
+    <script src="/rhodes-media.js?v=1772171004"></script>
     <script src="/rhodes-send.js?v=20260226-02"></script>
-    <script src="/rhodes-voice.js?v=1772058203"></script>
+    <script src="/rhodes-voice.js?v=1772171004"></script>
     <script src="/face-api.min.js?v=1771899160"></script>
-    <script src="/rhodes-valence.js?v=1772058203"></script>
-    <script src="/rhodes.js?v=1772058203"></script>
-    <script src="/rhodes-split.js?v=1772058203"></script>
+    <script src="/rhodes-valence.js?v=1772171004"></script>
+    <script src="/rhodes.js?v=1772171004"></script>
+    <script src="/rhodes-split.js?v=1772171004"></script>
+    <script src="/rhodes-cloud-storage.js?v=1772171004"></script>
 
     <!-- PWA Service Worker & Install -->
     <script>

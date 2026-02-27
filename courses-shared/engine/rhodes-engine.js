@@ -114,6 +114,7 @@ const RhodesEngine = {
       if (typeof RhodesSRS !== 'undefined' && this.drillsData?.drills) {
         const meta = {};
         for (const d of this.drillsData.drills) {
+          if (d.disabledReason) continue; // Skip disabled drills
           meta[d.id] = {
             pos_pattern: d.pos_pattern, commonality: d.commonality, unit: d.unit,
             is_canonical: d.is_canonical, pattern_group: d.pattern_group
@@ -356,7 +357,7 @@ const RhodesEngine = {
     }
 
     // Drill count
-    const unitDrills = this.drillsData ? this.drillsData.drills.filter(d => d.unit === unitId) : [];
+    const unitDrills = this.drillsData ? this.drillsData.drills.filter(d => d.unit === unitId && !d.disabledReason) : [];
     const drillsSection = el('startDrillsBtn')?.parentElement;
     if (unit.noDrills || unitDrills.length === 0) {
       if (drillsSection) drillsSection.style.display = 'none';
@@ -411,7 +412,7 @@ const RhodesEngine = {
 
   loadUnitDrills(unitId) {
     if (!this.drillsData) { console.error('Drills data not loaded'); return; }
-    const unitDrills = this.drillsData.drills.filter(d => d.unit === unitId);
+    const unitDrills = this.drillsData.drills.filter(d => d.unit === unitId && !d.disabledReason);
     if (unitDrills.length === 0) { alert(`No drills available for Unit ${unitId} yet.`); return; }
 
     const storageKey = this.cfg().storage?.progress || 'rhodes_course_progress';
@@ -443,7 +444,8 @@ const RhodesEngine = {
 
   updateSRSStats() {
     const stats = RhodesStorage.getStats();
-    const totalDrills = this.drillsData?.total_drills || this.drillsData?.drills?.length || 0;
+    const activeDrills = this.drillsData?.drills?.filter(d => !d.disabledReason) || [];
+    const totalDrills = activeDrills.length || 0;
     const newCards = totalDrills - stats.total;
     const el = (id) => document.getElementById(id);
     if (el('dueToday')) el('dueToday').textContent = stats.dueToday || 0;
@@ -472,7 +474,7 @@ const RhodesEngine = {
     const storageKey = this.cfg().storage?.progress || 'rhodes_course_progress';
     const progress = JSON.parse(localStorage.getItem(storageKey) || '{}');
     const cards = progress.cards || {};
-    const unit1Drills = this.drillsData.drills.filter(d => d.unit === 1);
+    const unit1Drills = this.drillsData.drills.filter(d => d.unit === 1 && !d.disabledReason);
     const seenCount = unit1Drills.filter(d => cards[d.id]).length;
     return seenCount >= unit1Drills.length * 0.8;
   },
@@ -486,7 +488,7 @@ const RhodesEngine = {
     const srsMaxUnit = cfg.srsMaxUnit || 12;
     const srsMaxCards = cfg.srs?.maxCards || 20;
 
-    this.currentDrills = this.drillsData.drills.filter(d => d.unit <= srsMaxUnit).map(d => {
+    this.currentDrills = this.drillsData.drills.filter(d => d.unit <= srsMaxUnit && !d.disabledReason).map(d => {
       const card = RhodesStorage.getCard(d.id);
       return {
         ...d,
@@ -547,6 +549,32 @@ const RhodesEngine = {
   updateDrillDisplay() {
     const drill = this.currentDrills[this.currentDrillIndex];
     if (!drill) return;
+
+    // Skip disabled drills that slipped through
+    if (drill.disabledReason) {
+      console.warn('Skipping disabled drill:', drill.id, drill.disabledReason);
+      this.nextDrill();
+      return;
+    }
+
+    // Skip drills with no content (empty target AND empty source)
+    const drillTarget = this.getTarget(drill);
+    const drillSource = this.getSource(drill);
+    const drillType = (drill.type || '').toLowerCase();
+    if (!drillTarget && !drillSource && drillType !== 'cultural_note' && drillType !== 'minimal_pair') {
+      console.warn('Skipping empty drill:', drill.id);
+      this.nextDrill();
+      return;
+    }
+
+    // Skip broken substitution/transformation drills (no model AND no cues)
+    if ((drillType === 'substitution' || drillType === 'fsi_substitution' ||
+         drillType === 'transformation' || drillType === 'fsi_transformation') &&
+        !drill.model_sentence && (!drill.cues || drill.cues.length === 0)) {
+      console.warn('Skipping broken structured drill:', drill.id, drillType);
+      this.nextDrill();
+      return;
+    }
 
     this.retryMode = false;
     this.retryExpected = '';

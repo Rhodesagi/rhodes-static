@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dueling Muskets</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; background: #000; }
+        #gameCanvas { display: block; }
+        #instructions {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            text-align: center;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 4px;
+            z-index: 100;
+            pointer-events: none;
+        }
+        .player-key { color: #ff6b6b; }
+        .p2-key { color: #4ecdc4; }
+    </style>
+</head>
+<body>
+    <div id="instructions">
+        <span class="player-key">P1: WASD | X Aim | F Fire | R Reload | Q/E Turn Musket</span> | 
+        <span class="p2-key">P2: IJKL | O Aim | P Fire | U Reload | 7/9 Turn Musket</span>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <script type="module" src="js/game.js"></script>
+</body>
+</html>
