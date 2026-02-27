@@ -1302,29 +1302,19 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
         }
 
         function renderVncAndSiteEmbeds(html) {
-            // VNC session URLs -> embedded iframe viewer (not just a clickable link)
-            html = html.replace(/(?<!="|'|>)(https?:\/\/[^\s<>"'`]*?cli-vnc\/\d+\/vnc(?:_lite)?\.html[^\s<>"'`]*)/gi, function(match, url) {
-                var safeUrl = url.replace(/'/g, "\\'");
-                return '<div class="rhodes-vnc-embed" style="margin:12px 0;border:1px solid var(--green);border-radius:6px;overflow:hidden;background:var(--panel);">' +
-                    '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:rgba(0,255,65,0.08);border-bottom:1px solid var(--green);">' +
-                        '<span style="color:var(--green);font-family:Orbitron,monospace;font-size:12px;">VNC SESSION</span>' +
-                        '<span style="display:flex;gap:8px;">' +
-                            '<button onclick="window.open(\'' + safeUrl + '\',\'rhodes_vnc\',\'width=1024,height=768,menubar=no,toolbar=no\')" style="background:var(--panel);border:1px solid var(--cyan);color:var(--cyan);padding:3px 10px;cursor:pointer;font-family:Orbitron,monospace;font-size:10px;border-radius:3px;">Pop Out</button>' +
-                            '<button onclick="this.closest(\'.rhodes-vnc-embed\').style.display=\'none\'" style="background:var(--panel);border:1px solid var(--dim);color:var(--dim);padding:3px 10px;cursor:pointer;font-family:Orbitron,monospace;font-size:10px;border-radius:3px;">Close</button>' +
-                        '</span>' +
-                    '</div>' +
-                    '<iframe src="' + url + '" style="width:100%;height:650px;border:none;background:#000;" allow="clipboard-read;clipboard-write" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'" onload="var d=this;setTimeout(function(){try{d.contentDocument}catch(e){d.style.display=\'none\';d.nextElementSibling.style.display=\'block\';}},3000)"></iframe>' +
-                    '<div style="display:none;padding:16px;text-align:center;color:var(--dim);font-size:12px;">VNC session may have expired. <a href="' + url + '" target="_blank" style="color:var(--cyan);">Open in new tab</a></div>' +
+            // VNC session URLs -> "Open Browser Session" button (opens in-chat modal)
+            html = html.replace(/(?<!="|\'|>)(https?:\/\/[^\s<>"'`]*?cli-vnc\/\d+\/vnc(?:_lite)?\.html[^\s<>"'`]*)/gi, function(match, url) {
+                return '<div style="margin:8px 0;padding:10px 14px;border:1px solid var(--green);border-radius:6px;background:rgba(0,255,65,0.06);display:inline-flex;align-items:center;gap:10px;">' +
+                    '<span style="color:var(--green);font-family:Orbitron,monospace;font-size:11px;">BROWSER SESSION</span>' +
+                    '<button onclick="if(window.openHandoffViewer){window.openHandoffViewer(decodeURIComponent(this.dataset.url),String.fromCharCode(86,78,67),String.fromCharCode(66,114,111,119,115,101,114))}" data-url="' + encodeURIComponent(url) + '" style="background:rgba(0,255,65,0.15);border:1px solid var(--green);color:var(--green);padding:5px 16px;cursor:pointer;font-family:Orbitron,monospace;font-size:12px;border-radius:4px;font-weight:bold;">Open</button>' +
                 '</div>';
             });
-            // Catch-all: any rhodesagi.com VNC URL -> embedded iframe
-            html = html.replace(/(?<!="|'|>)(https?:\/\/rhodesagi\.com\/sites\/[^\s<>"'`]*vnc[^\s<>"'`]*)/gi, function(match, url) {
-                return '<div class="rhodes-vnc-embed" style="margin:12px 0;border:1px solid var(--green);border-radius:6px;overflow:hidden;background:var(--panel);">' +
-                    '<div style="padding:6px 12px;display:flex;justify-content:space-between;align-items:center;background:rgba(0,255,65,0.08);">' +
-                    '<span style="color:var(--green);font-size:11px;font-family:Orbitron,monospace;">VNC Session</span>' +
-                    '<span><button onclick="window.open(\'' + url.replace(/'/g, "\\'") + '\',\'rhodes_vnc\',\'width=1024,height=768\')" style="background:none;border:1px solid var(--green);color:var(--green);padding:2px 8px;cursor:pointer;font-size:10px;margin-right:6px;border-radius:3px;">Pop Out</button>' +
-                    '<button onclick="this.closest(\'.rhodes-vnc-embed\').remove()" style="background:none;border:1px solid var(--red,#f55);color:var(--red,#f55);padding:2px 8px;cursor:pointer;font-size:10px;border-radius:3px;">Close</button></span></div>' +
-                    '<iframe src="' + url + '" style="width:100%;height:650px;border:none;background:#000;" allow="clipboard-read; clipboard-write" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe></div>';
+            // Catch-all: any rhodesagi.com VNC URL -> same modal button
+            html = html.replace(/(?<!="|\'|>)(https?:\/\/rhodesagi\.com\/sites\/[^\s<>"'`]*vnc[^\s<>"'`]*)/gi, function(match, url) {
+                return '<div style="margin:8px 0;padding:10px 14px;border:1px solid var(--green);border-radius:6px;background:rgba(0,255,65,0.06);display:inline-flex;align-items:center;gap:10px;">' +
+                    '<span style="color:var(--green);font-family:Orbitron,monospace;font-size:11px;">BROWSER SESSION</span>' +
+                    '<button onclick="if(window.openHandoffViewer){window.openHandoffViewer(decodeURIComponent(this.dataset.url),String.fromCharCode(86,78,67),String.fromCharCode(66,114,111,119,115,101,114))}" data-url="' + encodeURIComponent(url) + '" style="background:rgba(0,255,65,0.15);border:1px solid var(--green);color:var(--green);padding:5px 16px;cursor:pointer;font-family:Orbitron,monospace;font-size:12px;border-radius:4px;font-weight:bold;">Open</button>' +
+                '</div>';
             });
             // User-site/sandbox URLs -> embedded iframe preview
             html = html.replace(/(?<!="|'|>)(https?:\/\/rhodesagi\.com\/user-sites\/[^\s<>"'`\)\]]+)/gi, function(match, rawUrl) {
@@ -1349,6 +1339,7 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
         }
 
         function linkifyUrls(html) {
+            // VNC URLs handled by renderVncAndSiteEmbeds() above
             // 1. Markdown links: [text](url)
             html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+?)(?:\*\*|')?\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:underline;">$1</a>');
             // 2. Bare URLs with protocol (not already in href="...")

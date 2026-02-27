@@ -77,8 +77,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // ── Open the handoff viewer ──────────────────────────────────────────────
 
-    window.openHandoffViewer = function(novncUrl, cliName, reason) {
-        // Close any existing handoff viewer before opening new one
+    function _cleanupBeforeHandoff() {
         if (_handoffPopup && !_handoffPopup.closed) {
             try { _handoffPopup.close(); } catch(e) {}
         }
@@ -91,32 +90,39 @@ document.addEventListener("DOMContentLoaded", function() {
             try { _handoffModal.remove(); } catch(e) {}
             _handoffModal = null;
         }
-        // Remove old status banner
         var oldBanner = document.getElementById('handoff-status-banner');
         if (oldBanner) oldBanner.remove();
+    }
 
+    window.openHandoffViewer = function(novncUrl, cliName, reason) {
+        _cleanupBeforeHandoff();
         _handoffCliName = cliName;
-        const title = (cliName || 'CLI').toUpperCase() + ' — Solve CAPTCHA';
 
-        // Try popup first
-        try {
-            _handoffPopup = window.open(novncUrl.replace('vnc.html','vnc_lite.html'), 'rhodes_handoff',
-                'width=1024,height=768,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes');
-            if (_handoffPopup && !_handoffPopup.closed) {
-                _handoffPopup.document.title = title;
-                // Show toast
-                if (typeof showToast === 'function') showToast('CAPTCHA handoff opened in popup');
-                // Add in-chat status indicator
-                _addHandoffStatusBanner(cliName, reason, true);
-                return;
-            }
-        } catch(e) {
-            // popup blocked or cross-origin
+        // Look up fresh VNC URL from API (stale URLs from conversation history are dead)
+        var platformMap = {
+            'twitter_browser': 'twitter', 'facebook_browser': 'facebook',
+            'discord_browser': 'discord', 'reddit_browser': 'reddit',
+            'substack_browser': 'substack', 'google_voice_browser': 'gvoice',
+            'dsl_forum_browser': 'dsl', 'google_search_browser': 'google',
+        };
+        var platform = platformMap[(cliName || '').toLowerCase()] || null;
+        var username = null;
+        try { username = localStorage.getItem('rhodes_username') || sessionStorage.getItem('rhodes_username'); } catch(e) {}
+
+        if (platform && username) {
+            fetch('/api/vnc/lookup?username=' + encodeURIComponent(username) + '&platform=' + platform)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data && data.novnc_url) {
+                        _createIframeModal(data.novnc_url, cliName, reason);
+                    } else {
+                        _createIframeModal(novncUrl, cliName, reason);
+                    }
+                })
+                .catch(function() { _createIframeModal(novncUrl, cliName, reason); });
+        } else {
+            _createIframeModal(novncUrl, cliName, reason);
         }
-
-        // Fallback: in-chat iframe modal
-        _handoffPopup = null;
-        _createIframeModal(novncUrl, cliName, reason);
     };
 
     // ── Close the handoff viewer ─────────────────────────────────────────────
@@ -236,11 +242,27 @@ document.addEventListener("DOMContentLoaded", function() {
         };
         btnGroup.appendChild(popoutBtn);
 
-        // Close button
+        // Finished button - notifies the model and closes
+        const finishedBtn = document.createElement('button');
+        finishedBtn.textContent = 'Finished?';
+        finishedBtn.title = 'Tell Rhodes you are done with the browser session';
+        finishedBtn.style.cssText = _btnStyle('#1a3a2a', 'var(--green, #3fb950)');
+        finishedBtn.onclick = function() {
+            if (window.ws && window.ws.readyState === WebSocket.OPEN) {
+                window.ws.send(JSON.stringify({
+                    msg_type: 'handoff_user_done',
+                    payload: { cli_name: cliName || 'browser' }
+                }));
+            }
+            window.closeHandoffViewer();
+        };
+        btnGroup.appendChild(finishedBtn);
+
+        // Close button (just closes without notifying model)
         const closeBtn = document.createElement('button');
-        closeBtn.textContent = 'Done';
-        closeBtn.title = 'Close handoff viewer';
-        closeBtn.style.cssText = _btnStyle('#1a3a2a', 'var(--green, #3fb950)');
+        closeBtn.textContent = 'X';
+        closeBtn.title = 'Close viewer';
+        closeBtn.style.cssText = _btnStyle('#3a1a1a', '#f85149');
         closeBtn.onclick = function() { window.closeHandoffViewer(); };
         btnGroup.appendChild(closeBtn);
 

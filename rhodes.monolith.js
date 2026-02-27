@@ -5421,22 +5421,8 @@ document.addEventListener("DOMContentLoaded", function() {
         if (oldBanner) oldBanner.remove();
 
         _handoffCliName = cliName;
-        const title = (cliName || 'CLI').toUpperCase() + ' — Human Handoff';
 
-        // Try popup first
-        try {
-            _handoffPopup = window.open(novncUrl.replace('vnc.html','vnc_lite.html'), 'rhodes_handoff',
-                'width=1024,height=768,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes');
-            if (_handoffPopup && !_handoffPopup.closed) {
-                _handoffPopup.document.title = title;
-                if (typeof showToast === 'function') showToast('Browser session opened in popup');
-                _addHandoffStatusBanner(cliName, reason, true);
-                return;
-            }
-        } catch(e) {}
-
-        // Fallback: in-chat iframe modal
-        _handoffPopup = null;
+        // Always use in-chat iframe modal (not popup/tab)
         _createIframeModal(novncUrl, cliName, reason);
     }
 
