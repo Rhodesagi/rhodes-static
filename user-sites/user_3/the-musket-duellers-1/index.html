@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Musket Duellers</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #0a0a0a; 
+            overflow: hidden; 
+            font-family: 'Courier New', monospace;
+        }
+        #gameContainer {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .playerView {
+            flex: 1;
+            position: relative;
+            border: 2px solid #3a2818;
+        }
+        .playerView:first-child {
+            border-bottom: 4px solid #5c4033;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .hud {
+            position: absolute;
+            bottom: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.7);
+            color: #d4af37;
+            border: 1px solid #5c4033;
+            font-size: 14px;
+        }
+        .hud.p1 { left: 20px; }
+        .hud.p2 { right: 20px; text-align: right; }
+        .reloadStage {
+            color: #8b4513;
+            font-weight: bold;
+        }
+        .ready { color: #228b22; }
+        .ammo {
+            font-size: 24px;
+            color: #d4af37;
+        }
+        #startScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #1a0f0a 0%, #0a0505 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        h1 {
+            color: #d4af37;
+            font-size: 48px;
+            text-shadow: 3px 3px 0 #3a2818;
+            margin-bottom: 20px;
+            letter-spacing: 4px;
+        }
+        .subtitle {
+            color: #8b7355;
+            font-size: 18px;
+            margin-bottom: 40px;
+        }
+        .controls {
+            display: flex;
+            gap: 60px;
+            margin-bottom: 40px;
+        }
+        .controlPanel {
+            background: rgba(58, 40, 24, 0.5);
+            padding: 25px;
+            border: 2px solid #5c4033;
+            border-radius: 8px;
+            min-width: 280px;
+        }
+        .controlPanel h3 {
+            color: #d4af37;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #5c4033;
+            padding-bottom: 10px;
+        }
+        .controlPanel ul {
+            list-style: none;
+            color: #c4a574;
+            line-height: 1.8;
+        }
+        .key {
+            display: inline-block;
+            background: #3a2818;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #d4af37;
+        }
+        button {
+            padding: 20px 60px;
+            font-size: 24px;
+            background: #3a2818;
+            color: #d4af37;
+            border: 3px solid #5c4033;
+            cursor: pointer;
+            font-family: inherit;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #5c4033;
+            border-color: #d4af37;
+        }
+        #hitMarker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,0,0,0.8);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            display: none;
+        }
+        .ironSight {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+        .sightFront {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 25px;
+            background: #2a1a0a;
+        }
+        .sightNotch {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 8px;
+            border-bottom: 3px solid #2a1a0a;
+            border-left: 3px solid transparent;
+            border-right: 3px solid transparent;
+        }
+    </style>
+</head>
+<body>
+    <div id="startScreen">
+        <h1>⚔ THE MUSKET DUELLERS ⚔</h1>
+        <p class="subtitle">A Test of Steady Hands and Nerves</p>
+        
+        <div class="controls">
+            <div class="controlPanel">
+                <h3>🎮 Player 1 (Top)</h3>
+                <ul>
+                    <li><span class="key">WASD</span> Move</li>
+                    <li><span class="key">MOUSE</span> Aim (iron sights)</li>
+                    <li><span class="key">L-CLICK</span> Fire</li>
+                    <li><span class="key">R</span> Reload / Next Stage</li>
+                </ul>
+            </div>
+            <div class="controlPanel">
+                <h3>🎮 Player 2 (Bottom)</h3>
+                <ul>
+                    <li><span class="key">IJKL</span> Move</li>
+                    <li><span class="key">↑↓←→</span> Aim</li>
+                    <li><span class="key">.</span> or <span class="key">Num 0</span> Fire</li>
+                    <li><span class="key">,</span> or <span class="key">Num 1</span> Reload</li>
+                </ul>
+            </div>
+        </div>
+        
+        <button onclick="startGame()">ENTER THE FIELD OF HONOR</button>
+    </div>
+
+    <div id="gameContainer" style="display:none;">
+        <div class="playerView" id="p1View">
+            <canvas id="canvas1"></canvas>
+            <div class="hud p1">
+                <div class="ammo" id="p1Ammo">1 / 20</div>
+                <div id="p1Reload">Ready</div>
+                <div>Health: <span id="p1Health">100</span>%</div>
+            </div>
+            <div class="ironSight" id="p1Sight">
+                <div class="sightNotch"></div>
+                <div class="sightFront"></div>
+            </div>
+        </div>
+        <div class="playerView" id="p2View">
+            <canvas id="canvas2"></canvas>
+            <div class="hud p2">
+                <div class="ammo" id="p2Ammo">1 / 20</div>
+                <div id="p2Reload">Ready</div>
+                <div>Health: <span id="p2Health">100</span>%</div>
+            </div>
+            <div class="ironSight" id="p2Sight">
+                <div class="sightNotch"></div>
+                <div class="sightFront"></div>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ===== GAME ENGINE =====
+const canvas1 = document.getElementById('canvas1');
+const canvas2 = document.getElementById('canvas2');
+const ctx1 = canvas1.getContext('2d');
+const ctx2 = canvas2.getContext('2d');
+
+let gameRunning = false;
+let lastTime = 0;
+
+// Resize handling
+function resize() {
+    const container = document.getElementById('gameContainer');
+    const viewHeight = container.clientHeight / 2;
+    const width = container.clientWidth;
+    
+    canvas1.width = canvas2.width = width;
+    canvas1.height = canvas2.height = viewHeight;
+}
+window.addEventListener('resize', resize);
+
+// ===== INPUT HANDLING =====
+const keys = {};
+const mouse = { x: 0, y: 0, locked: false };
+
+window.addEventListener('keydown', e => keys[e.code] = true);
+window.addEventListener('keyup', e => keys[e.code] = false);
+
+// Pointer lock for P1 mouse aiming
+canvas1.addEventListener('click', () => {
+    if (gameRunning) canvas1.requestPointerLock();
+});
+
+document.addEventListener('pointerlockchange', () => {
+    mouse.locked = document.pointerLockElement === canvas1;
+});
+
+document.addEventListener('mousemove', e => {
+    if (mouse.locked) {
+        mouse.x += e.movementX * 0.002;
+        mouse.y += e.movementY * 0.002;
+        mouse.y = Math.max(-0.5, Math.min(0.5, mouse.y));
+    }
+});
+
+window.addEventListener('mousedown', e => {
+    if (e.button === 0) mouse.firing = true;
+});
+window.addEventListener('mouseup', e => {
+    if (e.button === 0) mouse.firing = false;
+});
+
+// ===== MUSKET RELOAD STATE MACHINE =====
+const ReloadStage = {
+    READY: 'Ready',
+    BITE_CARTRIDGE: 'Biting cartridge...',
+    PRIME_PAN: 'Priming pan...',
+    CHARGE_BARREL: 'Charging barrel...',
+    DRAW_RAMROD: 'Drawing ramrod...',
+    RAM_CHARGE: 'Ramming charge...',
+    RETURN_RAMROD: 'Returning ramrod...',
+    FULL_COCK: 'Cocking hammer...',
+    AIM: 'Aiming...'
+};
+
+const STAGE_TIMES = {
+    [ReloadStage.BITE_CARTRIDGE]: 800,
+    [ReloadStage.PRIME_PAN]: 600,
+    [ReloadStage.CHARGE_BARREL]: 700,
+    [ReloadStage.DRAW_RAMROD]: 400,
+    [ReloadStage.RAM_CHARGE]: 1200,
+    [ReloadStage.RETURN_RAMROD]: 400,
+    [ReloadStage.FULL_COCK]: 300,
+    [ReloadStage.AIM]: 200
+};
+
+class Musket {
+    constructor() {
+        this.loaded = true;
+        this.stage = ReloadStage.READY;
+        this.stageTimer = 0;
+        this.ammo = 20;
+        this.hammerCocked = true;
+        this.panPrimed = true;
+        this.reloading = false;
+    }
+
+    canFire() {
+        return this.loaded && this.hammerCocked && this.panPrimed && !this.reloading;
+    }
+
+    fire() {
+        if (!this.canFire()) return false;
+        this.loaded = false;
+        this.hammerCocked = false;
+        this.panPrimed = false;
+        this.reloading = false;
+        this.stage = ReloadStage.READY;
+        return true;
+    }
+
+    startReload() {
+        if (this.loaded || this.ammo <= 0 || this.reloading) return false;
+        this.reloading = true;
+        this.stage = ReloadStage.BITE_CARTRIDGE;
+        this.stageTimer = STAGE_TIMES[ReloadStage.BITE_CARTRIDGE];
+        return true;
+    }
+
+    advanceStage() {
+        const stages = [
+            ReloadStage.BITE_CARTRIDGE,
+            ReloadStage.PRIME_PAN,
+            ReloadStage.CHARGE_BARREL,
+            ReloadStage.DRAW_RAMROD,
+            ReloadStage.RAM_CHARGE,
+            ReloadStage.RETURN_RAMROD,
+            ReloadStage.FULL_COCK
+        ];
+        
+        const currentIdx = stages.indexOf(this.stage);
+        if (currentIdx < stages.length - 1) {
+            this.stage = stages[currentIdx + 1];
+            this.stageTimer = STAGE_TIMES[this.stage];
+        } else {
+            this.loaded = true;
+            this.reloading = false;
+            this.stage = ReloadStage.READY;
+        }
+    }
+
+    update(dt) {
+        if (this.reloading && this.stageTimer > 0) {
+            this.stageTimer -= dt;
+            if (this.stageTimer <= 0) {
+                this.advanceStage();
+            }
+        }
+    }
+}
+
+// ===== PLAYER CLASS =====
+class Player {
+    constructor(id, x, y, color, controls) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.z = 2; // eye height
+        this.angle = id === 1 ? 0 : Math.PI;
+        this.pitch = 0;
+        this.color = color;
+        this.controls = controls;
+        this.musket = new Musket();
+        this.health = 100;
+        this.radius = 0.3;
+        this.speed = 3;
+        this.height = 1.7;
+        
+        // Animation state
+        this.bobTime = 0;
+        this.recoil = 0;
+        this.swayX = 0;
+        this.swayY = 0;
+        
+        // Iron sight alignment
+        this.sightAlign = 0; // 0 to 1
+    }
+
+    update(dt, otherPlayer) {
+        // Movement
+        let moveX = 0, moveY = 0;
+        
+        if (keys[this.controls.forward]) moveY += 1;
+        if (keys[this.controls.backward]) moveY -= 1;
+        if (keys[this.controls.left]) moveX -= 1;
+        if (keys[this.controls.right]) moveX += 1;
+        
+        // Normalize diagonal
+        if (moveX !== 0 && moveY !== 0) {
+            const len = Math.sqrt(moveX*moveX + moveY*moveY);
+            moveX /= len;
+            moveY /= len;
+        }
+        
+        // Apply rotation to movement
+        const cos = Math.cos(this.angle);
+        const sin = Math.sin(this.angle);
+        const worldMoveX = moveX * cos - moveY * sin;
+        const worldMoveY = moveX * sin + moveY * cos;
+        
+        // New position
+        const newX = this.x + worldMoveX * this.speed * dt;
+        const newY = this.y + worldMoveY * this.speed * dt;
+        
+        // Collision with other player
+        const dx = newX - otherPlayer.x;
+        const dy = newY - otherPlayer.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist > this.radius + otherPlayer.radius) {
+            this.x = newX;
+            this.y = newY;
+        }
+        
+        // Bounds
+        this.x = Math.max(-9, Math.min(9, this.x));
+        this.y = Math.max(-9, Math.min(9, this.y));
+        
+        // Head bob when moving
+        if (moveX !== 0 || moveY !== 0) {
+            this.bobTime += dt * 10;
+        }
+        
+        // Recoil recovery
+        if (this.recoil > 0) {
+            this.recoil = Math.max(0, this.recoil - dt * 5);
+        }
+        
+        // Sway from breathing/heartbeat
+        this.swayX = Math.sin(Date.now() * 0.001) * 0.002;
+        this.swayY = Math.cos(Date.now() * 0.0013) * 0.003;
+        
+        // Iron sight alignment (gradual)
+        const targetAlign = (moveX === 0 && moveY === 0) ? 1 : 0;
+        this.sightAlign += (targetAlign - this.sightAlign) * dt * 2;
+        
+        // Mouse/KB aiming for P1, arrow keys for P2
+        if (this.id === 1 && mouse.locked) {
+            this.angle += mouse.x * dt * 2;
+            this.pitch += mouse.y * dt * 2;
+            this.pitch = Math.max(-0.8, Math.min(0.8, this.pitch));
+            mouse.x *= 0.1; // damping
+        } else if (this.id === 2) {
+            if (keys['ArrowLeft']) this.angle -= dt * 2;
+            if (keys['ArrowRight']) this.angle += dt * 2;
+            if (keys['ArrowUp']) this.pitch -= dt * 2;
+            if (keys['ArrowDown']) this.pitch += dt * 2;
+            this.pitch = Math.max(-0.8, Math.min(0.8, this.pitch));
+        }
+        
+        // Fire
+        const fireKey = this.id === 1 ? mouse.firing : keys[this.controls.fire];
+        if (fireKey && !this.lastFire) {
+            this.fire(otherPlayer);
+        }
+        this.lastFire = fireKey;
+        
+        // Reload
+        if (keys[this.controls.reload] && !this.lastReload) {
+            this.musket.startReload();
+        }
+        this.lastReload = keys[this.controls.reload];
+        
+        this.musket.update(dt * 1000);
+    }
+
+    fire(target) {
+        if (!this.musket.fire()) return;
+        
+        this.recoil = 1;
+        
+        // Raycast from barrel (iron sight line)
+        const spread = (1 - this.sightAlign) * 0.1 + 0.02;
+        const fireAngle = this.angle + this.swayX + (Math.random() - 0.5) * spread;
+        const firePitch = this.pitch + this.swayY + (Math.random() - 0.5) * spread * 0.5;
+        
+        // Barrel position
+        const barrelLen = 0.8;
+        const barrelX = this.x + Math.cos(this.angle) * barrelLen;
+        const barrelY = this.y + Math.sin(this.angle) * barrelLen;
+        const barrelZ = this.z + Math.sin(firePitch) * barrelLen - 0.1;
+        
+        // Ray direction
+        const dirX = Math.cos(fireAngle) * Math.cos(firePitch);
+        const dirY = Math.sin(fireAngle) * Math.cos(firePitch);
+        const dirZ = Math.sin(firePitch);
+        
+        // Check hit on target (simplified sphere collision)
+        const dx = target.x - barrelX;
+        const dy = target.y - barrelY;
+        const dz = (target.z - 0.3) - barrelZ; // aim for chest
+        
+        // Project onto ray
+        const t = dx * dirX + dy * dirY + dz * dirZ;
+        if (t > 0 && t < 50) {
+            const closestX = barrelX + dirX * t;
+            const closestY = barrelY + dirY * t;
+            const closestZ = barrelZ + dirZ * t;
+            
+            const dist = Math.sqrt(
+                (target.x - closestX)**2 + 
+                (target.y - closestY)**2 + 
+                ((target.z - 0.3) - closestZ)**2
+            );
+            
+            if (dist < target.radius + 0.2) {
+                // Hit!
+                const damage = 25 + Math.random() * 25;
+                target.health = Math.max(0, target.health - damage);
+                createParticle(target.x, target.y, target.z, 'blood');
+            }
+        }
+        
+        // Muzzle flash particle
+        createParticle(barrelX, barrelY, barrelZ, 'flash');
+        
+        // Smoke
+        for (let i = 0; i < 5; i++) {
+            createParticle(
+                barrelX + dirX * 0.5, 
+                barrelY + dirY * 0.5, 
+                barrelZ + dirZ * 0.5, 
+                'smoke'
+            );
+        }
+    }
+}
+
+// ===== PARTICLES =====
+let particles = [];
+
+function createParticle(x, y, z, type) {
+    particles.push({
+        x, y, z,
+        vx: (Math.random() - 0.5) * (type === 'flash' ? 0.5 : 0.2),
+        vy: (Math.random() - 0.5) * (type === 'flash' ? 0.5 : 0.2),
+        vz: Math.random() * (type === 'flash' ? 0.3 : 0.1) + (type === 'smoke' ? 0.05 : 0),
+        life: type === 'flash' ? 0.1 : (type === 'blood' ? 0.5 : 2),
+        type,
+        size: type === 'flash' ? 0.3 : (type === 'blood' ? 0.05 : 0.15)
+    });
+}
+
+function updateParticles(dt) {
+    particles = particles.filter(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.z += p.vz;
+        p.life -= dt;
+        p.size *= type === 'smoke' ? 1.01 : 0.98;
+        return p.life > 0;
+    });
+}
+
+// ===== RENDERING =====
+const FOV = 60 * Math.PI / 180;
+const WORLD_SIZE = 20;
+
+function project(x, y, z, player, canvas) {
+    // Transform to camera space
+    const dx = x - player.x;
+    const dy = y - player.y;
+    const dz = z - (player.z + Math.sin(player.bobTime) * 0.05 - player.recoil * 0.1);
+    
+    // Rotate by player angle
+    const cos = Math.cos(-player.angle);
+    const sin = Math.sin(-player.angle);
+    const rx = dx * cos - dy * sin;
+    const ry = dx * sin + dy * cos;
+    
+    // Pitch
+    const cosP = Math.cos(-player.pitch);
+    const sinP = Math.sin(-player.pitch);
+    const ry2 = ry * cosP - dz * sinP;
+    const rz = ry * sinP + dz * cosP;
+    
+    if (rz <= 0.1) return null;
+    
+    const scale = (canvas.height / 2) / Math.tan(FOV / 2) / rz;
+    const screenX = canvas.width / 2 + rx * scale;
+    const screenY = canvas.height / 2 - ry2 * scale;
+    
+    return { x: screenX, y: screenY, scale, dist: rz };
+}
+
+function drawMusket(ctx, player, canvas) {
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    
+    // Sway from breathing
+    const swayX = player.swayX * canvas.width * 0.3;
+    const swayY = player.swayY * canvas.height * 0.3;
+    
+    // Recoil offset
+    const recoilY = player.recoil * 80;
+    
+    // Stock (brown)
+    ctx.fillStyle = '#3d2817';
+    ctx.beginPath();
+    ctx.moveTo(centerX - 40 + swayX, centerY + 150 - recoilY + swayY);
+    ctx.lineTo(centerX + 40 + swayX, centerY + 150 - recoilY + swayY);
+    ctx.lineTo(centerX + 30 + swayX, centerY + 50 - recoilY + swayY);
+    ctx.lineTo(centerX - 30 + swayX, centerY + 50 - recoilY + swayY);
+    ctx.fill();
+    
+    // Buttplate (metal)
+    ctx.fillStyle = '#2a2a2a';
+    ctx.fillRect(centerX - 35 + swayX, centerY + 145 - recoilY + swayY, 70, 15);
+    
+    // Barrel (dark metal)
+    const barrelExt = player.musket.reloading ? 30 : 0;
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(centerX - 8 + swayX, centerY - 100 + barrelExt - recoilY + swayY, 16, 160);
+    
+    // Front sight
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(centerX - 2 + swayX, centerY - 105 + barrelExt - recoilY + swayY, 4, 8);
+    
+    // Hammer
+    const hammerPos = player.musket.hammerCocked ? -20 : 0;
+    ctx.fillStyle = '#2a2a2a';
+    ctx.beginPath();
+    ctx.moveTo(centerX - 15 + swayX, centerY + 20 - recoilY + swayY);
+    ctx.lineTo(centerX - 25 + swayX, centerY - 10 + hammerPos - recoilY + swayY);
+    ctx.lineTo(centerX - 5 + swayX, centerY - 10 + hammerPos - recoilY + swayY);
+    ctx.fill();
+    
+    // Frizzen (pan cover)
+    ctx.fillStyle = player.musket.panPrimed ? '#4a3728' : '#2a2a2a';
+    ctx.fillRect(centerX - 20 + swayX, centerY + 10 - recoilY + swayY, 15, 12);
+    
+    // Flash pan (if primed)
+    if (player.musket.panPrimed) {
+        ctx.fillStyle = '#d4af37';
+        ctx.fillRect(centerX - 17 + swayX, centerY + 13 - recoilY + swayY, 9, 6);
+    }
+    
+    // Ramrod (if drawn)
+    if (player.musket.stage === ReloadStage.RAM_CHARGE || 
+        player.musket.stage === ReloadStage.RETURN_RAMROD) {
+        ctx.strokeStyle = '#5c4033';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(centerX + swayX, centerY + 140 - recoilY + swayY);
+        ctx.lineTo(centerX + swayX, centerY - 20 - recoilY + swayY);
+        ctx.stroke();
+    }
+}
+
+function render(ctx, player, otherPlayer, canvas) {
+    // Sky
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    skyGrad.addColorStop(0, '#1a2634');
+    skyGrad.addColorStop(0.5, '#2d4a3e');
+    skyGrad.addColorStop(1, '#3d5a45');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Ground
+    const groundY = project(0, 10, 0, player, canvas)?.y || canvas.height;
+    ctx.fillStyle = '#2d3b1f';
+    ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+    
+    // Grid on ground
+    ctx.strokeStyle = '#3d4f2a';
+    ctx.lineWidth = 1;
+    for (let i = -10; i <= 10; i += 2) {
+        const p1 = project(i, 10, 0, player, canvas);
+        const p2 = project(i, -10, 0, player, canvas);
+        if (p1 && p2) {
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+        const p3 = project(10, i, 0, player, canvas);
+        const p4 = project(-10, i, 0, player, canvas);
+        if (p3 && p4) {
+            ctx.beginPath();
+            ctx.moveTo(p3.x, p3.y);
+            ctx.lineTo(p4.x, p4.y);
+            ctx.stroke();
+        }
+    }
+    
+    // Render other player
+    const bodyZ = otherPlayer.z - 0.3;
+    const headZ = otherPlayer.z + 0.4;
+    const feetZ = otherPlayer.z - 1.5;
+    
+    // Body
+    const body = project(otherPlayer.x, otherPlayer.y, bodyZ, player, canvas);
+    const head = project(otherPlayer.x, otherPlayer.y, headZ, player, canvas);
+    const feet = project(otherPlayer.x, otherPlayer.y, feetZ, player, canvas);
+    
+    if (body && head && feet && body.dist > 0.5) {
+        const bodySize = body.scale * 0.4;
+        
+        // Body (tunic)
+        ctx.fillStyle = otherPlayer.color;
+        ctx.beginPath();
+        ctx.ellipse(body.x, body.y, bodySize, bodySize * 1.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Head
+        const headSize = head.scale * 0.25;
+        ctx.fillStyle = '#d4a574';
+        ctx.beginPath();
+        ctx.arc(head.x, head.y, headSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Tricorne hat
+        ctx.fillStyle = '#1a1a1a';
+        ctx.beginPath();
+        ctx.ellipse(head.x, head.y - headSize * 0.3, headSize * 1.5, headSize * 0.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Musket (if aiming)
+        const barrel = project(
+            otherPlayer.x + Math.cos(otherPlayer.angle) * 0.5,
+            otherPlayer.y + Math.sin(otherPlayer.angle) * 0.5,
+            otherPlayer.z - 0.1,
+            player, canvas
+        );
+        if (barrel) {
+            ctx.strokeStyle = '#2a1a0a';
+            ctx.lineWidth = Math.max(2, barrel.scale * 0.05);
+            ctx.beginPath();
+            ctx.moveTo(body.x, body.y - bodySize * 0.5);
+            ctx.lineTo(barrel.x, barrel.y);
+            ctx.stroke();
+        }
+    }
+    
+    // Particles
+    particles.forEach(p => {
+        const proj = project(p.x, p.y, p.z, player, canvas);
+        if (proj && proj.dist > 0.1) {
+            const size = p.size * proj.scale;
+            if (p.type === 'flash') {
+                ctx.fillStyle = `rgba(255, 200, 100, ${p.life * 10})`;
+                ctx.beginPath();
+                ctx.arc(proj.x, proj.y, size * 50, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (p.type === 'smoke') {
+                ctx.fillStyle = `rgba(100, 100, 100, ${p.life * 0.3})`;
+                ctx.beginPath();
+                ctx.arc(proj.x, proj.y, size * 30, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (p.type === 'blood') {
+                ctx.fillStyle = `rgba(150, 0, 0, ${p.life})`;
+                ctx.beginPath();
+                ctx.arc(proj.x, proj.y, size * 20, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    });
+    
+    // Draw musket (first person)
+    drawMusket(ctx, player, canvas);
+}
+
+// ===== GAME LOOP =====
+let player1, player2;
+
+function initGame() {
+    player1 = new Player(1, -5, 0, '#8b0000', {
+        forward: 'KeyW', backward: 'KeyS', left: 'KeyA', right: 'KeyD',
+        fire: 'fire', reload: 'KeyR'
+    });
+    
+    player2 = new Player(2, 5, 0, '#00008b', {
+        forward: 'KeyI', backward: 'KeyK', left: 'KeyJ', right: 'KeyL',
+        fire: 'fire2', reload: 'Comma'
+    });
+    
+    // Alternative P2 fire keys
+    keys['fire2'] = false;
+    keys['Numpad0'] = false;
+    keys['Period'] = false;
+    
+    // Handle alternative keys
+    window.addEventListener('keydown', e => {
+        if (e.code === 'Numpad0' || e.code === 'Period') keys['fire2'] = true;
+        if (e.code === 'Numpad1') keys['Comma'] = true;
+    });
+    window.addEventListener('keyup', e => {
+        if (e.code === 'Numpad0' || e.code === 'Period') keys['fire2'] = false;
+        if (e.code === 'Numpad1') keys['Comma'] = false;
+    });
+}
+
+function updateUI() {
+    // P1 HUD
+    document.getElementById('p1Ammo').textContent = 
+        (player1.musket.loaded ? 1 : 0) + ' / ' + player1.musket.ammo;
+    document.getElementById('p1Reload').textContent = player1.musket.stage;
+    document.getElementById('p1Reload').className = player1.musket.canFire() ? 'ready' : 'reloadStage';
+    document.getElementById('p1Health').textContent = Math.ceil(player1.health);
+    
+    // P2 HUD
+    document.getElementById('p2Ammo').textContent = 
+        (player2.musket.loaded ? 1 : 0) + ' / ' + player2.musket.ammo;
+    document.getElementById('p2Reload').textContent = player2.musket.stage;
+    document.getElementById('p2Reload').className = player2.musket.canFire() ? 'ready' : 'reloadStage';
+    document.getElementById('p2Health').textContent = Math.ceil(player2.health);
+    
+    // Death check
+    if (player1.health <= 0 || player2.health <= 0) {
+        const winner = player1.health > 0 ? 'Player 1' : 'Player 2';
+        setTimeout(() => {
+            alert(winner + ' Wins!');
+            location.reload();
+        }, 100);
+        gameRunning = false;
+    }
+}
+
+function gameLoop(timestamp) {
+    if (!gameRunning) return;
+    
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+    lastTime = timestamp;
+    
+    player1.update(dt, player2);
+    player2.update(dt, player1);
+    updateParticles(dt);
+    updateUI();
+    
+    render(ctx1, player1, player2, canvas1);
+    render(ctx2, player2, player1, canvas2);
+    
+    requestAnimationFrame(gameLoop);
+}
+
+function startGame() {
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('gameContainer').style.display = 'flex';
+    resize();
+    initGame();
+    gameRunning = true;
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
+}
+</script>
+</body>
+</html>
