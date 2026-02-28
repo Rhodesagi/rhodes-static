@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KB Compression Compare</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a0a; color: #e0e0e0; font-family: 'Georgia', serif; }
+.header {
+    background: #111; border-bottom: 1px solid #333; padding: 20px 40px;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.header h1 { font-size: 18px; color: #fff; }
+.stats { font-size: 14px; color: #888; }
+.stats span { color: #4fc3f7; font-weight: bold; }
+.container { display: flex; height: calc(100vh - 65px); }
+.panel {
+    flex: 1; overflow-y: auto; padding: 30px 40px;
+    border-right: 1px solid #222;
+}
+.panel:last-child { border-right: none; }
+.panel-title {
+    font-size: 13px; text-transform: uppercase; letter-spacing: 2px;
+    color: #666; margin-bottom: 20px; padding-bottom: 10px;
+    border-bottom: 1px solid #222;
+}
+.panel-title span { color: #4fc3f7; }
+pre {
+    white-space: pre-wrap; word-wrap: break-word;
+    font-family: 'Georgia', serif; font-size: 14px; line-height: 1.7;
+    color: #ccc;
+}
+.panel::-webkit-scrollbar { width: 8px; }
+.panel::-webkit-scrollbar-track { background: #111; }
+.panel::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+.panel::-webkit-scrollbar-thumb:hover { background: #555; }
+</style>
+</head>
+<body>
+<div class="header">
+    <h1>KB Article Compression &mdash; Side by Side</h1>
+    <div class="stats" id="stats">Loading...</div>
+</div>
+<div class="container">
+    <div class="panel" id="left">
+        <div class="panel-title">Original <span id="orig-len"></span></div>
+        <pre id="original">Loading...</pre>
+    </div>
+    <div class="panel" id="right">
+        <div class="panel-title">Compressed <span id="comp-len"></span></div>
+        <pre id="compressed">Loading...</pre>
+    </div>
+</div>
+<script>
+async function load() {
+    const [origResp, compResp] = await Promise.all([
+        fetch('original.txt'), fetch('compressed.txt')
+    ]);
+    const orig = await origResp.text();
+    const comp = await compResp.text();
+    document.getElementById('original').textContent = orig;
+    document.getElementById('compressed').textContent = comp;
+    document.getElementById('orig-len').textContent = `(${orig.length.toLocaleString()} chars)`;
+    document.getElementById('comp-len').textContent = `(${comp.length.toLocaleString()} chars)`;
+    const ratio = (comp.length / orig.length * 100).toFixed(1);
+    const saved = (orig.length - comp.length).toLocaleString();
+    document.getElementById('stats').innerHTML =
+        `Original: <span>${orig.length.toLocaleString()}</span> chars &rarr; Compressed: <span>${comp.length.toLocaleString()}</span> chars | Ratio: <span>${ratio}%</span> | Saved: <span>${saved}</span> chars`;
+}
+load();
+</script>
+</body>
+</html>

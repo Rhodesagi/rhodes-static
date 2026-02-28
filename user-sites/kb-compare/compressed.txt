@@ -1,0 +1,173 @@
+**Title:** Reactionary Philosophy In An Enormous, Planet-Sized Nutshell  
+**Author:** Scott Alexander  
+**Source:** slatestarcodex.com/2013/03/03/reactionary-philosophy-in-an-enormous-planet-sized-nutshell/
+
+**Intro/Meta**
+- Problem: Reactionary ideas seem morally repugnant/ridiculous; no clear summary exists.
+- Claim: Some beliefs are "poetry" (like summarizing an elegy), but there is disconcerting content.
+- Author's aim: Summarize Reactionary thought to create a target for rebuttal.
+- Structure: 1) Meta-confidence in societal progress. 2) Object-level comparison with past societies. 3) Digression on social justice (race, gender). 4) Examine past cultures/governments/religions for success factors. 5) Assess adoption to modern life.
+- Warning: Content politically incorrect/offensive (especially race). Charitable presentation ≠ endorsement.
+
+**I. Skepticism About Modern Societal Superiority**
+- **A. Historical Parochialism:** Past societies (Imperial China, medieval Spain, Communist USSR) thought they were optimal; we think 21st-century West is. Their certainty now seems laughable; we should be suspicious of our own.
+- **B. Illusion of Free Marketplace of Ideas:**
+    - Apparent advantage: We allow criticism (e.g., Noam Chomsky rewarded).
+    - Counter: Criticism is only tolerated if it aligns with society's direction. Analogy: In Stalinist Russia, calling for "more Stalinism" is safe.
+    - Western society has moved leftward for centuries. Advocating faster leftward movement is rewarded ("bold iconoclast"). Advocating reversal (e.g., reverse women's suffrage, re-segregation) leads to severe social/career consequences (firing, ostracism, violence, in Europe legal prosecution via hate speech laws).
+    - Claim: Repression in liberal democracies is subtler (social/economic) but effective; targets ideas society dislikes. Good Catholic in medieval Spain feels free, sees Inquisition as dealing with "crazy people." Similarly, modern repression of anti-progressive ideas feels like no repression to those inside the progressive consensus.
+    - Not a conspiracy; analogous to patriarchy—strong cultural norms self-organize into an "immune system." Western society has a "progressivist immune system."
+
+**II. Information Bias in Repressive Society**
+- **A. General Skepticism:** In repressive society, be extremely skeptical of info from schools/media/books on politics, history, economics, race, gender. Especially skeptical of praised "counter-bias" books—likely "fifty Stalins" type.
+- **B. Race as Example:** Hard data on race comes from sociology depts—highly liberal, explicit mission to fight racism. Analogy: Pfizer lab with mission to prove drugs have no side effects; you wouldn't trust its study. File-drawer effect (positive results published, negative suppressed) known in medical research; likely worse in sociology.
+    - Sociologist's incentives: Design study to disprove racist beliefs; if study finds evidence for racism, unlikely to submit or get published.
+    - Claim: Statement "modern science has completely disproven racism" has same validity as 1900's "modern science has proven racism." Dogma changed, not process.
+    - Other fields (history, economics, political science) have less obvious taboos but require same skepticism. "Every legitimate scientist disagrees with Reactionary belief" = "Every legitimate archbishop disagrees with heresy."
+    - Not proof racism is correct; but censorship means absence of evidence isn't evidence of absence. Sometimes false ideas are censored too.
+
+**III. Assessing Claims of Modern Superiority**
+- Claims: Modern society is richer, safer, healthier, better educated, freer, happier, more equal, peaceful, humane.
+- Reactionary responses in three categories:
+    1. **"Yes, obviously" (due to technology):**
+        - Wealth increase since 1700 (100x) due to tech (e.g., modern mining equipment vs. pickaxe).
+        - Health/life expectancy up due to tech (e.g., targeted radiation vs. leeches).
+        - Peace due to tech (global trade, video reporting, nuclear deterrence).
+    2. **"Oh really?" (claims are wrong despite tech):**
+        - **Safety:** Quote from 1876 criminology text: life/property most secure in England ever; sense of security universal. Contrast with modern inner-city violence. Crime statistics (recorded offenses per 100k): ~5 in 1876 vs. ~500+ in 2000s (100x increase). Happened despite tech (CCTV, DNA, databases, wealth). Suggests Victorian society had inherent safety advantage.
+        - **Education:** 1899 Harvard entrance exam (no calculators) required advanced Latin, Greek, arithmetic, geometry, geography. Author (high SAT) couldn't take it. Modern high school curriculum lacks equivalently difficult material. 19th century Harvard entrants would find modern reading comprehension trivial. Evidence: Multilingual US presidents (Jefferson: 6+ languages; J.Q. Adams: fluent French/Dutch, studied German/Italian/Latin/Greek) vs. recent presidents (G.W. Bush: imperfect Spanish; Obama: "15 words" Spanish, basic Indonesian). Suggests past elite more educated.
+            - Counterargument: Education now more widespread. Author sarcastically endorses—points out inner-city minority youth not reading political philosophy blogs.
+            - Despite tech (Internet, Wikipedia, books) and Flynn Effect (IQ +10-20 since 1900), we perform worse. Suggests past social/political advantage.
+    3. **Remaining political advantages** (after "freedom" questioned in Intro): tolerance, equality, humaneness. To be examined.
+
+**IV. Race, Culture, and "Luck" (Trigger Warning)**
+- **A. The Pattern:** Social science shows persistent outcome differences across groups (crime, drug use, teen pregnancy, IQ, education, income, health). Outcomes correlate: some groups have "good" outcomes across many areas, others "bad." This underlies "First World/Third World," "privileged/oppressed" designations. Call this quality "luck."
+- **B. Three Hypotheses for Group Luck Differences:**
+    1. **Externalist:** Situations (natural/human). Jared Diamond: natural factors (geography, domesticable plants/animals, trade). Modern focus: human oppression (colonialism, racism). White luck from head start/privilege; black unluck from oppression.
+    2. **Culturalist:** Traditions/beliefs (memeplexes). Chinese success from values (scholarship, wealth accumulation, nonviolence); New Guinea from less useful values. Explains immigrant success (Chinese in Malaysia/USA; Jews in France).
+    3. **Biologicalist (≈racist):** Genetic factors or subtle theories (e.g., parasite load affecting neurological development).
+- **C. Testing Externalist (Oppression) Hypothesis:**
+    - Black-white income gap (graph 1974~): Gap stable while white oppression decreased drastically. Contrast women's income: rose as male oppression decreased. Suggests externalism partly correct for women, fails for race.
+    - Not all races have gap in predicted direction: Jews/Asians faced discrimination but now outperform average white Americans. Externalist hypothesis would imply "Jewish conspiracy."
+    - Jewish/Chinese success across diverse/hostile countries (Malaysia, France) replicated experiment favoring culturalist over externalist.
+    - Immigrant success correlates with home country success: Japanese-Americans > European-Americans > Latin-Americans > African-Americans. Implausible that white oppression modulates so precisely.
+    - Differences persist in areas resistant to oppression (teen pregnancy, drug use, intra-group violence) even *within same economic stratum* (e.g., Chinese vs. African Americans at $60k/year). Hard to explain via oppression.
+    - Conclusion: Externalist (oppression-based) explanation fails.
+- **D. Biological Hypothesis:**
+    - Creepy; left unexplained: groups with luck differences aren't always biological (e.g., Mormons, Sikhs vs. origin populations). Biologically similar groups have different luck (English vs. Irish).
+    - Dismissal as "obviously stupid" is disservice. See linked (unpublishable) review article for defense. Author extremely interested in takedowns.
+- **E. Culturalist Hypothesis:**
+    - Avoids pitfalls of externalist & biological. Explains minority success, cross-society correlation, differences in religious/biologically-similar groups.
+    - Explains Obama: African father, raised in Indonesia/Hawaii, little contact with African-American culture; outcomes not correlated with that group.
+    - Not that racist: attributes luck to memeplexes (initial conditions), changeable. Could make New Guineans achieve Chinese outcomes with Chinese memes.
+
+**V. Policy Implications of Culturalism**
+- **A. Assimilation as Solution:** Inject better memes (e.g., Chinese memes into New Guinea). In America, majority culture (like "thousand-tentacled monster") should assimilate minorities via "melting pot." Worked for Irish, Italians, later-generation Asians, Jews.
+- **B. Progressive Hindrance:** Since mid-late 20th century, progressives politically pride helping minorities resist "cultural imperialism"/assimilation. Examples:
+    - Story: Black children's low test scores; state replaced white teachers with black teachers (for relatability); scores plummeted.
+    - California bilingual education (Spanish until "ready" for English); students never became ready. Switch to English immersion (after political battle, accusations of racism) raised test scores.
+    - "Melting pot" replaced by "salad bowl" metaphor (stay different, fine).
+    - Externalist fear of "acting white" (academic achievement as betrayal) is promoted on social level: assimilating = "acting white." If majority culture has protective memes, this is harmful.
+- **C. Not Nightmare Brainwashing:** Solution: "stop digging." Cease demonizing assimilation, taboo on discussing some cultures better adapted. Allow natural assimilation that worked for past groups.
+
+**VI. Immigration**
+- In healthy society, assimilation works. In unhealthy society (anti-assimilation), culturalists worry.
+- **Thought Experiment:** Utopia (idyllic socialist) lets in 50,000 Americans (with guns, McDonald's, megachurches, racism). Result: hybrid society worse for Utopians. Not racist for Utopians to regret immigration/close borders.
+- Real-world: Some cultures worse than America (e.g., tribal Afghanistan: treats women as property, sharia, honor killings). Importing such cultures makes America worse.
+- **Democratic Problem:** Immigrants gain voting rights, shift politics. Hypothetical "Conservia" (billion evangelical Christians, anti-abortion/gays/evolution/government programs) moves to Berkeley: shifts area conservative, defunds public services, pushes pro-immigration policies. Analogous to real immigration: Latinos ~70% Democratic, African-Americans ~90% Democratic. Without Mexican immigration, Romney likely wins 2012. Is it wrong for liberal to want to close borders to prevent conservative shift? Conservative is in that situation now.
+- Reactionary addendum: Progressives control discourse; immigration favors progressivism, so opposition called racist; if immigration favored conservatism, progressives would find reason to oppose it.
+- **Not anti-immigration:** Anti-immigration by groups with bad luck/very different values. Welcome Japanese, Russians, Jews, Indians. Even Afghans if they pledge assimilation.
+- Historical parallel: Immigration Act of 1924 (dumb specifics: banned Asians/Jews) but principle wise: favor groups with good outcomes/value match. Progressives attacked as racist; repealed. Current policy: everyone has hard time, but illegals granted citizenship (compassion). Solution: stop digging.
+
+**VII. Colonialism Re-examined**
+- Externalist/progressive: help minorities by eliminating privileged influence. Culturalist/Reactionary: maximize privileged influence. Re-examine colonialism.
+- **Thought Experiment 1:** Reincarnated as black person. Best choice: Britain/Canada/US. Among majority-black African countries: best are heavily colonized by British (Kenya, Tanzania, Botswana, South Africa, Namibia). Never-colonized Ethiopia: byword for suffering (coups, wars, genocides, famines). Counters "colonialism root of all evil."
+- **Congo Example:** King Leopold II horrible. Post-Leopold colonial Congo (Belgian state) peaceful/prosperous (1950s Time article). Independence (1960) led to civil wars, genocides, warlords (graphically brutal). Suggests colonialism not source of problems; liveability plummeted after decolonization.
+- **Thought Experiment 2:** Reincarnated as Middle Easterner. Best: West. In Middle East: best is Qatar (oil-rich emirate), then Israel (not Occupied Territories). Israeli Arabs: avg earnings $6750 vs. Egypt $6200, Jordan $5900, Syria $5000. Plus religious freedom, voting, free speech, clean/safe country, healthcare, education. Israeli Arabs better off than Arabs in most other countries. Colonialism preferable.
+- **Pre-colonial not an option:** Now between Western influence or not. Afghanistan post-US takeover better than pre-US takeover.
+- **Not nightmare invasion:** China "colonizing" Africa via investment; continent doing better. West doesn't do it because progressives decry as "neo-colonialist worse than Hitler." Solution: stop digging.
+
+**VIII. Uncanny Valley of Dictatorship (Israeli-Palestinian Example)**
+- Palestinian Territories terrible. 19th-century view: Israel being terrible colonizer—gets no resources, allows protest, handed to native government.
+- **Hypothetical Psychopath Israeli PM:** Annex territories, Palestinians become non-voting residents, shoot protestors/criminals. Result: Palestinians similar to Israeli Arabs (better than now), no vote, shot if protest. Better than current plight/Syria.
+- **Uncanny Valley:** No dictator (America) good. Extreme dictator (czar/hypothetical psychopath) sucks but peaceful/predictable. Middle (current Israeli policy) worse: dictatorial enough to hurt, not enough to make dictator secure/leave alone.
+- **Fnargl Fable:** Omnipotent alien dictator levies 20% tax for gold; no reason to ban free speech/torture (invulnerable). Better than Mao, possibly better than modern government.
+- **Why Not Work Now?** Palestinians would protest en masse, Israel would shoot them—horrible. But British successfully colonized Palestine decades with "deal with it or we shoot." Worked then.
+- **Progressivism's Role:** For 50 years, progressives told colonized peoples: colonialism worst, must rebel. Made rebellion expected. Without progressivism, Israel could annex peacefully as Britain did New Zealand. Problem: we keep digging.
+
+**IX. Humane, All Too Humane (Criminal Justice & War)**
+- **A. Criminal Justice Uncanny Valley:**
+    - Modern "humane": prison (traumatic, rape, degradation, permanent record). "Inhumane" past: corporal punishment (lashes).
+    - Choice: 5 years prison vs. 50 lashes. Author would pick lashes instantly.
+    - Social benefits: Prison increases future criminality, skill. Cost: $50k/year/inmate ≈ Harvard tuition. Cutting prisons in half could fund free top-tier college for all.
+    - Why not switch? Progressives: call corporal punishment cruel, racist (disproportionately minorities), evoke slavery imagery. Oppose even offering choice.
+    - Uncanny Valley: Very nice (Norway-style rehabilitation) humane/effective but expensive. Very strict (corporal punishment) humane/effective. Middle (current prison) cruel/destructive—only route progressives allow.
+- **B. Warfare Uncanny Valley:**
+    - Example: Vietnam War (3M deaths, rape, torture, PTSD, disruption) vs. hypothetical nuking Hanoi (150k deaths). Latter better if avoids war (ignoring USSR retaliation).
+    - Enemy incentive: Drag war, commit atrocities to provoke US progressive backlash/withdrawal. US too humane to risk civilians, so enemies hide among them.
+    - Colonial warfare: "We're not leaving, don't care about atrocities/civilian deaths." Ugly but quick. British pacified Iraq (1920) in 3 months, ~6,000 casualties. US (2000s): 5 years, ~100,000 deaths.
+    - Uncanny Valley: Complete non-intervention humanitarian. Overwhelming force humanitarian (quick end). Wishy-washy half-hearted (modern) worst.
+    - Solution: Not torture/sarin gas. Allow prisoners' preference for corporal punishment without progressive "racist/atrocity" outcry. Stop digging.
+
+**X. Gender/Sex**
+- Reactionaries not necessarily claim women intellectually inferior or biological differences, but not fans of feminism.
+- **Data:**
+    - Women happier in 1950s (self-reported > men) than today (men > women). Past 50 years (more progressive) → women worse off relative to men.
+    - Today: Feminist women with progressive gender roles less happy than traditionalist peers.
+    - NYTimes article blames men not doing housework.
+    - Studies: Progressive marriages (equal housework) 50% more likely to divorce than traditional (woman does most). Both partners working → more divorce than man works/woman home.
+    - Not explained by religiosity (religious divorce more). Traditional marriages have better sex lives.
+- **Hypotheses:**
+    1. Emotional differences: women more submissive (BDSM community suggests some truth).
+    2. Conflict minimization: Traditional roles time-tested, minimize conflict. Socialization makes sticking to trained roles easiest.
+    3. Women's preferences rational: Compare Job 1 (work from home, own boss, raise kids) vs. Job 2 (office, demanding boss). Same status. Social pressure says Job 1 for losers, husbands ask why not Job 2. Result: do Job 2 + portions of Job 1, financially worse off, less happy.
+- Feminists say "Totally Okay to stay home," but analogous: if Disney glorified housewife role models with fine-print disclaimer, feminists would protest.
+- Traditional marriage benefits: Children not TV-socialized; household management (finances, parent-teacher conferences, family contact) done.
+- Not about forcing women. If media stopped optimizing feminist messages, stopped opposing positive housewife portrayals as "sexist," stopped lobbies making problem worse, things might self-correct. Stop digging.
+
+**XI. Cultural Unity vs. Diversity**
+- **Example:** Rescue by Mormons vs. Unitarians. Mormons effective (evangelism, fundraising, coordination). Unitarians: debate terminology, pedantry, schisms, ineffective. Difference: Mormon norm—discussion goal is agreement; Unitarian norm—goal is disagreement.
+- "Diversity is what unites us" vs. groups where "unity unites them"—latter more united.
+- Unity created by rituals/holidays (e.g., solstice-jumping)—creates bonding.
+- Robert Putnam finding: Greater diversity → less voting, volunteering, charity, community projects; neighbors trust half as much. "Civic health" lower in diverse settings.
+    - Effect not necessarily racial: multiracial Mormon community would act "non-diverse." Culture trumps race.
+- Progressivism undermines cultural unity: Points out flaws in American culture/heroes (Columbus jerk, Washington slaveowner). Christmas decorations must include atheist displays mocking Christmas. Culture subverts itself; status from showing unifying things are stupid/oppressive. Conservatives also hate modern America/government.
+- Victorian Britain: Unity phrases ("God save the Queen") meant sincerely. Colonized half planet. Modern America (Unitarian-like) can't pacify Afghanistan. Reactionaries cite Imperial China, medieval Catholicism, Victorian Britain as culturally optimized for unity.
+- Not about brainwashing. Stop deliberately optimizing for minimal unity/shared culture.
+
+**XII. The Need for a Czar (Unincentivized Incentivizer)**
+- **Pattern:** Systems with perverse incentives don't self-correct; individuals inside have no incentive to change. Example: Science reform (early registration, better statistics, replication status)—no individual scientist/journal has incentive to unilaterally adopt; only a "Science Czar" could decree change.
+- Education reform: Incentives (students → prestigious college for jobs; employers → prestige for defensibility; colleges → US News rankings) cause waste/poor education. "Education Czar" could fix easily.
+- **Refactored Agency:** Humans act roles per incentives; straying leads to replacement. System state determined by initial conditions + incentive dance.
+- **Government as Not Unincentivized:** Liberal democratic officials beholden to electorate/donors/competition. Example: corporate welfare—obvious to end, but anyone trying outcompeted by corporate-backed opponents or other states. Need "Government Czar."
+- Historical Czar: Imperial Russia. Could decree: end corporate welfare, close tax loopholes, fix healthcare.
+- **Objections:**
+    - Corruption/tyranny? Suppose Czar builds $10B gold-plated palace. Corporate welfare is $200B/year. Net saving $180B. British royal family earns more than cost.
+    - Tyranny? Would Obama as Czar send Republicans to penal camps? Unlikely.
+- **Democratic Inevitability:** Incentive for country to become more progressive (appeal to lowest common denominator). "Cthulhu swims slowly, but always left." Czar free from incentives could pick best of progressivism, discard rest.
+- **Who is Czar?** Schelling point: someone with unquestioned right to rule. Obama too progressive. British monarchy too constitutional since Glorious Revolution. Genuine legitimate old-line British monarch: clone King James II (ruled 1685-1688). Common sense.
+
+**XIII. Non-Political Reactionary Philosophy (Brief)**
+- **Morality:** Virtue vs. Decadence. Examples: Seneca vs. Nero; Liu Bei vs. Cao Cao; Thomas More vs. Henry VIII. Virtue = recognizing decadence, refusing to succumb. Higher virtue: Lycurgus—fix society.
+- **Aesthetics:** Reaction against progressive "Ugly Duckling" aesthetic (ugly is truly beautiful, beautiful is oppressive). Therefore, sophisticated people scoff at beautiful, gush over ugly (cathedrals "gaudy," Brutalist "groundbreaking"; conventionally attractive woman "self-objectifying," tattoos/shaved head "confident"). Reactionary aesthetic: beautiful things are beautiful, ugly ugly; suspect ulterior motives in denial.
+- **Metaphysics:** Into scholastic metaphysics. Author doesn't understand.
+
+**XIV. Conclusion/Summary**
+- Argument chain:
+    1. Modern culture likely biased; investigate impartially.
+    2. Many modern advantages due solely to tech.
+    3. Some areas (safety, education) past outperforms despite our tech.
+    4. Remaining supposed advantages: less racist, sexist, colonialist, more humane, less jingoistic.
+    5. Examination shows each may not be beneficial:
+        - "Racist" societies give minorities better outcomes.
+        - "Sexist" societies give women higher life satisfaction.
+        - Colonialism brought peace/growth; decolonization worse.
+        - "Humane" policies (prison) more torturous than corporal punishment.
+        - Cultural unity ("jingoism") builds community/prosocial sentiment.
+    6. Therefore, past societies favored on all points.
+    7. To replicate advantages: monarch (absolutist preferred). Problems exaggerated.
+    8. Ideal monarch: clone of James II.
+- Other ideas: chastity obsession, pro-Catholicism (non-religious), neo-formalism, Whigs—not covered (author doesn't understand/sympathize).
+- Goal: Ideological Turing Test of Reactionary belief. Acknowledges liberal ideas in echo chamber; Reactionaries too rightist but good for dialectic.
+
+**Postscript:** Counterargument forthcoming. Comments welcome except pure ethnic slurs/attacks; those deleted/IP-banned.
