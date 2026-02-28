@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Rhodes VNC</title>
+<style>
+  body { margin: 0; background: #000; overflow: hidden; }
+  iframe { width: 100vw; height: 100vh; border: none; }
+</style>
+</head>
+<body>
+<script>
+// Parse our URL params
+var params = new URLSearchParams(window.location.search);
+var port = params.get("port");
+var password = params.get("password");
+
+if (!port || !password) {
+  document.body.innerHTML = "<h1 style=\"color:red;padding:20px\">Missing port or password parameter</h1>";
+} else {
+  // Build the correct noVNC URL with the websocket path set correctly
+  var wsPath = "cli-vnc/" + port + "/websockify";
+  var novncUrl = "/cli-vnc/" + port + "/vnc.html"
+    + "?password=" + encodeURIComponent(password)
+    + "&autoconnect=true"
+    + "&resize=scale"
+    + "&path=" + encodeURIComponent(wsPath);
+  
+  // Use iframe to load noVNC with correct params
+  var iframe = document.createElement("iframe");
+  iframe.src = novncUrl;
+  document.body.appendChild(iframe);
+}
+</script>
+</body>
+</html>
