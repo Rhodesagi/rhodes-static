@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Projects - RHODES</title>
-    <link rel="stylesheet" href="/rhodes.css?v=20260115-06">
+    <link rel="stylesheet" href="/rhodes.css?v=1772323589">
     <style>
         body { background: var(--bg); color: var(--text); font-family: 'Orbitron', 'Segoe UI', monospace; margin: 0; padding: 20px; }
         .page-layout { max-width: 1100px; margin: 0 auto; display: flex; gap: 20px; }
@@ -110,6 +110,27 @@
         }
         .unassign-zone.drag-over { border-color: var(--red); background: rgba(255, 0, 100, 0.05); color: var(--red); }
 
+
+        /* Remove button on project sessions */
+        .session-link { position: relative; }
+        .session-remove {
+            color: var(--dim); cursor: pointer; font-size: 14px; padding: 0 4px;
+            margin-left: 6px; flex-shrink: 0; transition: color 0.15s; line-height: 1;
+            opacity: 0.5; font-weight: bold;
+        }
+        .session-remove:hover { color: var(--red); opacity: 1; }
+        /* Draggable project sessions */
+        .session-link[draggable="true"] { cursor: grab; }
+        .session-link[draggable="true"]:active { cursor: grabbing; }
+        .session-link.dragging { opacity: 0.4; }
+        /* Unset default button */
+        .btn-dim { border-color: var(--dim); color: var(--dim); }
+        .btn-dim:hover { background: rgba(255, 255, 255, 0.05); }
+        /* Sidebar drop highlight for receiving sessions from projects */
+        #recent-sessions-list.drag-over-sidebar {
+            outline: 2px dashed var(--cyan); outline-offset: -2px;
+            background: rgba(0, 255, 213, 0.03); border-radius: 3px;
+        }
         @media (max-width: 768px) {
             .page-layout { flex-direction: column; }
             .sidebar-col { width: 100%; }
@@ -240,10 +261,14 @@
                 var title = s.title || s.session_id.substring(0, 12) + '...';
                 var msgs = s.message_count || 0;
                 var date = s.updated_at ? new Date(s.updated_at * 1000).toLocaleDateString() : '';
-                return '<a class="session-link" href="/?session=' + s.session_id + '" title="' + escapeHtml(title) + '">' +
+                return '<div class="session-link" draggable="true" data-session-id="' + s.session_id + '" data-source-project="' + projectId + '">' +
+                    '<a href="/?session=' + s.session_id + '" style="flex:1;display:flex;text-decoration:none;color:inherit;overflow:hidden;" title="' + escapeHtml(title) + '">' +
                     '<span class="session-title">' + escapeHtml(title) + '</span>' +
-                    '<span class="session-meta">' + msgs + ' msgs' + (date ? ' &middot; ' + date : '') + '</span></a>';
+                    '<span class="session-meta">' + msgs + ' msgs' + (date ? ' &middot; ' + date : '') + '</span></a>' +
+                    '<span class="session-remove" onclick="removeSessionFromProject(\'' + s.session_id + '\', ' + projectId + ')" title="Remove from project">&times;</span>' +
+                    '</div>';
             }).join('') + (sessions.length > 5 ? '<div class="no-sessions">+ ' + (sessions.length - 5) + ' more</div>' : '');
+            setupProjectSessionDrag(projectId);
         }
 
         function renderProjects() {
@@ -259,7 +284,7 @@
                     (hasPrompt ? '<div class="project-meta">Has instructions (' + p.system_prompt.length + ' chars)</div>' : '') +
                     '</div>' +
                     '<div class="project-actions">' +
-                    (!p.is_default ? '<button class="btn btn-small btn-cyan" onclick="setDefault(' + p.id + ')">Set Default</button>' : '') +
+                    (p.is_default ? '<button class="btn btn-small btn-dim" onclick="unsetDefault(' + p.id + ')">Unset Default</button>' : '<button class="btn btn-small btn-cyan" onclick="setDefault(' + p.id + ')">Set Default</button>') +
                     '<button class="btn btn-small" onclick="editProject(' + p.id + ')">Edit</button>' +
                     '<button class="btn btn-small btn-danger" onclick="deleteProject(' + p.id + ')">Delete</button>' +
                     '</div></div>' +
@@ -516,9 +541,83 @@
             return div.innerHTML;
         }
 
+
+        // ---- Remove session from project (X button) ----
+        async function removeSessionFromProject(sessionId, projectId) {
+            try {
+                var resp = await fetch('/api/user/sessions/' + sessionId + '/project/' + projectId, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + USER_TOKEN }
+                });
+                if (!resp.ok) { var err = await resp.json().catch(function() { return {}; }); throw new Error(err.error || 'Failed'); }
+                showMessage('success', 'Session removed from project');
+                loadProjects();
+                loadRecentSessions();
+            } catch (e) {
+                showMessage('error', 'Failed to remove session: ' + e.message);
+            }
+        }
+
+        // ---- Unset default project ----
+        async function unsetDefault(id) {
+            try {
+                var resp = await fetch('/api/user/projects/' + id, {
+                    method: 'PUT',
+                    headers: { 'Authorization': 'Bearer ' + USER_TOKEN, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_default: false })
+                });
+                if (!resp.ok) throw new Error('Failed to unset default');
+                showMessage('success', 'Default removed');
+                loadProjects();
+            } catch (e) { showMessage('error', 'Failed to unset default: ' + e.message); }
+        }
+
+        // ---- Make project sessions draggable ----
+        function setupProjectSessionDrag(projectId) {
+            var container = document.getElementById('sessions-' + projectId);
+            if (!container) return;
+            var items = container.querySelectorAll('.session-link[draggable="true"]');
+            items.forEach(function(el) {
+                el.addEventListener('dragstart', function(e) {
+                    draggedSessionId = el.getAttribute('data-session-id');
+                    el.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', draggedSessionId);
+                    e.dataTransfer.setData('application/x-source-project', el.getAttribute('data-source-project'));
+                });
+                el.addEventListener('dragend', function() {
+                    el.classList.remove('dragging');
+                    draggedSessionId = null;
+                    document.querySelectorAll('.drag-over').forEach(function(d) { d.classList.remove('drag-over'); });
+                    document.getElementById('recent-sessions-list').classList.remove('drag-over-sidebar');
+                });
+            });
+        }
+
+        // ---- Setup sidebar as drop target for project sessions ----
+        function setupSidebarDropTarget() {
+            var sidebar = document.getElementById('recent-sessions-list');
+            sidebar.addEventListener('dragover', function(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; sidebar.classList.add('drag-over-sidebar'); });
+            sidebar.addEventListener('dragleave', function(e) {
+                if (!sidebar.contains(e.relatedTarget)) sidebar.classList.remove('drag-over-sidebar');
+            });
+            sidebar.addEventListener('drop', function(e) {
+                e.preventDefault();
+                sidebar.classList.remove('drag-over-sidebar');
+                var sessionId = e.dataTransfer.getData('text/plain');
+                var sourceProject = e.dataTransfer.getData('application/x-source-project');
+                if (sessionId && sourceProject) {
+                    removeSessionFromProject(sessionId, parseInt(sourceProject));
+                } else if (sessionId) {
+                    assignSession(sessionId, null);
+                }
+            });
+        }
+
         // ---- Init ----
         loadProjects();
         loadRecentSessions();
+        setupSidebarDropTarget();
 
         // Auto-open create modal if ?new=1 in URL
         (function() {
