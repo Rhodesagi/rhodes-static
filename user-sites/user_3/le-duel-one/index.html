@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le Duel One</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="instructions">
+        <h1>LE DUEL ONE</h1>
+        <p>18th Century Musket Duel - Two Players, One Computer</p>
+        <div class="controls">
+            <div class="player">
+                <h3>Player 1 (Left Screen)</h3>
+                <p>WASD - Move</p>
+                <p>Q/E - Rotate Musket</p>
+                <p>X - Iron Sights (Hold)</p>
+                <p>F - Fire</p>
+                <p>R - Reload (6 stages)</p>
+            </div>
+            <div class="player">
+                <h3>Player 2 (Right Screen)</h3>
+                <p>Arrow Keys - Move</p>
+                <p>Numpad 7/9 - Rotate Musket</p>
+                <p>Numpad Enter - Iron Sights (Hold)</p>
+                <p>Numpad + - Fire</p>
+                <p>Numpad 0 - Reload (6 stages)</p>
+            </div>
+        </div>
+        <p class="note">Click to start • No crosshairs • Iron sights only • Authentic reload</p>
+    </div>
+    <script src="js/raycaster.js"></script>
+    <script src="js/musket.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

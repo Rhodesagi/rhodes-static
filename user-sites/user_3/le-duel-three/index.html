@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le Duel - Flintlock Musket Combat</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="viewport-p1" class="viewport"></canvas>
+        <div id="divider"></div>
+        <canvas id="viewport-p2" class="viewport"></canvas>
+    </div>
+    
+    <div id="controls-hint">
+        <div class="player-controls">
+            <h3>PLAYER 1 (Blue Coat)</h3>
+            <p><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> Move</p>
+            <p><span class="key">Q</span><span class="key">E</span> Turn Musket</p>
+            <p><span class="key">X</span> Iron Sights</p>
+            <p><span class="key">F</span> Fire</p>
+            <p><span class="key">R</span> Reload</p>
+        </div>
+        <div class="player-controls">
+            <h3>PLAYER 2 (Red Coat)</h3>
+            <p><span class="key">↑</span><span class="key">←</span><span class="key">↓</span><span class="key">→</span> Move</p>
+            <p><span class="key">,</span><span class="key">.</span> Turn Musket</p>
+            <p><span class="key">M</span> Iron Sights</p>
+            <p><span class="key">/</span> Fire</p>
+            <p><span class="key">K</span> Reload</p>
+        </div>
+    </div>
+    
+    <div id="reload-status"></div>
+    
+    <script src="js/map.js"></script>
+    <script src="js/raycaster.js"></script>
+    <script src="js/musket.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
