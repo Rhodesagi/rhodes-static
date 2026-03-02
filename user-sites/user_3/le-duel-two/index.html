@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Le Duel - Two Player Musket Combat</title>
+    <title>Le Duel - Musket Shooter</title>
     <style>
         * {
             margin: 0;
@@ -11,7 +11,7 @@
             box-sizing: border-box;
         }
         body {
-            background: #0a0a0a;
+            background: #1a1a1a;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -23,144 +23,89 @@
         #gameContainer {
             display: flex;
             gap: 4px;
-            background: #1a1a1a;
+            background: #000;
             padding: 4px;
-            border: 2px solid #333;
+            border-radius: 4px;
         }
         canvas {
             image-rendering: pixelated;
-            image-rendering: -moz-crisp-edges;
-            image-rendering: crisp-edges;
-        }
-        #ui {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            color: #666;
-            font-size: 12px;
+            border: 2px solid #444;
         }
         #controls {
-            display: flex;
-            gap: 60px;
-            margin-top: 10px;
             color: #888;
-            font-size: 11px;
+            margin-top: 10px;
+            font-size: 12px;
+            text-align: center;
+        }
+        #controls h3 {
+            color: #aaa;
+            margin-bottom: 8px;
         }
         .player-controls {
-            text-align: left;
+            display: inline-block;
+            margin: 0 20px;
+            vertical-align: top;
         }
-        .player-controls h3 {
-            color: #aaa;
+        .player-controls h4 {
+            color: #6af;
             margin-bottom: 5px;
-            font-size: 12px;
+        }
+        .player-controls.p2 h4 {
+            color: #f66;
+        }
+        .key {
+            display: inline-block;
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin: 1px;
+            font-weight: bold;
         }
         #title {
-            color: #8B4513;
+            color: #c9a227;
             font-size: 24px;
             margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-        }
-        #startScreen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
-        #startScreen h1 {
-            color: #8B4513;
-            font-size: 48px;
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            letter-spacing: 8px;
-        }
-        #startScreen p {
-            color: #666;
-            margin-bottom: 30px;
-        }
-        #startBtn {
-            padding: 15px 40px;
-            font-size: 18px;
-            background: #8B4513;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        #startBtn:hover {
-            background: #A0522D;
-        }
-        .hidden {
-            display: none !important;
+            text-shadow: 2px 2px 4px #000;
         }
     </style>
 </head>
 <body>
-    <div id="title">Le Duel</div>
-    
-    <div id="startScreen">
-        <h1>Le Duel</h1>
-        <p>A gentlemen's musket duel. Iron sights only. No quarter given.</p>
-        <button id="startBtn">Enter the Field</button>
-    </div>
-
+    <div id="title">⚔️ LE DUEL ⚔️</div>
     <div id="gameContainer">
-        <canvas id="canvas1" width="400" height="300"></canvas>
-        <canvas id="canvas2" width="400" height="300"></canvas>
+        <canvas id="p1Canvas" width="400" height="300"></canvas>
+        <canvas id="p2Canvas" width="400" height="300"></canvas>
     </div>
-
-    <div id="ui">
-        <div id="controls">
-            <div class="player-controls">
-                <h3 style="color: #4682B4;">PLAYER 1 (Blue)</h3>
-                <div>WASD - Move</div>
-                <div>Q/E - Turn Musket</div>
-                <div>X - Aim Down Sights</div>
-                <div>F - Fire</div>
-                <div>R - Reload</div>
-            </div>
-            <div class="player-controls">
-                <h3 style="color: #CD5C5C;">PLAYER 2 (Red)</h3>
-                <div>IJKL - Move</div>
-                <div>U/O - Turn Musket</div>
-                <div>M - Aim Down Sights</div>
-                <div>H - Fire</div>
-                <div>P - Reload</div>
-            </div>
+    <div id="controls">
+        <h3>Controls</h3>
+        <div class="player-controls">
+            <h4>Player 1 (Blue)</h4>
+            <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> Move<br>
+            <span class="key">Q</span><span class="key">E</span> Turn Musket<br>
+            <span class="key">X</span> Aim (Iron Sights)<br>
+            <span class="key">F</span> Fire<br>
+            <span class="key">R</span> Reload
+        </div>
+        <div class="player-controls p2">
+            <h4>Player 2 (Red)</h4>
+            <span class="key">↑</span><span class="key">↓</span><span class="key">←</span><span class="key">→</span> Move<br>
+            <span class="key">,</span><span class="key">.</span> Turn Musket<br>
+            <span class="key">/</span> Aim (Iron Sights)<br>
+            <span class="key">RShift</span> Fire<br>
+            <span class="key">Enter</span> Reload
         </div>
     </div>
 
-    <script>
+<script>
 // ============================================
-// LE DUEL - Two Player Musket FPS
+// LE DUEL - Pseudo-3D Musket Shooter
 // ============================================
 
-const canvas1 = document.getElementById('canvas1');
-const canvas2 = document.getElementById('canvas2');
-const ctx1 = canvas1.getContext('2d');
-const ctx2 = canvas2.getContext('2d');
-
-// Game constants
-const SCREEN_WIDTH = 400;
-const SCREEN_HEIGHT = 300;
-const FOV = Math.PI / 3;
-const BLOCK_SIZE = 64;
-const MOVE_SPEED = 2;
-const ROT_SPEED = 0.03;
-const MUZZLE_VELOCITY = 8;
-
-// Map - 1 = wall, 0 = empty
 const MAP_SIZE = 16;
+const TILE_SIZE = 64;
+const FOV = Math.PI / 3;
+const STRIP_WIDTH = 1;
+
+// Map: 1 = wall, 0 = empty
 const map = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
@@ -168,693 +113,508 @@ const map = [
     [1,0,0,1,1,0,0,0,0,0,0,1,1,0,0,1],
     [1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
     [1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1],
     [1,0,0,1,1,0,0,0,0,0,0,1,1,0,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ];
 
-// Texture generation
-function generateTextures() {
-    const textures = {};
-    
-    // Stone wall texture
-    const stoneCanvas = document.createElement('canvas');
-    stoneCanvas.width = 64;
-    stoneCanvas.height = 64;
-    const stoneCtx = stoneCanvas.getContext('2d');
-    stoneCtx.fillStyle = '#444';
-    stoneCtx.fillRect(0, 0, 64, 64);
-    for (let i = 0; i < 200; i++) {
-        stoneCtx.fillStyle = Math.random() > 0.5 ? '#555' : '#333';
-        stoneCtx.fillRect(Math.random() * 64, Math.random() * 64, 4, 4);
-    }
-    // Add brick pattern
-    stoneCtx.strokeStyle = '#222';
-    stoneCtx.lineWidth = 2;
-    for (let y = 0; y < 64; y += 16) {
-        stoneCtx.beginPath();
-        stoneCtx.moveTo(0, y);
-        stoneCtx.lineTo(64, y);
-        stoneCtx.stroke();
-    }
-    for (let x = 0; x < 64; x += 32) {
-        for (let y = 0; y < 64; y += 32) {
-            stoneCtx.beginPath();
-            stoneCtx.moveTo(x + (y % 32 === 0 ? 0 : 16), y);
-            stoneCtx.lineTo(x + (y % 32 === 0 ? 0 : 16), y + 16);
-            stoneCtx.stroke();
-        }
-    }
-    textures.stone = stoneCanvas;
-    
-    // Wood texture
-    const woodCanvas = document.createElement('canvas');
-    woodCanvas.width = 64;
-    woodCanvas.height = 64;
-    const woodCtx = woodCanvas.getContext('2d');
-    woodCtx.fillStyle = '#3d2817';
-    woodCtx.fillRect(0, 0, 64, 64);
-    for (let i = 0; i < 64; i++) {
-        woodCtx.fillStyle = Math.random() > 0.5 ? '#4a3728' : '#2e1f12';
-        woodCtx.fillRect(0, i, 64, 1);
-    }
-    textures.wood = woodCanvas;
-    
-    // Ground texture
-    const groundCanvas = document.createElement('canvas');
-    groundCanvas.width = 64;
-    groundCanvas.height = 64;
-    const groundCtx = groundCanvas.getContext('2d');
-    groundCtx.fillStyle = '#2d5016';
-    groundCtx.fillRect(0, 0, 64, 64);
-    for (let i = 0; i < 300; i++) {
-        groundCtx.fillStyle = Math.random() > 0.5 ? '#3a6b1a' : '#1f3d0d';
-        groundCtx.fillRect(Math.random() * 64, Math.random() * 64, 2, 2);
-    }
-    textures.ground = groundCanvas;
-    
-    return textures;
-}
-
-const textures = generateTextures();
-
-// Reload states
-const ReloadState = {
-    READY: 0,
-    LOWERING: 1,
-    OPEN_PAN: 2,
-    CHARGE_POWDER: 3,
-    INSERT_BALL: 4,
-    RAMROD_1: 5,
-    RAMROD_2: 6,
-    RAMROD_3: 7,
-    REMOVE_ROD: 8,
-    SHOULDER: 9,
-    PRIME: 10,
-    COCK: 11,
-    RAISING: 12
-};
-
-// Player class
 class Player {
-    constructor(x, y, angle, color, controls) {
+    constructor(x, y, angle, color) {
         this.x = x;
         this.y = y;
         this.angle = angle;
         this.color = color;
-        this.controls = controls;
-        
-        this.health = 100;
         this.alive = true;
+        this.health = 100;
         
         // Musket state
-        this.musketAngle = 0; // Relative to player angle
         this.aiming = false;
         this.reloading = false;
-        this.reloadState = ReloadState.READY;
+        this.reloadStage = 0;
         this.reloadTimer = 0;
         this.loaded = true;
+        this.cocked = true;
+        
+        // Iron sight offset
+        this.musketAngle = 0;
         
         // Animation
         this.recoil = 0;
-        this.walkCycle = 0;
         this.reloadAnim = 0;
-        
-        // Hit flash
-        this.hitFlash = 0;
+    }
+}
+
+class Bullet {
+    constructor(x, y, angle, owner) {
+        this.x = x;
+        this.y = y;
+        this.angle = angle;
+        this.owner = owner;
+        this.speed = 8;
+        this.active = true;
+        this.lifetime = 60;
     }
     
-    update(dt, keys, otherPlayer) {
-        if (!this.alive) return;
-        
-        // Movement
-        let moveX = 0;
-        let moveY = 0;
-        
-        if (keys[this.controls.forward]) {
-            moveX += Math.cos(this.angle) * MOVE_SPEED;
-            moveY += Math.sin(this.angle) * MOVE_SPEED;
-            this.walkCycle += dt * 10;
-        }
-        if (keys[this.controls.back]) {
-            moveX -= Math.cos(this.angle) * MOVE_SPEED * 0.5;
-            moveY -= Math.sin(this.angle) * MOVE_SPEED * 0.5;
-            this.walkCycle += dt * 10;
-        }
-        if (keys[this.controls.left]) {
-            moveX += Math.cos(this.angle - Math.PI/2) * MOVE_SPEED * 0.7;
-            moveY += Math.sin(this.angle - Math.PI/2) * MOVE_SPEED * 0.7;
-        }
-        if (keys[this.controls.right]) {
-            moveX += Math.cos(this.angle + Math.PI/2) * MOVE_SPEED * 0.7;
-            moveY += Math.sin(this.angle + Math.PI/2) * MOVE_SPEED * 0.7;
+    update() {
+        if (!this.active) return;
+        this.lifetime--;
+        if (this.lifetime <= 0) {
+            this.active = false;
+            return;
         }
         
-        // Collision detection
-        const newX = this.x + moveX;
-        const newY = this.y + moveY;
+        const newX = this.x + Math.cos(this.angle) * this.speed;
+        const newY = this.y + Math.sin(this.angle) * this.speed;
         
-        if (map[Math.floor(newY / BLOCK_SIZE)][Math.floor(this.x / BLOCK_SIZE)] === 0) {
-            this.y = newY;
+        // Wall collision
+        const mapX = Math.floor(newX / TILE_SIZE);
+        const mapY = Math.floor(newY / TILE_SIZE);
+        
+        if (map[mapY] && map[mapY][mapX] === 1) {
+            this.active = false;
+            return;
         }
-        if (map[Math.floor(this.y / BLOCK_SIZE)][Math.floor(newX / BLOCK_SIZE)] === 0) {
-            this.x = newX;
-        }
         
-        // Keep in bounds
-        this.x = Math.max(32, Math.min((MAP_SIZE - 1) * BLOCK_SIZE - 32, this.x));
-        this.y = Math.max(32, Math.min((MAP_SIZE - 1) * BLOCK_SIZE - 32, this.y));
+        this.x = newX;
+        this.y = newY;
+    }
+}
+
+class Game {
+    constructor() {
+        this.p1Canvas = document.getElementById('p1Canvas');
+        this.p2Canvas = document.getElementById('p2Canvas');
+        this.p1Ctx = this.p1Canvas.getContext('2d');
+        this.p2Ctx = this.p2Canvas.getContext('2d');
         
-        // Musket rotation
-        if (!this.reloading) {
-            if (keys[this.controls.turnLeft]) {
-                this.musketAngle -= ROT_SPEED;
+        // Players
+        this.p1 = new Player(100, 100, Math.PI / 4, '#4488ff');
+        this.p2 = new Player(900, 900, Math.PI * 5 / 4, '#ff4444');
+        
+        this.bullets = [];
+        this.keys = {};
+        
+        this.setupInputs();
+        this.loop();
+    }
+    
+    setupInputs() {
+        window.addEventListener('keydown', (e) => {
+            this.keys[e.code] = true;
+            
+            // Player 1 actions
+            if (e.code === 'KeyX') this.p1.aiming = true;
+            if (e.code === 'KeyF') this.fire(this.p1);
+            if (e.code === 'KeyR') this.startReload(this.p1);
+            
+            // Player 2 actions  
+            if (e.code === 'Slash') this.p2.aiming = true;
+            if (e.code === 'ShiftRight') this.fire(this.p2);
+            if (e.code === 'Enter') this.startReload(this.p2);
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            this.keys[e.code] = false;
+            if (e.code === 'KeyX') this.p1.aiming = false;
+            if (e.code === 'Slash') this.p2.aiming = false;
+        });
+    }
+    
+    startReload(player) {
+        if (player.reloading || (player.loaded && player.cocked)) return;
+        player.reloading = true;
+        player.reloadStage = 0;
+        player.reloadTimer = 0;
+    }
+    
+    updateReload(player) {
+        if (!player.reloading) return;
+        
+        player.reloadTimer++;
+        const stageTime = 40; // frames per stage
+        
+        if (player.reloadTimer >= stageTime) {
+            player.reloadTimer = 0;
+            player.reloadStage++;
+            
+            if (player.reloadStage >= 5) {
+                player.reloading = false;
+                player.loaded = true;
+                player.cocked = true;
             }
-            if (keys[this.controls.turnRight]) {
-                this.musketAngle += ROT_SPEED;
-            }
-            // Clamp musket angle
-            this.musketAngle = Math.max(-Math.PI/3, Math.min(Math.PI/3, this.musketAngle));
         }
         
-        // Aiming
-        if (!this.reloading && this.loaded) {
-            this.aiming = keys[this.controls.aim];
+        player.reloadAnim = (player.reloadStage * stageTime + player.reloadTimer) / (5 * stageTime);
+    }
+    
+    fire(player) {
+        if (!player.loaded || !player.cocked || player.reloading) {
+            // Click sound effect (empty)
+            return;
         }
         
-        // Firing
-        if (keys[this.controls.fire] && this.loaded && !this.reloading && this.recoil <= 0) {
-            this.fire(otherPlayer);
-        }
+        // Fire bullet with musket angle offset
+        const fireAngle = player.angle + player.musketAngle;
+        const bullet = new Bullet(
+            player.x + Math.cos(fireAngle) * 20,
+            player.y + Math.sin(fireAngle) * 20,
+            fireAngle,
+            player
+        );
+        this.bullets.push(bullet);
         
-        // Reloading
-        if (keys[this.controls.reload] && !this.loaded && !this.reloading) {
-            this.startReload();
-        }
+        // Recoil
+        player.recoil = 10;
+        player.loaded = false;
+        player.cocked = false;
+    }
+    
+    update() {
+        // Player 1 movement
+        const p1Speed = 2;
+        const p1TurnSpeed = 0.05;
         
-        // Update reload
-        if (this.reloading) {
-            this.updateReload(dt);
-        }
+        if (this.keys['KeyW']) this.movePlayer(this.p1, p1Speed);
+        if (this.keys['KeyS']) this.movePlayer(this.p1, -p1Speed * 0.5);
+        if (this.keys['KeyA']) this.strafePlayer(this.p1, -p1Speed * 0.7);
+        if (this.keys['KeyD']) this.strafePlayer(this.p1, p1Speed * 0.7);
+        if (this.keys['KeyQ']) this.p1.musketAngle = Math.max(-0.3, this.p1.musketAngle - 0.02);
+        if (this.keys['KeyE']) this.p1.musketAngle = Math.min(0.3, this.p1.musketAngle + 0.02);
+        
+        // Player 2 movement
+        const p2Speed = 2;
+        if (this.keys['ArrowUp']) this.movePlayer(this.p2, p2Speed);
+        if (this.keys['ArrowDown']) this.movePlayer(this.p2, -p2Speed * 0.5);
+        if (this.keys['ArrowLeft']) this.strafePlayer(this.p2, -p2Speed * 0.7);
+        if (this.keys['ArrowRight']) this.strafePlayer(this.p2, p2Speed * 0.7);
+        if (this.keys['Comma']) this.p2.musketAngle = Math.max(-0.3, this.p2.musketAngle - 0.02);
+        if (this.keys['Period']) this.p2.musketAngle = Math.min(0.3, this.p2.musketAngle + 0.02);
         
         // Update recoil
-        if (this.recoil > 0) {
-            this.recoil -= dt * 5;
-            if (this.recoil < 0) this.recoil = 0;
-        }
+        [this.p1, this.p2].forEach(p => {
+            if (p.recoil > 0) p.recoil--;
+        });
         
-        // Update hit flash
-        if (this.hitFlash > 0) {
-            this.hitFlash -= dt * 5;
-            if (this.hitFlash < 0) this.hitFlash = 0;
+        // Update reloads
+        this.updateReload(this.p1);
+        this.updateReload(this.p2);
+        
+        // Update bullets
+        this.bullets.forEach(b => b.update());
+        this.bullets = this.bullets.filter(b => b.active);
+        
+        // Check bullet-player collisions
+        this.checkHits();
+    }
+    
+    movePlayer(player, dist) {
+        const newX = player.x + Math.cos(player.angle) * dist;
+        const newY = player.y + Math.sin(player.angle) * dist;
+        if (!this.isWall(newX, newY)) {
+            player.x = newX;
+            player.y = newY;
         }
     }
     
-    fire(otherPlayer) {
-        this.loaded = false;
-        this.recoil = 1;
-        
-        // Calculate fire angle
-        const fireAngle = this.angle + this.musketAngle;
-        
-        // Raycast to check hit
-        const hit = this.raycast(fireAngle, otherPlayer);
-        
-        if (hit && hit.player) {
-            // Calculate damage based on hit location
-            let damage = 75; // Base damage
-            if (hit.headshot) damage = 100;
+    strafePlayer(player, dist) {
+        const newX = player.x + Math.cos(player.angle + Math.PI/2) * dist;
+        const newY = player.y + Math.sin(player.angle + Math.PI/2) * dist;
+        if (!this.isWall(newX, newY)) {
+            player.x = newX;
+            player.y = newY;
+        }
+    }
+    
+    isWall(x, y) {
+        const mapX = Math.floor(x / TILE_SIZE);
+        const mapY = Math.floor(y / TILE_SIZE);
+        return map[mapY] && map[mapY][mapX] === 1;
+    }
+    
+    checkHits() {
+        this.bullets.forEach(b => {
+            if (!b.active) return;
             
-            otherPlayer.takeDamage(damage);
-        }
+            [this.p1, this.p2].forEach(target => {
+                if (target === b.owner) return;
+                
+                const dx = target.x - b.x;
+                const dy = target.y - b.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < 20) {
+                    target.health -= 50;
+                    b.active = false;
+                    
+                    if (target.health <= 0) {
+                        target.alive = false;
+                        setTimeout(() => this.respawn(target), 2000);
+                    }
+                }
+            });
+        });
     }
     
-    raycast(angle, otherPlayer) {
-        const sin = Math.sin(angle);
-        const cos = Math.cos(angle);
-        
+    respawn(player) {
+        if (player === this.p1) {
+            player.x = 100;
+            player.y = 100;
+            player.angle = Math.PI / 4;
+        } else {
+            player.x = 900;
+            player.y = 900;
+            player.angle = Math.PI * 5 / 4;
+        }
+        player.health = 100;
+        player.alive = true;
+        player.loaded = true;
+        player.cocked = true;
+        player.reloading = false;
+    }
+    
+    castRay(x, y, angle) {
         let dist = 0;
-        const maxDist = 1000;
         const step = 2;
+        const maxDist = 800;
         
         while (dist < maxDist) {
             dist += step;
-            const rx = this.x + cos * dist;
-            const ry = this.y + sin * dist;
+            const rx = x + Math.cos(angle) * dist;
+            const ry = y + Math.sin(angle) * dist;
             
-            // Check wall hit
-            const mx = Math.floor(rx / BLOCK_SIZE);
-            const my = Math.floor(ry / BLOCK_SIZE);
+            const mapX = Math.floor(rx / TILE_SIZE);
+            const mapY = Math.floor(ry / TILE_SIZE);
             
-            if (mx < 0 || mx >= MAP_SIZE || my < 0 || my >= MAP_SIZE || map[my][mx] !== 0) {
-                return null; // Hit wall
-            }
-            
-            // Check player hit
-            const dx = rx - otherPlayer.x;
-            const dy = ry - otherPlayer.y;
-            const playerDist = Math.sqrt(dx * dx + dy * dy);
-            
-            if (playerDist < 20) {
-                // Determine hit location
-                const heightDiff = 0; // Same height
-                const headshot = playerDist < 10 && Math.random() > 0.3;
-                return { player: true, headshot: headshot, dist: dist };
+            if (map[mapY] && map[mapY][mapX] === 1) {
+                // Correct for fisheye
+                const correctedDist = dist * Math.cos(angle - (x === this.p1.x ? this.p1.angle : this.p2.angle));
+                return { dist: correctedDist, hitX: rx, hitY: ry };
             }
         }
-        
-        return null;
+        return { dist: maxDist, hitX: 0, hitY: 0 };
     }
     
-    takeDamage(amount) {
-        this.health -= amount;
-        this.hitFlash = 1;
-        if (this.health <= 0) {
-            this.health = 0;
-            this.alive = false;
-        }
-    }
-    
-    startReload() {
-        this.reloading = true;
-        this.reloadState = ReloadState.LOWERING;
-        this.reloadTimer = 0;
-        this.aiming = false;
-    }
-    
-    updateReload(dt) {
-        const stateTimes = {
-            [ReloadState.LOWERING]: 0.5,
-            [ReloadState.OPEN_PAN]: 0.3,
-            [ReloadState.CHARGE_POWDER]: 0.6,
-            [ReloadState.INSERT_BALL]: 0.5,
-            [ReloadState.RAMROD_1]: 0.4,
-            [ReloadState.RAMROD_2]: 0.4,
-            [ReloadState.RAMROD_3]: 0.4,
-            [ReloadState.REMOVE_ROD]: 0.4,
-            [ReloadState.SHOULDER]: 0.3,
-            [ReloadState.PRIME]: 0.4,
-            [ReloadState.COCK]: 0.3,
-            [ReloadState.RAISING]: 0.5
-        };
+    renderView(ctx, viewer, opponent) {
+        const width = ctx.canvas.width;
+        const height = ctx.canvas.height;
+        const halfHeight = height / 2;
         
-        this.reloadTimer += dt;
-        const stateTime = stateTimes[this.reloadState] || 0.5;
-        this.reloadAnim = this.reloadTimer / stateTime;
+        // Clear
+        ctx.fillStyle = '#1a1a2e';
+        ctx.fillRect(0, 0, width, halfHeight);
+        ctx.fillStyle = '#2d2d3d';
+        ctx.fillRect(0, halfHeight, width, halfHeight);
         
-        if (this.reloadTimer >= stateTime) {
-            this.reloadTimer = 0;
-            this.reloadState++;
+        // Raycast walls
+        const numRays = width / STRIP_WIDTH;
+        const fov = viewer.aiming ? FOV * 0.3 : FOV;
+        const angleOffset = viewer.aiming ? viewer.musketAngle : 0;
+        
+        for (let i = 0; i < numRays; i++) {
+            const rayAngle = (viewer.angle + angleOffset) - fov / 2 + (i / numRays) * fov;
+            const hit = this.castRay(viewer.x, viewer.y, rayAngle);
             
-            if (this.reloadState > ReloadState.RAISING) {
-                this.reloading = false;
-                this.reloadState = ReloadState.READY;
-                this.loaded = true;
+            const wallHeight = Math.min(height, (TILE_SIZE * 300) / (hit.dist + 1));
+            const wallTop = halfHeight - wallHeight / 2;
+            
+            // Wall shading based on distance
+            const brightness = Math.max(20, 255 - hit.dist / 2);
+            ctx.fillStyle = `rgb(${brightness * 0.6}, ${brightness * 0.5}, ${brightness * 0.4})`;
+            ctx.fillRect(i * STRIP_WIDTH, wallTop, STRIP_WIDTH, wallHeight);
+        }
+        
+        // Draw opponent as sprite
+        const dx = opponent.x - viewer.x;
+        const dy = opponent.y - viewer.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+        
+        const relativeAngle = angle - (viewer.angle + angleOffset);
+        let normalizedAngle = relativeAngle;
+        while (normalizedAngle > Math.PI) normalizedAngle -= Math.PI * 2;
+        while (normalizedAngle < -Math.PI) normalizedAngle += Math.PI * 2;
+        
+        if (Math.abs(normalizedAngle) < fov / 2) {
+            const screenX = (normalizedAngle / fov + 0.5) * width;
+            const spriteHeight = (TILE_SIZE * 300) / (dist + 1);
+            const spriteWidth = spriteHeight * 0.5;
+            
+            ctx.fillStyle = opponent.color;
+            ctx.fillRect(screenX - spriteWidth/2, halfHeight - spriteHeight/2, spriteWidth, spriteHeight);
+            
+            // Draw opponent's musket
+            ctx.fillStyle = '#4a3728';
+            const musketLength = spriteWidth * 0.8;
+            const musketAngle = opponent.angle - viewer.angle - angleOffset;
+            ctx.save();
+            ctx.translate(screenX, halfHeight);
+            ctx.rotate(musketAngle + opponent.musketAngle);
+            ctx.fillRect(0, -3, musketLength, 6);
+            ctx.restore();
+        }
+        
+        // Draw bullets
+        this.bullets.forEach(b => {
+            const bdx = b.x - viewer.x;
+            const bdy = b.y - viewer.y;
+            const bAngle = Math.atan2(bdy, bdx);
+            const bRelative = bAngle - (viewer.angle + angleOffset);
+            let bNormalized = bRelative;
+            while (bNormalized > Math.PI) bNormalized -= Math.PI * 2;
+            while (bNormalized < -Math.PI) bNormalized += Math.PI * 2;
+            
+            if (Math.abs(bNormalized) < fov / 2) {
+                const bScreenX = (bNormalized / fov + 0.5) * width;
+                const bDist = Math.sqrt(bdx * bdx + bdy * bdy);
+                const bSize = Math.max(2, 300 / bDist);
+                ctx.fillStyle = '#ffff00';
+                ctx.fillRect(bScreenX - bSize/2, halfHeight - bSize/2, bSize, bSize);
             }
-        }
-    }
-    
-    getReloadDescription() {
-        const descriptions = {
-            [ReloadState.LOWERING]: "Lowering weapon...",
-            [ReloadState.OPEN_PAN]: "Opening frizzen...",
-            [ReloadState.CHARGE_POWDER]: "Charging powder...",
-            [ReloadState.INSERT_BALL]: "Inserting ball...",
-            [ReloadState.RAMROD_1]: "Ramming (stroke 1)...",
-            [ReloadState.RAMROD_2]: "Ramming (stroke 2)...",
-            [ReloadState.RAMROD_3]: "Ramming (stroke 3)...",
-            [ReloadState.REMOVE_ROD]: "Removing ramrod...",
-            [ReloadState.SHOULDER]: "Shouldering...",
-            [ReloadState.PRIME]: "Priming pan...",
-            [ReloadState.COCK]: "Cocking flintlock...",
-            [ReloadState.RAISING]: "Raising weapon..."
-        };
-        return descriptions[this.reloadState] || "";
-    }
-}
-
-// Raycasting renderer
-function renderView(ctx, player, otherPlayer) {
-    const w = SCREEN_WIDTH;
-    const h = SCREEN_HEIGHT;
-    
-    // Clear
-    ctx.fillStyle = '#1a1a1a';
-    ctx.fillRect(0, 0, w, h);
-    
-    // Sky gradient
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, h/2);
-    skyGrad.addColorStop(0, '#0a1628');
-    skyGrad.addColorStop(1, '#2d4a6b');
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(0, 0, w, h/2);
-    
-    // Floor
-    const floorGrad = ctx.createLinearGradient(0, h/2, 0, h);
-    floorGrad.addColorStop(0, '#1a2d1a');
-    floorGrad.addColorStop(1, '#0d1a0d');
-    ctx.fillStyle = floorGrad;
-    ctx.fillRect(0, h/2, w, h/2);
-    
-    // Cast rays
-    const numRays = w;
-    const deltaAngle = FOV / numRays;
-    
-    const zBuffer = new Array(numRays).fill(Infinity);
-    
-    for (let i = 0; i < numRays; i++) {
-        const rayAngle = player.angle - FOV/2 + i * deltaAngle;
-        const dist = castRay(player.x, player.y, rayAngle, zBuffer, i);
+        });
         
-        if (dist < Infinity) {
-            const wallHeight = (BLOCK_SIZE / dist) * (w / 2) / Math.tan(FOV/2);
-            const brightness = Math.max(0.2, 1 - dist / 600);
-            
-            const wallTop = (h - wallHeight) / 2;
-            
-            // Simple shading
-            ctx.fillStyle = `rgba(${60 * brightness}, ${60 * brightness}, ${60 * brightness}, 1)`;
-            ctx.fillRect(i, wallTop, 1, wallHeight);
+        // Draw own musket
+        this.drawMusket(ctx, viewer, width, height);
+        
+        // Draw iron sights when aiming
+        if (viewer.aiming) {
+            this.drawIronSights(ctx, width, height);
+        }
+        
+        // Health bar
+        ctx.fillStyle = '#333';
+        ctx.fillRect(10, height - 30, 100, 20);
+        ctx.fillStyle = viewer.health > 50 ? '#0f0' : viewer.health > 25 ? '#ff0' : '#f00';
+        ctx.fillRect(10, height - 30, viewer.health, 20);
+        ctx.strokeStyle = '#fff';
+        ctx.strokeRect(10, height - 30, 100, 20);
+        
+        // Status text
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px monospace';
+        if (!viewer.alive) {
+            ctx.fillStyle = '#f00';
+            ctx.font = '20px monospace';
+            ctx.fillText('DEAD', width/2 - 30, height/2);
+        } else if (viewer.reloading) {
+            const stages = ['Powder...', 'Ball...', 'Ramrod...', 'Cap...', 'Cock...'];
+            ctx.fillText(`Reloading: ${stages[viewer.reloadStage]}`, 10, height - 40);
+        } else if (!viewer.loaded) {
+            ctx.fillStyle = '#f80';
+            ctx.fillText('NOT LOADED - Press Reload', 10, height - 40);
+        } else if (!viewer.cocked) {
+            ctx.fillStyle = '#f80';
+            ctx.fillText('NOT COCKED - Press Reload', 10, height - 40);
+        } else {
+            ctx.fillStyle = '#0f0';
+            ctx.fillText('READY', 10, height - 40);
+        }
+        
+        // Vignette for aiming
+        if (viewer.aiming) {
+            const grad = ctx.createRadialGradient(width/2, height/2, 50, width/2, height/2, width/2);
+            grad.addColorStop(0, 'rgba(0,0,0,0)');
+            grad.addColorStop(1, 'rgba(0,0,0,0.6)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, width, height);
         }
     }
     
-    // Draw other player as sprite
-    drawPlayerSprite(ctx, player, otherPlayer, zBuffer);
-    
-    // Draw weapon
-    drawWeapon(ctx, player, w, h);
-    
-    // Draw iron sights if aiming
-    if (player.aiming) {
-        drawIronSights(ctx, w, h);
-    }
-    
-    // Hit flash
-    if (player.hitFlash > 0) {
-        ctx.fillStyle = `rgba(255, 0, 0, ${player.hitFlash * 0.5})`;
-        ctx.fillRect(0, 0, w, h);
-    }
-    
-    // Status text (minimal - no artificial overlays)
-    ctx.fillStyle = player.color;
-    ctx.font = 'bold 14px Courier New';
-    ctx.fillText(player.loaded ? '● LOADED' : '○ EMPTY', 10, 20);
-    
-    if (player.reloading) {
+    drawMusket(ctx, player, width, height) {
+        const recoilOffset = player.recoil * 2;
+        
+        // Musket stock and barrel
+        const baseX = width / 2;
+        const baseY = height - 50 + recoilOffset;
+        const length = player.aiming ? 200 : 120;
+        const angle = player.musketAngle;
+        
+        ctx.save();
+        ctx.translate(baseX, baseY);
+        ctx.rotate(angle);
+        
+        // Stock (wood)
+        ctx.fillStyle = '#4a3728';
+        ctx.fillRect(-length * 0.3, -15, length * 0.4, 30);
+        
+        // Barrel (metal)
+        const grad = ctx.createLinearGradient(0, -8, 0, 8);
+        grad.addColorStop(0, '#2a2a2a');
+        grad.addColorStop(0.5, '#555');
+        grad.addColorStop(1, '#1a1a1a');
+        ctx.fillStyle = grad;
+        ctx.fillRect(-length * 0.1, -8, length, 16);
+        
+        // Barrel bands
+        ctx.fillStyle = '#8a6a4a';
+        ctx.fillRect(length * 0.2, -10, 4, 20);
+        ctx.fillRect(length * 0.5, -9, 4, 18);
+        ctx.fillRect(length * 0.8, -8, 4, 16);
+        
+        // Flintlock mechanism
+        ctx.fillStyle = '#666';
+        ctx.fillRect(10, -20, 15, 12);
         ctx.fillStyle = '#888';
-        ctx.font = '11px Courier New';
-        ctx.fillText(player.getReloadDescription(), 10, 35);
-    }
-    
-    if (!player.alive) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(0, 0, w, h);
-        ctx.fillStyle = '#ff0000';
-        ctx.font = 'bold 24px Courier New';
-        ctx.textAlign = 'center';
-        ctx.fillText('FALLEN', w/2, h/2);
-        ctx.textAlign = 'left';
-    }
-}
-
-function castRay(x, y, angle, zBuffer, rayIndex) {
-    const sin = Math.sin(angle);
-    const cos = Math.cos(angle);
-    
-    let dist = 0;
-    const maxDist = 1000;
-    const step = 0.5;
-    
-    while (dist < maxDist) {
-        dist += step;
-        const rx = x + cos * dist;
-        const ry = y + sin * dist;
+        ctx.fillRect(12, -22, 8, 6);
         
-        const mx = Math.floor(rx / BLOCK_SIZE);
-        const my = Math.floor(ry / BLOCK_SIZE);
+        // Trigger guard
+        ctx.strokeStyle = '#8a6a4a';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(25, 5, 12, 0, Math.PI, false);
+        ctx.stroke();
         
-        if (mx < 0 || mx >= MAP_SIZE || my < 0 || my >= MAP_SIZE) {
-            zBuffer[rayIndex] = dist;
-            return dist;
-        }
-        
-        if (map[my][mx] !== 0) {
-            zBuffer[rayIndex] = dist;
-            return dist;
-        }
-    }
-    
-    zBuffer[rayIndex] = Infinity;
-    return Infinity;
-}
-
-function drawPlayerSprite(ctx, viewer, target, zBuffer) {
-    const dx = target.x - viewer.x;
-    const dy = target.y - viewer.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    
-    const angle = Math.atan2(dy, dx);
-    let relAngle = angle - viewer.angle;
-    
-    // Normalize
-    while (relAngle > Math.PI) relAngle -= 2 * Math.PI;
-    while (relAngle < -Math.PI) relAngle += 2 * Math.PI;
-    
-    if (Math.abs(relAngle) < FOV/2 && dist < 800) {
-        const screenX = SCREEN_WIDTH / 2 + (relAngle / (FOV/2)) * (SCREEN_WIDTH / 2);
-        const size = (BLOCK_SIZE / dist) * 200;
-        
-        const x = screenX - size/2;
-        const y = (SCREEN_HEIGHT - size) / 2 + size * 0.3;
-        
-        // Simple occlusion check
-        const rayIndex = Math.floor(screenX);
-        if (rayIndex >= 0 && rayIndex < SCREEN_WIDTH && dist < zBuffer[rayIndex] * BLOCK_SIZE) {
-            // Draw simple figure
-            const brightness = Math.max(0.3, 1 - dist / 600);
-            const r = parseInt(target.color.slice(1, 3), 16) * brightness;
-            const g = parseInt(target.color.slice(3, 5), 16) * brightness;
-            const b = parseInt(target.color.slice(5, 7), 16) * brightness;
-            
-            ctx.fillStyle = `rgb(${r},${g},${b})`;
-            
-            // Head
-            ctx.fillRect(x + size*0.35, y, size*0.3, size*0.3);
-            // Body
-            ctx.fillRect(x + size*0.25, y + size*0.35, size*0.5, size*0.5);
-            // Musket
-            ctx.fillStyle = `rgb(${80*brightness},${60*brightness},${40*brightness})`;
-            const musketAngle = target.musketAngle;
-            const mx = Math.cos(musketAngle) * size * 0.4;
-            const my = Math.sin(musketAngle) * size * 0.1;
-            ctx.fillRect(x + size*0.5, y + size*0.5, mx + size*0.4, my + size*0.1);
-        }
-    }
-}
-
-function drawWeapon(ctx, player, w, h) {
-    const centerX = w / 2;
-    const bottomY = h;
-    
-    // Weapon bob
-    const bobY = Math.sin(player.walkCycle) * 3;
-    const recoilY = player.recoil * 30;
-    const reloadOffset = player.reloading ? 50 + player.reloadAnim * 20 : 0;
-    
-    // Stock position
-    const stockX = centerX - 80;
-    const stockY = bottomY - 100 + bobY - recoilY + reloadOffset;
-    
-    // Draw musket stock
-    ctx.fillStyle = '#4a3728';
-    ctx.fillRect(stockX, stockY, 30, 80);
-    
-    // Barrel
-    ctx.fillStyle = '#2a2a2a';
-    const barrelX = stockX + 10;
-    const barrelY = stockY - 120;
-    ctx.fillRect(barrelX, barrelY, 10, 130);
-    
-    // Barrel bands
-    ctx.fillStyle = '#444';
-    ctx.fillRect(barrelX - 2, barrelY + 20, 14, 4);
-    ctx.fillRect(barrelX - 2, barrelY + 60, 14, 4);
-    ctx.fillRect(barrelX - 2, barrelY + 100, 14, 4);
-    
-    // Flintlock mechanism
-    ctx.fillStyle = '#555';
-    ctx.fillRect(barrelX + 5, stockY - 10, 15, 20);
-    
-    // Frizzen (cocked/uncocked)
-    ctx.fillStyle = '#666';
-    if (player.loaded && !player.reloading) {
-        // Cocked
-        ctx.fillRect(barrelX + 12, stockY - 25, 8, 15);
-    } else {
-        // Uncocked
-        ctx.fillRect(barrelX + 12, stockY - 5, 8, 15);
-    }
-    
-    // Pan
-    ctx.fillStyle = '#333';
-    ctx.fillRect(barrelX + 8, stockY - 15, 6, 4);
-    
-    // Reload animation elements
-    if (player.reloading) {
-        const state = player.reloadState;
-        
-        // Ramrod
-        if (state >= ReloadState.RAMROD_1 && state <= ReloadState.REMOVE_ROD) {
-            ctx.fillStyle = '#3d2817';
-            const rodProgress = state === ReloadState.RAMROD_1 ? player.reloadAnim :
-                               state === ReloadState.RAMROD_2 ? player.reloadAnim :
-                               state === ReloadState.RAMROD_3 ? player.reloadAnim :
-                               state === ReloadState.REMOVE_ROD ? 1 - player.reloadAnim : 0;
-            const rodDepth = rodProgress * 80;
-            ctx.fillRect(barrelX + 3, barrelY + 120 - rodDepth, 4, rodDepth + 20);
-        }
-        
-        // Powder horn (during charge)
-        if (state === ReloadState.CHARGE_POWDER) {
-            ctx.fillStyle = '#8B4513';
-            const hornX = stockX - 30 + player.reloadAnim * 20;
-            const hornY = stockY - 50;
-            ctx.beginPath();
-            ctx.arc(hornX, hornY, 15, 0, Math.PI * 2);
-            ctx.fill();
+        // Ramrod (if reloading)
+        if (player.reloading && player.reloadStage === 2) {
+            const rodProgress = player.reloadTimer / 40;
             ctx.fillStyle = '#654321';
-            ctx.fillRect(hornX + 10, hornY - 5, 20, 4);
+            ctx.fillRect(length * 0.3 + rodProgress * length * 0.4, -6, 3, 12);
         }
         
-        // Ball (during insert)
-        if (state === ReloadState.INSERT_BALL) {
-            ctx.fillStyle = '#666';
-            const ballX = stockX + 15;
-            const ballY = stockY - 80 - player.reloadAnim * 40;
-            ctx.beginPath();
-            ctx.arc(ballX, ballY, 5, 0, Math.PI * 2);
-            ctx.fill();
-        }
+        ctx.restore();
     }
     
-    // Hands
-    ctx.fillStyle = '#d4a574';
-    // Trigger hand
-    ctx.fillRect(stockX + 5, stockY + 40, 15, 20);
-    // Forehand
-    ctx.fillRect(barrelX - 5, stockY - 20, 15, 20);
-    
-    // Muzzle flash
-    if (player.recoil > 0.5) {
-        ctx.fillStyle = `rgba(255, 200, 50, ${player.recoil})`;
+    drawIronSights(ctx, width, height) {
+        // Rear sight (notch)
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(width/2 - 15, height/2 - 40, 30, 3);
+        ctx.fillRect(width/2 - 15, height/2 - 40, 3, 15);
+        ctx.fillRect(width/2 + 12, height/2 - 40, 3, 15);
+        
+        // Front sight post
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(width/2 - 2, height/2 + 30, 4, 20);
+        ctx.fillRect(width/2 - 4, height/2 + 48, 8, 4);
+        
+        // Slight blur/wobble for realism
+        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.arc(barrelX + 5, barrelY - 5, 20 + Math.random() * 10, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = `rgba(255, 100, 0, ${player.recoil})`;
-        ctx.beginPath();
-        ctx.arc(barrelX + 5, barrelY - 5, 15 + Math.random() * 5, 0, Math.PI * 2);
-        ctx.fill();
-        // Smoke
-        ctx.fillStyle = `rgba(100, 100, 100, ${player.recoil * 0.5})`;
-        ctx.beginPath();
-        ctx.arc(barrelX + 5, barrelY - 20, 30, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.moveTo(width/2, height/2 - 35);
+        ctx.lineTo(width/2, height/2 + 25);
+        ctx.stroke();
     }
-}
-
-function drawIronSights(ctx, w, h) {
-    // Rear sight (V-notch)
-    ctx.strokeStyle = '#1a1a1a';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(w/2 - 15, h - 60);
-    ctx.lineTo(w/2 - 5, h - 50);
-    ctx.lineTo(w/2 + 5, h - 50);
-    ctx.lineTo(w/2 + 15, h - 60);
-    ctx.stroke();
     
-    // Front sight post
-    ctx.fillStyle = '#1a1a1a';
-    ctx.fillRect(w/2 - 1, h - 80, 2, 25);
+    render() {
+        this.renderView(this.p1Ctx, this.p1, this.p2);
+        this.renderView(this.p2Ctx, this.p2, this.p1);
+    }
     
-    // Blur edges for depth of field effect
-    const gradient = ctx.createRadialGradient(w/2, h/2, 50, w/2, h/2, 200);
-    gradient.addColorStop(0, 'rgba(0,0,0,0)');
-    gradient.addColorStop(1, 'rgba(0,0,0,0.3)');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, w, h);
-}
-
-// Input handling
-const keys = {};
-
-window.addEventListener('keydown', (e) => {
-    keys[e.key.toLowerCase()] = true;
-});
-
-window.addEventListener('keyup', (e) => {
-    keys[e.key.toLowerCase()] = false;
-});
-
-// Player controls
-const player1Controls = {
-    forward: 'w',
-    back: 's',
-    left: 'a',
-    right: 'd',
-    turnLeft: 'q',
-    turnRight: 'e',
-    aim: 'x',
-    fire: 'f',
-    reload: 'r'
-};
-
-const player2Controls = {
-    forward: 'i',
-    back: 'k',
-    left: 'j',
-    right: 'l',
-    turnLeft: 'u',
-    turnRight: 'o',
-    aim: 'm',
-    fire: 'h',
-    reload: 'p'
-};
-
-// Create players
-const player1 = new Player(100, 100, 0, '#4682B4', player1Controls);
-const player2 = new Player(900, 900, Math.PI, '#CD5C5C', player2Controls);
-
-// Game loop
-let lastTime = 0;
-
-function gameLoop(timestamp) {
-    const dt = (timestamp - lastTime) / 1000;
-    lastTime = timestamp;
-    
-    // Update players
-    player1.update(dt, keys, player2);
-    player2.update(dt, keys, player1);
-    
-    // Render
-    renderView(ctx1, player1, player2);
-    renderView(ctx2, player2, player1);
-    
-    requestAnimationFrame(gameLoop);
+    loop() {
+        this.update();
+        this.render();
+        requestAnimationFrame(() => this.loop());
+    }
 }
 
 // Start game
-document.getElementById('startBtn').addEventListener('click', () => {
-    document.getElementById('startScreen').classList.add('hidden');
-    requestAnimationFrame(gameLoop);
-});
-    </script>
+window.onload = () => new Game();
+</script>
 </body>
 </html>

@@ -253,7 +253,7 @@ function handleKeyDown(e) {
     
     // Player 2
     if (e.code === 'KeyM') player2.aim(true);
-    if (e.code === 'Enter') {
+    if (e.code === 'Semicolon') {
         const shot = player2.fire();
         if (shot) checkHit(shot, player2, player1);
     }
