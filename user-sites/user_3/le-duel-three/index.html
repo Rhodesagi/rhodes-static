@@ -3,41 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Le Duel - Flintlock Musket Combat</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Le Duel - Three</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .player-view {
+            flex: 1;
+            position: relative;
+            border: 2px solid #333;
+        }
+        .player-view:first-child {
+            border-bottom: 4px solid #444;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            image-rendering: pixelated;
+        }
+        #controls-info {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 10px 20px;
+            border: 1px solid #555;
+            font-size: 11px;
+            text-align: center;
+            z-index: 100;
+        }
+        #start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+        #start-screen h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px #444;
+        }
+        #start-btn {
+            padding: 15px 40px;
+            font-size: 20px;
+            background: #333;
+            color: #fff;
+            border: 2px solid #666;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        #start-btn:hover {
+            background: #444;
+        }
+        .player-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 5px 10px;
+            font-size: 12px;
+            z-index: 10;
+        }
+        .status-indicator {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 5px 10px;
+            font-size: 11px;
+            z-index: 10;
+        }
+    </style>
 </head>
 <body>
-    <div id="game-container">
-        <canvas id="viewport-p1" class="viewport"></canvas>
-        <div id="divider"></div>
-        <canvas id="viewport-p2" class="viewport"></canvas>
-    </div>
-    
-    <div id="controls-hint">
-        <div class="player-controls">
-            <h3>PLAYER 1 (Blue Coat)</h3>
-            <p><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> Move</p>
-            <p><span class="key">Q</span><span class="key">E</span> Turn Musket</p>
-            <p><span class="key">X</span> Iron Sights</p>
-            <p><span class="key">F</span> Fire</p>
-            <p><span class="key">R</span> Reload</p>
-        </div>
-        <div class="player-controls">
-            <h3>PLAYER 2 (Red Coat)</h3>
-            <p><span class="key">↑</span><span class="key">←</span><span class="key">↓</span><span class="key">→</span> Move</p>
-            <p><span class="key">,</span><span class="key">.</span> Turn Musket</p>
-            <p><span class="key">M</span> Iron Sights</p>
-            <p><span class="key">/</span> Fire</p>
-            <p><span class="key">K</span> Reload</p>
+    <div id="start-screen">
+        <h1>⚔ LE DUEL ⚔</h1>
+        <p style="margin-bottom: 30px; color: #888;">A Gentleman's Musket Duel</p>
+        <button id="start-btn">ENTER THE FIELD</button>
+        <div style="margin-top: 40px; font-size: 12px; color: #666; text-align: center; line-height: 1.8;">
+            <p><strong>PLAYER 1 (Blue):</strong> WASD Move | Q/E Turn Musket | X Aim | F Fire | R Reload</p>
+            <p><strong>PLAYER 2 (Red):</strong> IJKL Move | U/O Turn Musket | M Aim | ENTER Fire | P Reload</p>
+            <p style="margin-top: 10px; color: #444;">Iron sights only. No crosshair. Honor demands precision.</p>
         </div>
     </div>
-    
-    <div id="reload-status"></div>
-    
-    <script src="js/map.js"></script>
-    <script src="js/raycaster.js"></script>
-    <script src="js/musket.js"></script>
-    <script src="js/player.js"></script>
-    <script src="js/game.js"></script>
+
+    <div id="game-container" style="display: none;">
+        <div class="player-view">
+            <span class="player-label">PLAYER 1</span>
+            <span class="status-indicator" id="p1-status">Ready</span>
+            <canvas id="canvas1"></canvas>
+        </div>
+        <div class="player-view">
+            <span class="player-label">PLAYER 2</span>
+            <span class="status-indicator" id="p2-status">Ready</span>
+            <canvas id="canvas2"></canvas>
+        </div>
+    </div>
+
+    <div id="controls-info" style="display: none;">
+        P1: WASD Q/E X F R | P2: IJKL U/O M ENTER P
+    </div>
+
+    <script src="game.js"></script>
 </body>
 </html>

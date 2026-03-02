@@ -3,38 +3,580 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Le Duel One</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Le Duel - Musket Duel FPS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: #c4a35a;
+            overflow: hidden;
+        }
+        #gameTitle {
+            font-size: 32px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px #000;
+            letter-spacing: 4px;
+        }
+        #canvasContainer {
+            position: relative;
+            border: 3px solid #5c4a2a;
+            box-shadow: 0 0 20px rgba(196, 163, 90, 0.3);
+        }
+        canvas {
+            display: block;
+            background: #000;
+        }
+        #controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 40px;
+            font-size: 12px;
+        }
+        .playerControls {
+            background: rgba(30, 25, 15, 0.8);
+            padding: 15px 20px;
+            border: 1px solid #5c4a2a;
+        }
+        .playerControls h3 {
+            color: #8b7355;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #5c4a2a;
+            padding-bottom: 5px;
+        }
+        .playerControls.p1 h3 { color: #4a9; }
+        .playerControls.p2 h3 { color: #a94; }
+        #status {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 10px 20px;
+            border: 1px solid #5c4a2a;
+            font-size: 14px;
+            display: none;
+        }
+        #victory {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            text-shadow: 3px 3px 6px #000;
+            display: none;
+            text-align: center;
+            background: rgba(0,0,0,0.9);
+            padding: 30px 50px;
+            border: 3px solid #c4a35a;
+        }
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        #startScreen h1 {
+            font-size: 48px;
+            margin-bottom: 30px;
+            letter-spacing: 8px;
+        }
+        #startScreen p {
+            margin: 10px 0;
+            font-size: 16px;
+            color: #8b7355;
+        }
+        #startBtn {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 20px;
+            background: #5c4a2a;
+            color: #c4a35a;
+            border: 2px solid #c4a35a;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        #startBtn:hover {
+            background: #c4a35a;
+            color: #0a0a0a;
+        }
+        .reload-bar {
+            position: absolute;
+            bottom: 20px;
+            width: 200px;
+            height: 20px;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid #5c4a2a;
+        }
+        #reloadP1 { left: 20px; }
+        #reloadP2 { right: 20px; }
+        .reload-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4a9, #2a5);
+            transition: width 0.1s;
+        }
+        .reload-stage {
+            position: absolute;
+            bottom: 45px;
+            font-size: 12px;
+            color: #8b7355;
+        }
+        #stageP1 { left: 20px; }
+        #stageP2 { right: 20px; }
+    </style>
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
-    <div id="instructions">
-        <h1>LE DUEL ONE</h1>
-        <p>18th Century Musket Duel - Two Players, One Computer</p>
-        <div class="controls">
-            <div class="player">
-                <h3>Player 1 (Left Screen)</h3>
-                <p>WASD - Move</p>
-                <p>Q/E - Rotate Musket</p>
-                <p>X - Iron Sights (Hold)</p>
-                <p>F - Fire</p>
-                <p>R - Reload (6 stages)</p>
-            </div>
-            <div class="player">
-                <h3>Player 2 (Right Screen)</h3>
-                <p>Arrow Keys - Move</p>
-                <p>Numpad 7/9 - Rotate Musket</p>
-                <p>Numpad Enter - Iron Sights (Hold)</p>
-                <p>Numpad + - Fire</p>
-                <p>Numpad 0 - Reload (6 stages)</p>
-            </div>
+    <div id="gameTitle">⚔️ LE DUEL ⚔️</div>
+    <div id="canvasContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="status">Prepare to Duel</div>
+        <div id="victory"></div>
+        <div id="startScreen">
+            <h1>LE DUEL</h1>
+            <p>A Gentleman's Musket Duel</p>
+            <p style="margin-top: 30px; color: #4a9;">Player 1 (Blue Coat): WASD | Q/E Rotate | X Aim | F Fire | R Reload</p>
+            <p style="color: #a94;">Player 2 (Brown Coat): Arrows | [/] Rotate | / Aim | Enter Fire | . Reload</p>
+            <p style="margin-top: 20px; font-size: 12px; color: #666;">No crosshairs. Use iron sights. Reload carefully.</p>
+            <button id="startBtn">ENTER THE FIELD</button>
         </div>
-        <p class="note">Click to start • No crosshairs • Iron sights only • Authentic reload</p>
+        <div id="reloadP1" class="reload-bar"><div class="reload-fill" id="fillP1"></div></div>
+        <div id="reloadP2" class="reload-bar"><div class="reload-fill" id="fillP2"></div></div>
+        <div id="stageP1" class="reload-stage"></div>
+        <div id="stageP2" class="reload-stage"></div>
     </div>
-    <script src="js/raycaster.js"></script>
-    <script src="js/musket.js"></script>
-    <script src="js/player.js"></script>
-    <script src="js/renderer.js"></script>
-    <script src="js/game.js"></script>
+    <div id="controls">
+        <div class="playerControls p1">
+            <h3>🎖️ PLAYER 1</h3>
+            <p>WASD - Move</p>
+            <p>Q / E - Turn Musket</p>
+            <p>X - Raise/Lower Sights</p>
+            <p>F - Fire</p>
+            <p>R - Reload</p>
+        </div>
+        <div class="playerControls p2">
+            <h3>⚔️ PLAYER 2</h3>
+            <p>↑↓←→ - Move</p>
+            <p>[ / ] - Turn Musket</p>
+            <p>/ - Raise/Lower Sights</p>
+            <p>Enter - Fire</p>
+            <p>. - Reload</p>
+        </div>
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const SCREEN_W = 800, SCREEN_H = 600;
+const FOV = Math.PI / 3;
+const WALL_SIZE = 64;
+
+// 1 = wall, 0 = empty, 2 = player1 start, 3 = player2 start
+const MAP = [
+    [1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,2,0,0,0,0,0,0,0,0,3,1],
+    [1,0,1,0,1,1,1,1,0,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,0,1,0,0,1,0,1,0,1],
+    [1,0,1,0,0,0,0,0,0,1,0,1],
+    [1,0,1,0,1,0,0,1,0,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,0,1,1,1,1,0,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1]
+];
+const MAP_W = MAP[0].length, MAP_H = MAP.length;
+
+// Reload stages for authentic musket reloading
+const RELOAD_STAGES = [
+    { name: "Bite Cartridge", time: 800 },
+    { name: "Pour Powder", time: 600 },
+    { name: "Insert Ball", time: 700 },
+    { name: "Ramrod", time: 1200 },
+    { name: "Remove Ramrod", time: 500 },
+    { name: "Prime Pan", time: 800 },
+    { name: "Close Frizzen", time: 400 },
+    { name: "Full Cock", time: 500 },
+    { name: "Ready", time: 0 }
+];
+
+class Player {
+    constructor(x, y, angle, color, name) {
+        this.x = x;
+        this.y = y;
+        this.angle = angle;
+        this.color = color;
+        this.name = name;
+        this.radius = 12;
+        this.speed = 2;
+        this.rotSpeed = 0.04;
+        this.alive = true;
+        
+        // Weapon state
+        this.loaded = true;
+        this.aiming = false;
+        this.reloading = false;
+        this.reloadStage = 0;
+        this.reloadProgress = 0;
+        this.reloadTimer = 0;
+        
+        // Animation
+        this.recoil = 0;
+        this.swayTime = 0;
+    }
+}
+
+const player1 = new Player(96, 96, Math.PI/4, '#4a9', 'Blue Coat');
+const player2 = new Player(704, 96, Math.PI*0.75, '#a94', 'Brown Coat');
+
+const keys = {};
+let gameRunning = false;
+
+// Input handling
+document.addEventListener('keydown', (e) => {
+    keys[e.key.toLowerCase()] = true;
+    keys[e.code] = true;
+    
+    // Prevent default for game keys
+    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter'].includes(e.code)) {
+        e.preventDefault();
+    }
+});
+document.addEventListener('keyup', (e) => {
+    keys[e.key.toLowerCase()] = false;
+    keys[e.code] = false;
+});
+
+function canMove(x, y, radius) {
+    const gridX = Math.floor(x / WALL_SIZE);
+    const gridY = Math.floor(y / WALL_SIZE);
+    
+    if (gridX < 0 || gridX >= MAP_W || gridY < 0 || gridY >= MAP_H) return false;
+    if (MAP[gridY][gridX] === 1) return false;
+    
+    // Check corners
+    const offsets = [[-radius,-radius], [radius,-radius], [-radius,radius], [radius,radius]];
+    for (let [ox, oy] of offsets) {
+        const gx = Math.floor((x + ox) / WALL_SIZE);
+        const gy = Math.floor((y + oy) / WALL_SIZE);
+        if (gx < 0 || gx >= MAP_W || gy < 0 || gy >= MAP_H) return false;
+        if (MAP[gy][gx] === 1) return false;
+    }
+    return true;
+}
+
+function castRay(x, y, angle) {
+    let rayX = x, rayY = y;
+    const stepX = Math.cos(angle) * 2;
+    const stepY = Math.sin(angle) * 2;
+    let dist = 0;
+    
+    while (dist < 1000) {
+        rayX += stepX;
+        rayY += stepY;
+        dist += 2;
+        
+        const gx = Math.floor(rayX / WALL_SIZE);
+        const gy = Math.floor(rayY / WALL_SIZE);
+        
+        if (gx < 0 || gx >= MAP_W || gy < 0 || gy >= MAP_H) return { dist: 1000, hit: true };
+        if (MAP[gy][gx] === 1) return { dist: dist, hit: true, x: rayX, y: rayY };
+    }
+    return { dist: 1000, hit: false };
+}
+
+function castRayToPlayer(fromX, fromY, fromAngle, targetX, targetY) {
+    const dx = targetX - fromX;
+    const dy = targetY - fromY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const angle = Math.atan2(dy, dx);
+    const angleDiff = Math.abs(normalizeAngle(angle - fromAngle));
+    
+    if (angleDiff > FOV/2) return { visible: false, dist: dist };
+    
+    // Check if wall blocks view
+    const wallHit = castRay(fromX, fromY, angle);
+    return { visible: wallHit.dist > dist - 10, dist: dist, angle: angleDiff };
+}
+
+function normalizeAngle(a) {
+    while (a > Math.PI) a -= Math.PI * 2;
+    while (a < -Math.PI) a += Math.PI * 2;
+    return a;
+}
+
+function updatePlayer(p, other, moveKeys, turnLeft, turnRight, aimKey, fireKey, reloadKey) {
+    if (!p.alive) return;
+    
+    p.swayTime += 0.05;
+    
+    // Movement
+    let moveX = 0, moveY = 0;
+    if (keys[moveKeys[0]]) { moveX += Math.cos(p.angle) * p.speed; moveY += Math.sin(p.angle) * p.speed; }
+    if (keys[moveKeys[1]]) { moveX -= Math.cos(p.angle) * p.speed; moveY -= Math.sin(p.angle) * p.speed; }
+    if (keys[moveKeys[2]]) { moveX += Math.cos(p.angle - Math.PI/2) * p.speed; moveY += Math.sin(p.angle - Math.PI/2) * p.speed; }
+    if (keys[moveKeys[3]]) { moveX += Math.cos(p.angle + Math.PI/2) * p.speed; moveY += Math.sin(p.angle + Math.PI/2) * p.speed; }
+    
+    if (moveX !== 0 || moveY !== 0) {
+        if (canMove(p.x + moveX, p.y, p.radius)) p.x += moveX;
+        if (canMove(p.x, p.y + moveY, p.radius)) p.y += moveY;
+    }
+    
+    // Turning (musket rotation)
+    if (keys[turnLeft]) p.angle -= p.rotSpeed;
+    if (keys[turnRight]) p.angle += p.rotSpeed;
+    
+    // Aiming (iron sights)
+    if (keys[aimKey]) p.aiming = true;
+    else p.aiming = false;
+    
+    // Firing
+    if (keys[fireKey] && p.loaded && !p.reloading && p.recoil <= 0) {
+        fireMusket(p, other);
+        p.recoil = 20;
+    }
+    
+    // Reloading
+    if (keys[reloadKey] && !p.loaded && !p.reloading) {
+        p.reloading = true;
+        p.reloadStage = 0;
+        p.reloadProgress = 0;
+    }
+    
+    // Process reload
+    if (p.reloading) {
+        p.reloadProgress += 16; // ~60fps
+        const stageTime = RELOAD_STAGES[p.reloadStage].time;
+        
+        if (p.reloadProgress >= stageTime) {
+            p.reloadStage++;
+            p.reloadProgress = 0;
+            
+            if (p.reloadStage >= RELOAD_STAGES.length - 1) {
+                p.reloading = false;
+                p.loaded = true;
+                p.reloadStage = 0;
+            }
+        }
+    }
+    
+    // Recoil recovery
+    if (p.recoil > 0) p.recoil -= 1;
+}
+
+function fireMusket(shooter, target) {
+    shooter.loaded = false;
+    
+    const result = castRayToPlayer(shooter.x, shooter.y, shooter.angle, target.x, target.y);
+    
+    if (result.visible) {
+        // Check accuracy based on aiming
+        let accuracy = 0.15; // Hip fire spread
+        if (shooter.aiming) accuracy = 0.03; // Iron sights
+        
+        // Add distance penalty
+        accuracy += result.dist * 0.0001;
+        
+        const hitRoll = Math.random() * result.angle;
+        if (hitRoll < accuracy && result.dist < 800) {
+            target.alive = false;
+            showVictory(shooter.name);
+        }
+    }
+}
+
+function showVictory(winner) {
+    document.getElementById('victory').innerHTML = `<div>${winner}</div><div style="font-size:24px;margin-top:20px;">VICTORY</div><button onclick="location.reload()" style="margin-top:20px;padding:10px 30px;font-size:16px;background:#5c4a2a;color:#c4a35a;border:2px solid #c4a35a;cursor:pointer;font-family:inherit;">Duel Again</button>`;
+    document.getElementById('victory').style.display = 'block';
+    gameRunning = false;
+}
+
+function render() {
+    // Clear
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+    
+    // Sky gradient
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, SCREEN_H/2);
+    skyGrad.addColorStop(0, '#1a1a2e');
+    skyGrad.addColorStop(1, '#4a3728');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, SCREEN_W, SCREEN_H/2);
+    
+    // Ground
+    const groundGrad = ctx.createLinearGradient(0, SCREEN_H/2, 0, SCREEN_H);
+    groundGrad.addColorStop(0, '#2d2416');
+    groundGrad.addColorStop(1, '#1a150f');
+    ctx.fillStyle = groundGrad;
+    ctx.fillRect(0, SCREEN_H/2, SCREEN_W, SCREEN_H/2);
+    
+    // Render from player1 perspective, show player2 as enemy
+    renderView(player1, player2);
+    
+    // Render iron sights overlay
+    renderIronSights(player1);
+    
+    // Render reload UI
+    updateReloadUI(player1, 'P1');
+    updateReloadUI(player2, 'P2');
+}
+
+function renderView(viewer, enemy) {
+    // Raycast walls
+    const numRays = SCREEN_W / 2;
+    const angleStep = FOV / numRays;
+    const startAngle = viewer.angle - FOV/2;
+    
+    for (let i = 0; i < numRays; i++) {
+        const rayAngle = startAngle + i * angleStep;
+        const hit = castRay(viewer.x, viewer.y, rayAngle);
+        
+        if (hit.hit) {
+            // Fish-eye correction
+            const perpDist = hit.dist * Math.cos(rayAngle - viewer.angle);
+            const wallHeight = (WALL_SIZE * SCREEN_H) / perpDist;
+            const wallTop = (SCREEN_H - wallHeight) / 2;
+            
+            // Wall shading based on distance
+            const brightness = Math.max(20, 255 - hit.dist * 0.3);
+            const color = Math.floor(brightness * 0.4);
+            ctx.fillStyle = `rgb(${color},${color*0.8},${color*0.5})`;
+            ctx.fillRect(i * 2, wallTop, 2, wallHeight);
+        }
+    }
+    
+    // Render enemy player
+    const enemyResult = castRayToPlayer(viewer.x, viewer.y, viewer.angle, enemy.x, enemy.y);
+    if (enemyResult.visible && enemy.alive) {
+        const spriteAngle = Math.atan2(enemy.y - viewer.y, enemy.x - viewer.x);
+        const angleDiff = normalizeAngle(spriteAngle - viewer.angle);
+        
+        if (Math.abs(angleDiff) < FOV/2) {
+            const screenX = SCREEN_W/2 + (angleDiff / (FOV/2)) * (SCREEN_W/2);
+            const spriteHeight = (WALL_SIZE * 3 * SCREEN_H) / enemyResult.dist;
+            const spriteWidth = spriteHeight * 0.5;
+            const spriteY = (SCREEN_H - spriteHeight) / 2 + spriteHeight * 0.3;
+            
+            // Draw enemy as simple sprite
+            ctx.fillStyle = enemy.color;
+            ctx.fillRect(screenX - spriteWidth/2, spriteY - spriteHeight, spriteWidth, spriteHeight);
+            
+            // Head
+            ctx.fillStyle = '#dcb';
+            ctx.beginPath();
+            ctx.arc(screenX, spriteY - spriteHeight * 0.85, spriteWidth * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Musket
+            ctx.fillStyle = '#4a3728';
+            ctx.fillRect(screenX + spriteWidth*0.2, spriteY - spriteHeight*0.6, spriteWidth*0.6, spriteHeight*0.15);
+        }
+    }
+}
+
+function renderIronSights(p) {
+    if (!p.aiming) return;
+    
+    ctx.strokeStyle = 'rgba(60, 50, 30, 0.9)';
+    ctx.lineWidth = 2;
+    ctx.fillStyle = 'rgba(60, 50, 30, 0.9)';
+    
+    const cx = SCREEN_W / 2;
+    const cy = SCREEN_H / 2;
+    
+    // Rear sight (V notch)
+    ctx.beginPath();
+    ctx.moveTo(cx - 40, cy + 80);
+    ctx.lineTo(cx - 15, cy + 60);
+    ctx.lineTo(cx, cy + 70);
+    ctx.lineTo(cx + 15, cy + 60);
+    ctx.lineTo(cx + 40, cy + 80);
+    ctx.stroke();
+    
+    // Front sight post
+    ctx.fillRect(cx - 3, cy + 20, 6, 40);
+    ctx.beginPath();
+    ctx.moveTo(cx - 5, cy + 20);
+    ctx.lineTo(cx, cy + 10);
+    ctx.lineTo(cx + 5, cy + 20);
+    ctx.fill();
+    
+    // Sight picture blur vignette
+    const grad = ctx.createRadialGradient(cx, cy, 50, cx, cy, 300);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.3)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+    
+    // Breathing sway when aiming
+    const sway = Math.sin(p.swayTime) * 3;
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy + 45, 2 + Math.abs(sway), 0, Math.PI*2);
+    ctx.stroke();
+}
+
+function updateReloadUI(p, id) {
+    const fill = document.getElementById('fill' + id);
+    const stage = document.getElementById('stage' + id);
+    
+    if (p.reloading) {
+        const stageInfo = RELOAD_STAGES[p.reloadStage];
+        const progress = (p.reloadProgress / stageInfo.time) * 100;
+        fill.style.width = progress + '%';
+        stage.textContent = stageInfo.name;
+        fill.parentElement.style.opacity = '1';
+    } else if (!p.loaded) {
+        fill.style.width = '0%';
+        stage.textContent = 'EMPTY - Press Reload';
+        fill.parentElement.style.opacity = '1';
+    } else {
+        fill.style.width = '100%';
+        stage.textContent = 'READY';
+        fill.parentElement.style.opacity = '0.3';
+    }
+}
+
+function gameLoop() {
+    if (!gameRunning) return;
+    
+    // Update both players
+    updatePlayer(player1, player2, 
+        ['w','s','a','d'], 'q', 'e', 'x', 'f', 'r');
+    updatePlayer(player2, player1, 
+        ['arrowup','arrowdown','arrowleft','arrowright'], 'bracketleft', 'bracketright', 'slash', 'enter', 'period');
+    
+    render();
+    requestAnimationFrame(gameLoop);
+}
+
+// Start button
+document.getElementById('startBtn').addEventListener('click', () => {
+    document.getElementById('startScreen').style.display = 'none';
+    gameRunning = true;
+    gameLoop();
+});
+
+// Initial render
+render();
+</script>
 </body>
 </html>

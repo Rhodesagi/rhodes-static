@@ -3,883 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Le Duel — Iron Sight Musket Combat</title>
+    <title>Le Duel - Musket Duel</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
-            background: #0a0a0a;
-            overflow: hidden;
+            background: #000;
+            color: #fff;
             font-family: 'Courier New', monospace;
-            color: #8b7355;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
         }
-        #gameCanvas {
-            display: block;
-            image-rendering: pixelated;
+        #gameContainer {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
         }
-        #ui {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 12px;
-            line-height: 1.4;
-            text-shadow: 1px 1px 0 #000;
-            pointer-events: none;
+        .player-view {
+            flex: 1;
+            position: relative;
+            border: 2px solid #444;
         }
-        .player-hud {
-            margin-bottom: 10px;
-            padding: 5px 10px;
-            background: rgba(0,0,0,0.7);
-            border: 1px solid #444;
+        .player-view.active {
+            border-color: #666;
         }
-        .hud-title { color: #d4af37; font-weight: bold; }
-        .health-bar {
-            width: 100px;
-            height: 8px;
-            background: #333;
-            margin-top: 3px;
-        }
-        .health-fill {
+        canvas {
+            width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, #8b0000, #ff4444);
-            transition: width 0.2s;
-        }
-        .reload-stage {
-            color: #666;
-            font-size: 10px;
-            margin-top: 2px;
-        }
-        .reload-stage.active {
-            color: #d4af37;
+            display: block;
         }
         #controls {
-            position: absolute;
+            position: fixed;
             bottom: 10px;
-            left: 10px;
-            right: 10px;
-            font-size: 10px;
-            color: #555;
-            display: flex;
-            justify-content: space-between;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 12px;
+            text-align: center;
+            z-index: 100;
         }
-        #message {
-            position: absolute;
+        #controls h3 {
+            margin-bottom: 5px;
+            color: #aaa;
+        }
+        .control-row {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+        }
+        .player-controls {
+            text-align: left;
+        }
+        .player-controls.p1 { color: #8f8; }
+        .player-controls.p2 { color: #88f; }
+        #startScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #startScreen h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px #444;
+        }
+        #startScreen button {
+            padding: 15px 40px;
+            font-size: 20px;
+            background: #333;
+            color: #fff;
+            border: 2px solid #666;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        #startScreen button:hover {
+            background: #444;
+            border-color: #888;
+        }
+        .instructions {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #888;
+            max-width: 600px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        #victory {
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 24px;
-            color: #d4af37;
+            background: rgba(0,0,0,0.95);
+            padding: 40px;
+            border: 3px solid #666;
             text-align: center;
-            opacity: 0;
-            transition: opacity 0.5s;
-            pointer-events: none;
-            text-shadow: 2px 2px 4px #000;
+            display: none;
+            z-index: 500;
         }
-        #message.show { opacity: 1; }
+        #victory h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        #victory button {
+            padding: 10px 30px;
+            font-size: 16px;
+            background: #333;
+            color: #fff;
+            border: 2px solid #666;
+            cursor: pointer;
+            font-family: inherit;
+        }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
-    <div id="ui">
-        <div class="player-hud">
-            <div class="hud-title">P1 — 6th Régiment</div>
-            <div class="health-bar"><div class="health-fill" id="p1-health" style="width: 100%"></div></div>
-            <div class="reload-stage" id="p1-reload">Ready</div>
-        </div>
-        <div class="player-hud">
-            <div class="hud-title">P2 — Black Watch</div>
-            <div class="health-bar"><div class="health-fill" id="p2-health" style="width: 100%"></div></div>
-            <div class="reload-stage" id="p2-reload">Ready</div>
+    <div id="startScreen">
+        <h1>⚔️ LE DUEL ⚔️</h1>
+        <button onclick="startGame()">ENTER THE FIELD OF HONOR</button>
+        <div class="instructions">
+            <p>A true gentleman's duel. Iron sights only. No overlays.</p>
+            <p>Master the complete musket reload. Control your breathing.</p>
+            <p>One shot can end it all.</p>
         </div>
     </div>
+
+    <div id="victory">
+        <h2 id="victorText"></h2>
+        <button onclick="resetGame()">Duel Again</button>
+    </div>
+
+    <div id="gameContainer">
+        <div class="player-view" id="p1View">
+            <canvas id="canvas1"></canvas>
+        </div>
+        <div class="player-view" id="p2View">
+            <canvas id="canvas2"></canvas>
+        </div>
+    </div>
+
     <div id="controls">
-        <span>P1: WASD Move | Q/E Turn | X Aim | F Fire | R Reload</span>
-        <span>P2: IJKL Move | U/O Turn | M Aim | . Fire | P Reload</span>
+        <h3>CONTROLS</h3>
+        <div class="control-row">
+            <div class="player-controls p1">
+                <strong>Player 1</strong><br>
+                WASD - Move<br>
+                Q/E - Tilt Musket<br>
+                X - Aim (Hold)<br>
+                F - Fire<br>
+                R - Reload
+            </div>
+            <div class="player-controls p2">
+                <strong>Player 2</strong><br>
+                IJKL - Move<br>
+                U/O - Tilt Musket<br>
+                M - Aim (Hold)<br>
+                H - Fire<br>
+                Y - Reload
+            </div>
+        </div>
     </div>
-    <div id="message"></div>
 
-<script>
-// === LE DUEL — Split-Screen Musket FPS ===
-// Raycasting engine with authentic 18th-century small arms mechanics
-
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-
-// Display configuration
-const VIEW_WIDTH = 400;
-const VIEW_HEIGHT = 300;
-const FPS = 60;
-
-// Map (1 = wall, 0 = empty)
-const MAP_SIZE = 16;
-const CELL_SIZE = 64;
-const map = [
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
-    [1,0,1,1,0,0,0,0,1,1,1,0,1,1,0,1],
-    [1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
-    [1,0,0,0,1,1,0,0,0,0,1,1,0,0,0,1],
-    [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
-    [1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
-    [1,0,1,1,0,0,0,0,0,0,0,0,1,1,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,1,1,0,0,0,0,0,0,0,0,1,1,0,1],
-    [1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
-    [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
-    [1,0,0,0,1,1,0,0,0,0,1,1,0,0,0,1],
-    [1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
-    [1,0,1,1,0,0,0,0,1,1,1,0,1,1,0,1],
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-];
-
-// Wall textures (procedural wood/stone)
-const wallColors = ['#3d2817', '#4a3c2a', '#2f2518', '#5c4a32'];
-
-// Game state
-const game = {
-    running: true,
-    winner: null,
-    projectiles: [],
-    particles: [],
-    lastTime: 0,
-    audioCtx: null
-};
-
-// Player definitions
-const P1 = {
-    x: 96, y: 96,
-    angle: 0,
-    health: 100,
-    maxHealth: 100,
-    state: 'ready', // ready, reloading_*, aiming, fired
-    reloadStage: 0,
-    reloadStartTime: 0,
-    ironSightOffset: 0, // 0 to 1 (aimed)
-    bob: 0,
-    bobPhase: 0,
-    swayPhase: 0,
-    keys: {},
-    color: '#4a6fa5',
-    kills: 0
-};
-
-const P2 = {
-    x: 928, y: 928,
-    angle: Math.PI,
-    health: 100,
-    maxHealth: 100,
-    state: 'ready',
-    reloadStage: 0,
-    reloadStartTime: 0,
-    ironSightOffset: 0,
-    bob: 0,
-    bobPhase: 0,
-    swayPhase: 0,
-    keys: {},
-    color: '#8b4513',
-    kills: 0
-};
-
-// Reload stages (authentic 18th century musket drill)
-const RELOAD_STAGES = [
-    { name: 'Opening pan...', duration: 400 },
-    { name: 'Pouring powder...', duration: 600 },
-    { name: 'Dropping ball...', duration: 300 },
-    { name: 'Ramming...', duration: 1200 },
-    { name: 'Priming pan...', duration: 500 },
-    { name: 'Closing frizzen...', duration: 300 },
-    { name: 'Ready', duration: 0 }
-];
-
-// Input handling
-const KEY_MAPS = {
-    p1: {
-        forward: 'KeyW', backward: 'KeyS',
-        left: 'KeyA', right: 'KeyD',
-        turnLeft: 'KeyQ', turnRight: 'KeyE',
-        aim: 'KeyX', fire: 'KeyF', reload: 'KeyR'
-    },
-    p2: {
-        forward: 'KeyI', backward: 'KeyK',
-        left: 'KeyJ', right: 'KeyL',
-        turnLeft: 'KeyU', turnRight: 'KeyO',
-        aim: 'KeyM', fire: 'Period', reload: 'KeyP'
-    }
-};
-
-window.addEventListener('keydown', (e) => {
-    P1.keys[e.code] = true;
-    P2.keys[e.code] = true;
-    if (!game.audioCtx) initAudio();
-});
-
-window.addEventListener('keyup', (e) => {
-    P1.keys[e.code] = false;
-    P2.keys[e.code] = false;
-});
-
-window.addEventListener('resize', resizeCanvas);
-
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-resizeCanvas();
-
-// Audio system
-function initAudio() {
-    game.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (game.audioCtx.state === 'suspended') {
-        game.audioCtx.resume();
-    }
-}
-
-function playSound(type, volume = 0.5) {
-    if (!game.audioCtx) return;
-    const osc = game.audioCtx.createOscillator();
-    const gain = game.audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(game.audioCtx.destination);
-    
-    const now = game.audioCtx.currentTime;
-    
-    switch(type) {
-        case 'musket_fire':
-            // White noise burst for gunshot
-            const bufferSize = game.audioCtx.sampleRate * 0.3;
-            const buffer = game.audioCtx.createBuffer(1, bufferSize, game.audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (game.audioCtx.sampleRate * 0.05));
-            }
-            const noise = game.audioCtx.createBufferSource();
-            noise.buffer = buffer;
-            const noiseGain = game.audioCtx.createGain();
-            noiseGain.gain.setValueAtTime(volume, now);
-            noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-            noise.connect(noiseGain);
-            noiseGain.connect(game.audioCtx.destination);
-            noise.start();
-            break;
-        case 'hit':
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(150, now);
-            osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
-            gain.gain.setValueAtTime(volume * 0.5, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-            osc.start(now);
-            osc.stop(now + 0.1);
-            break;
-        case 'reload_click':
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(800, now);
-            gain.gain.setValueAtTime(volume * 0.1, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-            osc.start(now);
-            osc.stop(now + 0.05);
-            break;
-    }
-}
-
-// Math utilities
-const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-const dist = (x1, y1, x2, y2) => Math.sqrt((x2-x1)**2 + (y2-y1)**2);
-const normalizeAngle = (a) => {
-    while (a < -Math.PI) a += Math.PI * 2;
-    while (a > Math.PI) a -= Math.PI * 2;
-    return a;
-};
-
-// Raycasting
-function castRay(x, y, angle, maxDist = 1000) {
-    const sin = Math.sin(angle);
-    const cos = Math.cos(angle);
-    
-    let mapX = Math.floor(x / CELL_SIZE);
-    let mapY = Math.floor(y / CELL_SIZE);
-    
-    const deltaDistX = Math.abs(1 / cos);
-    const deltaDistY = Math.abs(1 / sin);
-    
-    let stepX, stepY;
-    let sideDistX, sideDistY;
-    
-    if (cos < 0) {
-        stepX = -1;
-        sideDistX = (x / CELL_SIZE - mapX) * deltaDistX;
-    } else {
-        stepX = 1;
-        sideDistX = (mapX + 1 - x / CELL_SIZE) * deltaDistX;
-    }
-    
-    if (sin < 0) {
-        stepY = -1;
-        sideDistY = (y / CELL_SIZE - mapY) * deltaDistY;
-    } else {
-        stepY = 1;
-        sideDistY = (mapY + 1 - y / CELL_SIZE) * deltaDistY;
-    }
-    
-    let hit = false;
-    let side = 0;
-    
-    while (!hit && (mapX >= 0 && mapX < MAP_SIZE && mapY >= 0 && mapY < MAP_SIZE)) {
-        if (sideDistX < sideDistY) {
-            sideDistX += deltaDistX;
-            mapX += stepX;
-            side = 0;
-        } else {
-            sideDistY += deltaDistY;
-            mapY += stepY;
-            side = 1;
-        }
-        
-        if (map[mapY][mapX] === 1) {
-            hit = true;
-        }
-    }
-    
-    let perpWallDist;
-    if (side === 0) {
-        perpWallDist = (mapX - x / CELL_SIZE + (1 - stepX) / 2) / cos;
-    } else {
-        perpWallDist = (mapY - y / CELL_SIZE + (1 - stepY) / 2) / sin;
-    }
-    
-    const wallX = side === 0 ? y / CELL_SIZE + perpWallDist * sin : x / CELL_SIZE + perpWallDist * cos;
-    const texX = Math.floor((wallX - Math.floor(wallX)) * 64);
-    
-    return {
-        dist: perpWallDist * CELL_SIZE,
-        side,
-        texX: Math.abs(texX),
-        mapX,
-        mapY
-    };
-}
-
-// Wall collision
-function checkWallCollision(x, y, radius = 16) {
-    const mapX = Math.floor(x / CELL_SIZE);
-    const mapY = Math.floor(y / CELL_SIZE);
-    
-    for (let dy = -1; dy <= 1; dy++) {
-        for (let dx = -1; dx <= 1; dx++) {
-            const checkX = mapX + dx;
-            const checkY = mapY + dy;
-            if (checkY >= 0 && checkY < MAP_SIZE && checkX >= 0 && checkX < MAP_SIZE) {
-                if (map[checkY][checkX] === 1) {
-                    const wallLeft = checkX * CELL_SIZE;
-                    const wallRight = (checkX + 1) * CELL_SIZE;
-                    const wallTop = checkY * CELL_SIZE;
-                    const wallBottom = (checkY + 1) * CELL_SIZE;
-                    
-                    const closestX = clamp(x, wallLeft, wallRight);
-                    const closestY = clamp(y, wallTop, wallBottom);
-                    
-                    const dx = x - closestX;
-                    const dy = y - closestY;
-                    
-                    if (dx * dx + dy * dy < radius * radius) {
-                        return true;
-                    }
-                }
-            }
-        }
-    }
-    return false;
-}
-
-// Player update
-function updatePlayer(player, dt, opponent) {
-    const MOVE_SPEED = 120 * dt;
-    const ROT_SPEED = 2.0 * dt;
-    const keys = player.keys;
-    const keyMap = player === P1 ? KEY_MAPS.p1 : KEY_MAPS.p2;
-    
-    // Movement
-    let moveX = 0, moveY = 0;
-    if (keys[keyMap.forward]) {
-        moveX += Math.cos(player.angle) * MOVE_SPEED;
-        moveY += Math.sin(player.angle) * MOVE_SPEED;
-    }
-    if (keys[keyMap.backward]) {
-        moveX -= Math.cos(player.angle) * MOVE_SPEED * 0.6;
-        moveY -= Math.sin(player.angle) * MOVE_SPEED * 0.6;
-    }
-    if (keys[keyMap.left]) {
-        moveX += Math.cos(player.angle - Math.PI/2) * MOVE_SPEED * 0.7;
-        moveY += Math.sin(player.angle - Math.PI/2) * MOVE_SPEED * 0.7;
-    }
-    if (keys[keyMap.right]) {
-        moveX += Math.cos(player.angle + Math.PI/2) * MOVE_SPEED * 0.7;
-        moveY += Math.sin(player.angle + Math.PI/2) * MOVE_SPEED * 0.7;
-    }
-    
-    // Apply movement with collision
-    const newX = player.x + moveX;
-    const newY = player.y + moveY;
-    if (!checkWallCollision(newX, player.y)) player.x = newX;
-    if (!checkWallCollision(player.x, newY)) player.y = newY;
-    
-    // Bobbing when moving
-    const moving = Math.abs(moveX) > 0.1 || Math.abs(moveY) > 0.1;
-    if (moving) {
-        player.bobPhase += dt * 10;
-        player.bob = Math.sin(player.bobPhase) * 3;
-    } else {
-        player.bob *= 0.9;
-    }
-    
-    // Iron sight sway (breathing + fatigue)
-    player.swayPhase += dt * (moving ? 8 : 2);
-    
-    // Turn musket (Q/E)
-    if (keys[keyMap.turnLeft]) player.angle -= ROT_SPEED;
-    if (keys[keyMap.turnRight]) player.angle += ROT_SPEED;
-    player.angle = normalizeAngle(player.angle);
-    
-    // Aiming (X/M)
-    const aiming = keys[keyMap.aim];
-    const targetOffset = aiming ? 1 : 0;
-    player.ironSightOffset += (targetOffset - player.ironSightOffset) * dt * 8;
-    
-    // Firing (F/.)
-    if (keys[keyMap.fire] && !player.firePressed) {
-        player.firePressed = true;
-        if (player.state === 'ready') {
-            fireMusket(player);
-        }
-    }
-    if (!keys[keyMap.fire]) player.firePressed = false;
-    
-    // Reloading (R/P)
-    if (keys[keyMap.reload] && player.state !== 'reloading') {
-        startReload(player);
-    }
-    
-    // Update reload state machine
-    updateReload(player, dt);
-    
-    // Check player-player collision
-    const d = dist(player.x, player.y, opponent.x, opponent.y);
-    if (d < 40) {
-        const pushX = (player.x - opponent.x) / d * 2;
-        const pushY = (player.y - opponent.y) / d * 2;
-        if (!checkWallCollision(player.x + pushX, player.y)) player.x += pushX;
-        if (!checkWallCollision(player.x, player.y + pushY)) player.y += pushY;
-    }
-}
-
-function startReload(player) {
-    if (player.state === 'ready') {
-        player.state = 'reloading';
-        player.reloadStage = 0;
-        player.reloadStartTime = performance.now();
-        playSound('reload_click', 0.3);
-    }
-}
-
-function updateReload(player, dt) {
-    if (player.state !== 'reloading') return;
-    
-    const now = performance.now();
-    const elapsed = now - player.reloadStartTime;
-    
-    let stageTime = 0;
-    for (let i = 0; i <= player.reloadStage && i < RELOAD_STAGES.length; i++) {
-        if (i < RELOAD_STAGES.length - 1) {
-            stageTime += RELOAD_STAGES[i].duration;
-        }
-    }
-    
-    // Advance to next stage
-    while (elapsed > stageTime && player.reloadStage < RELOAD_STAGES.length - 1) {
-        player.reloadStage++;
-        if (player.reloadStage < RELOAD_STAGES.length - 1) {
-            playSound('reload_click', 0.2);
-        }
-        stageTime += RELOAD_STAGES[player.reloadStage].duration;
-    }
-    
-    // Complete reload
-    if (player.reloadStage >= RELOAD_STAGES.length - 1) {
-        player.state = 'ready';
-        player.reloadStage = 0;
-    }
-}
-
-function fireMusket(player) {
-    player.state = 'fired';
-    playSound('musket_fire', 0.7);
-    
-    // Muzzle flash particle
-    game.particles.push({
-        x: player.x + Math.cos(player.angle) * 30,
-        y: player.y + Math.sin(player.angle) * 30,
-        vx: 0, vy: 0,
-        life: 0.1,
-        maxLife: 0.1,
-        type: 'flash',
-        size: 40
-    });
-    
-    // Sway offset when fired (iron sight sway affects accuracy)
-    const swayAmount = Math.sin(player.swayPhase) * 0.02 * (1 - player.ironSightOffset * 0.7);
-    const fireAngle = player.angle + swayAmount;
-    
-    // Create ballistic projectile (NOT hitscan)
-    const muzzleVel = 450; // m/s scaled to pixels
-    game.projectiles.push({
-        x: player.x + Math.cos(fireAngle) * 25,
-        y: player.y + Math.sin(fireAngle) * 25,
-        vx: Math.cos(fireAngle) * muzzleVel,
-        vy: Math.sin(fireAngle) * muzzleVel,
-        owner: player,
-        gravity: 200, // pixels/s^2
-        drag: 0.3,
-        damage: 85,
-        distance: 0
-    });
-    
-    // Start automatic reload after short delay
-    setTimeout(() => {
-        if (player.state === 'fired') {
-            player.state = 'ready';
-            startReload(player);
-        }
-    }, 500);
-}
-
-function updateProjectiles(dt) {
-    for (let i = game.projectiles.length - 1; i >= 0; i--) {
-        const p = game.projectiles[i];
-        
-        // Apply drag and gravity (simplified ballistics)
-        const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-        p.vx *= (1 - p.drag * dt);
-        p.vy *= (1 - p.drag * dt);
-        p.vy += p.gravity * dt; // gravity causes drop
-        
-        // Move
-        const dx = p.vx * dt;
-        const dy = p.vy * dt;
-        const newX = p.x + dx;
-        const newY = p.y + dy;
-        p.distance += Math.sqrt(dx * dx + dy * dy);
-        
-        // Check wall collision
-        const mapX = Math.floor(newX / CELL_SIZE);
-        const mapY = Math.floor(newY / CELL_SIZE);
-        
-        if (mapY < 0 || mapY >= MAP_SIZE || mapX < 0 || mapX >= MAP_SIZE || map[mapY][mapX] === 1) {
-            // Hit wall - create spark
-            game.particles.push({
-                x: newX, y: newY,
-                vx: (Math.random() - 0.5) * 50,
-                vy: (Math.random() - 0.5) * 50,
-                life: 0.3, maxLife: 0.3,
-                type: 'spark', size: 3
-            });
-            game.projectiles.splice(i, 1);
-            continue;
-        }
-        
-        // Check player hit
-        const target = p.owner === P1 ? P2 : P1;
-        if (dist(newX, newY, target.x, target.y) < 20) {
-            target.health -= p.damage * (0.8 + Math.random() * 0.4);
-            playSound('hit', 0.6);
-            
-            // Blood particles
-            for (let j = 0; j < 8; j++) {
-                game.particles.push({
-                    x: newX, y: newY,
-                    vx: (Math.random() - 0.5) * 100,
-                    vy: (Math.random() - 0.5) * 100,
-                    life: 0.5, maxLife: 0.5,
-                    type: 'blood', size: 4
-                });
-            }
-            
-            game.projectiles.splice(i, 1);
-            
-            if (target.health <= 0) {
-                target.health = 0;
-                p.owner.kills++;
-                showMessage(`${p.owner === P1 ? 'P1' : 'P2'} WINS!`);
-                setTimeout(resetRound, 3000);
-            }
-            continue;
-        }
-        
-        p.x = newX;
-        p.y = newY;
-        
-        // Remove if too far (beyond effective range)
-        if (p.distance > 1200) {
-            game.projectiles.splice(i, 1);
-        }
-    }
-}
-
-function updateParticles(dt) {
-    for (let i = game.particles.length - 1; i >= 0; i--) {
-        const p = game.particles[i];
-        p.life -= dt;
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.vy += 50 * dt; // gravity on particles
-        
-        if (p.life <= 0) {
-            game.particles.splice(i, 1);
-        }
-    }
-}
-
-function showMessage(text) {
-    const msg = document.getElementById('message');
-    msg.textContent = text;
-    msg.classList.add('show');
-    setTimeout(() => msg.classList.remove('show'), 3000);
-}
-
-function resetRound() {
-    P1.x = 96; P1.y = 96; P1.angle = 0; P1.health = 100;
-    P1.state = 'ready'; P1.reloadStage = 0;
-    P2.x = 928; P2.y = 928; P2.angle = Math.PI; P2.health = 100;
-    P2.state = 'ready'; P2.reloadStage = 0;
-    game.projectiles = [];
-    game.particles = [];
-}
-
-// Rendering
-function renderView(player, x, y, w, h, opponent) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(x, y, w, h);
-    ctx.clip();
-    
-    // Calculate effective FOV based on iron sights
-    const baseFOV = Math.PI / 3; // 60 degrees
-    const aimedFOV = Math.PI / 6; // 30 degrees
-    const fov = baseFOV - (baseFOV - aimedFOV) * player.ironSightOffset;
-    
-    // Clear
-    ctx.fillStyle = '#1a1510';
-    ctx.fillRect(x, y, w, h);
-    
-    // Sky gradient
-    const skyGrad = ctx.createLinearGradient(x, y, x, y + h/2);
-    skyGrad.addColorStop(0, '#2a3f5f');
-    skyGrad.addColorStop(1, '#5d4e37');
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(x, y, w, h/2);
-    
-    // Floor
-    const floorGrad = ctx.createLinearGradient(x, y + h/2, x, y + h);
-    floorGrad.addColorStop(0, '#3d3429');
-    floorGrad.addColorStop(1, '#2a2218');
-    ctx.fillStyle = floorGrad;
-    ctx.fillRect(x, y + h/2, w, h/2);
-    
-    // Raycast walls
-    const stripWidth = Math.max(1, Math.floor(w / 120));
-    const numStrips = Math.floor(w / stripWidth);
-    
-    for (let i = 0; i < numStrips; i++) {
-        const screenX = i * stripWidth;
-        const cameraX = 2 * i / numStrips - 1;
-        const rayAngle = player.angle + cameraX * fov / 2;
-        
-        const ray = castRay(player.x, player.y, rayAngle);
-        
-        // Fish-eye correction
-        const perpDist = ray.dist * Math.cos(cameraX * fov / 2);
-        
-        const lineHeight = (CELL_SIZE * h) / perpDist;
-        const drawStart = Math.max(0, (h - lineHeight) / 2 + player.bob);
-        const drawEnd = Math.min(h, (h + lineHeight) / 2 + player.bob);
-        
-        // Wall shading based on distance and side
-        const brightness = Math.max(0.1, 1 - perpDist / 600);
-        const sideDarken = ray.side === 1 ? 0.7 : 1;
-        const finalBrightness = brightness * sideDarken;
-        
-        // Texture color based on texX
-        const texColor = wallColors[Math.floor(ray.texX / 16) % wallColors.length];
-        ctx.fillStyle = shadeColor(texColor, finalBrightness);
-        ctx.fillRect(x + screenX, y + drawStart, stripWidth + 1, drawEnd - drawStart);
-    }
-    
-    // Render opponent as sprite with depth sorting
-    const spriteX = opponent.x - player.x;
-    const spriteY = opponent.y - player.y;
-    
-    const invDet = 1 / (Math.cos(player.angle + Math.PI/2) * Math.sin(player.angle) - Math.sin(player.angle + Math.PI/2) * Math.cos(player.angle));
-    const transformX = invDet * (Math.sin(player.angle) * spriteX - Math.cos(player.angle) * spriteY);
-    const transformY = invDet * (-Math.sin(player.angle + Math.PI/2) * spriteX + Math.cos(player.angle + Math.PI/2) * spriteY);
-    
-    if (transformY > 0) {
-        const spriteScreenX = Math.floor((w / 2) * (1 + transformX / transformY));
-        const spriteHeight = Math.abs(Math.floor(h / transformY)) * 1.5;
-        const spriteWidth = spriteHeight * 0.5;
-        
-        const drawStartY = Math.max(0, -spriteHeight / 2 + h / 2 + player.bob);
-        const drawEndY = Math.min(h, spriteHeight / 2 + h / 2 + player.bob);
-        const drawStartX = Math.max(0, -spriteWidth / 2 + spriteScreenX);
-        const drawEndX = Math.min(w, spriteWidth / 2 + spriteScreenX);
-        
-        // Simple occlusion check against walls at center of sprite
-        const centerRay = castRay(player.x, player.y, player.angle + (spriteScreenX - w/2) * fov / 2 / (w/2));
-        if (centerRay.dist > transformY * CELL_SIZE) {
-            ctx.fillStyle = opponent.color;
-            ctx.fillRect(x + drawStartX, y + drawStartY, drawEndX - drawStartX, drawEndY - drawStartY);
-            // Head
-            ctx.fillStyle = '#dcb';
-            ctx.fillRect(x + drawStartX + spriteWidth * 0.2, y + drawStartY, spriteWidth * 0.6, spriteHeight * 0.25);
-        }
-    }
-    
-    // Render particles
-    game.particles.forEach(p => {
-        const px = (p.x - player.x);
-        const py = (p.y - player.y);
-        const pTransformX = invDet * (Math.sin(player.angle) * px - Math.cos(player.angle) * py);
-        const pTransformY = invDet * (-Math.sin(player.angle + Math.PI/2) * px + Math.cos(player.angle + Math.PI/2) * py);
-        
-        if (pTransformY > 0) {
-            const pScreenX = Math.floor((w / 2) * (1 + pTransformX / pTransformY));
-            const pScreenY = Math.floor(h / 2 + player.bob);
-            const pSize = Math.max(1, p.size / pTransformY * 10);
-            const alpha = p.life / p.maxLife;
-            
-            if (p.type === 'flash') {
-                ctx.fillStyle = `rgba(255, 200, 100, ${alpha})`;
-            } else if (p.type === 'blood') {
-                ctx.fillStyle = `rgba(150, 20, 20, ${alpha})`;
-            } else {
-                ctx.fillStyle = `rgba(255, 200, 50, ${alpha})`;
-            }
-            
-            ctx.fillRect(x + pScreenX - pSize/2, y + pScreenY - pSize/2, pSize, pSize);
-        }
-    });
-    
-    // Iron sight overlay (only when aiming)
-    if (player.ironSightOffset > 0.1) {
-        const sightAlpha = player.ironSightOffset * 0.9;
-        const sightX = x + w / 2;
-        const sightY = y + h / 2 + player.bob + Math.sin(player.swayPhase) * 5 * player.ironSightOffset;
-        
-        ctx.globalAlpha = sightAlpha;
-        ctx.strokeStyle = '#1a1a1a';
-        ctx.lineWidth = 2;
-        
-        // Rear sight (V-notch)
-        ctx.beginPath();
-        ctx.moveTo(sightX - 30, sightY + 20);
-        ctx.lineTo(sightX - 15, sightY - 5);
-        ctx.lineTo(sightX - 5, sightY);
-        ctx.moveTo(sightX + 5, sightY);
-        ctx.lineTo(sightX + 15, sightY - 5);
-        ctx.lineTo(sightX + 30, sightY + 20);
-        ctx.stroke();
-        
-        // Front sight (blade)
-        ctx.fillStyle = '#0a0a0a';
-        ctx.fillRect(sightX - 2, sightY - 25, 4, 40);
-        
-        // Barrel sides (tunnel effect)
-        ctx.fillStyle = `rgba(10, 10, 10, ${sightAlpha * 0.8})`;
-        ctx.fillRect(x, y, w * 0.15, h);
-        ctx.fillRect(x + w * 0.85, y, w * 0.15, h);
-        ctx.fillRect(x, y, w, h * 0.1);
-        ctx.fillRect(x, y + h * 0.9, w, h * 0.1);
-        
-        ctx.globalAlpha = 1;
-    }
-    
-    // Muzzle flash overlay
-    const flash = game.particles.find(p => p.type === 'flash');
-    if (flash && flash.life > 0) {
-        ctx.fillStyle = `rgba(255, 200, 100, ${flash.life / flash.maxLife * 0.5})`;
-        ctx.fillRect(x, y, w, h);
-    }
-    
-    ctx.restore();
-}
-
-function shadeColor(color, factor) {
-    const hex = color.replace('#', '');
-    const r = Math.floor(parseInt(hex.substr(0, 2), 16) * factor);
-    const g = Math.floor(parseInt(hex.substr(2, 2), 16) * factor);
-    const b = Math.floor(parseInt(hex.substr(4, 2), 16) * factor);
-    return `rgb(${r},${g},${b})`;
-}
-
-function updateHUD() {
-    document.getElementById('p1-health').style.width = `${P1.health}%`;
-    document.getElementById('p2-health').style.width = `${P2.health}%`;
-    
-    const p1Reload = document.getElementById('p1-reload');
-    const p2Reload = document.getElementById('p2-reload');
-    
-    if (P1.state === 'reloading') {
-        p1Reload.textContent = RELOAD_STAGES[P1.reloadStage].name;
-        p1Reload.classList.add('active');
-    } else if (P1.state === 'fired') {
-        p1Reload.textContent = 'Fired!';
-        p1Reload.classList.add('active');
-    } else {
-        p1Reload.textContent = 'Ready';
-        p1Reload.classList.remove('active');
-    }
-    
-    if (P2.state === 'reloading') {
-        p2Reload.textContent = RELOAD_STAGES[P2.reloadStage].name;
-        p2Reload.classList.add('active');
-    } else if (P2.state === 'fired') {
-        p2Reload.textContent = 'Fired!';
-        p2Reload.classList.add('active');
-    } else {
-        p2Reload.textContent = 'Ready';
-        p2Reload.classList.remove('active');
-    }
-}
-
-// Main loop
-function gameLoop(timestamp) {
-    const dt = Math.min((timestamp - game.lastTime) / 1000, 0.1);
-    game.lastTime = timestamp;
-    
-    // Update
-    updatePlayer(P1, dt, P2);
-    updatePlayer(P2, dt, P1);
-    updateProjectiles(dt);
-    updateParticles(dt);
-    updateHUD();
-    
-    // Render split screen
-    const w = canvas.width;
-    const h = canvas.height;
-    const halfH = Math.floor(h / 2);
-    
-    // Divider line
-    ctx.fillStyle = '#222';
-    ctx.fillRect(0, halfH - 2, w, 4);
-    
-    // P1 view (top)
-    renderView(P1, 0, 0, w, halfH - 2, P2);
-    
-    // P2 view (bottom)
-    renderView(P2, 0, halfH + 2, w, halfH - 2, P1);
-    
-    requestAnimationFrame(gameLoop);
-}
-
-// Start
-resetRound();
-requestAnimationFrame(gameLoop);
-</script>
+    <script src="game.js"></script>
 </body>
 </html>

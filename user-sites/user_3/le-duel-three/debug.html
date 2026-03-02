@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head><title>Debug</title></head>
+<body>
+<div id="log"></div>
+<script>
+const originalLog = console.log;
+const originalError = console.error;
+console.log = function(...args) {
+    originalLog.apply(console, args);
+    document.getElementById('log').innerHTML += '<div>' + args.join(' ') + '</div>';
+};
+console.error = function(...args) {
+    originalError.apply(console, args);
+    document.getElementById('log').innerHTML += '<div style="color:red">ERROR: ' + args.join(' ') + '</div>';
+};
+</script>
+<script src="map.js"></script>
+<script>
+console.log('MAP loaded:', typeof MAP);
+console.log('MAP width:', MAP?.width);
+console.log('MAP isWall(2.5,2.5):', MAP?.isWall(2.5, 2.5));
+console.log('MAP isWall(3,3):', MAP?.isWall(3, 3));
+console.log('MAP get(2,2):', MAP?.get(2, 2));
+</script>
+</body>
+</html>
