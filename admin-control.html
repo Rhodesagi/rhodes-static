@@ -667,6 +667,34 @@
       </div>
 
 
+      <!-- User Context (Post-Handoff System Messages) -->
+      <div class="card" id="userContextCard">
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted" style="font-weight:bold;">User Context (Post-Handoff Briefing)</div>
+          <button id="ucRefreshBtn" style="font-size:11px;">Refresh</button>
+        </div>
+        <div id="ucEntries" style="margin-top:10px;"></div>
+        <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
+          <div class="row" style="gap:8px;align-items:flex-end;">
+            <label style="min-width:120px;">User
+              <select id="ucUserSelect" style="min-width:160px;">
+                <option value="">-- select user --</option>
+              </select>
+            </label>
+            <label>Preset
+              <select id="ucPresetSelect" style="min-width:140px;">
+                <option value="">Custom</option>
+              </select>
+            </label>
+            <label class="grow">Context (system message appended to briefing-over)
+              <textarea id="ucTextarea" rows="3" placeholder="e.g. You are now being connected to Mark Bass, a senior military officer..."></textarea>
+            </label>
+            <button id="ucSaveBtn" style="background:#1a4a2e;border-color:#2d6b40;">Save</button>
+            <button id="ucClearBtn" style="background:#4a1a1a;border-color:#6b2d2d;">Clear</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Warmup Seeds Editor -->
       <div class="card" id="seedEditorCard">
         <div class="row" style="justify-content: space-between;">
@@ -2742,6 +2770,98 @@
         const container = $('seedMessages');
         container.lastElementChild?.scrollIntoView({ behavior: 'smooth' });
       }
+
+      // === User Context (Post-Handoff Briefing) ===
+      let _ucPresets = {};
+      async function ucRefresh() {
+        try {
+          const data = await api('/api/admin/user-context', { method: 'GET' });
+          const entries = data.entries || [];
+          const users = data.users || {};
+          const container = $('ucEntries');
+          if (!entries.length) {
+            container.innerHTML = '<div class="muted" style="font-size:12px;">No user contexts set.</div>';
+          } else {
+            container.innerHTML = entries.map(e =>
+              '<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;padding:6px;background:#0f1730;border-radius:8px;">' +
+                '<span class="mono" style="min-width:120px;color:var(--ok);font-size:12px;">' + e.username + ' (ID ' + e.user_id + ')</span>' +
+                '<span style="flex:1;font-size:12px;">' + e.context.substring(0, 200) + (e.context.length > 200 ? '...' : '') + '</span>' +
+                '<button style="font-size:11px;" onclick="ucEdit(' + e.user_id + ',\''+e.username+'\')">Edit</button>' +
+              '</div>'
+            ).join('');
+          }
+          // Populate presets
+          _ucPresets = data.presets || {};
+          const presetSel = $('ucPresetSelect');
+          const curPreset = presetSel.value;
+          presetSel.innerHTML = '<option value="">Custom</option>';
+          for (const [key, tmpl] of Object.entries(_ucPresets)) {
+            presetSel.innerHTML += '<option value="' + key + '">' + key.charAt(0).toUpperCase() + key.slice(1) + '</option>';
+          }
+          if (curPreset) presetSel.value = curPreset;
+          // Populate user select
+          const sel = $('ucUserSelect');
+          const curVal = sel.value;
+          sel.innerHTML = '<option value="">-- select user --</option>';
+          for (const [uid, uname] of Object.entries(users)) {
+            sel.innerHTML += '<option value="' + uid + '">' + uname + ' (ID ' + uid + ')</option>';
+          }
+          if (curVal) sel.value = curVal;
+        } catch (e) {
+          console.error('ucRefresh error:', e);
+        }
+      }
+      window.ucEdit = function(uid, uname) {
+        $('ucUserSelect').value = String(uid);
+        // Load existing context into textarea
+        api('/api/admin/user-context', { method: 'GET' }).then(data => {
+          const entry = (data.entries || []).find(e => e.user_id === uid);
+          $('ucTextarea').value = entry ? entry.context : '';
+          $('ucTextarea').focus();
+        });
+      };
+      $('ucPresetSelect').onchange = function() {
+        const key = this.value;
+        if (!key || !_ucPresets[key]) return;
+        const uid = $('ucUserSelect').value;
+        // Try to get username for {name} substitution
+        const sel = $('ucUserSelect');
+        const opt = sel.options[sel.selectedIndex];
+        const uname = opt ? opt.textContent.split(' (')[0] : 'the user';
+        $('ucTextarea').value = _ucPresets[key].replace(/{name}/g, uname);
+      };
+      $('ucUserSelect').onchange = function() {
+        // Re-apply preset if one is selected
+        const key = $('ucPresetSelect').value;
+        if (key && _ucPresets[key]) {
+          const opt = this.options[this.selectedIndex];
+          const uname = opt ? opt.textContent.split(' (')[0] : 'the user';
+          $('ucTextarea').value = _ucPresets[key].replace(/{name}/g, uname);
+        }
+      };
+      $('ucRefreshBtn').onclick = ucRefresh;
+      $('ucSaveBtn').onclick = async function() {
+        const uid = $('ucUserSelect').value;
+        const ctx = $('ucTextarea').value.trim();
+        if (!uid) { showToast('Select a user first'); return; }
+        try {
+          const data = await api('/api/admin/user-context', { method: 'POST', body: JSON.stringify({ user_id: parseInt(uid), context: ctx }) });
+          showToast(data.message || 'Saved');
+          $('ucTextarea').value = '';
+          ucRefresh();
+        } catch (e) { showToast('Error: ' + e.message); }
+      };
+      $('ucClearBtn').onclick = async function() {
+        const uid = $('ucUserSelect').value;
+        if (!uid) { showToast('Select a user first'); return; }
+        try {
+          const data = await api('/api/admin/user-context', { method: 'POST', body: JSON.stringify({ user_id: parseInt(uid), context: '' }) });
+          showToast(data.message || 'Cleared');
+          $('ucTextarea').value = '';
+          ucRefresh();
+        } catch (e) { showToast('Error: ' + e.message); }
+      };
+      ucRefresh();
 
       $('seedLoadListBtn').onclick = loadSeedList;
       $('seedLoadBtn').onclick = loadSeed;

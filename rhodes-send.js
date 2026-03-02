@@ -302,6 +302,26 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
             return;
         }
 
+        // User context commands — send as user_message, not model_set_request
+        const _ctxCmds = ["/military", "/fbi", "/dia", "/cia", "/nsa", "/system"];
+        const _ctxWord = text.split(' ')[0].toLowerCase();
+        if (_ctxCmds.includes(_ctxWord)) {
+            const ws = getWs();
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                clearInputAndResize(input);
+                ws.send(JSON.stringify({
+                    msg_type: 'user_message',
+                    msg_id: generateUUID(),
+                    timestamp: new Date().toISOString(),
+                    payload: { content: text }
+                }));
+                showToast('Context: ' + _ctxWord.slice(1).toUpperCase());
+            } else {
+                showToast('Not connected');
+            }
+            return;
+        }
+
         console.log('[BEFORE parseModelSwitchPrefix] text:', text);
         const modelCmd = parseModelSwitchPrefix(text);
         console.log('[AFTER parseModelSwitchPrefix] modelCmd:', modelCmd);

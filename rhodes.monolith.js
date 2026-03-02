@@ -4464,6 +4464,28 @@ window._slashCommands["/credentials"] = function(args) {
 };
 window._slashCommands["/creds"] = window._slashCommands["/credentials"];
 
+// User context slash commands - forward as user_message so server handles them
+(function() {
+    const ctxCmds = ["/military", "/fbi", "/dia", "/cia", "/nsa", "/system"];
+    ctxCmds.forEach(function(cmd) {
+        window._slashCommands[cmd] = function(args) {
+            const ws = window.ws;
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                if (typeof showToast === "function") showToast("Not connected");
+                return null;
+            }
+            const fullText = args ? cmd + " " + args : cmd;
+            ws.send(JSON.stringify({
+                msg_type: "user_message",
+                msg_id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+                timestamp: new Date().toISOString(),
+                payload: { content: fullText }
+            }));
+            return null;
+        };
+    });
+})();
+
 // Project switcher (projects are user-level context, never system prompt).
 (function() {
     if (window.__rhodesProjectUiInstalled) return;
