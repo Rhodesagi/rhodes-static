@@ -115,8 +115,14 @@
             const serverTurnMs = Number(payload && payload.turn_time_ms);
             if (Number.isFinite(serverTurnMs) && serverTurnMs > 0) {
                 ms = serverTurnMs;
-            } else if (pendingStartTs && pendingStartTs > 0) {
-                ms = Date.now() - pendingStartTs;
+            } else {
+                let startTs = (pendingStartTs && pendingStartTs > 0) ? pendingStartTs : 0;
+                const submitTs = Number(window._submitTimestamp || 0);
+                const payloadReqId = String((payload && payload.req_id) || '');
+                const submitReqId = String(window._submitReqId || '');
+                const canUseSubmitTs = submitTs > 0 && (!submitReqId || !payloadReqId || payloadReqId === submitReqId);
+                if (!startTs && canUseSubmitTs) startTs = submitTs;
+                if (startTs > 0) ms = Date.now() - startTs;
             }
             if (ms <= 0) return '';
             return formatResponseDuration(ms);

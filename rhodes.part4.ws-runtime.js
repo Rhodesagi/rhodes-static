@@ -225,9 +225,27 @@
 
         function showLoading() {
             // Track that we are waiting for a response (for restart continuation)
-            window._pendingGeneration = { timestamp: Date.now(), reqId: activeReqId };
-            window._submitTimestamp = Date.now();
+            const _now = Date.now();
+            window._pendingGeneration = { timestamp: _now, reqId: activeReqId };
+            window._submitTimestamp = _now;
             window._submitReqId = activeReqId;
+
+            // If an older stream bubble is still open (missing final event, reconnect race, etc.),
+            // close it now so the next reply always starts in a fresh message block.
+            if (window.streamingMsgEl) {
+                try {
+                    if (typeof finalizeStreamingMsg === 'function') {
+                        finalizeStreamingMsg(window.streamingMsgEl, window.streamingContent || '');
+                    } else {
+                        window.streamingMsgEl.classList.remove('streaming');
+                    }
+                } catch (e) {
+                    try { window.streamingMsgEl.classList.remove('streaming'); } catch (_) {}
+                }
+                window.streamingMsgEl = null;
+                window.streamingContent = '';
+            }
+
             hideLoading(); // Clear any existing
             clearToolCalls();
             loadingEl = document.createElement('div');

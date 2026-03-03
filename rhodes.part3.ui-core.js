@@ -162,6 +162,50 @@ function showDownloads() {
             chat.scrollTop = chat.scrollHeight;
         }
 
+        function _normalizeReqId(payloadReqId, fallbackReqId) {
+            const pr = (payloadReqId !== undefined && payloadReqId !== null) ? String(payloadReqId) : '';
+            if (pr) return pr;
+            return fallbackReqId ? String(fallbackReqId) : '';
+        }
+
+        function _wallToWallLabelSafe(payload, pendingStartTs) {
+            try {
+                if (typeof getWallToWallLabel === 'function') {
+                    const v = getWallToWallLabel(payload, pendingStartTs);
+                    if (v) return v;
+                }
+            } catch (e) {}
+            if (payload && payload.partial) return '';
+            let ms = 0;
+            const serverTurnMs = Number(payload && payload.turn_time_ms);
+            if (Number.isFinite(serverTurnMs) && serverTurnMs > 0) {
+                ms = serverTurnMs;
+            } else {
+                let startTs = (pendingStartTs && pendingStartTs > 0) ? pendingStartTs : 0;
+                const submitTs = Number(window._submitTimestamp || 0);
+                if (!startTs && submitTs > 0) startTs = submitTs;
+                if (startTs > 0) ms = Date.now() - startTs;
+            }
+            if (ms <= 0) return '';
+            if (typeof formatResponseDuration === 'function') return formatResponseDuration(ms);
+            if (typeof formatDuration === 'function') return formatDuration(ms);
+            const totalSeconds = Math.max(0, Math.round(ms / 1000));
+            if (totalSeconds < 60) return totalSeconds + 's';
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return seconds === 0 ? minutes + 'm' : minutes + 'm ' + seconds + 's';
+        }
+
+        function _findLastAiMsgByReqId(reqId) {
+            if (!reqId) return null;
+            const nodes = document.querySelectorAll('.msg.ai');
+            for (let i = nodes.length - 1; i >= 0; i--) {
+                const n = nodes[i];
+                if (n && n.dataset && n.dataset.reqId === reqId) return n;
+            }
+            return null;
+        }
+
         // Firebase initialization
         const firebaseConfig = {
             apiKey: "AIzaSyBZ1BCmsiSCgEjEMXkeMxedzqUtzQMJnO4",
@@ -763,9 +807,16 @@ function showDownloads() {
                         window._reasoningSummary = null;
                     }
                     if (activeReqId && msg.payload && msg.payload.req_id && msg.payload.req_id !== activeReqId) return;
+                    const chunkReqId = _normalizeReqId(msg.payload && msg.payload.req_id, activeReqId);
+                    if (window.streamingMsgEl && window._streamReqId && chunkReqId && window._streamReqId !== chunkReqId) {
+                        finalizeStreamingMsg(window.streamingMsgEl, window.streamingContent || '');
+                        window.streamingMsgEl = null;
+                        window.streamingContent = '';
+                        window._streamReqId = null;
+                    }
                     const chunk = msg.payload.content || '';
                     if (chunk) {
-                        if (_seenRecently('chunk:' + chunk.slice(0, 64), 150)) return;
+                        if (_seenRecently('chunk:' + ((msg.payload && msg.payload.req_id) || activeReqId || '') + ':' + chunk.slice(0, 64), 150)) return;
                         // Filter internal system messages that should never reach the user
                         if (chunk.includes('[Response regenerated') || chunk.includes('[RETRACTION') || chunk.includes('CRITICAL SCIENTIFIC INTEGRITY WARNING') || chunk.includes('[CONTEXT COMPACTION NOTICE]')) {
                             console.log('[FILTER] Blocked internal message from display:', chunk.slice(0, 80));
@@ -778,6 +829,11 @@ function showDownloads() {
                             if (typeof collapseToolCalls === 'function') collapseToolCalls();
                             window.streamingContent = '';
                             window.streamingMsgEl = addMsgStreaming('ai', '');
+                            window._streamReqId = chunkReqId || null;
+                            if (window.streamingMsgEl && window._streamReqId) window.streamingMsgEl.dataset.reqId = window._streamReqId;
+                        } else if (!window._streamReqId && chunkReqId && window.streamingMsgEl) {
+                            window._streamReqId = chunkReqId;
+                            window.streamingMsgEl.dataset.reqId = window._streamReqId;
                         }
                         window.streamingContent += chunk;
                         updateStreamingMsg(window.streamingMsgEl, window.streamingContent);
@@ -793,11 +849,13 @@ function showDownloads() {
                     hideLoading();
                     // Finalize streaming: keep content in place, append wall-to-wall timer
                     if (window.streamingMsgEl) {
-                        if (window.streamingContent && window.marked) {
-                            try { window.streamingMsgEl.innerHTML = window.marked.parse(window.streamingContent); } catch(e) {}
-                        }
-                        window.streamingMsgEl.classList.remove('streaming');
-                        const _wtw = getWallToWallLabel(msg.payload || {}, pendingTurnStartTs);
+                        const _finalText = (msg.payload && typeof msg.payload.content === 'string' && msg.payload.content.trim())
+                            ? msg.payload.content
+                            : (window.streamingContent || '');
+                        const _reqId = _normalizeReqId(msg.payload && msg.payload.req_id, activeReqId);
+                        if (window.streamingMsgEl && _reqId) window.streamingMsgEl.dataset.reqId = _reqId;
+                        finalizeStreamingMsg(window.streamingMsgEl, _finalText);
+                        const _wtw = _wallToWallLabelSafe(msg.payload || {}, pendingTurnStartTs);
                         if (_wtw) {
                             const _timeEl = document.createElement('span');
                             _timeEl.className = 'msg-response-time';
@@ -813,6 +871,11 @@ function showDownloads() {
                         }
                         window.streamingMsgEl = null;
                         window.streamingContent = '';
+                        window._streamReqId = null;
+                        if (!(msg.payload && msg.payload.partial)) {
+                            window._submitTimestamp = 0;
+                            window._submitReqId = null;
+                        }
                         return;
                     }
                     // Close any live reasoning display
@@ -865,7 +928,8 @@ function showDownloads() {
                         }
                     }
 
-                    const responseTimeLabel = getWallToWallLabel(msg.payload || {}, pendingTurnStartTs);
+                    const reqId = _normalizeReqId(msg.payload && msg.payload.req_id, activeReqId);
+                    const responseTimeLabel = _wallToWallLabelSafe(msg.payload || {}, pendingTurnStartTs);
                     msg.payload.content = msg.payload.content || '';
 
                     // Update valence context with current round info
@@ -879,14 +943,30 @@ function showDownloads() {
 
                     // ALWAYS display content as a fresh message
                     if (msg.payload.content && msg.payload.content.trim()) {
-                        const k = 'ai:' + (msg.payload.req_id || '') + ':' + msg.payload.content.slice(0, 240);
-                        if (_seenRecently(k, 2000)) return;
+                        const k = 'ai:' + (reqId || '') + ':' + msg.payload.content.slice(0, 240);
+                        if (_seenRecently(k, 2000)) {
+                            if (responseTimeLabel) {
+                                const existing = _findLastAiMsgByReqId(reqId);
+                                if (existing && !existing.querySelector('.msg-response-time')) {
+                                    const _timeEl = document.createElement('span');
+                                    _timeEl.className = 'msg-response-time';
+                                    _timeEl.textContent = ' (' + responseTimeLabel + ')';
+                                    existing.appendChild(_timeEl);
+                                }
+                            }
+                            return;
+                        }
                         // Collapse tool log so any subsequent tool calls appear after this message
                         if (typeof collapseToolCalls === 'function') collapseToolCalls();
                         const node = addMsg('ai', msg.payload.content, false, responseTimeLabel);
+                        if (node && reqId) node.dataset.reqId = reqId;
                         if (msg.payload.debug_reasoning && window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin) {
                             attachDebugReasoning(node, msg.payload.debug_reasoning);
                         }
+                    }
+                    if (!(msg.payload && msg.payload.partial)) {
+                        window._submitTimestamp = 0;
+                        window._submitReqId = null;
                     }
                     // Admin error detail popup
                     if (msg.payload.error_detail && window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin) {
@@ -1466,6 +1546,7 @@ function showDownloads() {
                             window.streamingMsgEl.classList.remove('streaming');
                             window.streamingMsgEl = null;
                             window.streamingContent = '';
+                            window._streamReqId = null;
                         }
                         msgEl = document.createElement('div');
                         msgEl.className = 'tool-dot-container';

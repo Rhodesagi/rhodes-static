@@ -1277,7 +1277,7 @@ function handlePaneAiMessage(paneNum, msg, chatEl) {
     if (window.hideInstanceLoading) window.hideInstanceLoading(paneNum);
 
     let streamEl = chatEl.querySelector('.instance-streaming-' + paneNum);
-    const responseTimeLabel = getWallToWallLabel(msg.payload || {}, 0);
+    const responseTimeLabel = (typeof getWallToWallLabel === 'function') ? getWallToWallLabel(msg.payload || {}, 0) : '';
     let content = msg.payload?.content || '';
 
     const wasFromShare = window.paneLastWasShare && window.paneLastWasShare[paneNum];
