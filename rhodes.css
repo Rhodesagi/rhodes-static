@@ -869,11 +869,17 @@
         .msg-response-time {
             display: inline-block;
             margin-top: 8px;
-            font-size: 11px;
-            color: var(--dim, #666);
-            opacity: 0.7;
+            font-size: 12px;
+            color: var(--cyan);
+            opacity: 0.95;
             font-family: 'Orbitron', monospace;
             letter-spacing: 1px;
+            text-shadow: 0 0 6px rgba(0, 255, 204, 0.35);
+        }
+
+        body.light-mode .msg-response-time {
+            text-shadow: none;
+            opacity: 0.9;
         }
 
         .msg pre {
