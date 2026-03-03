@@ -791,11 +791,29 @@ function showDownloads() {
                     console.log("[DEBUG] debug_reasoning present:", !!msg.payload.debug_reasoning, "len:", msg.payload.debug_reasoning ? msg.payload.debug_reasoning.length : 0);
                     const pendingTurnStartTs = (window._pendingGeneration && window._pendingGeneration.timestamp) ? window._pendingGeneration.timestamp : 0;
                     hideLoading();
-                    // Clear any streaming state
+                    // Finalize streaming: keep content in place, append wall-to-wall timer
                     if (window.streamingMsgEl) {
-                        window.streamingMsgEl.remove();  // Remove the tool-only element
+                        if (window.streamingContent && window.marked) {
+                            try { window.streamingMsgEl.innerHTML = window.marked.parse(window.streamingContent); } catch(e) {}
+                        }
+                        window.streamingMsgEl.classList.remove('streaming');
+                        const _wtw = getWallToWallLabel(msg.payload || {}, pendingTurnStartTs);
+                        if (_wtw) {
+                            const _timeEl = document.createElement('span');
+                            _timeEl.className = 'msg-response-time';
+                            _timeEl.textContent = ' (' + _wtw + ')';
+                            window.streamingMsgEl.appendChild(_timeEl);
+                        }
+                        if (msg.payload.debug_reasoning && window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin) {
+                            attachDebugReasoning(window.streamingMsgEl, msg.payload.debug_reasoning);
+                        }
+                        if (window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin) {
+                            const injPayload = takePendingInjectionDebugPayload(msg.payload.req_id || activeReqId || null);
+                            if (injPayload) attachInjectedArticles(window.streamingMsgEl, injPayload);
+                        }
                         window.streamingMsgEl = null;
                         window.streamingContent = '';
+                        return;
                     }
                     // Close any live reasoning display
                     if (window._reasoningEl && window._reasoningSummary) {

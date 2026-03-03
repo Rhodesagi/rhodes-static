@@ -866,6 +866,16 @@
             letter-spacing: 2px;
         }
 
+        .msg-response-time {
+            display: inline-block;
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--dim, #666);
+            opacity: 0.7;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 1px;
+        }
+
         .msg pre {
             background: #000;
             padding: 12px;
