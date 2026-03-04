@@ -840,6 +840,8 @@
 
     window.openProjectPicker = openProjectPicker;
     window.switchProject = _switchProject;
+    window._showProjectCreateForm = _showCreateForm;
+    window._showProjectEditForm = _showEditForm;
 
     window._slashCommands["/project"] = function(args) {
         const a = String(args || '').trim();

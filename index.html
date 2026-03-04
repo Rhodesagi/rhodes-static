@@ -2685,29 +2685,11 @@ window._createProjectFromPanel = function() {
         if (typeof window.showToast === 'function') window.showToast('Login required');
         return;
     }
-    var name = window.prompt('New project name:');
-    if (name === null) return;
-    name = name.trim();
-    if (!name) {
-        if (typeof window.showToast === 'function') window.showToast('Project name required');
-        return;
+    if (typeof window._showProjectCreateForm === 'function') {
+        window._showProjectCreateForm();
+    } else if (typeof window.openProjectPicker === 'function') {
+        window.openProjectPicker();
     }
-    fetch('/api/user/projects', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, description: '' })
-    }).then(function(r) { return r.json(); }).then(function(data) {
-        if (data && data.success) {
-            if (typeof window.showToast === 'function') window.showToast('Project created');
-            window._projectNameMap = null;
-            window._loadProjectsUp();
-            window._loadSessionsUp();
-        } else if (typeof window.showToast === 'function') {
-            window.showToast('Failed to create project');
-        }
-    }).catch(function() {
-        if (typeof window.showToast === 'function') window.showToast('Error creating project');
-    });
 };
 window._loadProjectsUp = function() {
     var results = document.getElementById('projects-up-results');
@@ -2796,7 +2778,11 @@ window._loadProjectsUp = function() {
                         e.preventDefault();
                         return;
                     }
-                    window.location.href = '/projects.html?id=' + p.id;
+                    if (typeof window._showProjectEditForm === 'function') {
+                        window._showProjectEditForm(p);
+                    } else {
+                        window.location.href = '/projects.html?id=' + p.id;
+                    }
                 };
                 results.appendChild(div);
             });
