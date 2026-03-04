@@ -300,6 +300,23 @@
       }
       .spinner { display:inline-block;width:14px;height:14px;border:2px solid var(--warn);border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;margin-right:8px; }
       @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* Seed Manager tabs */
+      .seedTab {
+        font-size: 12px;
+        padding: 6px 16px;
+        background: transparent;
+        border: 1px solid var(--border);
+        border-bottom: none;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .seedTab:hover { background: #1a1f30; }
+      .seedTabActive {
+        background: var(--panel) !important;
+        color: var(--ok) !important;
+        border-bottom: 2px solid var(--ok) !important;
+      }
     </style>
   </head>
   <body>
@@ -695,24 +712,95 @@
         </div>
       </div>
 
-      <!-- Warmup Seeds Editor -->
+      <!-- Seed Manager -->
       <div class="card" id="seedEditorCard">
         <div class="row" style="justify-content: space-between;">
-          <div class="muted" style="font-weight:bold;">Warmup Seeds</div>
+          <div class="muted" style="font-weight:bold;">Seed Manager</div>
           <div class="muted" id="seedMeta">(not loaded)</div>
         </div>
-        <div class="row" style="margin-top: 8px; gap: 8px;">
-          <label>Seed file
-            <select id="seedSelect" style="min-width:260px;">
-              <option value="">-- select --</option>
-            </select>
-          </label>
-          <button id="seedLoadListBtn">Refresh list</button>
-          <button id="seedLoadBtn">Load</button>
-          <button id="seedSaveBtn" style="background:#1a4a2e;border-color:#2d6b40;">Save</button>
-          <button id="seedAddMsgBtn">+ Message</button>
+
+        <!-- Tab bar -->
+        <div class="row" style="margin-top:8px;gap:0;border-bottom:1px solid var(--border);">
+          <button id="seedTabEditor" class="seedTab seedTabActive" onclick="seedSwitchTab('editor')" style="border-radius:6px 6px 0 0;border-bottom:none;">Editor</button>
+          <button id="seedTabConfig" class="seedTab" onclick="seedSwitchTab('config')" style="border-radius:6px 6px 0 0;border-bottom:none;">Config</button>
+          <button id="seedTabSysMsg" class="seedTab" onclick="seedSwitchTab('sysmsg')" style="border-radius:6px 6px 0 0;border-bottom:none;">System Messages</button>
         </div>
-        <div id="seedMessages" style="margin-top:10px;"></div>
+
+        <!-- Tab: Editor (original seed editor) -->
+        <div id="seedPanelEditor" class="seedPanel">
+          <div class="row" style="margin-top:8px;gap:8px;">
+            <label>Seed file
+              <select id="seedSelect" style="min-width:260px;">
+                <option value="">-- select --</option>
+              </select>
+            </label>
+            <button id="seedLoadListBtn">Refresh list</button>
+            <button id="seedLoadBtn">Load</button>
+            <button id="seedSaveBtn" style="background:#1a4a2e;border-color:#2d6b40;">Save</button>
+            <button id="seedAddMsgBtn">+ Message</button>
+            <button id="seedValidateBtn" style="background:#1a3a4a;border-color:#2d5a6b;">Validate</button>
+          </div>
+          <div id="seedValidateResult" style="margin-top:4px;display:none;"></div>
+          <div id="seedMessages" style="margin-top:10px;"></div>
+        </div>
+
+        <!-- Tab: Config (manifest-aware config panel) -->
+        <div id="seedPanelConfig" class="seedPanel" style="display:none;">
+          <div style="margin-top:8px;">
+            <div class="row" style="gap:8px;margin-bottom:8px;">
+              <button id="seedManifestRefresh" onclick="seedLoadManifest()">Refresh Manifest</button>
+            </div>
+            <div id="seedManifestGrid" style="overflow-x:auto;"></div>
+            <div id="seedConfigEditor" style="margin-top:12px;display:none;border:1px solid var(--border);border-radius:8px;padding:12px;background:#0a0e1a;">
+              <div style="font-weight:bold;margin-bottom:8px;color:var(--ok);">Editing: <span id="seedCfgId">—</span></div>
+              <div class="split" style="gap:12px;">
+                <div>
+                  <label style="display:block;margin-bottom:6px;"><input type="checkbox" id="seedCfgSysPrompt"> Is System Prompt</label>
+                  <label style="display:block;margin-bottom:6px;"><input type="checkbox" id="seedCfgRhodesOs"> Inject Rhodes OS</label>
+                  <label style="display:block;margin-bottom:6px;"><input type="checkbox" id="seedCfgBriefing"> Inject Briefing Over</label>
+                </div>
+                <div>
+                  <label style="display:block;margin-bottom:4px;">System Prompt Text
+                    <input type="text" id="seedCfgSysPromptText" style="width:100%;margin-top:2px;" placeholder="e.g. You are Rhodes.">
+                  </label>
+                  <label style="display:block;margin-bottom:4px;">Description
+                    <input type="text" id="seedCfgDescription" style="width:100%;margin-top:2px;" placeholder="Seed description">
+                  </label>
+                </div>
+              </div>
+              <div style="margin-top:8px;">
+                <div class="muted" style="font-size:11px;margin-bottom:4px;">Appended System Messages:</div>
+                <div id="seedCfgAppended" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+              </div>
+              <div class="row" style="margin-top:8px;gap:8px;">
+                <button onclick="seedSaveConfig()" style="background:#1a4a2e;border-color:#2d6b40;">Save Config</button>
+                <button onclick="$('seedConfigEditor').style.display='none'">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: System Messages -->
+        <div id="seedPanelSysMsg" class="seedPanel" style="display:none;">
+          <div style="margin-top:8px;">
+            <div class="row" style="gap:8px;margin-bottom:8px;">
+              <button onclick="seedLoadSysMsgs()">Refresh</button>
+              <button onclick="seedNewSysMsg()" style="background:#1a3a4a;border-color:#2d5a6b;">+ New</button>
+            </div>
+            <div id="seedSysMsgList"></div>
+            <div id="seedSysMsgEditor" style="margin-top:12px;display:none;border:1px solid var(--border);border-radius:8px;padding:12px;background:#0a0e1a;">
+              <div class="row" style="gap:8px;margin-bottom:8px;">
+                <label>ID <input type="text" id="sysMsgEditId" style="width:180px;"></label>
+                <label>Description <input type="text" id="sysMsgEditDesc" style="width:280px;"></label>
+              </div>
+              <textarea id="sysMsgEditContent" rows="8" style="width:100%;font-family:var(--mono);font-size:12px;background:#0f1730;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px;resize:vertical;" placeholder="System message content..."></textarea>
+              <div class="row" style="margin-top:8px;gap:8px;">
+                <button onclick="seedSaveSysMsg()" style="background:#1a4a2e;border-color:#2d6b40;">Save</button>
+                <button onclick="$('seedSysMsgEditor').style.display='none'">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="card" id="criticalDecisionsCard">
@@ -2772,6 +2860,304 @@
       }
 
       // === User Context (Post-Handoff Briefing) ===
+
+      // ── Seed Manager: Tabs ──────────────────────────────────────────────
+      function seedSwitchTab(tab) {
+        document.querySelectorAll('.seedPanel').forEach(p => p.style.display = 'none');
+        document.querySelectorAll('.seedTab').forEach(t => t.classList.remove('seedTabActive'));
+        $('seedPanel' + tab.charAt(0).toUpperCase() + tab.slice(1)).style.display = '';
+        $('seedTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('seedTabActive');
+        if (tab === 'config') seedLoadManifest();
+        if (tab === 'sysmsg') seedLoadSysMsgs();
+      }
+
+      // ── Seed Manager: Manifest Config ───────────────────────────────────
+      let _manifestData = null;
+      let _editingSeedId = null;
+
+      async function seedLoadManifest() {
+        try {
+          _manifestData = await api('/api/admin/manifest');
+          renderManifestGrid();
+        } catch(e) {
+          $('seedManifestGrid').innerHTML = '<div class="bad">Error: ' + _escHtml(e.message) + '</div>';
+        }
+      }
+
+      function renderManifestGrid() {
+        if (!_manifestData || !_manifestData.seeds) {
+          $('seedManifestGrid').innerHTML = '<div class="muted">No manifest data.</div>';
+          return;
+        }
+        const seeds = _manifestData.seeds;
+        const ids = Object.keys(seeds).sort();
+        let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+        html += '<tr style="border-bottom:1px solid var(--border);color:var(--muted);">';
+        html += '<th style="text-align:left;padding:4px 8px;">ID</th>';
+        html += '<th style="text-align:center;padding:4px;">Msgs</th>';
+        html += '<th style="text-align:center;padding:4px;">SysPrompt</th>';
+        html += '<th style="text-align:center;padding:4px;">RhodesOS</th>';
+        html += '<th style="text-align:center;padding:4px;">Briefing</th>';
+        html += '<th style="text-align:center;padding:4px;">Reasoning</th>';
+        html += '<th style="text-align:left;padding:4px 8px;">Description</th>';
+        html += '<th style="text-align:center;padding:4px;">Actions</th>';
+        html += '</tr>';
+        ids.forEach(id => {
+          const s = seeds[id];
+          const yes = '<span style="color:var(--ok);">&#10003;</span>';
+          const no = '<span style="color:var(--muted);">&#8211;</span>';
+          html += '<tr style="border-bottom:1px solid #1a1f30;">';
+          html += '<td style="padding:4px 8px;font-weight:bold;color:#60a5fa;">' + _escHtml(id) + '</td>';
+          html += '<td style="text-align:center;padding:4px;">' + (s.message_count || 0) + '</td>';
+          html += '<td style="text-align:center;padding:4px;">' + (s.is_system_prompt ? yes : no) + '</td>';
+          html += '<td style="text-align:center;padding:4px;">' + (s.inject_rhodes_os ? yes : no) + '</td>';
+          html += '<td style="text-align:center;padding:4px;">' + (s.inject_briefing_over ? yes : no) + '</td>';
+          html += '<td style="text-align:center;padding:4px;">' + (s.has_reasoning ? yes : no) + '</td>';
+          html += '<td style="padding:4px 8px;color:var(--muted);">' + _escHtml(s.description || '') + '</td>';
+          html += '<td style="text-align:center;padding:4px;">';
+          html += '<button onclick="seedEditConfig(\'' + _escHtml(id) + '\')" style="font-size:11px;padding:2px 8px;">Edit</button>';
+          html += '</td>';
+          html += '</tr>';
+        });
+        html += '</table>';
+        $('seedManifestGrid').innerHTML = html;
+      }
+
+      function seedEditConfig(seedId) {
+        if (!_manifestData || !_manifestData.seeds[seedId]) return;
+        _editingSeedId = seedId;
+        const cfg = _manifestData.seeds[seedId];
+        $('seedCfgId').textContent = seedId;
+        $('seedCfgSysPrompt').checked = !!cfg.is_system_prompt;
+        $('seedCfgRhodesOs').checked = !!cfg.inject_rhodes_os;
+        $('seedCfgBriefing').checked = !!cfg.inject_briefing_over;
+        $('seedCfgSysPromptText').value = cfg.system_prompt_text || '';
+        $('seedCfgDescription').value = cfg.description || '';
+
+        // Render appended system messages
+        const appended = cfg.appended_system_messages || [];
+        const allMsgs = _manifestData.system_messages || {};
+        let html = '';
+        appended.forEach(mid => {
+          html += '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:#1a2a3a;border:1px solid #2d4a5a;border-radius:12px;font-size:11px;">';
+          html += _escHtml(mid);
+          html += ' <button onclick="seedDetachSysMsg(\'' + _escHtml(_editingSeedId) + '\',\'' + _escHtml(mid) + '\')" style="font-size:10px;padding:0 4px;border:none;color:var(--bad);background:none;cursor:pointer;">&#10005;</button>';
+          html += '</span>';
+        });
+        // Add attach button
+        const available = Object.keys(allMsgs).filter(m => !appended.includes(m));
+        if (available.length) {
+          html += '<select id="seedCfgAttachSelect" style="font-size:11px;padding:2px 6px;background:#0f1730;color:var(--text);border:1px solid var(--border);border-radius:6px;">';
+          html += '<option value="">+ attach...</option>';
+          available.forEach(m => {
+            html += '<option value="' + _escHtml(m) + '">' + _escHtml(m) + '</option>';
+          });
+          html += '</select>';
+        }
+        $('seedCfgAppended').innerHTML = html;
+
+        // Wire attach select
+        setTimeout(() => {
+          const sel = $('seedCfgAttachSelect');
+          if (sel) sel.onchange = function() {
+            if (this.value) seedAttachSysMsg(_editingSeedId, this.value);
+          };
+        }, 50);
+
+        $('seedConfigEditor').style.display = '';
+      }
+
+      async function seedSaveConfig() {
+        if (!_editingSeedId) return;
+        try {
+          await api('/api/admin/manifest/seeds/' + encodeURIComponent(_editingSeedId), {
+            method: 'PUT',
+            body: JSON.stringify({
+              is_system_prompt: $('seedCfgSysPrompt').checked,
+              inject_rhodes_os: $('seedCfgRhodesOs').checked,
+              inject_briefing_over: $('seedCfgBriefing').checked,
+              system_prompt_text: $('seedCfgSysPromptText').value || null,
+              description: $('seedCfgDescription').value,
+            }),
+          });
+          showToast('Config saved for ' + _editingSeedId);
+          seedLoadManifest();
+        } catch(e) {
+          alert('Save failed: ' + e.message);
+        }
+      }
+
+      async function seedAttachSysMsg(seedId, msgId) {
+        try {
+          await api('/api/admin/manifest/seeds/' + encodeURIComponent(seedId) + '/attach', {
+            method: 'POST',
+            body: JSON.stringify({ msg_id: msgId }),
+          });
+          showToast('Attached ' + msgId);
+          await seedLoadManifest();
+          seedEditConfig(seedId);
+        } catch(e) {
+          alert('Attach failed: ' + e.message);
+        }
+      }
+
+      async function seedDetachSysMsg(seedId, msgId) {
+        try {
+          await api('/api/admin/manifest/seeds/' + encodeURIComponent(seedId) + '/detach', {
+            method: 'POST',
+            body: JSON.stringify({ msg_id: msgId }),
+          });
+          showToast('Detached ' + msgId);
+          await seedLoadManifest();
+          seedEditConfig(seedId);
+        } catch(e) {
+          alert('Detach failed: ' + e.message);
+        }
+      }
+
+      // ── Seed Manager: Validate ──────────────────────────────────────────
+      async function seedValidate() {
+        const name = $('seedSelect').value;
+        if (!name) { alert('Select a seed file'); return; }
+        // Find seed_id from manifest by filename match
+        if (!_manifestData) {
+          try { _manifestData = await api('/api/admin/manifest'); } catch(e) {}
+        }
+        let seedId = null;
+        if (_manifestData && _manifestData.seeds) {
+          for (const [id, cfg] of Object.entries(_manifestData.seeds)) {
+            if (cfg.seed_file && cfg.seed_file.includes(name)) {
+              seedId = id;
+              break;
+            }
+          }
+        }
+        if (!seedId) {
+          $('seedValidateResult').style.display = '';
+          $('seedValidateResult').innerHTML = '<div class="warn" style="font-size:12px;">Seed not in manifest. Run init from CLI.</div>';
+          return;
+        }
+        try {
+          const result = await api('/api/admin/manifest/seeds/' + encodeURIComponent(seedId) + '/validate');
+          let html = '';
+          if (result.valid) {
+            html = '<div style="color:var(--ok);font-size:12px;">&#10003; Valid (' + result.message_count + ' messages)';
+            if (result.warnings.length) html += ' — ' + result.warnings.length + ' warnings';
+            html += '</div>';
+          } else {
+            html = '<div style="color:var(--bad);font-size:12px;">&#10007; Invalid</div>';
+          }
+          if (result.errors.length) {
+            html += '<div style="font-size:11px;color:var(--bad);margin-top:2px;">' + result.errors.map(e => '&#8226; ' + _escHtml(e)).join('<br>') + '</div>';
+          }
+          if (result.warnings.length) {
+            html += '<div style="font-size:11px;color:var(--warn);margin-top:2px;">' + result.warnings.map(w => '&#8226; ' + _escHtml(w)).join('<br>') + '</div>';
+          }
+          $('seedValidateResult').style.display = '';
+          $('seedValidateResult').innerHTML = html;
+        } catch(e) {
+          $('seedValidateResult').style.display = '';
+          $('seedValidateResult').innerHTML = '<div class="bad" style="font-size:12px;">Validate error: ' + _escHtml(e.message) + '</div>';
+        }
+      }
+
+      // ── Seed Manager: System Messages Tab ───────────────────────────────
+      async function seedLoadSysMsgs() {
+        try {
+          const data = await api('/api/admin/manifest/system-messages');
+          const msgs = data.system_messages || [];
+          if (!msgs.length) {
+            $('seedSysMsgList').innerHTML = '<div class="muted" style="font-size:12px;">No system messages registered.</div>';
+            return;
+          }
+          let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+          html += '<tr style="border-bottom:1px solid var(--border);color:var(--muted);">';
+          html += '<th style="text-align:left;padding:4px 8px;">ID</th>';
+          html += '<th style="text-align:center;padding:4px;">Size</th>';
+          html += '<th style="text-align:left;padding:4px 8px;">Description</th>';
+          html += '<th style="text-align:center;padding:4px;">Actions</th>';
+          html += '</tr>';
+          msgs.forEach(m => {
+            html += '<tr style="border-bottom:1px solid #1a1f30;">';
+            html += '<td style="padding:4px 8px;font-weight:bold;color:#fbbf24;">' + _escHtml(m.id) + '</td>';
+            html += '<td style="text-align:center;padding:4px;">' + m.content_length + 'c</td>';
+            html += '<td style="padding:4px 8px;color:var(--muted);">' + _escHtml(m.description || '') + '</td>';
+            html += '<td style="text-align:center;padding:4px;">';
+            html += '<button onclick="seedViewSysMsg(\'' + _escHtml(m.id) + '\')" style="font-size:11px;padding:2px 8px;">View</button> ';
+            html += '<button onclick="seedEditSysMsg(\'' + _escHtml(m.id) + '\')" style="font-size:11px;padding:2px 8px;">Edit</button> ';
+            html += '<button onclick="seedDeleteSysMsg(\'' + _escHtml(m.id) + '\')" class="danger" style="font-size:11px;padding:2px 6px;">&#10005;</button>';
+            html += '</td>';
+            html += '</tr>';
+          });
+          html += '</table>';
+          $('seedSysMsgList').innerHTML = html;
+        } catch(e) {
+          $('seedSysMsgList').innerHTML = '<div class="bad">Error: ' + _escHtml(e.message) + '</div>';
+        }
+      }
+
+      async function seedViewSysMsg(msgId) {
+        try {
+          const data = await api('/api/admin/manifest/system-messages/' + encodeURIComponent(msgId));
+          $('sysMsgEditId').value = data.id;
+          $('sysMsgEditId').disabled = true;
+          $('sysMsgEditDesc').value = data.description || '';
+          $('sysMsgEditContent').value = data.content || '';
+          $('seedSysMsgEditor').style.display = '';
+          // Auto-resize
+          const ta = $('sysMsgEditContent');
+          ta.style.height = 'auto';
+          ta.style.height = Math.min(Math.max(ta.scrollHeight + 4, 100), 500) + 'px';
+        } catch(e) {
+          alert('Load failed: ' + e.message);
+        }
+      }
+
+      async function seedEditSysMsg(msgId) {
+        await seedViewSysMsg(msgId);
+        $('sysMsgEditId').disabled = false;
+      }
+
+      function seedNewSysMsg() {
+        $('sysMsgEditId').value = '';
+        $('sysMsgEditId').disabled = false;
+        $('sysMsgEditDesc').value = '';
+        $('sysMsgEditContent').value = '';
+        $('seedSysMsgEditor').style.display = '';
+      }
+
+      async function seedSaveSysMsg() {
+        const id = $('sysMsgEditId').value.trim();
+        if (!id) { alert('ID is required'); return; }
+        try {
+          await api('/api/admin/manifest/system-messages/' + encodeURIComponent(id), {
+            method: 'POST',
+            body: JSON.stringify({
+              content: $('sysMsgEditContent').value,
+              description: $('sysMsgEditDesc').value,
+            }),
+          });
+          showToast('Saved system message: ' + id);
+          $('seedSysMsgEditor').style.display = 'none';
+          seedLoadSysMsgs();
+        } catch(e) {
+          alert('Save failed: ' + e.message);
+        }
+      }
+
+      async function seedDeleteSysMsg(msgId) {
+        if (!confirm('Delete system message "' + msgId + '"?')) return;
+        try {
+          await api('/api/admin/manifest/system-messages/' + encodeURIComponent(msgId), {
+            method: 'DELETE',
+          });
+          showToast('Deleted: ' + msgId);
+          seedLoadSysMsgs();
+        } catch(e) {
+          alert('Delete failed: ' + e.message);
+        }
+      }
+
       let _ucPresets = {};
       async function ucRefresh() {
         try {
@@ -2867,6 +3253,7 @@
       $('seedLoadBtn').onclick = loadSeed;
       $('seedSaveBtn').onclick = saveSeed;
       $('seedAddMsgBtn').onclick = seedAddMessage;
+      $('seedValidateBtn').onclick = seedValidate;
 
       // Auto-load seed list on page load
       loadSeedList().catch(() => {});
