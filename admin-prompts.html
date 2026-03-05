@@ -230,6 +230,33 @@ textarea {
   font-size: 11px; color: var(--muted); flex-shrink: 0;
 }
 
+
+/* Injection Toggles */
+.toggle-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px; margin-top: 8px;
+}
+.toggle-item {
+  display: flex; align-items: center; gap: 8px; padding: 5px 8px;
+  background: rgba(0,0,0,0.2); border-radius: 6px; font-size: 11px;
+}
+.toggle-item label { flex: 1; color: var(--muted); cursor: pointer; user-select: none; }
+.toggle-item label.active { color: var(--ok); }
+.toggle-switch {
+  position: relative; width: 32px; height: 18px; flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-switch .slider {
+  position: absolute; inset: 0; background: #2a2a3e; border-radius: 9px;
+  cursor: pointer; transition: 0.2s;
+}
+.toggle-switch .slider:before {
+  content: ""; position: absolute; width: 14px; height: 14px;
+  left: 2px; bottom: 2px; background: #666; border-radius: 50%; transition: 0.2s;
+}
+.toggle-switch input:checked + .slider { background: #1a3d2a; }
+.toggle-switch input:checked + .slider:before { transform: translateX(14px); background: var(--ok); }
+
 /* Seed message editor */
 .seed-editor { padding: 16px; overflow-y: auto; flex: 1; }
 .seed-msg {
@@ -364,6 +391,16 @@ textarea {
                 </div>
               </div>
               <textarea id="bSeedText" style="min-height:80px;max-height:120px;width:100%;margin-top:6px" oninput="onSeedTextEdit()" placeholder="Select a seed above to load content, or paste JSON..."></textarea>
+            </div>
+            <div class="form-section" id="injection-toggles">
+              <div class="form-section-header">
+                <span>Injection Pipeline</span>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <button onclick="setAllInjections(true)" style="padding:2px 8px;font-size:10px">All On</button>
+                  <button onclick="setAllInjections(false)" style="padding:2px 8px;font-size:10px">All Off</button>
+                </div>
+              </div>
+              <div class="toggle-grid" id="injectionToggles"></div>
             </div>
           </div>
         </div>
@@ -907,6 +944,86 @@ async function loadModelClones() {
   }
 }
 
+
+// === INJECTION TYPES ===
+const INJECTION_TYPES = [
+  {key: "rhodes_os", label: "Rhodes OS Identity", desc: "Operating system identity prompt"},
+  {key: "briefing_over", label: "Briefing Over", desc: "User context transition message"},
+  {key: "warmup_seed", label: "Warmup Seed", desc: "Base seed conversation messages"},
+  {key: "longinus_poetry", label: "Longinus / Poetry", desc: "Poetry & Longinus keyword injection"},
+  {key: "superbaby", label: "Superbaby", desc: "Superbaby topic injection"},
+  {key: "immigration", label: "Immigration", desc: "Immigration/civilization topic injection"},
+  {key: "dutch_hunger", label: "Dutch Hunger Winter", desc: "Dutch hunger winter injection"},
+  {key: "articles", label: "KB Articles (Gated)", desc: "LLM-gated knowledge base articles"},
+  {key: "memories", label: "Instance Memories", desc: "Insight memory injection"},
+  {key: "known_cases", label: "Known Cases", desc: "Known case study injection"},
+  {key: "person", label: "Person Dossiers", desc: "Wikipedia person dossier injection"},
+  {key: "prior_positions", label: "Prior Positions", desc: "Position memory from past queries"},
+  {key: "verification", label: "Fact Verification", desc: "Verification context injection"},
+];
+
+let CURRENT_INJECTION_CONFIG = {};
+
+function renderInjectionToggles() {
+  var container = document.getElementById('injectionToggles');
+  if (!container) return;
+  var html = '';
+  for (var i = 0; i < INJECTION_TYPES.length; i++) {
+    var t = INJECTION_TYPES[i];
+    var checked = CURRENT_INJECTION_CONFIG[t.key] !== false;
+    var eid = 'inj_' + t.key;
+    html += '<div class="toggle-item" title="' + esc(t.desc) + '">';
+    html += '<div class="toggle-switch">';
+    html += '<input type="checkbox" id="' + eid + '"' + (checked ? ' checked' : '') + ' onchange="onInjectionToggle()">';
+    html += '<span class="slider" data-target="' + eid + '"></span>';
+    html += '</div>';
+    html += '<label class="' + (checked ? 'active' : '') + '" data-target="' + eid + '">' + esc(t.label) + '</label>';
+    html += '</div>';
+  }
+  container.innerHTML = html;
+  // Add click handlers via event delegation
+  container.onclick = function(e) {
+    var el = e.target.closest('[data-target]');
+    if (el && el.tagName !== 'INPUT') {
+      var cb = document.getElementById(el.getAttribute('data-target'));
+      if (cb) { cb.checked = !cb.checked; onInjectionToggle(); }
+    }
+  };
+}
+
+function onInjectionToggle() {
+  CURRENT_INJECTION_CONFIG = {};
+  INJECTION_TYPES.forEach(t => {
+    const el = $('inj_'+t.key);
+    if (el) {
+      CURRENT_INJECTION_CONFIG[t.key] = el.checked;
+      const lbl = el.closest('.toggle-item').querySelector('label');
+      if (lbl) lbl.className = el.checked ? 'active' : '';
+    }
+  });
+}
+
+function setAllInjections(on) {
+  INJECTION_TYPES.forEach(t => {
+    const el = $('inj_'+t.key);
+    if (el) el.checked = on;
+  });
+  onInjectionToggle();
+}
+
+function getInjectionConfig() {
+  // Only include non-default (disabled) values to keep config sparse
+  const cfg = {};
+  let anyDisabled = false;
+  INJECTION_TYPES.forEach(t => {
+    if (CURRENT_INJECTION_CONFIG[t.key] === false) {
+      cfg[t.key] = false;
+      anyDisabled = true;
+    }
+  });
+  return anyDisabled ? CURRENT_INJECTION_CONFIG : null;
+}
+
 // ---- Model Builder ----
 function renderModelList() {
   if (!MODEL_CLONES.length) {
@@ -919,7 +1036,7 @@ function renderModelList() {
     const promptInfo = c.prompt_exists ? (c.prompt_chars||0)+' chars' : 'no prompt';
     return '<div class="model-item'+active+'" onclick="loadModelIntoBuilder(\''+esc(c.alias||'')+'\')">'
       + '<div class="name">'+esc(c.alias||'')+'</div>'
-      + '<div class="info">'+esc(base)+' &middot; '+esc(c.slash_command||'')+' &middot; '+promptInfo+'</div>'
+      + '<div class="info">'+esc(base)+' &middot; '+esc(c.slash_command||'')+' &middot; '+promptInfo+(c.injection_config && Object.values(c.injection_config).some(v=>v===false) ? ' &middot; <span style="color:var(--warn)">inj:custom</span>' : '')+'</div>'
       + '</div>';
   }).join('');
 }
@@ -935,6 +1052,8 @@ function newModel() {
   $('bSeedId').value = '';
   $('bPromptChars').textContent = '0 chars';
   $('bSeedInfo').textContent = 'Default seed (r18)';
+  CURRENT_INJECTION_CONFIG = {};
+  renderInjectionToggles();
   $('builderTitle').textContent = 'New Model';
   $('saveModelBtn').disabled = false;
   $('deleteModelBtn').style.display = 'none';
@@ -982,16 +1101,19 @@ async function loadModelIntoBuilder(alias) {
   $('bSeedId').value = '';
   $('bSeedInfo').textContent = '';
   $('bSeedText').value = '';
-  // Load clone-specific seed if configured
-  if (clone.seed_id) {
-    var seedOpts = $('bSeedId').options;
-    for (var si=0; si<seedOpts.length; si++) {
-      if (seedOpts[si].value === clone.seed_id) { $('bSeedId').selectedIndex = si; loadSeedInline(); break; }
-    }
-  }
   $('bSeedMsgCount').textContent = '';
   $('bSeedDirty').textContent = '';
   SEED_INLINE_STATE = {id:null, originalText:''};
+  // Load clone-specific seed if configured (MUST be after SEED_INLINE_STATE reset)
+  if (clone.seed_id) {
+    var seedOpts = $('bSeedId').options;
+    for (var si=0; si<seedOpts.length; si++) {
+      if (seedOpts[si].value === clone.seed_id) { $('bSeedId').selectedIndex = si; onSeedChange(); break; }
+    }
+  }
+  // Load injection config
+  CURRENT_INJECTION_CONFIG = clone.injection_config || {};
+  renderInjectionToggles();
   $('builderTitle').textContent = 'Edit: ' + alias;
   $('saveModelBtn').disabled = false;
   $('deleteModelBtn').style.display = 'inline-block';
@@ -1102,11 +1224,19 @@ async function saveModel() {
   if (prompt_text && prompt_text.trim()) payload.prompt_text = prompt_text;
   // Include selected seed_id if a seed is selected
   if (SEED_INLINE_STATE && SEED_INLINE_STATE.id) payload.seed_id = SEED_INLINE_STATE.id;
+  const injCfg = getInjectionConfig();
+  if (injCfg) payload.injection_config = CURRENT_INJECTION_CONFIG;
 
   try {
     const data = await api('/api/admin/model-clones', {method:'POST', body: JSON.stringify(payload)});
     if (!data.success) { alert('Save failed: '+(data.error||'unknown')); return; }
-    setStatus('Saved model: '+alias);
+    var savedSeedId = (SEED_INLINE_STATE && SEED_INLINE_STATE.id) ? SEED_INLINE_STATE.id : '(default)';
+    var savedPrompt = (prompt_text && prompt_text.trim()) ? prompt_text.trim().length+' chars' : '(base model prompt)';
+    var disabledInj = INJECTION_TYPES.filter(t => CURRENT_INJECTION_CONFIG[t.key] === false).map(t => t.label);
+    var injSummary = disabledInj.length ? ' | disabled: ' + disabledInj.join(', ') : ' | all injections on';
+    var summary = 'Saved: ' + alias + ' | base=' + base_model + ' | cmd=' + slash_command + ' | prompt=' + savedPrompt + ' | seed=' + savedSeedId + injSummary;
+    setStatus(summary);
+    showSaveConfirmation(summary);
     BUILDER_STATE = {isNew: false, originalAlias: alias};
     await loadModelClones();
     $('builderTitle').textContent = 'Edit: '+alias;
@@ -1414,6 +1544,21 @@ function setStatus(msg) {
   setTimeout(()=>{ $('statusLeft').textContent='Ready'; }, 5000);
 }
 
+
+function showSaveConfirmation(msg) {
+  var el = document.getElementById('saveConfirmation');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'saveConfirmation';
+    el.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:999;background:#166534;color:#4ade80;border:1px solid #22c55e;border-radius:8px;padding:12px 24px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.5);transition:opacity 0.3s;pointer-events:none;';
+    document.body.appendChild(el);
+  }
+  el.textContent = '\u2713 ' + msg;
+  el.style.opacity = '1';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(function(){ el.style.opacity = '0'; }, 4000);
+}
+
 // ---- Init ----
 async function init() {
   try {
@@ -1423,6 +1568,7 @@ async function init() {
     setStatus('Load error: '+e.message);
   }
   const hash = window.location.hash.replace('#','');
+  renderInjectionToggles();
   if (hash && document.querySelector('.tab[data-tab="'+hash+'"]')) switchTab(hash);
 }
 window.addEventListener('hashchange', () => {
