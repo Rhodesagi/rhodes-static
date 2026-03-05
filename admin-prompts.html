@@ -357,6 +357,7 @@ textarea {
                   <select id="bSeedId" onchange="onSeedChange()" style="min-width:180px">
                     <option value="">(default - r18)</option>
                   </select>
+                  <span class="expand-btn" onclick="openNewSeedModal()" title="Create new seed">+</span>
                   <span id="bSeedInfo" style="font-size:10px;color:var(--muted)"></span>
                   <button onclick="saveSeedInline()" id="seedInlineSaveBtn" disabled class="success" style="padding:3px 8px;font-size:10px">Save Seed</button>
                   <span class="expand-btn" onclick="openSeedPopover()">Expand</span>
@@ -675,22 +676,26 @@ function renderSeedEditor() {
   $('spEditor').innerHTML = SP_MESSAGES.map(function(msg, i) {
     var role = msg.role || 'unknown';
     var content = msg.content || '';
-    var reasoning = msg.reasoning_content || '';
+    var reasoning = msg.reasoning_content !== undefined ? msg.reasoning_content : null;
     var roleClass = 'role-' + role;
     var html = '<div class="seed-msg" data-idx="'+i+'">';
     html += '<div class="seed-msg-header '+roleClass+'">';
     html += '<span>'+role.toUpperCase()+' #'+(i+1)+'</span>';
     html += '<div class="seed-msg-actions">';
-    if (i > 0) html += '<button onclick="spMoveMsg('+i+',-1)">&#9650;</button>';
-    if (i < SP_MESSAGES.length-1) html += '<button onclick="spMoveMsg('+i+',1)">&#9660;</button>';
-    html += '<button class="danger" onclick="spDeleteMsg('+i+')">&#10005;</button>';
+    if (i > 0) html += '<button data-action="moveUp" data-idx="'+i+'">&#9650;</button>';
+    if (i < SP_MESSAGES.length-1) html += '<button data-action="moveDown" data-idx="'+i+'">&#9660;</button>';
+    html += '<button class="danger" data-action="deleteMsg" data-idx="'+i+'">&#10005;</button>';
     html += '</div></div>';
     html += '<textarea class="seed-msg-content" data-idx="'+i+'" data-field="content" oninput="spEditMsg(this)" rows="'+Math.max(3, content.split("\n").length)+'">' + esc(content) + '</textarea>';
-    if (reasoning) {
-      html += '<div class="seed-msg-reasoning">';
-      html += '<div style="padding:4px 12px;font-size:10px;color:#a78bfa">REASONING</div>';
-      html += '<textarea class="seed-msg-content" data-idx="'+i+'" data-field="reasoning_content" oninput="spEditMsg(this)" rows="'+Math.max(2, reasoning.split("\n").length)+'">' + esc(reasoning) + '</textarea>';
-      html += '</div>';
+    if (role === 'assistant') {
+      if (reasoning !== null) {
+        html += '<div class="seed-msg-reasoning">';
+        html += '<div style="padding:4px 12px;font-size:10px;color:#a78bfa;display:flex;justify-content:space-between;align-items:center">REASONING <button data-action="removeReasoning" data-idx="'+i+'" style="font-size:9px;padding:1px 5px;color:var(--bad);border-color:var(--bad);background:transparent">remove</button></div>';
+        html += '<textarea class="seed-msg-content" data-idx="'+i+'" data-field="reasoning_content" oninput="spEditMsg(this)" rows="'+Math.max(3, (reasoning||'').split("\n").length)+'">' + esc(reasoning) + '</textarea>';
+        html += '</div>';
+      } else {
+        html += '<div style="padding:6px 12px"><button data-action="addReasoning" data-idx="'+i+'" style="font-size:11px;padding:4px 12px;color:#a78bfa;border:1px solid #a78bfa;background:rgba(167,139,250,0.1);border-radius:4px;cursor:pointer">+ Add Reasoning</button></div>';
+      }
     }
     html += '</div>';
     return html;
@@ -725,8 +730,29 @@ function spDeleteMsg(idx) {
   renderSeedEditor();
 }
 
+function spAddReasoning(idx) {
+  if (SP_MESSAGES[idx]) {
+    SP_MESSAGES[idx].reasoning_content = '';
+    editorToRaw();
+    renderSeedEditor();
+    // Focus the new reasoning textarea
+    var el = document.querySelector('.seed-msg[data-idx="'+idx+'"] .seed-msg-reasoning textarea');
+    if (el) el.focus();
+  }
+}
+
+function spRemoveReasoning(idx) {
+  if (SP_MESSAGES[idx]) {
+    delete SP_MESSAGES[idx].reasoning_content;
+    editorToRaw();
+    renderSeedEditor();
+  }
+}
+
 function spAddMessage(role) {
-  SP_MESSAGES.push({role: role, content: ''});
+  var msg = {role: role, content: ''};
+  if (role === 'assistant') msg.reasoning_content = '';
+  SP_MESSAGES.push(msg);
   editorToRaw();
   renderSeedEditor();
   // Scroll to bottom
@@ -744,6 +770,26 @@ function spRawSync() {
   onSeedTextEdit();
   updateSpDirty();
 }
+// Event delegation for seed editor buttons (fixes innerHTML onclick issues)
+(function() {
+  var ed = document.getElementById('spEditor');
+  if (!ed) return;
+  ed.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    var action = btn.dataset.action;
+    var idx = parseInt(btn.dataset.idx);
+    if (isNaN(idx)) return;
+    switch(action) {
+      case 'addReasoning': spAddReasoning(idx); break;
+      case 'removeReasoning': spRemoveReasoning(idx); break;
+      case 'moveUp': spMoveMsg(idx, -1); break;
+      case 'moveDown': spMoveMsg(idx, 1); break;
+      case 'deleteMsg': spDeleteMsg(idx); break;
+    }
+  });
+})();
+
 
 function updateSpDirty() {
   var dirty = $('spText').value !== SEED_INLINE_STATE.originalText;
@@ -936,6 +982,13 @@ async function loadModelIntoBuilder(alias) {
   $('bSeedId').value = '';
   $('bSeedInfo').textContent = '';
   $('bSeedText').value = '';
+  // Load clone-specific seed if configured
+  if (clone.seed_id) {
+    var seedOpts = $('bSeedId').options;
+    for (var si=0; si<seedOpts.length; si++) {
+      if (seedOpts[si].value === clone.seed_id) { $('bSeedId').selectedIndex = si; loadSeedInline(); break; }
+    }
+  }
   $('bSeedMsgCount').textContent = '';
   $('bSeedDirty').textContent = '';
   SEED_INLINE_STATE = {id:null, originalText:''};
@@ -1047,6 +1100,8 @@ async function saveModel() {
 
   const payload = {alias, base_model, slash_command, notes, enabled: true};
   if (prompt_text && prompt_text.trim()) payload.prompt_text = prompt_text;
+  // Include selected seed_id if a seed is selected
+  if (SEED_INLINE_STATE && SEED_INLINE_STATE.id) payload.seed_id = SEED_INLINE_STATE.id;
 
   try {
     const data = await api('/api/admin/model-clones', {method:'POST', body: JSON.stringify(payload)});
@@ -1303,7 +1358,14 @@ async function createNewSeed() {
       inject_briefing_over: $('newSeedBriefing').checked,
       has_reasoning: $('newSeedReasoning').checked,
     })});
-    if (data.success) { setStatus('Created seed: '+id); closeNewSeedModal(); loadAllSeeds(); }
+    if (data.success) {
+      setStatus('Created seed: '+id);
+      closeNewSeedModal();
+      await loadAllSeeds();
+      // Auto-select the new seed in builder
+      $('bSeedId').value = id;
+      $('bSeedId').dispatchEvent(new Event('change'));
+    }
     else alert('Failed: '+(data.error||''));
   } catch(e) { alert(e.message); }
 }
