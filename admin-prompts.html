@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>RHODES Admin - System Prompts</title>
+  <title>RHODES Admin - Prompts, Models & Seeds</title>
   <style>
 :root {
   --bg: #0b1020; --panel: #121a33; --text: #e7ecff; --muted: #aab4e6;
@@ -36,12 +36,86 @@ header a:hover { border-color: var(--accent); color: var(--text); }
 .tab {
   padding: 10px 20px; font-size: 13px; color: var(--muted); cursor: pointer;
   border-bottom: 2px solid transparent; transition: all 0.15s;
+  text-decoration: none;
 }
 .tab:hover { color: var(--text); background: rgba(255,255,255,0.05); }
-.tab { cursor: pointer; text-decoration: none; }
 .tab.active { color: var(--ok); border-bottom-color: var(--ok); }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
+button {
+  background: var(--btn); color: var(--text); border: 1px solid var(--border);
+  padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;
+}
+button:hover { background: var(--btn2); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button.primary { background: var(--accent); border-color: var(--accent); }
+button.primary:hover { opacity: 0.9; }
+button.danger { background: #4a1525; border-color: #ff5a6b; color: #ff5a6b; }
+button.success { background: #1a3d2a; border-color: var(--ok); color: var(--ok); }
+select, input[type="text"], input[type="number"] {
+  background: var(--bg); color: var(--text); border: 1px solid var(--border);
+  padding: 6px 10px; border-radius: 6px; font-size: 12px;
+}
+textarea {
+  background: #080e1a; color: var(--text); border: 1px solid var(--border);
+  font-family: var(--mono); font-size: 12px; line-height: 1.5;
+  padding: 12px; resize: vertical; outline: none; border-radius: 6px;
+}
+.badge { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-right: 4px; }
+.badge-base { background: #1e3a5f; color: #7dd3fc; }
+.badge-format { background: #3b1f5e; color: #c084fc; }
+.badge-combined { background: #1f3d2e; color: #86efac; }
+.badge-seed { background: #3d2e1f; color: #fbbf24; }
+.pill { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: var(--btn); }
+.pill-ok { background: #1a3d2a; color: var(--ok); }
+.status-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; padding: 6px 20px;
+  background: var(--panel); border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--muted); z-index: 50;
+  display: flex; justify-content: space-between;
+}
+
+/* Model Builder */
+.builder-container { padding: 20px; max-width: 1200px; }
+.builder-grid {
+  display: grid; grid-template-columns: 300px 1fr; gap: 16px; min-height: 600px;
+}
+.model-list {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  overflow-y: auto; max-height: 75vh;
+}
+.model-list-header {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; background: var(--panel); z-index: 2;
+}
+.model-list-header span { font-size: 13px; font-weight: 600; }
+.model-item {
+  padding: 10px 14px; border-bottom: 1px solid rgba(39,50,92,0.5);
+  cursor: pointer; transition: all 0.1s;
+}
+.model-item:hover { background: rgba(99,102,241,0.1); }
+.model-item.active { background: rgba(99,102,241,0.15); border-left: 3px solid var(--accent); }
+.model-item .name { font-size: 12px; font-weight: 600; font-family: var(--mono); }
+.model-item .info { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.builder-form {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 20px; display: flex; flex-direction: column; gap: 16px;
+}
+.form-row { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+.form-field { display: flex; flex-direction: column; gap: 4px; }
+.form-field label { font-size: 11px; color: var(--muted); font-weight: 600; }
+.form-field input, .form-field select { min-width: 160px; }
+.form-section {
+  border: 1px solid var(--border); border-radius: 8px; padding: 12px;
+  background: rgba(0,0,0,0.2);
+}
+.form-section-header {
+  font-size: 12px; font-weight: 600; margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+/* Prompts Grid */
 .prompt-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 12px; padding: 20px;
@@ -57,10 +131,27 @@ header a:hover { border-color: var(--accent); color: var(--text); }
   font-size: 11px; color: var(--muted); font-family: var(--mono);
   line-height: 1.4; max-height: 60px; overflow: hidden; opacity: 0.7;
 }
-.badge { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-right: 4px; }
-.badge-base { background: #1e3a5f; color: #7dd3fc; }
-.badge-format { background: #3b1f5e; color: #c084fc; }
-.badge-combined { background: #1f3d2e; color: #86efac; }
+.toolbar {
+  padding: 12px 20px; display: flex; gap: 10px; align-items: center;
+  border-bottom: 1px solid var(--border); flex-wrap: wrap;
+}
+.toolbar input { flex: 1; max-width: 300px; }
+
+/* Seeds Grid */
+.seed-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px; padding: 20px;
+}
+.seed-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.15s;
+}
+.seed-card:hover { border-color: var(--warn); transform: translateY(-1px); }
+.seed-card .name { font-size: 13px; font-weight: 600; margin-bottom: 4px; font-family: var(--mono); }
+.seed-card .desc { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+.seed-card .meta { font-size: 10px; color: var(--muted); display: flex; gap: 10px; }
+
+/* Modals */
 .modal-overlay {
   display: none; position: fixed; inset: 0;
   background: rgba(0,0,0,0.9); z-index: 200; backdrop-filter: blur(4px);
@@ -78,7 +169,7 @@ header a:hover { border-color: var(--accent); color: var(--text); }
 .modal-body textarea {
   flex: 1; width: 100%; background: #080e1a; color: var(--text);
   border: none; padding: 20px; font-family: var(--mono);
-  font-size: 13px; line-height: 1.6; resize: none; outline: none;
+  font-size: 13px; line-height: 1.6; resize: none; outline: none; border-radius: 0;
 }
 .modal-body textarea:not([readonly]) {
   background: #0a1020; border-left: 3px solid var(--ok);
@@ -89,217 +180,243 @@ header a:hover { border-color: var(--accent); color: var(--text); }
   display: flex; align-items: center; justify-content: space-between;
   font-size: 11px; color: var(--muted); flex-shrink: 0;
 }
-button {
-  background: var(--btn); color: var(--text); border: 1px solid var(--border);
-  padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;
-}
-button:hover { background: var(--btn2); }
-button:disabled { opacity: 0.4; cursor: not-allowed; }
-button.primary { background: var(--accent); border-color: var(--accent); }
-button.primary:hover { opacity: 0.9; }
-button.danger { background: #4a1525; border-color: #ff5a6b; color: #ff5a6b; }
-button.success { background: #1a3d2a; border-color: var(--ok); color: var(--ok); }
-.assignments-container { padding: 20px; max-width: 1000px; }
-.assignment-row {
-  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
-  background: var(--panel); border: 1px solid var(--border);
-  border-radius: 8px; margin-bottom: 8px; flex-wrap: wrap;
-}
-.assignment-row select, .assignment-row input[type="text"], .assignment-row input[type="number"] {
-  background: var(--bg); color: var(--text); border: 1px solid var(--border);
-  padding: 5px 8px; border-radius: 4px; font-size: 12px;
-}
-.assignment-row .label { font-size: 11px; color: var(--muted); min-width: 60px; }
+
+/* Test */
 .test-container { padding: 20px; max-width: 1000px; }
 .test-output {
   background: #080e1a; border: 1px solid var(--border); border-radius: 8px;
   padding: 14px; font-family: var(--mono); font-size: 12px;
   line-height: 1.5; min-height: 200px; white-space: pre-wrap; overflow-y: auto;
 }
-.login-card {
-  max-width: 360px; margin: 80px auto; background: var(--panel);
-  border: 1px solid var(--border); border-radius: 12px; padding: 24px;
+
+@media (max-width: 800px) {
+  .builder-grid { grid-template-columns: 1fr; }
+  .model-list { max-height: 200px; }
 }
-.login-card input {
-  width: 100%; background: var(--bg); color: var(--text);
-  border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px;
-  font-size: 13px; margin: 8px 0 12px;
+
+/* Popover expand */
+.expand-btn {
+  cursor: pointer; font-size: 10px; padding: 3px 8px;
+  background: var(--btn); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--muted); transition: all 0.15s;
 }
-.pill { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: var(--btn); }
-.pill-ok { background: #1a3d2a; color: var(--ok); }
-select {
-  background: var(--bg); color: var(--text); border: 1px solid var(--border);
-  padding: 5px 8px; border-radius: 4px; font-size: 12px;
+.expand-btn:hover { background: var(--btn2); color: var(--text); }
+.popover-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85); z-index: 300; backdrop-filter: blur(4px);
+  flex-direction: column; padding: 24px;
 }
-.status-bar {
-  position: fixed; bottom: 0; left: 0; right: 0; padding: 6px 20px;
-  background: var(--panel); border-top: 1px solid var(--border);
-  font-size: 11px; color: var(--muted); z-index: 50;
-  display: flex; justify-content: space-between;
+.popover-overlay.open { display: flex; }
+.popover-box {
+  flex: 1; display: flex; flex-direction: column;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+  overflow: hidden; max-width: 1200px; width: 100%; margin: 0 auto;
 }
-.toolbar {
-  padding: 12px 20px; display: flex; gap: 10px; align-items: center;
+.popover-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.popover-header .title { font-size: 14px; font-weight: 600; }
+.popover-header .actions { display: flex; gap: 8px; align-items: center; }
+.popover-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.popover-body textarea {
+  flex: 1; width: 100%; background: #080e1a; color: var(--text);
+  border: none; padding: 20px; font-family: var(--mono);
+  font-size: 13px; line-height: 1.6; resize: none; outline: none;
+}
+.popover-footer {
+  padding: 8px 20px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 11px; color: var(--muted); flex-shrink: 0;
+}
+
+/* Seed message editor */
+.seed-editor { padding: 16px; overflow-y: auto; flex: 1; }
+.seed-msg {
+  margin-bottom: 12px; border: 1px solid var(--border); border-radius: 8px;
+  overflow: hidden; background: var(--bg);
+}
+.seed-msg-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 12px; font-size: 11px; font-weight: 600;
   border-bottom: 1px solid var(--border);
 }
-.toolbar input {
-  background: var(--panel); color: var(--text); border: 1px solid var(--border);
-  padding: 6px 12px; border-radius: 6px; font-size: 12px; flex: 1; max-width: 300px;
+.seed-msg-header.role-system { background: #1e293b; color: #94a3b8; }
+.seed-msg-header.role-user { background: #1e3a5f; color: #7dd3fc; }
+.seed-msg-header.role-assistant { background: #1f3d2e; color: #86efac; }
+.seed-msg-content {
+  width: 100%; border: none; background: transparent; color: var(--text);
+  font-family: var(--mono); font-size: 12px; line-height: 1.6;
+  padding: 10px 12px; resize: vertical; outline: none; min-height: 60px;
 }
-.multi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 12px;
+.seed-msg-reasoning {
+  border-top: 1px dashed var(--border);
 }
-.multi-panel {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  min-height: 360px;
+.seed-msg-reasoning .seed-msg-content {
+  color: #a78bfa; font-style: italic;
 }
-.multi-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
-  font-size: 11px;
-  color: var(--muted);
+.seed-msg-actions { display: flex; gap: 6px; }
+.seed-msg-actions button {
+  font-size: 10px; padding: 2px 6px; border-radius: 3px;
 }
-.multi-panel textarea {
-  flex: 1;
-  border: none;
-  background: #080e1a;
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 12px;
-  line-height: 1.5;
-  padding: 10px;
-  resize: none;
-  outline: none;
+.seed-editor-toolbar {
+  padding: 8px 16px; border-top: 1px solid var(--border);
+  display: flex; gap: 8px; align-items: center; flex-shrink: 0;
 }
-.diff-output {
-  white-space: pre;
-  font-family: var(--mono);
-  font-size: 12px;
-  line-height: 1.4;
-  overflow: auto;
-  padding: 12px;
-  background: #080e1a;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+.seed-view-toggle {
+  display: flex; border: 1px solid var(--border); border-radius: 4px; overflow: hidden;
 }
+.seed-view-toggle span {
+  padding: 3px 10px; font-size: 10px; cursor: pointer; color: var(--muted);
+}
+.seed-view-toggle span.active { background: var(--accent); color: white; }
 </style>
 </head>
 <body>
 
-  <div id="loginView">
-    <div class="login-card">
-      <h2 style="font-size:15px;margin-bottom:4px">System Prompts</h2>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:16px">Admin authentication required</div>
-      <input id="loginPw" type="password" placeholder="Admin password" autofocus>
-      <button onclick="doLogin()" style="width:100%" class="primary">Login</button>
-      <div id="loginError" style="color:var(--bad);font-size:11px;margin-top:8px"></div>
-    </div>
-  </div>
-
-  <div id="mainApp" style="display:none">
+  <div id="mainApp">
     <header>
-      <h1>RHODES — System Prompts</h1>
+      <h1>RHODES &mdash; Prompts, Models & Seeds</h1>
       <div class="nav">
         <a href="admin-control.html">Control Panel</a>
         <a href="admin.html">Legacy Admin</a>
-        <span class="pill pill-ok" id="promptCount">0 prompts</span>
+        <span class="pill pill-ok" id="promptCount">...</span>
       </div>
     </header>
 
     <div class="tabs">
-      <a class="tab active" data-tab="prompts" href="#prompts" onclick="switchTab('prompts');return false">All Prompts</a>
-      <a class="tab" data-tab="assignments" href="#assignments" onclick="switchTab('assignments');return false">Assignments</a>
-      <a class="tab" data-tab="clones" href="#clones" onclick="switchTab('clones');return false">Model Clones</a>
+      <a class="tab active" data-tab="builder" href="#builder" onclick="switchTab('builder');return false">Model Builder</a>
+      <a class="tab" data-tab="prompts" href="#prompts" onclick="switchTab('prompts');return false">Prompts Library</a>
+      <a class="tab" data-tab="seeds" href="#seeds" onclick="switchTab('seeds');return false">Seeds</a>
       <a class="tab" data-tab="test" href="#test" onclick="switchTab('test');return false">Test</a>
     </div>
 
-    <div class="tab-content active" id="tab-prompts">
-      <div class="toolbar" style="flex-wrap:wrap">
+    <!-- MODEL BUILDER -->
+    <div class="tab-content active" id="tab-builder">
+      <div class="builder-container">
+        <div class="builder-grid">
+          <div class="model-list">
+            <div class="model-list-header">
+              <span>Models</span>
+              <button class="primary" onclick="newModel()" style="padding:4px 10px;font-size:11px">+ New</button>
+            </div>
+            <div id="modelListItems"><div style="padding:12px;color:var(--muted)">Loading...</div></div>
+          </div>
+          <div class="builder-form" id="builderForm">
+            <div style="font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:space-between">
+              <span id="builderTitle">Select or create a model</span>
+              <div style="display:flex;gap:8px">
+                <button class="success" onclick="saveModel()" id="saveModelBtn" disabled>Save Model</button>
+                <button class="danger" onclick="deleteModel()" id="deleteModelBtn" style="display:none">Delete</button>
+              </div>
+            </div>
+            <div class="form-section">
+              <div class="form-section-header">Identity</div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label>Model Alias</label>
+                  <input type="text" id="bAlias" placeholder="e.g. mymodel" style="width:140px" oninput="onBuilderChange()">
+                </div>
+                <div class="form-field">
+                  <label>Base Model</label>
+                  <select id="bBaseModel" onchange="onBuilderChange()">
+                    <option value="p1.12e">Kimi (p1.12e)</option>
+                    <option value="p1.12d">DeepSeek (p1.12d)</option>
+                    <option value="r1.0a">Opus (r1.0a)</option>
+                    <option value="r1.0b">Sonnet (r1.0b)</option>
+                    <option value="r1.0c">Haiku (r1.0c)</option>
+                    <option value="r1.12f">Grok (r1.12f)</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label>Slash Command</label>
+                  <input type="text" id="bSlash" placeholder="/mymodel" style="width:120px" oninput="onBuilderChange()">
+                </div>
+                <div class="form-field">
+                  <label>Description</label>
+                  <input type="text" id="bNotes" placeholder="Optional" style="width:200px">
+                </div>
+              </div>
+            </div>
+            <div class="form-section">
+              <div class="form-section-header">
+                <span>System Prompt <span id="bPromptChars" style="font-size:10px;color:var(--muted);font-weight:400;margin-left:8px">0 chars</span></span>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <select id="bPromptSource" onchange="loadPromptFromSource()" style="min-width:200px">
+                    <option value="">(custom / paste below)</option>
+                  </select>
+                  <span class="expand-btn" onclick="openPromptPopover()">Expand</span>
+                </div>
+              </div>
+              <textarea id="bPromptText" style="min-height:80px;max-height:120px;width:100%;margin-top:6px" oninput="onPromptEdit()" placeholder="Enter system prompt text, or select from library above..."></textarea>
+            </div>
+            <div class="form-section">
+              <div class="form-section-header">
+                <span>Warmup Seed <span id="bSeedMsgCount" style="font-size:10px;color:var(--muted);font-weight:400;margin-left:8px"></span> <span id="bSeedDirty" style="font-size:10px;color:var(--warn);margin-left:4px"></span></span>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <select id="bSeedId" onchange="onSeedChange()" style="min-width:180px">
+                    <option value="">(default - r18)</option>
+                  </select>
+                  <span id="bSeedInfo" style="font-size:10px;color:var(--muted)"></span>
+                  <button onclick="saveSeedInline()" id="seedInlineSaveBtn" disabled class="success" style="padding:3px 8px;font-size:10px">Save Seed</button>
+                  <span class="expand-btn" onclick="openSeedPopover()">Expand</span>
+                </div>
+              </div>
+              <textarea id="bSeedText" style="min-height:80px;max-height:120px;width:100%;margin-top:6px" oninput="onSeedTextEdit()" placeholder="Select a seed above to load content, or paste JSON..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROMPTS LIBRARY -->
+    <div class="tab-content" id="tab-prompts">
+      <div class="toolbar">
         <input id="promptFilter" type="text" placeholder="Filter prompts..." oninput="filterPrompts()">
         <select id="promptTypeFilter" onchange="filterPrompts()">
           <option value="">All types</option>
-          <option value="base">Base prompts</option>
-          <option value="format">Format only</option>
+          <option value="base">Base</option>
+          <option value="format">Format</option>
           <option value="combined">Combined</option>
+          <option value="custom">Custom</option>
+          <option value="clone">Clone</option>
         </select>
-        <select id="newPromptTemplate" title="Template source" style="min-width:180px"></select>
         <input id="newPromptSource" type="text" placeholder="custom_new_prompt" style="max-width:200px">
         <button class="primary" onclick="createPrompt()">+ New Prompt</button>
-        <button onclick="openMultiView()">Multi-View</button>
-        <button onclick="loadAllPrompts()">↻ Refresh</button>
+        <button onclick="loadAllPrompts()">&#x21bb; Refresh</button>
       </div>
-      <div class="prompt-grid" id="promptGrid">
-        <div style="padding:20px;color:var(--muted)">Loading prompts...</div>
-      </div>
+      <div class="prompt-grid" id="promptGrid"><div style="padding:20px;color:var(--muted)">Loading...</div></div>
     </div>
 
-    <div class="tab-content" id="tab-assignments">
-      <div class="assignments-container">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <div>
-            <div style="font-size:14px;font-weight:600">Prompt Assignments</div>
-            <div style="font-size:11px;color:var(--muted)">Route prompts to models, users, and tiers. Higher priority wins.</div>
-          </div>
-          <div style="display:flex;gap:8px">
-            <button class="primary" onclick="addAssignment()">+ New Assignment</button>
-            <button class="success" onclick="saveAssignments()">Save All</button>
-            <button onclick="loadAssignments()">↻ Refresh</button>
-          </div>
-        </div>
-        <div id="assignmentsList" style="color:var(--muted);padding:12px">Loading...</div>
+    <!-- SEEDS -->
+    <div class="tab-content" id="tab-seeds">
+      <div class="toolbar">
+        <span style="font-size:13px;font-weight:600">Warmup Seeds</span>
+        <span style="font-size:11px;color:var(--muted)">Conversation seeds injected before first user message</span>
+        <div style="flex:1"></div>
+        <button class="primary" onclick="openNewSeedModal()">+ New Seed</button>
+        <button onclick="loadAllSeeds()">&#x21bb; Refresh</button>
       </div>
+      <div class="seed-grid" id="seedGrid"><div style="padding:20px;color:var(--muted)">Loading...</div></div>
     </div>
 
-    <div class="tab-content" id="tab-clones">
-      <div class="assignments-container">
-        <div style="font-size:14px;font-weight:600;margin-bottom:8px">Model Clones</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:12px">
-          Clone a model runtime profile (thinking mode, injections, routing) under a new alias, with optional prompt override.
-        </div>
-        <div class="assignment-row">
-          <span class="label">Alias:</span>
-          <input id="cloneAlias" type="text" placeholder="x" style="width:120px">
-          <span class="label">Base model:</span>
-          <input id="cloneBaseModel" type="text" placeholder="p1.12e" style="width:140px">
-          <span class="label">Slash:</span>
-          <input id="cloneSlash" type="text" placeholder="/x" style="width:100px">
-          <span class="label">Prompt:</span>
-          <select id="clonePromptSource" style="min-width:220px"></select>
-          <button class="primary" onclick="saveClone()">Save Clone</button>
-          <button onclick="loadModelClones()">↻ Refresh</button>
-        </div>
-        <div id="cloneList" style="margin-top:12px;color:var(--muted)">Loading...</div>
-      </div>
-    </div>
-
+    <!-- TEST -->
     <div class="tab-content" id="tab-test">
       <div class="test-container">
         <div style="font-size:14px;font-weight:600;margin-bottom:12px">Test System Prompt</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:12px">
-          Send a test message with a specific prompt and model/provider to verify runtime routing.
-        </div>
         <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end">
           <label style="font-size:11px;color:var(--muted)">
             Prompt source
-            <select id="testSource" style="display:block;margin-top:4px" onchange="syncTestModelToSource()"></select>
+            <select id="testSource" style="display:block;margin-top:4px;min-width:200px"></select>
           </label>
           <label style="font-size:11px;color:var(--muted)">
             Model
-            <select id="testModel" style="display:block;margin-top:4px;min-width:220px"></select>
+            <select id="testModel" style="display:block;margin-top:4px;min-width:200px"></select>
           </label>
           <label style="font-size:11px;color:var(--muted);flex:1;min-width:250px">
             Test message
-            <input id="testMessage" type="text" value="Respond in one sentence. Who are you and what system are you part of?"
-              style="display:block;margin-top:4px;width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:4px;font-size:12px">
+            <input id="testMessage" type="text" value="Respond in one sentence. Who are you?"
+              style="display:block;margin-top:4px;width:100%">
           </label>
           <button class="primary" onclick="runPromptTest()" id="testRunBtn">Send Test</button>
         </div>
@@ -307,12 +424,13 @@ select {
         <div style="font-size:12px;font-weight:600;margin-bottom:4px">Response:</div>
         <div class="test-output" id="testOutput">(no test run yet)</div>
         <div style="margin-top:20px">
-          <div style="font-size:12px;font-weight:600;margin-bottom:4px">Prompt Preview (what model sees):</div>
+          <div style="font-size:12px;font-weight:600;margin-bottom:4px">Prompt Preview:</div>
           <div class="test-output" id="testPreview" style="max-height:400px">(select source and click Send Test)</div>
         </div>
       </div>
     </div>
 
+    <!-- PROMPT EDITOR MODAL -->
     <div class="modal-overlay" id="editorModal">
       <div class="modal-header">
         <div>
@@ -321,807 +439,935 @@ select {
         </div>
         <div class="actions">
           <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px">
-            <input type="checkbox" id="editorEditMode" onchange="toggleEditMode()"> Edit mode
+            <input type="checkbox" id="editorEditMode" onchange="toggleEditMode()"> Edit
           </label>
           <button id="editorSaveBtn" class="success" onclick="saveFromEditor()" disabled>Save</button>
-          <button onclick="showVersions()">Versions</button>
-          <button class="danger" onclick="closeEditor()">Close (Esc)</button>
+          <button class="danger" onclick="closeEditor()">Close</button>
         </div>
       </div>
       <div class="modal-body">
         <textarea id="editorText" readonly placeholder="Loading..."></textarea>
       </div>
       <div class="modal-footer">
-        <div>
-          <span id="editorCharCount">0 chars</span>
-          <span style="margin:0 8px">·</span>
-          <span id="editorSha">sha256: —</span>
-        </div>
+        <span id="editorCharCount">0 chars</span>
         <div id="editorDirty" style="color:var(--warn)"></div>
       </div>
     </div>
 
-    <div class="modal-overlay" id="versionsModal">
+    <!-- SEED VIEWER MODAL -->
+    <div class="modal-overlay" id="seedModal">
       <div class="modal-header">
-        <div class="title" id="versionsTitle">Version History</div>
+        <div>
+          <div class="title" id="seedModalTitle">Seed Viewer</div>
+          <div class="meta" id="seedModalMeta"></div>
+        </div>
         <div class="actions">
-          <button class="danger" onclick="closeVersions()">Close</button>
+          <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="seedEditMode" onchange="toggleSeedEditMode()"> Edit
+          </label>
+          <button id="seedSaveBtn" class="success" onclick="saveSeedFromModal()" disabled>Save</button>
+          <button class="danger" onclick="closeSeedModal()">Close</button>
         </div>
       </div>
-      <div class="modal-body" style="overflow-y:auto;padding:20px">
-        <div id="versionsList"></div>
+      <div class="modal-body">
+        <textarea id="seedModalText" readonly placeholder="Loading..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <span id="seedModalInfo">0 messages</span>
+        <div id="seedModalDirty" style="color:var(--warn)"></div>
       </div>
     </div>
 
-
-    <div class="modal-overlay" id="compareModal">
+    <!-- NEW SEED MODAL -->
+    <div class="modal-overlay" id="newSeedModal">
       <div class="modal-header">
-        <div>
-          <div class="title" id="compareTitle">Prompt Comparison</div>
-          <div class="meta" id="compareMeta"></div>
-        </div>
-        <div class="actions">
-          <button class="danger" onclick="closeCompare()">Close</button>
-        </div>
+        <div class="title">Create New Seed</div>
+        <div class="actions"><button class="danger" onclick="closeNewSeedModal()">Cancel</button></div>
       </div>
-      <div class="modal-body" style="padding:16px;overflow:auto">
-        <pre class="diff-output" id="compareDiff"></pre>
-      </div>
-    </div>
-
-    <div class="modal-overlay" id="multiViewModal">
-      <div class="modal-header">
-        <div>
-          <div class="title">Multi Prompt View</div>
-          <div class="meta">Select up to 4 prompts and view them side-by-side</div>
-        </div>
-        <div class="actions">
-          <button onclick="loadMultiViewSelection()">Load Selected</button>
-          <button class="danger" onclick="closeMultiView()">Close</button>
-        </div>
-      </div>
-      <div class="modal-body" style="padding:16px;overflow:auto">
-        <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px">
-          <select id="multiPromptSelect" multiple size="8" style="min-width:340px;max-width:480px"></select>
-          <div style="font-size:11px;color:var(--muted);max-width:460px">
-            Hold Cmd/Ctrl to select multiple prompts. Use this to compare base/format variants quickly.
-            You can also add from cards via "Add Multi".
+      <div style="padding:20px;max-width:600px">
+        <div class="form-row" style="margin-bottom:12px">
+          <div class="form-field">
+            <label>Seed ID</label>
+            <input type="text" id="newSeedId" placeholder="e.g. custom1" style="width:200px">
+          </div>
+          <div class="form-field">
+            <label>Description</label>
+            <input type="text" id="newSeedDesc" placeholder="Description" style="width:300px">
           </div>
         </div>
-        <div class="multi-grid" id="multiViewGrid">
-          <div style="color:var(--muted)">No prompts loaded yet.</div>
+        <div class="form-row" style="margin-bottom:12px;gap:16px">
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px">
+            <input type="checkbox" id="newSeedRhodesOS" checked> inject_rhodes_os
+          </label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px">
+            <input type="checkbox" id="newSeedBriefing" checked> inject_briefing_over
+          </label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px">
+            <input type="checkbox" id="newSeedReasoning" checked> has_reasoning
+          </label>
+        </div>
+        <div class="form-field" style="margin-bottom:12px">
+          <label>Seed Messages (JSON array)</label>
+          <textarea id="newSeedContent" style="width:100%;min-height:300px" placeholder='[{"role":"system","content":"You are Rhodes."},{"role":"user","content":"Hello"},{"role":"assistant","content":"Greetings."}]'></textarea>
+        </div>
+        <button class="primary" onclick="createNewSeed()">Create Seed</button>
+      </div>
+    </div>
+
+
+    <!-- PROMPT POPOVER -->
+    <div class="popover-overlay" id="promptPopover">
+      <div class="popover-box">
+        <div class="popover-header">
+          <div class="title">System Prompt</div>
+          <div class="actions">
+            <select id="ppPromptSource" onchange="ppLoadSource()" style="min-width:200px">
+              <option value="">(current)</option>
+            </select>
+            <span id="ppChars" style="font-size:11px;color:var(--muted)">0 chars</span>
+            <button class="danger" onclick="closePromptPopover()">Close</button>
+          </div>
+        </div>
+        <div class="popover-body">
+          <textarea id="ppText" oninput="ppSync()"></textarea>
+        </div>
+        <div class="popover-footer">
+          <span>Edits sync back to the builder automatically</span>
+          <span id="ppFooterInfo"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEED POPOVER -->
+    <div class="popover-overlay" id="seedPopover">
+      <div class="popover-box">
+        <div class="popover-header">
+          <div class="title">Warmup Seed</div>
+          <div class="actions">
+            <select id="spSeedId" onchange="spLoadSeed()" style="min-width:180px">
+              <option value="">(current)</option>
+            </select>
+            <span id="spInfo" style="font-size:11px;color:var(--muted)"></span>
+            <div class="seed-view-toggle">
+              <span class="active" id="viewEditor" onclick="setSeedView('editor')">Editor</span>
+              <span id="viewRaw" onclick="setSeedView('raw')">Raw JSON</span>
+            </div>
+            <button onclick="saveSeedFromPopover()" id="spSaveBtn" disabled class="success" style="font-size:11px">Save Seed</button>
+            <button class="danger" onclick="closeSeedPopover()">Close</button>
+          </div>
+        </div>
+        <div class="popover-body">
+          <div class="seed-editor" id="spEditor"></div>
+          <textarea id="spText" oninput="spRawSync()" style="display:none"></textarea>
+        </div>
+        <div class="seed-editor-toolbar">
+          <button onclick="spAddMessage('system')" style="font-size:11px">+ System</button>
+          <button onclick="spAddMessage('user')" style="font-size:11px">+ User</button>
+          <button onclick="spAddMessage('assistant')" style="font-size:11px">+ Assistant</button>
+          <div style="flex:1"></div>
+          <span id="spMsgCount" style="font-size:11px;color:var(--muted)"></span>
         </div>
       </div>
     </div>
 
     <div class="status-bar">
-      <span id="statusLeft">Connected</span>
+      <span id="statusLeft">Loading...</span>
       <span id="statusRight"></span>
     </div>
   </div>
 
 <script>
-
-let TOKEN = localStorage.getItem('rhodes_admin_token') || '';
-let ALL_PROMPTS = [];
-let EDITOR_STATE = {source:null, sha256:null, originalText:'', path:null, truncated:false, combined:false};
-let ASSIGNMENTS = [];
-let MODEL_CLONES = [];
-let MULTI_PICK = new Set();
-
 const $ = id => document.getElementById(id);
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-function switchTab(name) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  document.querySelector('.tab[data-tab="' + name + '"]').classList.add('active');
-  $('tab-' + name).classList.add('active');
+let ALL_PROMPTS = [];
+let ALL_SEEDS = [];
+let MODEL_CLONES = [];
+let EDITOR_STATE = {};
+let SEED_MODAL_STATE = {};
+let BUILDER_STATE = { isNew: true, originalAlias: null };
+// ---- Prompt Popover ----
+function openPromptPopover() {
+  $('promptPopover').classList.add('open');
+  $('ppText').value = $('bPromptText').value;
+  $('ppChars').textContent = ($('bPromptText').value||'').length.toLocaleString()+' chars';
+  // Populate source dropdown
+  var nonCombined = ALL_PROMPTS.filter(function(p){return !p.combined;});
+  $('ppPromptSource').innerHTML = '<option value="">(current)</option>'
+    + nonCombined.map(function(p){return '<option value="'+esc(p.source)+'">'+esc(p.source)+'</option>';}).join('');
+  $('ppText').focus();
+}
+function closePromptPopover() {
+  // Sync back
+  $('bPromptText').value = $('ppText').value;
+  onPromptEdit();
+  $('promptPopover').classList.remove('open');
+}
+function ppSync() {
+  $('bPromptText').value = $('ppText').value;
+  $('ppChars').textContent = ($('ppText').value||'').length.toLocaleString()+' chars';
+  onPromptEdit();
+}
+async function ppLoadSource() {
+  var source = $('ppPromptSource').value;
+  if (!source) return;
+  try {
+    var data = await api('/api/admin/prompt?source='+encodeURIComponent(source)+'&max_chars=500000');
+    $('ppText').value = data.text||'';
+    ppSync();
+    $('bPromptSource').value = source;
+  } catch(e) { alert('Failed: '+e.message); }
+}
+
+// ---- Seed Popover (structured editor) ----
+var SP_MESSAGES = [];
+var SP_VIEW = 'editor';
+
+function openSeedPopover() {
+  $('seedPopover').classList.add('open');
+  $('spSeedId').innerHTML = '<option value="">(current)</option>'
+    + ALL_SEEDS.map(function(s){return '<option value="'+esc(s.id)+'">'+esc(s.id)+' - '+esc(s.description)+'</option>';}).join('');
+  // Parse current seed
+  try {
+    SP_MESSAGES = JSON.parse($('bSeedText').value);
+    if (!Array.isArray(SP_MESSAGES)) SP_MESSAGES = [];
+  } catch(e) { SP_MESSAGES = []; }
+  SP_VIEW = 'editor';
+  setSeedView('editor');
+  renderSeedEditor();
+}
+
+function closeSeedPopover() {
+  // Sync structured data back to builder
+  if (SP_VIEW === 'editor') { editorToRaw(); }
+  $('bSeedText').value = $('spText').value;
+  onSeedTextEdit();
+  $('seedPopover').classList.remove('open');
+}
+
+function setSeedView(view) {
+  SP_VIEW = view;
+  $('viewEditor').classList.toggle('active', view === 'editor');
+  $('viewRaw').classList.toggle('active', view === 'raw');
+  if (view === 'editor') {
+    // Sync from raw if switching back
+    try {
+      SP_MESSAGES = JSON.parse($('spText').value);
+      if (!Array.isArray(SP_MESSAGES)) SP_MESSAGES = [];
+    } catch(e) {}
+    $('spEditor').style.display = '';
+    $('spText').style.display = 'none';
+    renderSeedEditor();
+  } else {
+    editorToRaw();
+    $('spEditor').style.display = 'none';
+    $('spText').style.display = '';
+  }
+}
+
+function renderSeedEditor() {
+  if (!SP_MESSAGES.length) {
+    $('spEditor').innerHTML = '<div style="padding:20px;color:var(--muted)">No messages. Add one below.</div>';
+    $('spMsgCount').textContent = '0 messages';
+    return;
+  }
+  $('spMsgCount').textContent = SP_MESSAGES.length + ' messages';
+  $('spEditor').innerHTML = SP_MESSAGES.map(function(msg, i) {
+    var role = msg.role || 'unknown';
+    var content = msg.content || '';
+    var reasoning = msg.reasoning_content || '';
+    var roleClass = 'role-' + role;
+    var html = '<div class="seed-msg" data-idx="'+i+'">';
+    html += '<div class="seed-msg-header '+roleClass+'">';
+    html += '<span>'+role.toUpperCase()+' #'+(i+1)+'</span>';
+    html += '<div class="seed-msg-actions">';
+    if (i > 0) html += '<button onclick="spMoveMsg('+i+',-1)">&#9650;</button>';
+    if (i < SP_MESSAGES.length-1) html += '<button onclick="spMoveMsg('+i+',1)">&#9660;</button>';
+    html += '<button class="danger" onclick="spDeleteMsg('+i+')">&#10005;</button>';
+    html += '</div></div>';
+    html += '<textarea class="seed-msg-content" data-idx="'+i+'" data-field="content" oninput="spEditMsg(this)" rows="'+Math.max(3, content.split("\n").length)+'">' + esc(content) + '</textarea>';
+    if (reasoning) {
+      html += '<div class="seed-msg-reasoning">';
+      html += '<div style="padding:4px 12px;font-size:10px;color:#a78bfa">REASONING</div>';
+      html += '<textarea class="seed-msg-content" data-idx="'+i+'" data-field="reasoning_content" oninput="spEditMsg(this)" rows="'+Math.max(2, reasoning.split("\n").length)+'">' + esc(reasoning) + '</textarea>';
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }).join('');
+  updateSpDirty();
+}
+
+function spEditMsg(el) {
+  var idx = parseInt(el.dataset.idx);
+  var field = el.dataset.field;
+  if (SP_MESSAGES[idx]) {
+    SP_MESSAGES[idx][field] = el.value;
+    editorToRaw();
+    updateSpDirty();
+  }
+}
+
+function spMoveMsg(idx, dir) {
+  var newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= SP_MESSAGES.length) return;
+  var tmp = SP_MESSAGES[idx];
+  SP_MESSAGES[idx] = SP_MESSAGES[newIdx];
+  SP_MESSAGES[newIdx] = tmp;
+  editorToRaw();
+  renderSeedEditor();
+}
+
+function spDeleteMsg(idx) {
+  if (!confirm('Delete message #'+(idx+1)+'?')) return;
+  SP_MESSAGES.splice(idx, 1);
+  editorToRaw();
+  renderSeedEditor();
+}
+
+function spAddMessage(role) {
+  SP_MESSAGES.push({role: role, content: ''});
+  editorToRaw();
+  renderSeedEditor();
+  // Scroll to bottom
+  $('spEditor').scrollTop = $('spEditor').scrollHeight;
+}
+
+function editorToRaw() {
+  $('spText').value = JSON.stringify(SP_MESSAGES, null, 2);
+  $('bSeedText').value = $('spText').value;
+  $('spMsgCount').textContent = SP_MESSAGES.length + ' messages';
+}
+
+function spRawSync() {
+  $('bSeedText').value = $('spText').value;
+  onSeedTextEdit();
+  updateSpDirty();
+}
+
+function updateSpDirty() {
+  var dirty = $('spText').value !== SEED_INLINE_STATE.originalText;
+  $('spSaveBtn').disabled = !dirty;
+}
+
+async function saveSeedFromPopover() {
+  if (SP_VIEW === 'editor') editorToRaw();
+  var seedId = SEED_INLINE_STATE.id;
+  if (!seedId) { alert('No seed selected.'); return; }
+  var raw = $('spText').value;
+  try { JSON.parse(raw); } catch(e) { alert('Invalid JSON: '+e.message); return; }
+  if (!confirm('Save seed "'+seedId+'"?')) return;
+  try {
+    var data = await api('/api/admin/seed', {method:'POST', body:JSON.stringify({id:seedId, raw_content:raw})});
+    if (data.success) {
+      SEED_INLINE_STATE.originalText = raw;
+      $('bSeedDirty').textContent = '';
+      $('seedInlineSaveBtn').disabled = true;
+      updateSpDirty();
+      setStatus('Saved seed: '+seedId);
+      loadAllSeeds();
+    } else alert('Failed: '+(data.error||''));
+  } catch(e) { alert(e.message); }
+}
+
+async function spLoadSeed() {
+  var seedId = $('spSeedId').value;
+  if (!seedId) return;
+  try {
+    var data = await api('/api/admin/seed?id='+encodeURIComponent(seedId));
+    if (data.exists) {
+      var raw = data.raw_content || JSON.stringify(data.messages||[],null,2);
+      $('spText').value = raw;
+      $('bSeedText').value = raw;
+      $('bSeedId').value = seedId;
+      SEED_INLINE_STATE = {id:seedId, originalText: raw};
+      try { SP_MESSAGES = JSON.parse(raw); } catch(e) { SP_MESSAGES = []; }
+      if (SP_VIEW === 'editor') renderSeedEditor();
+      $('bSeedDirty').textContent = '';
+      $('seedInlineSaveBtn').disabled = true;
+      updateSpDirty();
+    }
+  } catch(e) { alert('Failed: '+e.message); }
+}
+
+
+
+// ---- Auth (same pattern as admin-control.html) ----
+function token() {
+  return localStorage.getItem('rhodes_user_token') || localStorage.getItem('rhodes_admin_token') || '';
 }
 
 async function api(url, opts={}) {
-  const headers = {...(opts.headers||{})};
-  if (TOKEN) headers['X-Rhodes-Admin-Token'] = TOKEN;
-  const resp = await fetch(url, {...opts, headers});
-  if (resp.status === 401) {
-    TOKEN = ''; localStorage.removeItem('rhodes_admin_token');
-    $('mainApp').style.display = 'none';
-    $('loginView').style.display = 'block';
-    throw new Error('Session expired');
+  const headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
+  const t = token();
+  if (t) {
+    if (localStorage.getItem('rhodes_user_token')) {
+      headers['Authorization'] = 'Bearer ' + t;
+    } else {
+      headers['X-Rhodes-Admin-Token'] = t;
+    }
   }
-  const raw = await resp.text();
-  let data = null;
-  try {
-    data = raw ? JSON.parse(raw) : {};
-  } catch (e) {
-    const preview = (raw || '').slice(0, 200).replace(/\s+/g, ' ').trim();
-    throw new Error(`Invalid JSON response (${resp.status}): ${preview || 'empty body'}`);
+  const r = await fetch(url, Object.assign({}, opts, {headers}));
+  const text = await r.text();
+  let data;
+  try { data = JSON.parse(text); } catch { data = {raw: text}; }
+  if (r.status === 401) {
+    setStatus('Auth required - log in on the main site first');
+    throw new Error('Admin auth required. Log in on rhodesagi.com first.');
   }
-  if (!resp.ok) {
-    const err = (data && (data.error || data.message)) || `HTTP ${resp.status}`;
-    throw new Error(String(err));
-  }
+  if (!r.ok) throw new Error('HTTP ' + r.status + ': ' + JSON.stringify(data));
   return data;
 }
 
-async function doLogin() {
-  const pw = $('loginPw').value.trim();
-  if (!pw) return;
-  try {
-    const resp = await fetch('/api/admin/login', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({password:pw})
-    });
-    const data = await resp.json();
-    if (data.token) {
-      TOKEN = data.token;
-      localStorage.setItem('rhodes_admin_token', TOKEN);
-      $('loginView').style.display = 'none';
-      $('mainApp').style.display = 'block';
-      init();
-    } else {
-      $('loginError').textContent = data.error || 'Login failed';
-    }
-  } catch(e) { $('loginError').textContent = e.message; }
+// ---- Tabs ----
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.toggle('active', t.id === 'tab-'+name));
+  window.location.hash = name;
 }
-$('loginPw').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
 
-// Tabs
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    tab.classList.add('active');
-    $('tab-' + tab.dataset.tab).classList.add('active');
-  });
-});
-
-// ---- Prompt List ----
+// ---- Data Loading ----
 async function loadAllPrompts() {
-  $('promptGrid').innerHTML = '<div style="padding:20px;color:var(--muted)">Loading prompts...</div>';
   try {
     const data = await api('/api/admin/prompt/list');
     ALL_PROMPTS = data.prompts || [];
     $('promptCount').textContent = ALL_PROMPTS.length + ' prompts';
     renderPromptGrid();
-    populateTestSourceDropdown();
-    populateTestModelDropdown();
-    populateClonePromptSourceDropdown();
-    populateNewPromptTemplateDropdown();
-    populateMultiPromptSelect();
+    populatePromptDropdowns();
   } catch(e) {
-    $('promptGrid').innerHTML = `<div style="color:var(--bad);padding:20px">Error: ${e.message}</div>`;
+    $('promptGrid').innerHTML = '<div style="padding:20px;color:var(--bad)">'+esc(e.message)+'</div>';
   }
 }
 
-function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+async function loadAllSeeds() {
+  try {
+    const data = await api('/api/admin/seeds');
+    ALL_SEEDS = data.seeds || [];
+    renderSeedGrid();
+    populateSeedDropdown();
+  } catch(e) {
+    $('seedGrid').innerHTML = '<div style="padding:20px;color:var(--bad)">'+esc(e.message)+'</div>';
+  }
+}
 
-function renderPromptGrid() {
-  const filter = ($('promptFilter').value||'').toLowerCase();
-  const typeFilter = $('promptTypeFilter').value;
-  let prompts = ALL_PROMPTS.filter(p => {
-    if (filter && !p.source.toLowerCase().includes(filter) && !(p.path||'').toLowerCase().includes(filter)) return false;
-    if (typeFilter === 'base' && (p.combined || p.source.startsWith('format_'))) return false;
-    if (typeFilter === 'format' && !p.source.startsWith('format_')) return false;
-    if (typeFilter === 'combined' && !p.combined) return false;
-    return true;
-  });
-  if (!prompts.length) {
-    $('promptGrid').innerHTML = '<div style="padding:20px;color:var(--muted)">No prompts match filter</div>';
+async function loadModelClones() {
+  try {
+    const data = await api('/api/admin/model-clones');
+    MODEL_CLONES = data.clones || [];
+    renderModelList();
+    populateTestModelDropdown();
+  } catch(e) {
+    $('modelListItems').innerHTML = '<div style="padding:12px;color:var(--bad)">'+esc(e.message)+'</div>';
+  }
+}
+
+// ---- Model Builder ----
+function renderModelList() {
+  if (!MODEL_CLONES.length) {
+    $('modelListItems').innerHTML = '<div style="padding:12px;color:var(--muted)">No models. Click + New.</div>';
     return;
   }
-  $('promptGrid').innerHTML = prompts.map(p => {
-    const badge = p.combined ? '<span class="badge badge-combined">combined</span>'
-      : p.source.startsWith('format_') ? '<span class="badge badge-format">format</span>'
-      : '<span class="badge badge-base">base</span>';
-    const size = p.chars >= 1000 ? (p.chars/1000).toFixed(1)+'k' : p.chars+'';
-    const preview = esc(p.preview||'');
-    const missing = p.exists===false ? '<span style="color:var(--bad)">MISSING</span>' : '';
-    const sha = p.sha256 ? 'sha:'+p.sha256.slice(0,8) : '';
-    const selected = MULTI_PICK.has(p.source);
-    return `<div class="prompt-card" onclick="openEditor('${esc(p.source)}')">
-      <div class="name">${badge} ${esc(p.source)}</div>
-      <div class="meta"><span>${size} chars</span>${sha ? `<span>${sha}</span>` : ''}${missing}</div>
-      <div class="preview">${preview}</div>
-      <div style="display:flex;justify-content:flex-end;margin-top:10px">
-        <button style="font-size:11px;padding:4px 8px" onclick="event.stopPropagation();toggleMultiPrompt('${esc(p.source)}')">${selected ? 'Remove Multi' : 'Add Multi'}</button>
-      </div>
-    </div>`;
+  $('modelListItems').innerHTML = MODEL_CLONES.map(c => {
+    const active = BUILDER_STATE.originalAlias === c.alias ? ' active' : '';
+    const base = c.base_model_input || c.base_model || '';
+    const promptInfo = c.prompt_exists ? (c.prompt_chars||0)+' chars' : 'no prompt';
+    return '<div class="model-item'+active+'" onclick="loadModelIntoBuilder(\''+esc(c.alias||'')+'\')">'
+      + '<div class="name">'+esc(c.alias||'')+'</div>'
+      + '<div class="info">'+esc(base)+' &middot; '+esc(c.slash_command||'')+' &middot; '+promptInfo+'</div>'
+      + '</div>';
   }).join('');
 }
 
+function newModel() {
+  BUILDER_STATE = { isNew: true, originalAlias: null };
+  $('bAlias').value = '';
+  $('bBaseModel').value = 'p1.12e';
+  $('bSlash').value = '';
+  $('bNotes').value = '';
+  $('bPromptSource').value = '';
+  $('bPromptText').value = '';
+  $('bSeedId').value = '';
+  $('bPromptChars').textContent = '0 chars';
+  $('bSeedInfo').textContent = 'Default seed (r18)';
+  $('builderTitle').textContent = 'New Model';
+  $('saveModelBtn').disabled = false;
+  $('deleteModelBtn').style.display = 'none';
+  renderModelList();
+}
+
+async function loadModelIntoBuilder(alias) {
+  const clone = MODEL_CLONES.find(c => c.alias === alias);
+  if (!clone) return;
+  BUILDER_STATE = { isNew: false, originalAlias: alias };
+  $('bAlias').value = clone.alias || '';
+  const baseInput = clone.base_model_input || clone.base_model || '';
+  const baseOpts = Array.from($('bBaseModel').options).map(o => o.value);
+  if (!baseOpts.includes(baseInput)) {
+    const opt = document.createElement('option');
+    opt.value = baseInput; opt.textContent = baseInput;
+    $('bBaseModel').appendChild(opt);
+  }
+  $('bBaseModel').value = baseInput;
+  $('bSlash').value = clone.slash_command || '';
+  $('bNotes').value = clone.notes || '';
+  $('bPromptSource').value = clone.prompt_source || '';
+
+  // Load prompt text
+  if (clone.prompt_exists) {
+    try {
+      const pd = await api('/api/admin/prompt?source=clone_'+encodeURIComponent(alias)+'&max_chars=500000');
+      $('bPromptText').value = pd.text || '';
+      $('bPromptChars').textContent = (pd.chars||0).toLocaleString()+' chars';
+    } catch(e) {
+      $('bPromptText').value = '';
+      $('bPromptChars').textContent = 'load failed';
+    }
+  } else if (clone.prompt_source) {
+    try {
+      const pd = await api('/api/admin/prompt?source='+encodeURIComponent(clone.prompt_source)+'&max_chars=500000');
+      $('bPromptText').value = pd.text || '';
+      $('bPromptChars').textContent = (pd.chars||0).toLocaleString()+' chars';
+    } catch(e) { $('bPromptText').value = ''; }
+  } else {
+    $('bPromptText').value = '';
+    $('bPromptChars').textContent = '0 chars (base model prompt)';
+  }
+
+  $('bSeedId').value = '';
+  $('bSeedInfo').textContent = '';
+  $('bSeedText').value = '';
+  $('bSeedMsgCount').textContent = '';
+  $('bSeedDirty').textContent = '';
+  SEED_INLINE_STATE = {id:null, originalText:''};
+  $('builderTitle').textContent = 'Edit: ' + alias;
+  $('saveModelBtn').disabled = false;
+  $('deleteModelBtn').style.display = 'inline-block';
+  renderModelList();
+}
+
+function onBuilderChange() {
+  $('saveModelBtn').disabled = !$('bAlias').value.trim();
+}
+
+function onPromptEdit() {
+  $('bPromptChars').textContent = ($('bPromptText').value||'').length.toLocaleString()+' chars';
+}
+
+var SEED_INLINE_STATE = { id: null, originalText: '' };
+
+async function onSeedChange() {
+  const seedId = $('bSeedId').value || 'r18';
+  const sel = ALL_SEEDS.find(s => s.id === seedId);
+  if (sel) {
+    $('bSeedInfo').innerHTML = sel.message_count+' msgs | '
+      +(sel.has_reasoning?'reasoning':'no-think')+' | '
+      +(sel.file_exists?'<span style="color:var(--ok)">OK</span>':'<span style="color:var(--bad)">MISSING</span>');
+  } else {
+    $('bSeedInfo').textContent = '';
+  }
+  // Load seed content inline
+  $('bSeedText').value = 'Loading...';
+  SEED_INLINE_STATE = { id: seedId, originalText: '' };
+  try {
+    const data = await api('/api/admin/seed?id='+encodeURIComponent(seedId));
+    if (data.exists) {
+      const raw = data.raw_content || JSON.stringify(data.messages||[],null,2);
+      $('bSeedText').value = raw;
+      SEED_INLINE_STATE.originalText = raw;
+      $('bSeedMsgCount').textContent = data.message_count+' messages | '+(data.file_size||0)+' bytes';
+    } else {
+      $('bSeedText').value = '(seed not found)';
+    }
+  } catch(e) {
+    $('bSeedText').value = 'Error loading seed: '+e.message;
+  }
+  $('bSeedDirty').textContent = '';
+  $('seedInlineSaveBtn').disabled = true;
+}
+
+function onSeedTextEdit() {
+  const dirty = $('bSeedText').value !== SEED_INLINE_STATE.originalText;
+  $('bSeedDirty').textContent = dirty ? 'unsaved' : '';
+  $('seedInlineSaveBtn').disabled = !dirty;
+  // Count messages
+  try {
+    const parsed = JSON.parse($('bSeedText').value);
+    if (Array.isArray(parsed)) $('bSeedMsgCount').textContent = parsed.length+' messages';
+  } catch(e) {
+    $('bSeedMsgCount').textContent = 'invalid JSON';
+  }
+}
+
+async function saveSeedInline() {
+  const seedId = SEED_INLINE_STATE.id;
+  if (!seedId) return;
+  const raw = $('bSeedText').value;
+  try { JSON.parse(raw); } catch(e) { alert('Invalid JSON: '+e.message); return; }
+  if (!confirm('Save seed "'+seedId+'"?')) return;
+  try {
+    const data = await api('/api/admin/seed', {method:'POST', body:JSON.stringify({id:seedId, raw_content:raw})});
+    if (data.success) {
+      SEED_INLINE_STATE.originalText = raw;
+      $('bSeedDirty').textContent = '';
+      $('seedInlineSaveBtn').disabled = true;
+      setStatus('Saved seed: '+seedId);
+      loadAllSeeds();
+    } else alert('Failed: '+(data.error||''));
+  } catch(e) { alert(e.message); }
+}
+
+async function loadPromptFromSource() {
+  const source = $('bPromptSource').value;
+  if (!source) return;
+  try {
+    const data = await api('/api/admin/prompt?source='+encodeURIComponent(source)+'&max_chars=500000');
+    $('bPromptText').value = data.text || '';
+    $('bPromptChars').textContent = (data.chars||0).toLocaleString()+' chars';
+  } catch(e) { alert('Failed: '+e.message); }
+}
+
+
+
+async function saveModel() {
+  const alias = $('bAlias').value.trim().toLowerCase();
+  const base_model = $('bBaseModel').value.trim();
+  const slash_command = ($('bSlash').value.trim() || '/'+alias).toLowerCase();
+  const notes = $('bNotes').value.trim();
+  const prompt_text = $('bPromptText').value;
+  if (!alias) { alert('Alias required.'); return; }
+  if (!base_model) { alert('Base model required.'); return; }
+
+  if (!BUILDER_STATE.isNew && BUILDER_STATE.originalAlias && BUILDER_STATE.originalAlias !== alias) {
+    try {
+      await api('/api/admin/model-clones', {
+        method:'POST', body: JSON.stringify({alias: BUILDER_STATE.originalAlias, action:'delete'})
+      });
+    } catch(e) {}
+  }
+
+  const payload = {alias, base_model, slash_command, notes, enabled: true};
+  if (prompt_text && prompt_text.trim()) payload.prompt_text = prompt_text;
+
+  try {
+    const data = await api('/api/admin/model-clones', {method:'POST', body: JSON.stringify(payload)});
+    if (!data.success) { alert('Save failed: '+(data.error||'unknown')); return; }
+    setStatus('Saved model: '+alias);
+    BUILDER_STATE = {isNew: false, originalAlias: alias};
+    await loadModelClones();
+    $('builderTitle').textContent = 'Edit: '+alias;
+    $('deleteModelBtn').style.display = 'inline-block';
+  } catch(e) { alert('Error: '+e.message); }
+}
+
+async function deleteModel() {
+  const alias = BUILDER_STATE.originalAlias;
+  if (!alias || !confirm('Delete "'+alias+'"?')) return;
+  try {
+    await api('/api/admin/model-clones', {method:'POST', body: JSON.stringify({alias, action:'delete'})});
+    setStatus('Deleted: '+alias);
+    newModel();
+    await loadModelClones();
+  } catch(e) { alert('Error: '+e.message); }
+}
+
+// ---- Dropdowns ----
+function populatePromptDropdowns() {
+  const nonCombined = ALL_PROMPTS.filter(p => !p.combined);
+  const opts = '<option value="">(custom / paste below)</option>'
+    + nonCombined.map(p => '<option value="'+esc(p.source)+'">'+esc(p.source)+' ('+(p.chars?(p.chars/1000).toFixed(1)+'k':'?')+')</option>').join('');
+  $('bPromptSource').innerHTML = opts;
+  $('testSource').innerHTML = ALL_PROMPTS.map(p =>
+    '<option value="'+p.source+'">'+p.source+' ('+(p.chars?(p.chars/1000).toFixed(1)+'k':'?')+')</option>'
+  ).join('');
+}
+
+function populateSeedDropdown() {
+  $('bSeedId').innerHTML = '<option value="">(default - r18)</option>'
+    + ALL_SEEDS.map(s => '<option value="'+esc(s.id)+'">'+esc(s.id)+' - '+esc(s.description)+' ('+s.message_count+' msgs)</option>').join('');
+}
+
+function populateTestModelDropdown() {
+  const defaults = [
+    ['deepseek-chat','DeepSeek'],['r1.0a','Opus'],['r1.0b','Sonnet'],
+    ['r1.0c','Haiku'],['r1.12e','Kimi'],['r1.12f','Grok']
+  ];
+  const cloneOpts = (MODEL_CLONES||[]).filter(c=>c&&c.alias).map(c=>[c.alias,'Clone: '+c.alias]);
+  const seen = new Set();
+  const merged = [];
+  for (const [v,l] of defaults.concat(cloneOpts)) {
+    if (seen.has(v)) continue; seen.add(v);
+    merged.push([v,l]);
+  }
+  $('testModel').innerHTML = merged.map(([v,l])=>'<option value="'+v+'">'+l+'</option>').join('');
+}
+
+// ---- Prompts Library ----
+function renderPromptGrid() {
+  const filter = ($('promptFilter').value||'').trim().toLowerCase();
+  const tf = $('promptTypeFilter').value;
+  let list = ALL_PROMPTS.filter(p => {
+    if (filter && !p.source.toLowerCase().includes(filter)) return false;
+    if (tf==='base' && (p.combined||p.source.startsWith('format_')||p.source.startsWith('custom_')||p.source.startsWith('clone_'))) return false;
+    if (tf==='format' && !p.source.startsWith('format_')) return false;
+    if (tf==='combined' && !p.combined) return false;
+    if (tf==='custom' && !p.source.startsWith('custom_')) return false;
+    if (tf==='clone' && !p.source.startsWith('clone_')) return false;
+    return true;
+  });
+  if (!list.length) { $('promptGrid').innerHTML='<div style="padding:20px;color:var(--muted)">No prompts match</div>'; return; }
+  $('promptGrid').innerHTML = list.map(p => {
+    const badge = p.combined?'<span class="badge badge-combined">combined</span>'
+      : p.source.startsWith('format_')?'<span class="badge badge-format">format</span>'
+      : p.source.startsWith('clone_')?'<span class="badge badge-seed">clone</span>'
+      : p.source.startsWith('custom_')?'<span class="badge badge-format">custom</span>'
+      : '<span class="badge badge-base">base</span>';
+    const size = p.chars>=1000?(p.chars/1000).toFixed(1)+'k':p.chars+'';
+    return '<div class="prompt-card" onclick="openEditor(\''+esc(p.source)+'\')">'
+      +'<div class="name">'+badge+' '+esc(p.source)+'</div>'
+      +'<div class="meta"><span>'+size+' chars</span></div>'
+      +'<div class="preview">'+esc(p.preview||'')+'</div></div>';
+  }).join('');
+}
 function filterPrompts() { renderPromptGrid(); }
 
-// ---- Full-page Editor ----
+function _normSource(input) {
+  let s = (input||'').trim().toLowerCase().replace(/\s+/g,'_').replace(/^custom[-_]?/,'');
+  s = s.replace(/[^a-z0-9._-]/g,'_').replace(/_+/g,'_').replace(/^_+|_+$/g,'');
+  return s ? 'custom_'+s : '';
+}
+
+async function createPrompt() {
+  const source = _normSource($('newPromptSource').value);
+  if (!source) { alert('Enter a name like: custom_policy_v2'); return; }
+  if (ALL_PROMPTS.some(p=>p.source===source)) { openEditor(source); return; }
+  try {
+    const res = await api('/api/admin/prompt', {method:'POST', body:JSON.stringify({source, text:'# '+source+'\n\n'})});
+    if (!res.success) { alert('Failed: '+(res.error||'')); return; }
+    setStatus('Created '+source);
+    await loadAllPrompts();
+    openEditor(source);
+  } catch(e) { alert(e.message); }
+}
+
+// ---- Prompt Editor ----
 async function openEditor(source) {
-  const modal = $('editorModal');
-  const textarea = $('editorText');
-  modal.classList.add('open');
-  textarea.value = 'Loading...'; textarea.readOnly = true;
+  $('editorModal').classList.add('open');
+  $('editorText').value = 'Loading...';
+  $('editorText').readOnly = true;
   $('editorEditMode').checked = false;
   $('editorSaveBtn').disabled = true;
   $('editorTitle').textContent = source;
-  $('editorMeta').textContent = 'Loading...';
-  EDITOR_STATE = {source, sha256:null, originalText:'', path:null, truncated:false, combined:false};
+  EDITOR_STATE = {source, sha256:null, originalText:'', combined:false, truncated:false};
   try {
-    const data = await api('/api/admin/prompt?source=' + encodeURIComponent(source) + '&max_chars=500000');
-    textarea.value = data.text || '';
-    EDITOR_STATE.sha256 = data.sha256 || null;
-    EDITOR_STATE.originalText = data.text || '';
-    EDITOR_STATE.path = data.path || null;
+    const data = await api('/api/admin/prompt?source='+encodeURIComponent(source)+'&max_chars=500000');
+    $('editorText').value = data.text||'';
+    EDITOR_STATE.sha256 = data.sha256;
+    EDITOR_STATE.originalText = data.text||'';
+    EDITOR_STATE.combined = !!(data.note&&data.note.includes('combined'));
     EDITOR_STATE.truncated = !!data.truncated;
-    EDITOR_STATE.combined = !!(data.note && data.note.includes('combined'));
-    const metaParts = [data.path||'', data.exists===false?'FILE MISSING':'', data.truncated?'TRUNCATED':'', data.note||''].filter(Boolean);
-    $('editorMeta').textContent = metaParts.join(' \u00b7 ');
-    $('editorCharCount').textContent = (data.chars||0).toLocaleString() + ' chars';
-    $('editorSha').textContent = 'sha256: ' + (data.sha256||'\u2014');
-    if (EDITOR_STATE.combined) {
-      $('editorEditMode').disabled = true;
-      $('editorMeta').textContent += ' (read-only: combined prompt)';
-    } else {
-      $('editorEditMode').disabled = false;
-    }
+    $('editorMeta').textContent = [data.path||'',data.note||''].filter(Boolean).join(' | ');
+    $('editorCharCount').textContent = (data.chars||0).toLocaleString()+' chars';
+    if (EDITOR_STATE.combined) $('editorEditMode').disabled = true;
+    else $('editorEditMode').disabled = false;
     updateEditorDirty();
-  } catch(e) { textarea.value = 'Error: ' + e.message; }
+  } catch(e) { $('editorText').value = 'Error: '+e.message; }
 }
 
 function closeEditor() {
-  const dirty = $('editorText').value !== EDITOR_STATE.originalText;
-  if (dirty && $('editorEditMode').checked) {
-    if (!confirm('Unsaved changes. Close anyway?')) return;
+  if ($('editorEditMode').checked && $('editorText').value !== EDITOR_STATE.originalText) {
+    if (!confirm('Unsaved changes. Close?')) return;
   }
   $('editorModal').classList.remove('open');
 }
 
 function toggleEditMode() {
-  const textarea = $('editorText');
-  const checked = $('editorEditMode').checked;
-  if (EDITOR_STATE.combined || EDITOR_STATE.truncated) {
-    textarea.readOnly = true;
-    $('editorEditMode').checked = false;
-    if (EDITOR_STATE.truncated) alert('Cannot edit truncated prompt.');
-    return;
-  }
-  textarea.readOnly = !checked;
+  if (EDITOR_STATE.combined||EDITOR_STATE.truncated) { $('editorEditMode').checked=false; return; }
+  $('editorText').readOnly = !$('editorEditMode').checked;
   updateEditorDirty();
 }
 
 function updateEditorDirty() {
-  const textarea = $('editorText');
-  const dirty = textarea.value !== EDITOR_STATE.originalText;
-  const editing = $('editorEditMode').checked;
-  $('editorDirty').textContent = dirty ? '\u25cf unsaved changes' : '';
-  $('editorSaveBtn').disabled = !(editing && dirty && !EDITOR_STATE.combined && !EDITOR_STATE.truncated);
-  $('editorCharCount').textContent = textarea.value.length.toLocaleString() + ' chars';
+  const dirty = $('editorText').value !== EDITOR_STATE.originalText;
+  $('editorDirty').textContent = dirty?'unsaved changes':'';
+  $('editorSaveBtn').disabled = !($('editorEditMode').checked && dirty);
+  $('editorCharCount').textContent = $('editorText').value.length.toLocaleString()+' chars';
 }
 $('editorText').addEventListener('input', updateEditorDirty);
 
 async function saveFromEditor() {
-  const source = EDITOR_STATE.source;
-  const text = $('editorText').value;
-  if (!confirm('Overwrite "' + source + '"? Updates the live prompt file immediately.')) return;
+  if (!confirm('Save "'+EDITOR_STATE.source+'"?')) return;
   try {
-    const payload = {source, text};
+    const payload = {source:EDITOR_STATE.source, text:$('editorText').value};
     if (EDITOR_STATE.sha256) payload.expected_sha256 = EDITOR_STATE.sha256;
-    const data = await api('/api/admin/prompt', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
+    const data = await api('/api/admin/prompt', {method:'POST', body:JSON.stringify(payload)});
     if (data.success) {
       EDITOR_STATE.sha256 = data.sha256;
-      EDITOR_STATE.originalText = text;
-      $('editorSha').textContent = 'sha256: ' + data.sha256;
+      EDITOR_STATE.originalText = $('editorText').value;
       $('editorEditMode').checked = false;
       $('editorText').readOnly = true;
       updateEditorDirty();
-      setStatus('Saved ' + source + ' (' + data.chars + ' chars)');
+      setStatus('Saved '+EDITOR_STATE.source);
       loadAllPrompts();
-    } else { alert('Save failed: ' + (data.error||'unknown')); }
-  } catch(e) { alert('Save error: ' + e.message); }
+    } else alert('Failed: '+(data.error||''));
+  } catch(e) { alert(e.message); }
 }
 
-// Keyboard shortcuts
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    if ($('versionsModal').classList.contains('open')) closeVersions();
-    else if ($('editorModal').classList.contains('open')) closeEditor();
-  }
-  if ((e.ctrlKey||e.metaKey) && e.key === 's') {
-    if ($('editorModal').classList.contains('open')) {
-      e.preventDefault();
-      if (!$('editorSaveBtn').disabled) saveFromEditor();
-    }
-  }
-});
-
-// ---- Versions ----
-function _formatTs(ts) {
-  if (!ts) return '?';
-  const n = Number(ts);
-  if (!Number.isNaN(n) && n > 100000) return new Date(n * 1000).toLocaleString();
-  const d = new Date(ts);
-  return Number.isNaN(d.getTime()) ? String(ts) : d.toLocaleString();
-}
-
-async function showVersions() {
-  if (!EDITOR_STATE.source) return;
-  $('versionsModal').classList.add('open');
-  $('versionsTitle').textContent = 'Versions: ' + EDITOR_STATE.source;
-  $('versionsList').innerHTML = '<div style="color:var(--muted)">Loading...</div>';
-  try {
-    const data = await api('/api/admin/prompt/versions?source=' + encodeURIComponent(EDITOR_STATE.source) + '&limit=80');
-    const versions = data.versions || [];
-    if (!versions.length) {
-      $('versionsList').innerHTML = '<div style="color:var(--muted)">No version history</div>';
-      return;
-    }
-    $('versionsList').innerHTML = versions.map(v => {
-      const date = _formatTs(v.created_at);
-      const active = v.sha256 === EDITOR_STATE.sha256;
-      const border = active ? 'var(--ok)' : 'var(--border)';
-      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--panel);border:1px solid ${border};border-radius:8px;margin-bottom:6px">
-        <div style="flex:1">
-          <div style="font-size:12px;font-family:var(--mono)">${v.sha256.slice(0,16)}...</div>
-          <div style="font-size:11px;color:var(--muted)">${date} · ${v.chars||'?'} chars · ${v.uses||0} uses</div>
-        </div>
-        ${active ? '<span class="pill pill-ok">current</span>' : ''}
-        <button style="font-size:11px" onclick="loadVersion('${v.sha256}')">Load</button>
-        <button style="font-size:11px" onclick="compareVersion('${v.sha256}')">Compare</button>
-      </div>`;
-    }).join('');
-  } catch(e) {
-    $('versionsList').innerHTML = `<div style="color:var(--bad)">Error: ${e.message}</div>`;
-  }
-}
-
-function _simpleLineDiff(a, b, labelA='current', labelB='selected') {
-  const aa = String(a || '').split('\n');
-  const bb = String(b || '').split('\n');
-  const max = Math.max(aa.length, bb.length);
-  const out = [`--- ${labelA}`, `+++ ${labelB}`];
-  for (let i = 0; i < max; i++) {
-    const av = aa[i];
-    const bv = bb[i];
-    if (av === bv) out.push(' ' + (av ?? ''));
-    else {
-      if (av !== undefined) out.push('-' + av);
-      if (bv !== undefined) out.push('+' + bv);
-    }
-  }
-  return out.join('\n');
-}
-
-async function compareVersion(sha256) {
-  try {
-    const current = await api('/api/admin/prompt?source=' + encodeURIComponent(EDITOR_STATE.source) + '&max_chars=500000');
-    const hist = await api('/api/admin/prompt/history?sha256=' + encodeURIComponent(sha256) + '&max_chars=500000');
-    let diffText = '';
-    if (current.sha256 && sha256 && current.sha256 !== sha256) {
-      try {
-        const d = await api('/api/admin/prompt/diff?a=' + encodeURIComponent(current.sha256) + '&b=' + encodeURIComponent(sha256) + '&max_chars=500000');
-        diffText = d.diff || '';
-      } catch(_) {}
-    }
-    if (!diffText) {
-      diffText = _simpleLineDiff(current.text || '', hist.text || '', `${EDITOR_STATE.source} (current)`, `${sha256.slice(0,12)} (version)`);
-    }
-    $('compareTitle').textContent = `Compare: ${EDITOR_STATE.source}`;
-    $('compareMeta').textContent = `current ${String(current.sha256 || '').slice(0,12)} vs ${sha256.slice(0,12)}`;
-    $('compareDiff').textContent = diffText || '(no differences)';
-    $('compareModal').classList.add('open');
-  } catch(e) {
-    alert('Compare failed: ' + e.message);
-  }
-}
-
-async function loadVersion(sha256) {
-  try {
-    const data = await api('/api/admin/prompt/history?sha256=' + encodeURIComponent(sha256) + '&max_chars=500000');
-    $('editorText').value = data.text || '';
-    $('editorSha').textContent = 'sha256: ' + sha256;
-    updateEditorDirty();
-    closeVersions();
-  } catch(e) { alert('Error loading version: ' + e.message); }
-}
-function closeVersions() { $('versionsModal').classList.remove('open'); }
-function closeCompare() { $('compareModal').classList.remove('open'); }
-
-// ---- Assignments ----
-async function loadAssignments() {
-  try {
-    const data = await api('/api/admin/prompt/assignments');
-    ASSIGNMENTS = data.assignments || [];
-    renderAssignments();
-  } catch(e) {
-    $('assignmentsList').innerHTML = '<div style="color:var(--muted);padding:12px">No assignments configured yet. Click + New Assignment to create routing rules.</div>';
-    ASSIGNMENTS = [];
-  }
-}
-
-function renderAssignments() {
-  const container = $('assignmentsList');
-  if (!ASSIGNMENTS.length) {
-    container.innerHTML = '<div style="color:var(--muted);padding:12px">No assignments. Click + New Assignment.</div>';
-    return;
-  }
-  const sources = ALL_PROMPTS.filter(p => !p.combined).map(p => p.source);
-  container.innerHTML = ASSIGNMENTS.map((a, i) => {
-    const sourceOpts = sources.map(s =>
-      `<option value="${s}"${s===a.prompt_source?' selected':''}>${s}</option>`
-    ).join('');
-    return `<div class="assignment-row">
-      <span class="label">Context:</span>
-      <select onchange="ASSIGNMENTS[${i}].context_type=this.value">
-        <option value="default"${a.context_type==='default'?' selected':''}>Default</option>
-        <option value="model"${a.context_type==='model'?' selected':''}>Model</option>
-        <option value="user"${a.context_type==='user'?' selected':''}>User ID</option>
-        <option value="tier"${a.context_type==='tier'?' selected':''}>Tier</option>
-      </select>
-      <input type="text" placeholder="value (* = all)" value="${esc(a.context_value||'*')}"
-        onchange="ASSIGNMENTS[${i}].context_value=this.value" style="width:120px">
-      <span class="label">\u2192 Prompt:</span>
-      <select onchange="ASSIGNMENTS[${i}].prompt_source=this.value">${sourceOpts}</select>
-      <span class="label">Priority:</span>
-      <input type="number" value="${a.priority||0}" style="width:50px"
-        onchange="ASSIGNMENTS[${i}].priority=parseInt(this.value)||0">
-      <label style="font-size:11px;display:flex;align-items:center;gap:4px">
-        <input type="checkbox"${a.active!==false?' checked':''}
-          onchange="ASSIGNMENTS[${i}].active=this.checked"> Active
-      </label>
-      <button class="danger" onclick="removeAssignment(${i})" style="padding:4px 8px;font-size:11px">\u2715</button>
-    </div>`;
+// ---- Seeds ----
+function renderSeedGrid() {
+  if (!ALL_SEEDS.length) { $('seedGrid').innerHTML='<div style="padding:20px;color:var(--muted)">No seeds.</div>'; return; }
+  $('seedGrid').innerHTML = ALL_SEEDS.map(s => {
+    const status = s.file_exists?'<span style="color:var(--ok)">OK</span>':'<span style="color:var(--bad)">MISSING</span>';
+    const size = s.file_size>=1000?(s.file_size/1000).toFixed(1)+'k':s.file_size+'';
+    return '<div class="seed-card" onclick="openSeedModal(\''+esc(s.id)+'\')">'
+      +'<div class="name"><span class="badge badge-seed">seed</span> '+esc(s.id)+'</div>'
+      +'<div class="desc">'+esc(s.description)+'</div>'
+      +'<div class="meta"><span>'+s.message_count+' msgs</span><span>'+size+' bytes</span>'
+      +'<span>'+(s.has_reasoning?'reasoning':'no-think')+'</span><span>'+status+'</span></div></div>';
   }).join('');
 }
 
-function addAssignment() {
-  ASSIGNMENTS.push({context_type:'default', context_value:'*', prompt_source:'delta_public', priority:0, active:true});
-  renderAssignments();
-}
-function removeAssignment(idx) { ASSIGNMENTS.splice(idx,1); renderAssignments(); }
-
-async function saveAssignments() {
+async function openSeedModal(seedId) {
+  $('seedModal').classList.add('open');
+  $('seedModalTitle').textContent = 'Seed: '+seedId;
+  $('seedModalText').value = 'Loading...';
+  $('seedModalText').readOnly = true;
+  $('seedEditMode').checked = false;
+  $('seedSaveBtn').disabled = true;
+  SEED_MODAL_STATE = {id:seedId, originalText:''};
   try {
-    const data = await api('/api/admin/prompt/assignments', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({assignments: ASSIGNMENTS})
-    });
-    if (data.success) { setStatus('Assignments saved'); loadAssignments(); }
-    else alert('Save failed: ' + (data.error||'unknown'));
-  } catch(e) { alert('Error: ' + e.message); }
+    const data = await api('/api/admin/seed?id='+encodeURIComponent(seedId));
+    if (!data.exists) { $('seedModalText').value='Not found.'; return; }
+    const raw = data.raw_content || JSON.stringify(data.messages||[],null,2);
+    $('seedModalText').value = raw;
+    SEED_MODAL_STATE.originalText = raw;
+    $('seedModalMeta').textContent = data.message_count+' messages | '+(data.file_size||0)+' bytes';
+    $('seedModalInfo').textContent = data.message_count+' msgs | '+data.seed_file;
+    updateSeedDirty();
+  } catch(e) { $('seedModalText').value = 'Error: '+e.message; }
 }
 
-// ---- Model Clones ----
-async function loadModelClones() {
+function closeSeedModal() {
+  if ($('seedEditMode').checked && $('seedModalText').value !== SEED_MODAL_STATE.originalText) {
+    if (!confirm('Unsaved. Close?')) return;
+  }
+  $('seedModal').classList.remove('open');
+}
+
+function toggleSeedEditMode() {
+  $('seedModalText').readOnly = !$('seedEditMode').checked;
+  updateSeedDirty();
+}
+
+function updateSeedDirty() {
+  const dirty = $('seedModalText').value !== SEED_MODAL_STATE.originalText;
+  $('seedModalDirty').textContent = dirty?'unsaved':'';
+  $('seedSaveBtn').disabled = !($('seedEditMode').checked && dirty);
+}
+$('seedModalText').addEventListener('input', updateSeedDirty);
+
+async function saveSeedFromModal() {
+  if (!confirm('Save seed "'+SEED_MODAL_STATE.id+'"?')) return;
+  const raw = $('seedModalText').value;
+  try { JSON.parse(raw); } catch(e) { alert('Invalid JSON: '+e.message); return; }
   try {
-    const data = await api('/api/admin/model-clones');
-    MODEL_CLONES = data.clones || [];
-    renderModelClones();
-    populateTestModelDropdown();
-  } catch(e) {
-    $('cloneList').innerHTML = `<div style="color:var(--bad)">Error: ${e.message}</div>`;
-  }
+    const data = await api('/api/admin/seed', {method:'POST', body:JSON.stringify({id:SEED_MODAL_STATE.id, raw_content:raw})});
+    if (data.success) {
+      SEED_MODAL_STATE.originalText = raw;
+      $('seedEditMode').checked = false;
+      $('seedModalText').readOnly = true;
+      updateSeedDirty();
+      setStatus('Saved seed: '+SEED_MODAL_STATE.id);
+      loadAllSeeds();
+    } else alert('Failed: '+(data.error||''));
+  } catch(e) { alert(e.message); }
 }
 
-function renderModelClones() {
-  if (!MODEL_CLONES.length) {
-    $('cloneList').innerHTML = '<div style="color:var(--muted);padding:8px 0">No model clones configured.</div>';
-    return;
-  }
-  $('cloneList').innerHTML = MODEL_CLONES.map(c => {
-    const enabled = c.enabled !== false;
-    const baseInput = c.base_model_input || c.base_model || '';
-    const resolvedBase = c.resolved_base_model || c.base_model || '';
-    const promptInfo = c.prompt_exists ? `${c.prompt_chars || 0} chars` : 'no override prompt';
-    const resolvedNote = (baseInput && resolvedBase && baseInput !== resolvedBase)
-      ? `resolves: ${resolvedBase}`
-      : '';
-    return `<div class="assignment-row">
-      <span class="badge ${enabled ? 'badge-combined' : 'badge-format'}">${enabled ? 'active' : 'disabled'}</span>
-      <span style="font-size:12px;font-family:var(--mono)">${esc(c.alias || '')}</span>
-      <span style="font-size:11px;color:var(--muted)">→ ${esc(baseInput)}</span>
-      <span style="font-size:11px;color:var(--muted)">${esc(resolvedNote)}</span>
-      <span style="font-size:11px;color:var(--muted)">${esc(c.slash_command || '')}</span>
-      <span style="font-size:11px;color:var(--muted)">${esc(promptInfo)}</span>
-      <button style="padding:4px 8px;font-size:11px" onclick="prefillClone('${esc(c.alias || '')}','${esc(baseInput)}','${esc(c.slash_command || '')}','${esc(c.prompt_source || '')}')">Edit</button>
-      <button class="danger" style="padding:4px 8px;font-size:11px" onclick="deleteClone('${esc(c.alias || '')}')">Delete</button>
-    </div>`;
-  }).join('');
-}
+function openNewSeedModal() { $('newSeedModal').classList.add('open'); }
+function closeNewSeedModal() { $('newSeedModal').classList.remove('open'); }
 
-function prefillClone(alias, baseModel, slash, promptSource) {
-  $('cloneAlias').value = alias || '';
-  $('cloneBaseModel').value = baseModel || '';
-  $('cloneSlash').value = slash || '';
-  $('clonePromptSource').value = promptSource || '';
-}
-
-async function saveClone() {
-  const alias = ($('cloneAlias').value || '').trim().toLowerCase();
-  const base_model = ($('cloneBaseModel').value || '').trim().toLowerCase();
-  const slash_command = ($('cloneSlash').value || '').trim().toLowerCase();
-  const prompt_source = ($('clonePromptSource').value || '').trim().toLowerCase();
-  if (!alias || !base_model) {
-    alert('Alias and base model are required.');
-    return;
+async function createNewSeed() {
+  const id = ($('newSeedId').value||'').trim().toLowerCase();
+  if (!id || !/^[a-z0-9_-]{1,64}$/.test(id)) { alert('Invalid seed ID.'); return; }
+  let messages = null;
+  const raw = $('newSeedContent').value.trim();
+  if (raw) {
+    try { messages = JSON.parse(raw); if (!Array.isArray(messages)) throw new Error('Must be array'); }
+    catch(e) { alert('Invalid JSON: '+e.message); return; }
+  } else {
+    messages = [{"role":"system","content":"You are Rhodes."},{"role":"user","content":"Hello"},{"role":"assistant","content":"Greetings."}];
   }
   try {
-    const payload = {alias, base_model};
-    if (slash_command) payload.slash_command = slash_command;
-    if (prompt_source) payload.prompt_source = prompt_source;
-    const data = await api('/api/admin/model-clones', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload),
-    });
-    if (!data.success) {
-      alert('Save failed: ' + (data.error || 'unknown'));
-      return;
-    }
-    setStatus('Saved clone ' + alias);
-    loadAllPrompts();
-    loadModelClones();
-  } catch(e) {
-    alert('Save failed: ' + e.message);
-  }
-}
-
-async function deleteClone(alias) {
-  if (!alias) return;
-  if (!confirm('Delete clone "' + alias + '"?')) return;
-  try {
-    const data = await api('/api/admin/model-clones', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({action:'delete', alias}),
-    });
-    if (!data.success) {
-      alert('Delete failed: ' + (data.error || 'unknown'));
-      return;
-    }
-    setStatus('Deleted clone ' + alias);
-    loadAllPrompts();
-    loadModelClones();
-  } catch(e) {
-    alert('Delete failed: ' + e.message);
-  }
-}
-
-function populateNewPromptTemplateDropdown() {
-  const opts = ['<option value="">(blank template)</option>']
-    .concat(ALL_PROMPTS.filter(p => !p.combined).map(p => `<option value="${p.source}">${p.source}</option>`));
-  $('newPromptTemplate').innerHTML = opts.join('');
-}
-
-function _normalizePromptSource(input) {
-  let s = (input || '').trim().toLowerCase().replace(/\s+/g, '_');
-  s = s.replace(/^custom[-_]?/, '');
-  s = s.replace(/[^a-z0-9._-]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
-  if (!s) return '';
-  return 'custom_' + s;
-}
-
-async function createPrompt() {
-  const source = _normalizePromptSource(($('newPromptSource').value || ''));
-  if (!source) {
-    alert('Enter a prompt name. Example: custom_policy_v2');
-    return;
-  }
-  if (!/^custom_[a-z0-9._-]{1,64}$/.test(source)) {
-    alert('Prompt source must match custom_[a-z0-9._-]{1,64}.');
-    return;
-  }
-  const exists = ALL_PROMPTS.some(p => p.source === source);
-  if (exists) {
-    if (!confirm('Prompt already exists. Open it?')) return;
-    openEditor(source);
-    return;
-  }
-
-  let text = `# ${source}
-
-`;
-  const template = ($('newPromptTemplate').value || '').trim();
-  if (template) {
-    try {
-      const td = await api('/api/admin/prompt?source=' + encodeURIComponent(template) + '&max_chars=500000');
-      text = td.text || text;
-    } catch (e) {
-      alert('Template load failed: ' + e.message);
-      return;
-    }
-  }
-
-  try {
-    const res = await api('/api/admin/prompt', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({source, text}),
-    });
-    if (!res.success) {
-      alert('Create failed: ' + (res.error || 'unknown'));
-      return;
-    }
-    $('newPromptSource').value = source;
-    setStatus('Created ' + source);
-    await loadAllPrompts();
-    openEditor(source);
-  } catch(e) {
-    alert('Create failed: ' + e.message);
-  }
-}
-
-function toggleMultiPrompt(source) {
-  if (!source) return;
-  if (MULTI_PICK.has(source)) MULTI_PICK.delete(source);
-  else {
-    if (MULTI_PICK.size >= 4) {
-      alert('Multi-view supports up to 4 prompts at once.');
-      return;
-    }
-    MULTI_PICK.add(source);
-  }
-  renderPromptGrid();
-  populateMultiPromptSelect();
-}
-
-function populateMultiPromptSelect() {
-  const sel = $('multiPromptSelect');
-  if (!sel) return;
-  const opts = ALL_PROMPTS.map(p => {
-    const selected = MULTI_PICK.has(p.source) ? ' selected' : '';
-    return `<option value="${p.source}"${selected}>${p.source}</option>`;
-  }).join('');
-  sel.innerHTML = opts;
-}
-
-function openMultiView() {
-  $('multiViewModal').classList.add('open');
-  populateMultiPromptSelect();
-  if (MULTI_PICK.size) loadMultiViewSelection();
-}
-
-function closeMultiView() {
-  $('multiViewModal').classList.remove('open');
-}
-
-async function loadMultiViewSelection() {
-  const sel = $('multiPromptSelect');
-  if (!sel) return;
-  const picks = Array.from(sel.selectedOptions || []).map(o => o.value).slice(0, 4);
-  MULTI_PICK = new Set(picks);
-  renderPromptGrid();
-  if (!picks.length) {
-    $('multiViewGrid').innerHTML = '<div style="color:var(--muted)">No prompts selected.</div>';
-    return;
-  }
-  $('multiViewGrid').innerHTML = '<div style="color:var(--muted)">Loading selected prompts...</div>';
-  try {
-    const items = await Promise.all(picks.map(async source => {
-      const data = await api('/api/admin/prompt?source=' + encodeURIComponent(source) + '&max_chars=500000');
-      return {source, data};
-    }));
-    $('multiViewGrid').innerHTML = items.map(({source, data}) => {
-      const sha = (data.sha256 || '').slice(0, 12);
-      const chars = data.chars || 0;
-      return `<div class="multi-panel">
-        <div class="multi-panel-header">
-          <span>${esc(source)}</span>
-          <span>${chars} chars · ${sha}</span>
-        </div>
-        <textarea readonly>${esc(data.text || '')}</textarea>
-      </div>`;
-    }).join('');
-  } catch(e) {
-    $('multiViewGrid').innerHTML = `<div style="color:var(--bad)">Load failed: ${e.message}</div>`;
-  }
+    const data = await api('/api/admin/seed', {method:'POST', body:JSON.stringify({
+      id, description: $('newSeedDesc').value.trim()||'Custom seed', messages,
+      inject_rhodes_os: $('newSeedRhodesOS').checked,
+      inject_briefing_over: $('newSeedBriefing').checked,
+      has_reasoning: $('newSeedReasoning').checked,
+    })});
+    if (data.success) { setStatus('Created seed: '+id); closeNewSeedModal(); loadAllSeeds(); }
+    else alert('Failed: '+(data.error||''));
+  } catch(e) { alert(e.message); }
 }
 
 // ---- Test ----
-function populateTestSourceDropdown() {
-  $('testSource').innerHTML = ALL_PROMPTS.map(p =>
-    `<option value="${p.source}">${p.source} (${p.chars?(p.chars/1000).toFixed(1)+'k':'?'})</option>`
-  ).join('');
-  syncTestModelToSource();
-}
-
-function syncTestModelToSource() {
-  const sourceSel = $('testSource');
-  const modelSel = $('testModel');
-  if (!sourceSel || !modelSel) return;
-  const source = (sourceSel.value || "").trim().toLowerCase();
-  if (!source.startsWith("clone_")) return;
-  const alias = source.slice(6);
-  const hasAlias = Array.from(modelSel.options || []).some(opt => opt.value === alias);
-  if (!hasAlias) return;
-  if (!modelSel.value || modelSel.value === "deepseek-chat") modelSel.value = alias;
-}
-
-function populateClonePromptSourceDropdown() {
-  const opts = ['<option value="">(keep base model prompt)</option>']
-    .concat(ALL_PROMPTS.filter(p => !p.combined).map(p =>
-      `<option value="${p.source}">${p.source}</option>`
-    ));
-  $('clonePromptSource').innerHTML = opts.join('');
-}
-
-function populateTestModelDropdown() {
-  const sel = $('testModel');
-  if (!sel) return;
-  const defaults = [
-    ['deepseek-chat', 'DeepSeek (chat)'],
-    ['r1.0a', 'Claude Opus (r1.0a)'],
-    ['r1.0b', 'Claude Sonnet (r1.0b)'],
-    ['r1.0c', 'Claude Haiku (r1.0c)'],
-    ['r1.12e', 'Kimi (r1.12e)'],
-    ['r1.12f', 'Grok (r1.12f)'],
-  ];
-  const cloneOpts = (MODEL_CLONES || [])
-    .filter(c => c && c.alias)
-    .map(c => [String(c.alias), `Clone ${String(c.alias)} (${String(c.base_model_input || c.base_model || '')})`]);
-  const merged = [];
-  const seen = new Set();
-  for (const [v, label] of defaults.concat(cloneOpts)) {
-    if (seen.has(v)) continue;
-    seen.add(v);
-    merged.push([v, label]);
-  }
-  const current = sel.value || 'deepseek-chat';
-  sel.innerHTML = merged.map(([v,label]) => `<option value="${v}">${label}</option>`).join('');
-  if (seen.has(current)) sel.value = current;
-  syncTestModelToSource();
-}
-
 async function runPromptTest() {
   const source = $('testSource').value;
-  const model = ($('testModel').value || 'deepseek-chat').trim();
+  const model = ($('testModel').value||'deepseek-chat').trim();
   const message = $('testMessage').value.trim();
-  if (!source || !message) return;
-  const btn = $('testRunBtn');
-  btn.disabled = true; btn.textContent = 'Testing...';
-  $('testStatus').textContent = 'Sending test with prompt: ' + source + ' · model: ' + model;
+  if (!source||!message) return;
+  $('testRunBtn').disabled = true; $('testRunBtn').textContent = 'Testing...';
+  $('testStatus').textContent = 'Sending: '+source+' / '+model;
   $('testOutput').textContent = '(waiting...)';
   try {
-    const promptData = await api('/api/admin/prompt?source=' + encodeURIComponent(source) + '&max_chars=500000');
-    $('testPreview').textContent = promptData.text || '(empty)';
-    const data = await api('/api/admin/prompt/test', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({source, message, model})
-    });
-    $('testOutput').textContent = data.response || data.error || JSON.stringify(data,null,2);
+    const pd = await api('/api/admin/prompt?source='+encodeURIComponent(source)+'&max_chars=500000');
+    $('testPreview').textContent = pd.text||'(empty)';
+    const data = await api('/api/admin/prompt/test', {method:'POST', body:JSON.stringify({source,message,model})});
+    $('testOutput').textContent = data.response||data.error||JSON.stringify(data,null,2);
     $('testStatus').textContent = data.success
-      ? '\u2713 Response (' + (data.provider||'?') + ' / ' + (data.model||'?') + ', ' + (data.tokens||'?') + ' tokens, ' + (data.duration_ms||'?') + 'ms)'
-      : '\u2717 Failed: ' + (data.error||'unknown');
+      ? 'OK: '+(data.provider||'?')+' / '+(data.model||'?')+' '+((data.tokens||'?')+' tok, '+(data.duration_ms||'?')+'ms')
+      : 'Failed: '+(data.error||'');
   } catch(e) {
-    $('testOutput').textContent = 'Error: ' + e.message;
-    $('testStatus').textContent = '\u2717 Error';
-  } finally { btn.disabled = false; btn.textContent = 'Send Test'; }
+    $('testOutput').textContent = 'Error: '+e.message;
+    $('testStatus').textContent = 'Error';
+  } finally { $('testRunBtn').disabled=false; $('testRunBtn').textContent='Send Test'; }
 }
+
+// ---- Keyboard ----
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') {
+    if ($('promptPopover').classList.contains('open')) closePromptPopover();
+    else if ($('seedPopover').classList.contains('open')) closeSeedPopover();
+    else if ($('newSeedModal').classList.contains('open')) closeNewSeedModal();
+    else if ($('seedModal').classList.contains('open')) closeSeedModal();
+    else if ($('editorModal').classList.contains('open')) closeEditor();
+  }
+  if ((e.ctrlKey||e.metaKey) && e.key==='s') {
+    e.preventDefault();
+    if ($('editorModal').classList.contains('open') && !$('editorSaveBtn').disabled) saveFromEditor();
+    else if ($('seedModal').classList.contains('open') && !$('seedSaveBtn').disabled) saveSeedFromModal();
+  }
+});
 
 function setStatus(msg) {
   $('statusLeft').textContent = msg;
-  setTimeout(() => { $('statusLeft').textContent = 'Connected'; }, 5000);
+  setTimeout(()=>{ $('statusLeft').textContent='Ready'; }, 5000);
 }
 
+// ---- Init ----
 async function init() {
-  await loadAllPrompts();
-  loadAssignments().catch(() => {});
-  loadModelClones().catch(() => {});
-  // Handle hash-based tab navigation
-  const hash = window.location.hash.replace('#', '');
-  if (hash && document.querySelector('.tab[data-tab="' + hash + '"]')) {
-    switchTab(hash);
+  try {
+    await Promise.all([loadAllPrompts(), loadAllSeeds(), loadModelClones()]);
+    setStatus('Ready');
+  } catch(e) {
+    setStatus('Load error: '+e.message);
   }
+  const hash = window.location.hash.replace('#','');
+  if (hash && document.querySelector('.tab[data-tab="'+hash+'"]')) switchTab(hash);
 }
 window.addEventListener('hashchange', () => {
-  const hash = window.location.hash.replace('#', '');
+  const hash = window.location.hash.replace('#','');
   if (hash) switchTab(hash);
 });
-
-if (TOKEN) {
-  $('loginView').style.display = 'none';
-  $('mainApp').style.display = 'block';
-  init();
-}
-
+init();
 </script>
 </body>
 </html>
