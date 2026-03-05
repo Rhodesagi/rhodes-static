@@ -261,11 +261,9 @@ const VoiceChat = {
 
                         // Show transcript in input field always
                         document.getElementById('input').value = fullTranscript;
-                        // Only show on takeover screen during FIRST listening (before face debuts)
-                        if (!this.faceDebuted) {
-                            const transcriptEl = document.getElementById('takeover-transcript');
-                            if (transcriptEl) transcriptEl.textContent = fullTranscript;
-                        }
+                        // Keep takeover transcript empty to avoid duplicating chat text.
+                        const transcriptEl = document.getElementById('takeover-transcript');
+                        if (transcriptEl) transcriptEl.textContent = '';
 
                         // Clear any pending submit timer
                         if (this.submitTimeout) clearTimeout(this.submitTimeout);

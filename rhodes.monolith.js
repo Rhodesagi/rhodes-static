@@ -2082,6 +2082,21 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
             const div = document.createElement('div');
             div.className = 'msg ' + role + ' streaming';
             div.innerHTML = '<span class="streaming-cursor">▌</span>';
+
+            // Show Q&A share control as soon as streaming starts.
+            if (role === 'ai' && lastUserMessage) {
+                const qaId = 'qa_' + Math.random().toString(36).substr(2, 9);
+                div.dataset.qaId = qaId;
+                div.dataset.question = lastUserMessage;
+                div.dataset.answer = '';
+                const shareBtnEl = document.createElement('button');
+                shareBtnEl.className = 'qa-share-btn';
+                shareBtnEl.title = 'Share this Q&A';
+                shareBtnEl.textContent = 'SHARE';
+                shareBtnEl.onclick = () => showShareOptions(qaId);
+                div.appendChild(shareBtnEl);
+            }
+
             chat.appendChild(div);
             chat.scrollTop = chat.scrollHeight;
             updateIntroCentering();
@@ -2107,6 +2122,18 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
                 .replace(/(?<![*])\*([^*]+?)\*(?![*])/g, '<em>$1</em>')
                 .replace(/\n/g, '<br>')));
             el.innerHTML = formatted + '<span class="streaming-cursor">▌</span>';
+
+            if (el.dataset && el.dataset.qaId) {
+                el.dataset.answer = cleanText;
+                const qaId = el.dataset.qaId;
+                const shareBtnEl = document.createElement('button');
+                shareBtnEl.className = 'qa-share-btn';
+                shareBtnEl.title = 'Share this Q&A';
+                shareBtnEl.textContent = 'SHARE';
+                shareBtnEl.onclick = () => showShareOptions(qaId);
+                el.appendChild(shareBtnEl);
+            }
+
             chat.scrollTop = chat.scrollHeight;
         }
 
@@ -2870,11 +2897,31 @@ function showDownloads() {
                     hideLoading();
                     // Finalize streaming: keep content in place, append wall-to-wall timer
                     if (window.streamingMsgEl) {
+                        const streamedText = window.streamingContent || '';
+                        const streamedCleanText = stripActionBlocks(streamedText);
+
                         // Render final markdown
                         if (window.streamingContent && window.marked) {
                             try { window.streamingMsgEl.innerHTML = window.marked.parse(window.streamingContent); } catch(e) {}
                         }
                         window.streamingMsgEl.classList.remove('streaming');
+
+                        // Preserve per-message sharing for streamed replies.
+                        if (lastUserMessage && streamedCleanText) {
+                            const qaId = 'qa_' + Math.random().toString(36).substr(2, 9);
+                            window.streamingMsgEl.dataset.qaId = qaId;
+                            window.streamingMsgEl.dataset.question = lastUserMessage;
+                            window.streamingMsgEl.dataset.answer = streamedCleanText;
+                            if (!window.streamingMsgEl.querySelector('.qa-share-btn')) {
+                                const shareBtnEl = document.createElement('button');
+                                shareBtnEl.className = 'qa-share-btn';
+                                shareBtnEl.title = 'Share this Q&A';
+                                shareBtnEl.textContent = 'SHARE';
+                                shareBtnEl.onclick = () => showShareOptions(qaId);
+                                window.streamingMsgEl.appendChild(shareBtnEl);
+                            }
+                        }
+
                         // Append wall-to-wall timer
                         const _wtw = getWallToWallLabel(msg.payload || {}, pendingTurnStartTs);
                         if (_wtw) {

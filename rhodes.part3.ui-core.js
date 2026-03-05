@@ -155,6 +155,21 @@ function showDownloads() {
                     delete t.dataset.startTime;
                 }
             });
+
+            // Preserve Q&A sharing for streamed replies.
+            if (lastUserMessage && cleanText && !el.querySelector('.qa-share-btn')) {
+                const qaId = 'qa_' + Math.random().toString(36).substr(2, 9);
+                el.dataset.qaId = qaId;
+                el.dataset.question = lastUserMessage;
+                el.dataset.answer = cleanText;
+                const shareBtnEl = document.createElement('button');
+                shareBtnEl.className = 'qa-share-btn';
+                shareBtnEl.title = 'Share this Q&A';
+                shareBtnEl.textContent = 'SHARE';
+                shareBtnEl.onclick = () => showShareOptions(qaId);
+                el.appendChild(shareBtnEl);
+            }
+
             if (window.toolTimerInterval) {
                 clearInterval(window.toolTimerInterval);
                 window.toolTimerInterval = null;
