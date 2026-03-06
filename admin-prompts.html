@@ -393,6 +393,30 @@ textarea {
               </div>
               <textarea id="bSeedText" style="min-height:80px;max-height:120px;width:100%;margin-top:6px" oninput="onSeedTextEdit()" placeholder="Select a seed above to load content, or paste JSON..."></textarea>
             </div>
+            <div class="form-section">
+              <div class="form-section-header">
+                <span>Manual Prefill Think Block <span id="bManualThinkChars" style="font-size:10px;color:var(--muted);font-weight:400;margin-left:8px">0 chars</span></span>
+              </div>
+              <textarea id="bManualThink" style="min-height:70px;max-height:120px;width:100%;margin-top:6px" oninput="onManualThinkEdit()" placeholder="Optional. Adds an extra filled &lt;think&gt; block before the model's final open reasoning block for p1/q1/s1 prefill models."></textarea>
+            </div>
+            <div class="form-section">
+              <div class="form-section-header">
+                <span>Manual Final Think Block <span id="bManualFinalThinkChars" style="font-size:10px;color:var(--muted);font-weight:400;margin-left:8px">0 chars</span></span>
+              </div>
+              <textarea id="bManualFinalThink" style="min-height:70px;max-height:120px;width:100%;margin-top:6px" oninput="onManualFinalThinkEdit()" placeholder="Optional. Final manual think block. In append mode it reopens think for model reasoning; in replace mode it becomes response-only for that turn."></textarea>
+              <div class="form-row" style="margin-top:8px;align-items:flex-end;gap:12px">
+                <div class="form-field" style="flex:1;min-width:280px">
+                  <label>One-turn Regex Gate (optional)</label>
+                  <input type="text" id="bManualFinalThinkRegex" placeholder="Example: (?i)\btopic\b">
+                </div>
+                <div class="form-field" style="min-width:320px">
+                  <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)">
+                    <input type="checkbox" id="bManualFinalThinkReplace">
+                    Replace prefill think entirely and force response (one turn)
+                  </label>
+                </div>
+              </div>
+            </div>
             <div class="form-section" id="injection-toggles">
               <div class="form-section-header">
                 <span>Injection Pipeline</span>
@@ -1035,9 +1059,12 @@ function renderModelList() {
     const active = BUILDER_STATE.originalAlias === c.alias ? ' active' : '';
     const base = c.base_model_input || c.base_model || '';
     const promptInfo = c.prompt_exists ? (c.prompt_chars||0)+' chars' : 'no prompt';
+    const hasCustomInj = !!(c.injection_config && Object.values(c.injection_config).some(v=>v===false));
+    const hasManualThink = !!(c.manual_prefill_think && String(c.manual_prefill_think).trim());
+    const hasFinalThink = !!(c.manual_final_think && String(c.manual_final_think).trim());
     return '<div class="model-item'+active+'" onclick="loadModelIntoBuilder(\''+esc(c.alias||'')+'\')">'
       + '<div class="name">'+esc(c.alias||'')+'</div>'
-      + '<div class="info">'+esc(base)+' &middot; '+esc(c.slash_command||'')+' &middot; '+promptInfo+(c.injection_config && Object.values(c.injection_config).some(v=>v===false) ? ' &middot; <span style="color:var(--warn)">inj:custom</span>' : '')+'</div>'
+      + '<div class="info">'+esc(base)+' &middot; '+esc(c.slash_command||'')+' &middot; '+promptInfo+(hasCustomInj ? ' &middot; <span style="color:var(--warn)">inj:custom</span>' : '')+(hasManualThink ? ' &middot; <span style="color:var(--ok)">think:manual</span>' : '')+(hasFinalThink ? ' &middot; <span style="color:var(--ok)">think:final</span>' : '')+'</div>'
       + '</div>';
   }).join('');
 }
@@ -1051,7 +1078,13 @@ function newModel() {
   $('bPromptSource').value = '';
   $('bPromptText').value = '';
   $('bSeedId').value = '';
+  $('bManualThink').value = '';
+  $('bManualFinalThink').value = '';
+  $('bManualFinalThinkRegex').value = '';
+  $('bManualFinalThinkReplace').checked = false;
   $('bPromptChars').textContent = '0 chars';
+  $('bManualThinkChars').textContent = '0 chars';
+  $('bManualFinalThinkChars').textContent = '0 chars';
   $('bSeedInfo').textContent = 'Default seed (r18)';
   CURRENT_INJECTION_CONFIG = {};
   renderInjectionToggles();
@@ -1105,6 +1138,12 @@ async function loadModelIntoBuilder(alias) {
   $('bSeedText').value = '';
   $('bSeedMsgCount').textContent = '';
   $('bSeedDirty').textContent = '';
+  $('bManualThink').value = clone.manual_prefill_think || '';
+  onManualThinkEdit();
+  $('bManualFinalThink').value = clone.manual_final_think || '';
+  $('bManualFinalThinkRegex').value = clone.manual_final_think_regex || '';
+  $('bManualFinalThinkReplace').checked = !!clone.manual_final_think_replace;
+  onManualFinalThinkEdit();
   SEED_INLINE_STATE = {id:null, originalText:''};
   // Load clone-specific seed if configured (MUST be after SEED_INLINE_STATE reset)
   if (clone.seed_id) {
@@ -1129,6 +1168,14 @@ function onBuilderChange() {
 
 function onPromptEdit() {
   $('bPromptChars').textContent = ($('bPromptText').value||'').length.toLocaleString()+' chars';
+}
+
+function onManualThinkEdit() {
+  $('bManualThinkChars').textContent = ($('bManualThink').value||'').length.toLocaleString()+' chars';
+}
+
+function onManualFinalThinkEdit() {
+  $('bManualFinalThinkChars').textContent = ($('bManualFinalThink').value||'').length.toLocaleString()+' chars';
 }
 
 var SEED_INLINE_STATE = { id: null, originalText: '' };
@@ -1212,6 +1259,10 @@ async function saveModel() {
   const slash_command = ($('bSlash').value.trim() || '/'+alias).toLowerCase();
   const notes = $('bNotes').value.trim();
   const prompt_text = $('bPromptText').value;
+  const manual_prefill_think = $('bManualThink').value;
+  const manual_final_think = $('bManualFinalThink').value;
+  const manual_final_think_regex = $('bManualFinalThinkRegex').value;
+  const manual_final_think_replace = $('bManualFinalThinkReplace').checked;
   if (!alias) { alert('Alias required.'); return; }
   if (!base_model) { alert('Base model required.'); return; }
 
@@ -1225,6 +1276,10 @@ async function saveModel() {
 
   const payload = {alias, base_model, slash_command, notes, enabled: true};
   if (prompt_text && prompt_text.trim()) payload.prompt_text = prompt_text;
+  payload.manual_prefill_think = (manual_prefill_think && manual_prefill_think.trim()) ? manual_prefill_think : null;
+  payload.manual_final_think = (manual_final_think && manual_final_think.trim()) ? manual_final_think : null;
+  payload.manual_final_think_regex = (manual_final_think_regex && manual_final_think_regex.trim()) ? manual_final_think_regex.trim() : null;
+  payload.manual_final_think_replace = !!manual_final_think_replace;
   // Include selected seed_id if a seed is selected
   if (SEED_INLINE_STATE && SEED_INLINE_STATE.id) payload.seed_id = SEED_INLINE_STATE.id;
   const injCfg = getInjectionConfig();
@@ -1235,9 +1290,15 @@ async function saveModel() {
     if (!data.success) { alert('Save failed: '+(data.error||'unknown')); return; }
     var savedSeedId = (SEED_INLINE_STATE && SEED_INLINE_STATE.id) ? SEED_INLINE_STATE.id : '(default)';
     var savedPrompt = (prompt_text && prompt_text.trim()) ? prompt_text.trim().length+' chars' : '(base model prompt)';
+    var savedManualThink = (manual_prefill_think && manual_prefill_think.trim()) ? (manual_prefill_think.trim().length+' chars') : 'off';
+    var savedFinalThink = (manual_final_think && manual_final_think.trim()) ? (manual_final_think.trim().length+' chars') : 'off';
+    if (savedFinalThink !== 'off' && manual_final_think_regex && manual_final_think_regex.trim()) {
+      savedFinalThink += ' [regex]';
+      if (manual_final_think_replace) savedFinalThink += ' [replace]';
+    }
     var disabledInj = INJECTION_TYPES.filter(t => CURRENT_INJECTION_CONFIG[t.key] === false).map(t => t.label);
     var injSummary = disabledInj.length ? ' | disabled: ' + disabledInj.join(', ') : ' | all injections on';
-    var summary = 'Saved: ' + alias + ' | base=' + base_model + ' | cmd=' + slash_command + ' | prompt=' + savedPrompt + ' | seed=' + savedSeedId + injSummary;
+    var summary = 'Saved: ' + alias + ' | base=' + base_model + ' | cmd=' + slash_command + ' | prompt=' + savedPrompt + ' | seed=' + savedSeedId + ' | manual-think=' + savedManualThink + ' | final-think=' + savedFinalThink + injSummary;
     setStatus(summary);
     showSaveConfirmation(summary);
     BUILDER_STATE = {isNew: false, originalAlias: alias};
