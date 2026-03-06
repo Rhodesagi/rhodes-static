@@ -398,6 +398,20 @@ textarea {
                 <span>Manual Prefill Think Block <span id="bManualThinkChars" style="font-size:10px;color:var(--muted);font-weight:400;margin-left:8px">0 chars</span></span>
               </div>
               <textarea id="bManualThink" style="min-height:70px;max-height:120px;width:100%;margin-top:6px" oninput="onManualThinkEdit()" placeholder="Optional. Adds an extra filled &lt;think&gt; block before the model's final open reasoning block for p1/q1/s1 prefill models."></textarea>
+              <div class="form-row" style="margin-top:8px;align-items:flex-end;gap:12px">
+                <div class="form-field" style="flex:1;min-width:260px">
+                  <label>Regex Gate (optional)</label>
+                  <input type="text" id="bManualThinkRegex" placeholder="Example: (?i)\bfinancial\b">
+                </div>
+                <div class="form-field" style="flex:1;min-width:280px">
+                  <label>Voyage Semantic Gate Text (optional)</label>
+                  <input type="text" id="bManualThinkVoyageQuery" placeholder="Example: planning a budget under debt pressure">
+                </div>
+                <div class="form-field" style="min-width:120px">
+                  <label>Similarity</label>
+                  <input type="number" id="bManualThinkVoyageThreshold" min="0" max="1" step="0.01" placeholder="0.72">
+                </div>
+              </div>
             </div>
             <div class="form-section">
               <div class="form-section-header">
@@ -1061,10 +1075,11 @@ function renderModelList() {
     const promptInfo = c.prompt_exists ? (c.prompt_chars||0)+' chars' : 'no prompt';
     const hasCustomInj = !!(c.injection_config && Object.values(c.injection_config).some(v=>v===false));
     const hasManualThink = !!(c.manual_prefill_think && String(c.manual_prefill_think).trim());
+    const hasManualThinkGate = !!((c.manual_prefill_think_regex && String(c.manual_prefill_think_regex).trim()) || (c.manual_prefill_think_voyage_query && String(c.manual_prefill_think_voyage_query).trim()));
     const hasFinalThink = !!(c.manual_final_think && String(c.manual_final_think).trim());
     return '<div class="model-item'+active+'" onclick="loadModelIntoBuilder(\''+esc(c.alias||'')+'\')">'
       + '<div class="name">'+esc(c.alias||'')+'</div>'
-      + '<div class="info">'+esc(base)+' &middot; '+esc(c.slash_command||'')+' &middot; '+promptInfo+(hasCustomInj ? ' &middot; <span style="color:var(--warn)">inj:custom</span>' : '')+(hasManualThink ? ' &middot; <span style="color:var(--ok)">think:manual</span>' : '')+(hasFinalThink ? ' &middot; <span style="color:var(--ok)">think:final</span>' : '')+'</div>'
+      + '<div class="info">'+esc(base)+' &middot; '+esc(c.slash_command||'')+' &middot; '+promptInfo+(hasCustomInj ? ' &middot; <span style="color:var(--warn)">inj:custom</span>' : '')+(hasManualThink ? ' &middot; <span style="color:var(--ok)">think:manual'+(hasManualThinkGate?'[gated]':'')+'</span>' : '')+(hasFinalThink ? ' &middot; <span style="color:var(--ok)">think:final</span>' : '')+'</div>'
       + '</div>';
   }).join('');
 }
@@ -1079,6 +1094,9 @@ function newModel() {
   $('bPromptText').value = '';
   $('bSeedId').value = '';
   $('bManualThink').value = '';
+  $('bManualThinkRegex').value = '';
+  $('bManualThinkVoyageQuery').value = '';
+  $('bManualThinkVoyageThreshold').value = '';
   $('bManualFinalThink').value = '';
   $('bManualFinalThinkRegex').value = '';
   $('bManualFinalThinkReplace').checked = false;
@@ -1139,6 +1157,11 @@ async function loadModelIntoBuilder(alias) {
   $('bSeedMsgCount').textContent = '';
   $('bSeedDirty').textContent = '';
   $('bManualThink').value = clone.manual_prefill_think || '';
+  $('bManualThinkRegex').value = clone.manual_prefill_think_regex || '';
+  $('bManualThinkVoyageQuery').value = clone.manual_prefill_think_voyage_query || '';
+  $('bManualThinkVoyageThreshold').value = (clone.manual_prefill_think_voyage_threshold !== null && clone.manual_prefill_think_voyage_threshold !== undefined)
+    ? String(clone.manual_prefill_think_voyage_threshold)
+    : '';
   onManualThinkEdit();
   $('bManualFinalThink').value = clone.manual_final_think || '';
   $('bManualFinalThinkRegex').value = clone.manual_final_think_regex || '';
@@ -1260,6 +1283,9 @@ async function saveModel() {
   const notes = $('bNotes').value.trim();
   const prompt_text = $('bPromptText').value;
   const manual_prefill_think = $('bManualThink').value;
+  const manual_prefill_think_regex = $('bManualThinkRegex').value;
+  const manual_prefill_think_voyage_query = $('bManualThinkVoyageQuery').value;
+  const manual_prefill_think_voyage_threshold_raw = $('bManualThinkVoyageThreshold').value;
   const manual_final_think = $('bManualFinalThink').value;
   const manual_final_think_regex = $('bManualFinalThinkRegex').value;
   const manual_final_think_replace = $('bManualFinalThinkReplace').checked;
@@ -1277,6 +1303,18 @@ async function saveModel() {
   const payload = {alias, base_model, slash_command, notes, enabled: true};
   if (prompt_text && prompt_text.trim()) payload.prompt_text = prompt_text;
   payload.manual_prefill_think = (manual_prefill_think && manual_prefill_think.trim()) ? manual_prefill_think : null;
+  payload.manual_prefill_think_regex = (manual_prefill_think_regex && manual_prefill_think_regex.trim()) ? manual_prefill_think_regex.trim() : null;
+  payload.manual_prefill_think_voyage_query = (manual_prefill_think_voyage_query && manual_prefill_think_voyage_query.trim()) ? manual_prefill_think_voyage_query.trim() : null;
+  if (manual_prefill_think_voyage_threshold_raw && String(manual_prefill_think_voyage_threshold_raw).trim()) {
+    const _thr = Number(manual_prefill_think_voyage_threshold_raw);
+    if (!Number.isFinite(_thr) || _thr < 0 || _thr > 1) {
+      alert('Manual Prefill similarity must be between 0 and 1.');
+      return;
+    }
+    payload.manual_prefill_think_voyage_threshold = _thr;
+  } else {
+    payload.manual_prefill_think_voyage_threshold = null;
+  }
   payload.manual_final_think = (manual_final_think && manual_final_think.trim()) ? manual_final_think : null;
   payload.manual_final_think_regex = (manual_final_think_regex && manual_final_think_regex.trim()) ? manual_final_think_regex.trim() : null;
   payload.manual_final_think_replace = !!manual_final_think_replace;
@@ -1291,6 +1329,15 @@ async function saveModel() {
     var savedSeedId = (SEED_INLINE_STATE && SEED_INLINE_STATE.id) ? SEED_INLINE_STATE.id : '(default)';
     var savedPrompt = (prompt_text && prompt_text.trim()) ? prompt_text.trim().length+' chars' : '(base model prompt)';
     var savedManualThink = (manual_prefill_think && manual_prefill_think.trim()) ? (manual_prefill_think.trim().length+' chars') : 'off';
+    if (savedManualThink !== 'off' && manual_prefill_think_regex && manual_prefill_think_regex.trim()) {
+      savedManualThink += ' [regex]';
+    }
+    if (savedManualThink !== 'off' && manual_prefill_think_voyage_query && manual_prefill_think_voyage_query.trim()) {
+      var _prefThr = (manual_prefill_think_voyage_threshold_raw && String(manual_prefill_think_voyage_threshold_raw).trim())
+        ? Number(manual_prefill_think_voyage_threshold_raw).toFixed(2)
+        : '0.72';
+      savedManualThink += ' [voyage>=' + _prefThr + ']';
+    }
     var savedFinalThink = (manual_final_think && manual_final_think.trim()) ? (manual_final_think.trim().length+' chars') : 'off';
     if (savedFinalThink !== 'off' && manual_final_think_regex && manual_final_think_regex.trim()) {
       savedFinalThink += ' [regex]';
