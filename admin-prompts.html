@@ -949,7 +949,6 @@ async function loadModelClones() {
 const INJECTION_TYPES = [
   {key: "rhodes_os", label: "Rhodes OS Identity", desc: "Operating system identity prompt"},
   {key: "briefing_over", label: "Briefing Over", desc: "User context transition message"},
-  {key: "warmup_seed", label: "Warmup Seed", desc: "Base seed conversation messages"},
   {key: "longinus_poetry", label: "Longinus / Poetry", desc: "Poetry & Longinus keyword injection"},
   {key: "superbaby", label: "Superbaby", desc: "Superbaby topic injection"},
   {key: "immigration", label: "Immigration", desc: "Immigration/civilization topic injection"},
@@ -960,6 +959,7 @@ const INJECTION_TYPES = [
   {key: "person", label: "Person Dossiers", desc: "Wikipedia person dossier injection"},
   {key: "prior_positions", label: "Prior Positions", desc: "Position memory from past queries"},
   {key: "verification", label: "Fact Verification", desc: "Verification context injection"},
+  {key: "thought_substitution", label: "Thought Substitution", desc: "Pre-query thought/reasoning injection"},
 ];
 
 let CURRENT_INJECTION_CONFIG = {};
