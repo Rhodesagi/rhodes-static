@@ -1064,6 +1064,65 @@
         }
       }
 
+      let MODEL_BASE_OPTIONS_HTML = '';
+
+      function ensureModelOption(value, label) {
+        const v = String(value || '').trim();
+        if (!v) return;
+        const sel = $('model');
+        if (!sel) return;
+        const existing = Array.from(sel.options).find((o) => o.value === v);
+        if (existing) return;
+        let group = sel.querySelector('optgroup[label="Model Clones"]');
+        if (!group) {
+          group = document.createElement('optgroup');
+          group.label = 'Model Clones';
+          sel.appendChild(group);
+        }
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = label || `${v} (clone)`;
+        group.appendChild(opt);
+      }
+
+      async function loadModelOptions() {
+        const sel = $('model');
+        if (!sel) return;
+        if (!MODEL_BASE_OPTIONS_HTML) MODEL_BASE_OPTIONS_HTML = sel.innerHTML;
+        const keepValue = sel.value;
+        sel.innerHTML = MODEL_BASE_OPTIONS_HTML;
+        try {
+          const data = await api('/api/admin/model-clones', { method: 'GET' });
+          const clones = (data.clones || [])
+            .filter((c) => c && c.alias && c.enabled !== false)
+            .sort((a, b) => String(a.alias).localeCompare(String(b.alias)));
+          if (clones.length) {
+            const group = document.createElement('optgroup');
+            group.label = 'Model Clones';
+            for (const c of clones) {
+              const alias = String(c.alias || '').trim();
+              if (!alias) continue;
+              const slash = String(c.slash_command || '').trim();
+              const base = String(c.base_model_input || c.base_model || '').trim();
+              const bits = [alias];
+              if (slash) bits.push(slash);
+              if (base) bits.push('-> ' + base);
+              const opt = document.createElement('option');
+              opt.value = alias;
+              opt.textContent = bits.join(' ');
+              group.appendChild(opt);
+            }
+            sel.appendChild(group);
+          }
+        } catch (e) {
+          console.warn('[admin-control] clone model load failed:', e);
+        }
+        if (keepValue) ensureModelOption(keepValue, keepValue + ' (current)');
+        if (keepValue && Array.from(sel.options).some((o) => o.value === keepValue)) {
+          sel.value = keepValue;
+        }
+      }
+
       function esc(s) { return String(s || '').replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
       function escAttr(s) { return String(s || '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
       function safeSnippet(snippet) {
@@ -1958,7 +2017,11 @@
         const svcData = (statusData.services || {})[svc] || {};
         const env = svcData.env || {};
 
-        if (env.RHODES_MODEL) $('model').value = env.RHODES_MODEL;
+        if (env.RHODES_MODEL) {
+          const modelVal = String(env.RHODES_MODEL).trim();
+          ensureModelOption(modelVal, modelVal + ' (current)');
+          $('model').value = modelVal;
+        }
         if (env.RHODES_BRIDGE_MODE) $('bridge').value = env.RHODES_BRIDGE_MODE;
 
         if (env.DEEPSEEK_REASONING) $('reasoning').value = String(env.DEEPSEEK_REASONING).toLowerCase() === 'true' ? 'true' : 'false';
@@ -2000,7 +2063,7 @@
 
       // Wire events
       $('loginBtn').addEventListener('click', () => login().then(async () => {
-        await loadTools();
+        await Promise.all([loadTools(), loadModelOptions()]);
         const st = await refreshStatus();
         fillFromServiceStatus(st);
         cdLoad().catch(() => {});
@@ -2008,7 +2071,11 @@
       }).catch(e => $('actionOut').textContent = e.message));
 
       $('logoutBtn').addEventListener('click', () => { setToken(''); setAuthState(); $('actionOut').textContent = 'logged out'; });
-      $('refreshBtn').addEventListener('click', () => refreshStatus().then(fillFromServiceStatus).catch(e => $('actionOut').textContent = e.message));
+      $('refreshBtn').addEventListener('click', () =>
+        Promise.all([loadModelOptions(), refreshStatus()])
+          .then(([, status]) => fillFromServiceStatus(status))
+          .catch(e => $('actionOut').textContent = e.message)
+      );
       $('applyBtn').addEventListener('click', () => applyConfig().catch(e => $('actionOut').textContent = e.message));
       $('clearBtn').addEventListener('click', () => clearOverride().catch(e => $('actionOut').textContent = e.message));
 
@@ -2103,8 +2170,8 @@
       setAuthState();
       updatePromptEditUI();
       if (token()) {
-        loadTools()
-          .then(refreshStatus)
+        Promise.all([loadTools(), loadModelOptions()])
+          .then(() => refreshStatus())
           .then(fillFromServiceStatus)
           .then(() => loadPromptSources().catch(() => {}))
           .then(() => cdLoad().catch(() => {}))
