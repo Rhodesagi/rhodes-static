@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rhodes API + MCP</title>
+  <style>
+    :root {
+      --bg: #0a0d10;
+      --panel: #111720;
+      --text: #e9f1ff;
+      --muted: #9db0c7;
+      --line: #2b3a52;
+      --brand: #37d6ff;
+      --good: #1fd27f;
+      --bad: #ff667a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      background: radial-gradient(circle at 20% 0%, #112236, var(--bg) 55%);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 36px auto;
+      padding: 0 16px;
+    }
+    .card {
+      background: linear-gradient(180deg, #121a25, #0f1520);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 10px 40px rgba(0,0,0,.35);
+      margin-bottom: 16px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      letter-spacing: .3px;
+    }
+    h2 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      letter-spacing: .2px;
+      color: #cce2ff;
+    }
+    .muted { color: var(--muted); font-size: 13px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    input {
+      flex: 1;
+      min-width: 220px;
+      background: #0b111a;
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      outline: none;
+    }
+    button {
+      background: #0e2031;
+      color: var(--text);
+      border: 1px solid #29517a;
+      border-radius: 8px;
+      padding: 10px 13px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.primary { border-color: #2c7aa9; background: #12334d; }
+    button.danger { border-color: #7a2944; background: #3a1322; color: #ffd8e0; }
+    button:disabled { opacity: .5; cursor: default; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    th, td {
+      text-align: left;
+      padding: 9px 8px;
+      border-bottom: 1px solid #223148;
+      vertical-align: top;
+    }
+    th { color: #b7cae6; font-weight: 700; }
+    .status { margin-top: 6px; font-size: 13px; }
+    .ok { color: var(--good); }
+    .err { color: var(--bad); }
+    .code {
+      margin-top: 10px;
+      background: #08111a;
+      border: 1px solid #22415f;
+      border-radius: 8px;
+      padding: 10px;
+      word-break: break-all;
+      white-space: pre-wrap;
+      line-height: 1.35;
+    }
+    .col {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .tiny { font-size: 12px; color: #9eb4ce; }
+    a { color: var(--brand); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Rhodes API + MCP</h1>
+      <div class="muted">Single page for API keys and MCP hookup.</div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="card">
+      <h2>1) API Keys</h2>
+      <div class="row">
+        <input id="name" placeholder="Key name (e.g., claude-live-test)" maxlength="64" />
+        <button id="create" class="primary">Create Key</button>
+        <button id="refresh">Refresh</button>
+      </div>
+      <div id="newKeyWrap" style="display:none; margin-top:12px;">
+        <div class="muted">New key (shown once):</div>
+        <div class="code" id="newKey"></div>
+        <div style="margin-top:8px;"><button id="copyNew">Copy Key</button></div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Prefix</th>
+            <th>Created</th>
+            <th>Last Used</th>
+            <th>Calls</th>
+            <th>Active</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>2) MCP Setup</h2>
+      <div class="col">
+        <div class="row">
+          <input id="mcpUrl" value="https://rhodesagi.com/v1/live-chat/mcp" readonly />
+          <button id="copyMcpUrl">Copy MCP URL</button>
+        </div>
+        <div class="row">
+          <input id="mcpKey" placeholder="Paste API key for MCP package download (or create one above)" />
+          <button id="copyClaude" class="primary">Copy Claude/Cursor MCP Config</button>
+        </div>
+        <div class="row">
+          <button id="downloadZip">Download MCP Package (zip)</button>
+          <button id="downloadJson">Download MCP Package (json)</button>
+        </div>
+        <div class="tiny">Default model is web default (`p1.12e`).</div>
+      </div>
+      <div id="mcpConfig" class="code" style="margin-top:12px;"></div>
+    </div>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const rowsEl = document.getElementById('rows');
+    const createBtn = document.getElementById('create');
+    const refreshBtn = document.getElementById('refresh');
+    const nameEl = document.getElementById('name');
+    const newKeyWrap = document.getElementById('newKeyWrap');
+    const newKeyEl = document.getElementById('newKey');
+    const copyNewBtn = document.getElementById('copyNew');
+
+    const mcpUrlEl = document.getElementById('mcpUrl');
+    const mcpKeyEl = document.getElementById('mcpKey');
+    const mcpConfigEl = document.getElementById('mcpConfig');
+    const copyMcpUrlBtn = document.getElementById('copyMcpUrl');
+    const copyClaudeBtn = document.getElementById('copyClaude');
+    const downloadZipBtn = document.getElementById('downloadZip');
+    const downloadJsonBtn = document.getElementById('downloadJson');
+
+    let latestPlainKey = '';
+
+    function getUserToken() {
+      const safeStorage = window.rhodesStorage && typeof window.rhodesStorage.getItem === 'function'
+        ? window.rhodesStorage
+        : window.localStorage;
+      return (safeStorage.getItem('rhodes_user_token') || '').trim();
+    }
+
+    function getApiKeyForMcp() {
+      return (mcpKeyEl.value || '').trim() || latestPlainKey;
+    }
+
+    function setStatus(msg, ok = true) {
+      statusEl.className = 'status ' + (ok ? 'ok' : 'err');
+      statusEl.textContent = msg;
+    }
+
+    async function copyText(text, okMsg) {
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatus(okMsg || 'Copied.', true);
+      } catch {
+        setStatus('Copy failed. Copy manually.', false);
+      }
+    }
+
+    async function userApi(path, opts = {}) {
+      const token = getUserToken();
+      if (!token) {
+        throw new Error('Not logged in. Sign in at https://rhodesagi.com then reload this page.');
+      }
+      const headers = Object.assign({
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      }, opts.headers || {});
+      const res = await fetch(path, Object.assign({}, opts, { headers }));
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+      return data;
+    }
+
+    async function mcpDownload(path, filename) {
+      const key = getApiKeyForMcp();
+      if (!key) {
+        setStatus('Paste an API key (or create one above) before MCP download.', false);
+        return;
+      }
+      const res = await fetch(path, {
+        method: 'GET',
+        headers: { 'x-api-key': key }
+      });
+      if (!res.ok) {
+        let err = 'Download failed (HTTP ' + res.status + ')';
+        try {
+          const j = await res.json();
+          if (j && j.detail) err = j.detail;
+        } catch {}
+        throw new Error(err);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function renderMcpConfig() {
+      const key = getApiKeyForMcp();
+      const authVal = key ? ('Bearer ' + key) : 'Bearer ${RHODES_API_KEY}';
+      const cfg = {
+        mcpServers: {
+          "rhodes-live-chat": {
+            type: "http",
+            url: "https://rhodesagi.com/v1/live-chat/mcp",
+            headers: {
+              Authorization: authVal
+            }
+          }
+        }
+      };
+      mcpConfigEl.textContent = JSON.stringify(cfg, null, 2);
+    }
+
+    function fmt(ts) {
+      if (!ts) return '-';
+      const d = new Date(ts);
+      if (isNaN(d.getTime())) return ts;
+      return d.toLocaleString();
+    }
+
+    async function loadKeys() {
+      rowsEl.innerHTML = '<tr><td colspan="8" class="muted">Loading...</td></tr>';
+      try {
+        const data = await userApi('/api/user/api-keys');
+        const keys = data.keys || [];
+        if (!keys.length) {
+          rowsEl.innerHTML = '<tr><td colspan="8" class="muted">No keys yet.</td></tr>';
+          setStatus('Connected. No API keys found.', true);
+          return;
+        }
+        rowsEl.innerHTML = '';
+        for (const k of keys) {
+          const tr = document.createElement('tr');
+          const active = !!k.is_active;
+          tr.innerHTML =
+            '<td>' + k.id + '</td>' +
+            '<td>' + escapeHtml(k.name || '') + '</td>' +
+            '<td><code>' + escapeHtml(k.key_prefix || '') + '</code></td>' +
+            '<td>' + fmt(k.created_at) + '</td>' +
+            '<td>' + fmt(k.last_used_at) + '</td>' +
+            '<td>' + (k.total_calls || 0) + '</td>' +
+            '<td>' + (active ? 'yes' : 'no') + '</td>' +
+            '<td>' + (active ? '<button class="danger" data-id="' + k.id + '">Revoke</button>' : '-') + '</td>';
+          rowsEl.appendChild(tr);
+        }
+        setStatus('Connected. Keys loaded.', true);
+      } catch (e) {
+        rowsEl.innerHTML = '<tr><td colspan="8" class="muted">Failed to load keys.</td></tr>';
+        setStatus(e.message, false);
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    async function createKey() {
+      createBtn.disabled = true;
+      try {
+        const name = (nameEl.value || '').trim() || 'API Key';
+        const data = await userApi('/api/user/api-keys', {
+          method: 'POST',
+          body: JSON.stringify({ name })
+        });
+        latestPlainKey = data.key || '';
+        if (latestPlainKey) {
+          mcpKeyEl.value = latestPlainKey;
+        }
+        newKeyEl.textContent = latestPlainKey;
+        newKeyWrap.style.display = latestPlainKey ? 'block' : 'none';
+        renderMcpConfig();
+        setStatus('New key created: ' + (data.name || name), true);
+        await loadKeys();
+      } catch (e) {
+        setStatus(e.message, false);
+      } finally {
+        createBtn.disabled = false;
+      }
+    }
+
+    async function revokeKey(keyId) {
+      if (!confirm('Revoke key #' + keyId + '?')) return;
+      try {
+        await userApi('/api/user/api-keys/' + keyId, { method: 'DELETE' });
+        setStatus('Key revoked: #' + keyId, true);
+        await loadKeys();
+      } catch (e) {
+        setStatus(e.message, false);
+      }
+    }
+
+    rowsEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-id]');
+      if (!btn) return;
+      revokeKey(btn.getAttribute('data-id'));
+    });
+
+    mcpKeyEl.addEventListener('input', renderMcpConfig);
+    createBtn.addEventListener('click', createKey);
+    refreshBtn.addEventListener('click', loadKeys);
+
+    copyNewBtn.addEventListener('click', () => copyText(newKeyEl.textContent || '', 'API key copied.'));
+    copyMcpUrlBtn.addEventListener('click', () => copyText(mcpUrlEl.value, 'MCP URL copied.'));
+
+    copyClaudeBtn.addEventListener('click', () => {
+      renderMcpConfig();
+      copyText(mcpConfigEl.textContent || '', 'MCP config copied.');
+    });
+
+    downloadZipBtn.addEventListener('click', async () => {
+      try {
+        await mcpDownload('/v1/live-chat/mcp-package', 'rhodes-live-chat-mcp-package.zip');
+        setStatus('MCP zip downloaded.', true);
+      } catch (e) {
+        setStatus(e.message, false);
+      }
+    });
+
+    downloadJsonBtn.addEventListener('click', async () => {
+      try {
+        await mcpDownload('/v1/live-chat/mcp-package.json', 'rhodes-live-chat-mcp-package.json');
+        setStatus('MCP json downloaded.', true);
+      } catch (e) {
+        setStatus(e.message, false);
+      }
+    });
+
+    renderMcpConfig();
+    loadKeys();
+  </script>
+</body>
+</html>
