@@ -151,6 +151,28 @@ textarea {
 .seed-card .desc { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
 .seed-card .meta { font-size: 10px; color: var(--muted); display: flex; gap: 10px; }
 
+/* Unified Search */
+.search-results {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 12px; padding: 20px;
+}
+.search-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px;
+}
+.search-card .head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px; gap: 8px;
+}
+.search-card .title { font-family: var(--mono); font-size: 12px; font-weight: 600; }
+.search-card .snippet {
+  font-size: 11px; color: var(--muted); line-height: 1.4;
+  font-family: var(--mono); white-space: normal;
+}
+.search-meta {
+  font-size: 11px; color: var(--muted); padding: 0 20px 8px 20px;
+}
+
 /* Modals */
 .modal-overlay {
   display: none; position: fixed; inset: 0;
@@ -314,6 +336,7 @@ textarea {
     <div class="tabs">
       <a class="tab active" data-tab="builder" href="#builder" onclick="switchTab('builder');return false">Model Builder</a>
       <a class="tab" data-tab="prompts" href="#prompts" onclick="switchTab('prompts');return false">Prompts Library</a>
+      <a class="tab" data-tab="search" href="#search" onclick="switchTab('search');return false">Search</a>
       <a class="tab" data-tab="seeds" href="#seeds" onclick="switchTab('seeds');return false">Seeds</a>
       <a class="tab" data-tab="test" href="#test" onclick="switchTab('test');return false">Test</a>
     </div>
@@ -463,6 +486,16 @@ textarea {
         <button onclick="loadAllPrompts()">&#x21bb; Refresh</button>
       </div>
       <div class="prompt-grid" id="promptGrid"><div style="padding:20px;color:var(--muted)">Loading...</div></div>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="tab-content" id="tab-search">
+      <div class="toolbar">
+        <input id="globalSearchInput" type="text" placeholder="Search across prompt texts, model clone prompts/config, and seed content..." style="max-width:none">
+        <button class="primary" onclick="runGlobalSearch()">Search All</button>
+      </div>
+      <div class="search-meta" id="globalSearchMeta">Enter a query and run search.</div>
+      <div class="search-results" id="globalSearchResults"><div style="padding:20px;color:var(--muted)">No search yet.</div></div>
     </div>
 
     <!-- SEEDS -->
@@ -660,6 +693,7 @@ const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 let ALL_PROMPTS = [];
 let ALL_SEEDS = [];
 let MODEL_CLONES = [];
+let GLOBAL_SEARCH = { query: '', total: 0, count: 0, results: [] };
 let EDITOR_STATE = {};
 let SEED_MODAL_STATE = {};
 let BUILDER_STATE = { isNew: true, originalAlias: null };
@@ -980,6 +1014,61 @@ async function loadModelClones() {
     populateTestModelDropdown();
   } catch(e) {
     $('modelListItems').innerHTML = '<div style="padding:12px;color:var(--bad)">'+esc(e.message)+'</div>';
+  }
+}
+
+// ---- Unified Search ----
+function renderGlobalSearchResults() {
+  const res = GLOBAL_SEARCH.results || [];
+  if (!res.length) {
+    $('globalSearchResults').innerHTML = '<div style="padding:20px;color:var(--muted)">No matches.</div>';
+    return;
+  }
+  $('globalSearchResults').innerHTML = res.map(function(r) {
+    var badge = r.type === 'prompt'
+      ? '<span class="badge badge-format">prompt</span>'
+      : r.type === 'model'
+      ? '<span class="badge badge-combined">model</span>'
+      : '<span class="badge badge-seed">seed</span>';
+    var openBtn = '';
+    if (r.type === 'prompt') {
+      openBtn = '<button onclick="openEditor(\'' + esc(r.source || r.id || '') + '\')">Open</button>';
+    } else if (r.type === 'model') {
+      openBtn = '<button onclick="switchTab(\'builder\');loadModelIntoBuilder(\'' + esc(r.alias || r.id || '') + '\')">Open</button>';
+    } else if (r.type === 'seed') {
+      openBtn = '<button onclick="openSeedModal(\'' + esc(r.id || '') + '\')">Open</button>';
+    }
+    var title = esc(r.source || r.alias || r.id || '');
+    return '<div class="search-card">'
+      + '<div class="head"><div class="title">' + badge + ' ' + title + '</div><div>' + openBtn + '</div></div>'
+      + '<div class="snippet">' + esc(r.snippet || '') + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+async function runGlobalSearch() {
+  var q = ($('globalSearchInput').value || '').trim();
+  if (!q) {
+    $('globalSearchMeta').textContent = 'Enter a query and run search.';
+    $('globalSearchResults').innerHTML = '<div style="padding:20px;color:var(--muted)">No search yet.</div>';
+    return;
+  }
+  $('globalSearchMeta').textContent = 'Searching...';
+  $('globalSearchResults').innerHTML = '<div style="padding:20px;color:var(--muted)">Searching...</div>';
+  try {
+    var data = await api('/api/admin/prompt/search-all?q=' + encodeURIComponent(q) + '&limit=200');
+    GLOBAL_SEARCH = data || {results:[]};
+    var counts = data.counts || {};
+    $('globalSearchMeta').textContent =
+      'Query: "' + q + '" | ' + (data.total || 0) + ' matches'
+      + ' (prompts ' + (counts.prompt || 0)
+      + ', models ' + (counts.model || 0)
+      + ', seeds ' + (counts.seed || 0) + ')'
+      + (data.truncated ? ' | showing first ' + (data.count || 0) : '');
+    renderGlobalSearchResults();
+  } catch (e) {
+    $('globalSearchMeta').textContent = 'Search failed';
+    $('globalSearchResults').innerHTML = '<div style="padding:20px;color:var(--bad)">' + esc(e.message) + '</div>';
   }
 }
 
@@ -1697,6 +1786,9 @@ async function init() {
   }
   const hash = window.location.hash.replace('#','');
   renderInjectionToggles();
+  $('globalSearchInput').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') runGlobalSearch();
+  });
   if (hash && document.querySelector('.tab[data-tab="'+hash+'"]')) switchTab(hash);
 }
 window.addEventListener('hashchange', () => {
