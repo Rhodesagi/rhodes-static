@@ -335,6 +335,7 @@ textarea {
               <div style="display:flex;gap:8px">
                 <button class="success" onclick="saveModel()" id="saveModelBtn" disabled>Save Model</button>
                 <button class="danger" onclick="deleteModel()" id="deleteModelBtn" style="display:none">Delete</button>
+                <button onclick="cloneModel()" id="cloneModelBtn" style="display:none;margin-left:6px;padding:4px 12px;background:#555;color:#fff;border:1px solid #777;border-radius:4px;cursor:pointer">Clone</button>
               </div>
             </div>
             <div class="form-section">
@@ -1057,6 +1058,7 @@ function newModel() {
   $('builderTitle').textContent = 'New Model';
   $('saveModelBtn').disabled = false;
   $('deleteModelBtn').style.display = 'none';
+  $('cloneModelBtn').style.display = 'none';
   renderModelList();
 }
 
@@ -1117,6 +1119,7 @@ async function loadModelIntoBuilder(alias) {
   $('builderTitle').textContent = 'Edit: ' + alias;
   $('saveModelBtn').disabled = false;
   $('deleteModelBtn').style.display = 'inline-block';
+    $('cloneModelBtn').style.display = 'inline-block';
   renderModelList();
 }
 
@@ -1241,6 +1244,7 @@ async function saveModel() {
     await loadModelClones();
     $('builderTitle').textContent = 'Edit: '+alias;
     $('deleteModelBtn').style.display = 'inline-block';
+    $('cloneModelBtn').style.display = 'inline-block';
   } catch(e) { alert('Error: '+e.message); }
 }
 
@@ -1253,6 +1257,22 @@ async function deleteModel() {
     newModel();
     await loadModelClones();
   } catch(e) { alert('Error: '+e.message); }
+}
+
+function cloneModel() {
+  var src = BUILDER_STATE.originalAlias;
+  if (!src) return;
+  var newAlias = prompt('New clone name:', src + '-copy');
+  if (!newAlias || !newAlias.trim()) return;
+  newAlias = newAlias.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '-');
+  BUILDER_STATE = { isNew: true, originalAlias: null };
+  document.getElementById('bAlias').value = newAlias;
+  document.getElementById('bSlash').value = '/' + newAlias;
+  document.getElementById('builderTitle').textContent = 'New Model (cloned from ' + src + ')';
+  document.getElementById('deleteModelBtn').style.display = 'none';
+  document.getElementById('cloneModelBtn').style.display = 'none';
+  document.getElementById('saveModelBtn').disabled = false;
+  setStatus('Cloned from ' + src + ' \u2014 edit and save as ' + newAlias);
 }
 
 // ---- Dropdowns ----
