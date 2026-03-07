@@ -405,10 +405,42 @@
           </label>
           <label>Model
             <select id="model">
-              <option value="deepseek">deepseek (Delta)</option>
-              <option value="opus">opus (Alpha)</option>
-              <option value="sonnet">sonnet (Beta)</option>
-              <option value="haiku">haiku (Ada)</option>
+              <optgroup label="Base Models">
+                <option value="deepseek">deepseek (Delta)</option>
+                <option value="opus">opus (Alpha)</option>
+                <option value="sonnet">sonnet (Beta)</option>
+                <option value="haiku">haiku (Ada)</option>
+                <option value="kimi">kimi (Epsilon)</option>
+                <option value="grok">grok (Zeta)</option>
+              </optgroup>
+              <optgroup label="R-line (Standard)">
+                <option value="r1.12d">r1.12d (DeepSeek)</option>
+                <option value="r1.12e">r1.12e (Kimi)</option>
+                <option value="r1.12f">r1.12f (Grok)</option>
+              </optgroup>
+              <optgroup label="P-line (Prefill)">
+                <option value="p1.12d">p1.12d (DeepSeek)</option>
+                <option value="p1.12e" selected>p1.12e (Kimi) ★</option>
+                <option value="p1.12f">p1.12f (Grok)</option>
+              </optgroup>
+              <optgroup label="U-line (Thought Sanitized)">
+                <option value="u1.12e">u1.12e (Kimi)</option>
+                <option value="u1.12f">u1.12f (Grok)</option>
+                <option value="u1.0e">u1.0e (Kimi)</option>
+              </optgroup>
+              <optgroup label="Q-line (Clone-a)">
+                <option value="q1.0d">q1.0d (DeepSeek)</option>
+                <option value="q1.0e">q1.0e (Kimi)</option>
+              </optgroup>
+              <optgroup label="S-line (Clone-a, no TS)">
+                <option value="s1.12d">s1.12d (DeepSeek)</option>
+                <option value="s1.12e">s1.12e (Kimi)</option>
+              </optgroup>
+              <optgroup label="W/Z/A1-line">
+                <option value="w1.0e">w1.0e (Prose seed)</option>
+                <option value="z1.0e">z1.0e (Claude-style)</option>
+                <option value="a1.0e">a1.0e (Claude-style v2)</option>
+              </optgroup>
             </select>
           </label>
           <label>Bridge
@@ -685,6 +717,27 @@
 
 
       <!-- User Context (Post-Handoff System Messages) -->
+      
+      <div class="card" id="thoughtSanitizeCard">
+        <div class="row" style="justify-content: space-between; align-items: center;">
+          <div>
+            <strong>Thought Sanitization</strong>
+            <span class="muted" style="margin-left:8px;">Strips safety reactions from reasoning, resubmits clean thought as prefill (Kimi/Grok only)</span>
+          </div>
+          <div style="display:flex; gap:12px; align-items:center;">
+            <span id="tsStat" class="muted">loading...</span>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="tsToggle" style="width:18px;height:18px;cursor:pointer;" />
+              <span>Enabled</span>
+            </label>
+          </div>
+        </div>
+        <div class="muted" style="margin-top:6px;">
+          U-line models (u1.0e, u1.12e) always have this ON. This toggle enables it for ALL models globally.
+          <br/>Keeps factual observations ("this is controversial"), removes safety reactions ("so I should be careful").
+        </div>
+      </div>
+
       <div class="card" id="userContextCard">
         <div class="row" style="justify-content: space-between;">
           <div class="muted" style="font-weight:bold;">User Context (Post-Handoff Briefing)</div>
@@ -3478,6 +3531,38 @@
 
 
 console.log('Admin panel script fully loaded');
+    
+      // === Thought Sanitization Toggle ===
+      async function loadTSStatus() {
+        try {
+          const data = await api('/api/admin/thought-sanitize', { method: 'GET' });
+          if (data.success) {
+            document.getElementById('tsToggle').checked = data.enabled;
+            document.getElementById('tsStat').textContent = data.enabled ? 'ON' : 'OFF';
+            document.getElementById('tsStat').style.color = data.enabled ? 'var(--ok)' : 'var(--warn)';
+          }
+        } catch (e) {
+          document.getElementById('tsStat').textContent = 'error';
+        }
+      }
+      document.getElementById('tsToggle').addEventListener('change', async (e) => {
+        const enabled = e.target.checked;
+        try {
+          const data = await api('/api/admin/thought-sanitize', {
+            method: 'POST',
+            body: JSON.stringify({ enabled })
+          });
+          if (data.success) {
+            document.getElementById('tsStat').textContent = data.enabled ? 'ON' : 'OFF';
+            document.getElementById('tsStat').style.color = data.enabled ? 'var(--ok)' : 'var(--warn)';
+          }
+        } catch (e) {
+          alert('Failed: ' + e.message);
+          e.target.checked = !enabled;
+        }
+      });
+      loadTSStatus();
+
     </script>
   </body>
 </html>

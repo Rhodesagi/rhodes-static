@@ -408,6 +408,9 @@ textarea {
                     <option value="r1.0b">Sonnet (r1.0b)</option>
                     <option value="r1.0c">Haiku (r1.0c)</option>
                     <option value="r1.12f">Grok (r1.12f)</option>
+                    <option value="u1.12e">Kimi Sanitized (u1.12e)</option>
+                    <option value="u1.12f">Grok Sanitized (u1.12f)</option>
+                    <option value="u1.0e">Kimi Sanitized (u1.0e)</option>
                   </select>
                 </div>
                 <div class="form-field">
@@ -1895,7 +1898,7 @@ function populateSeedDropdown() {
 function populateTestModelDropdown() {
   const defaults = [
     ['deepseek-chat','DeepSeek'],['r1.0a','Opus'],['r1.0b','Sonnet'],
-    ['r1.0c','Haiku'],['r1.12e','Kimi'],['r1.12f','Grok']
+    ['r1.0c','Haiku'],['r1.12e','Kimi'],['r1.12f','Grok'],['u1.12e','Kimi Sanitized'],['u1.12f','Grok Sanitized']
   ];
   const cloneOpts = (MODEL_CLONES||[]).filter(c=>c&&c.alias).map(c=>[c.alias,'Clone: '+c.alias]);
   const seen = new Set();
