@@ -738,6 +738,7 @@
             <button id="seedLoadBtn">Load</button>
             <button id="seedSaveBtn" style="background:#1a4a2e;border-color:#2d6b40;">Save</button>
             <button id="seedAddMsgBtn">+ Message</button>
+            <button id="seedAddToolCallPairBtn" onclick="seedAddToolCallPair()" title="Add assistant tool_call + tool result message pair">+ Tool Call</button>
             <button id="seedValidateBtn" style="background:#1a3a4a;border-color:#2d5a6b;">Validate</button>
           </div>
           <div id="seedValidateResult" style="margin-top:4px;display:none;"></div>
@@ -2796,8 +2797,8 @@
         }
         let html = '';
         _seedData.forEach((msg, idx) => {
-          const roleColor = msg.role === 'user' ? '#60a5fa' : msg.role === 'assistant' ? '#4ade80' : '#fbbf24';
-          const roleBg = msg.role === 'user' ? '#0f1f3a' : msg.role === 'assistant' ? '#0f2a1a' : '#2a2010';
+          const roleColor = msg.role === 'user' ? '#60a5fa' : msg.role === 'assistant' ? '#4ade80' : msg.role === 'tool' ? '#f472b6' : '#fbbf24';
+          const roleBg = msg.role === 'user' ? '#0f1f3a' : msg.role === 'assistant' ? '#0f2a1a' : msg.role === 'tool' ? '#2a0f2a' : '#2a2010';
           html += '<div style="border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:8px;background:' + roleBg + ';">';
           html += '<div class="row" style="justify-content:space-between;margin-bottom:6px;">';
           html += '<div style="display:flex;align-items:center;gap:8px;">';
@@ -2805,10 +2806,17 @@
           html += '<option value="user"' + (msg.role === 'user' ? ' selected' : '') + '>user</option>';
           html += '<option value="assistant"' + (msg.role === 'assistant' ? ' selected' : '') + '>assistant</option>';
           html += '<option value="system"' + (msg.role === 'system' ? ' selected' : '') + '>system</option>';
+          html += '<option value="tool"' + (msg.role === 'tool' ? ' selected' : '') + '>tool</option>';
           html += '</select>';
           html += '<span class="muted" style="font-size:11px;">msg #' + idx + '</span>';
           if (msg.reasoning_content) {
             html += '<span style="font-size:10px;background:#3b2070;color:#c4b5fd;padding:2px 6px;border-radius:4px;">has reasoning</span>';
+          }
+          if (msg.tool_calls && msg.tool_calls.length > 0) {
+            html += '<span style="font-size:10px;background:#4a1942;color:#f472b6;padding:2px 6px;border-radius:4px;">' + msg.tool_calls.length + ' tool call' + (msg.tool_calls.length > 1 ? 's' : '') + '</span>';
+          }
+          if (msg.role === 'tool') {
+            html += '<span style="font-size:10px;background:#4a1942;color:#f472b6;padding:2px 6px;border-radius:4px;">tool result</span>';
           }
           html += '</div>';
           html += '<div style="display:flex;gap:4px;">';
@@ -2826,6 +2834,52 @@
           }
           if (msg.role === 'assistant' && msg.reasoning_content === undefined) {
             html += '<button onclick="seedAddReasoning(' + idx + ')" style="font-size:11px;padding:2px 8px;margin-bottom:4px;">+ reasoning_content</button>';
+          }
+          // Tool calls for assistant messages — human-friendly UI
+          if (msg.role === 'assistant') {
+            const tcList = msg.tool_calls || [];
+            if (tcList.length > 0) {
+              html += '<div style="margin-bottom:6px;">';
+              tcList.forEach((tc, tcIdx) => {
+                const tcFunc = tc.function || {};
+                const tcName = tcFunc.name || '';
+                let argsObj = {};
+                try { argsObj = JSON.parse(tcFunc.arguments || '{}'); } catch(e) {}
+                html += '<div style="background:#1a0f2a;border:1px solid #3b2070;border-radius:8px;padding:10px;margin-bottom:6px;">';
+                html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+                html += '<span style="color:#f472b6;font-weight:bold;font-size:12px;">Tool Call: ' + _escHtml(tcName || '(unnamed)') + '</span>';
+                html += '<button onclick="seedRemoveToolCall(' + idx + ',' + tcIdx + ')" class="danger" style="font-size:10px;padding:2px 8px;">Remove</button>';
+                html += '</div>';
+                html += '<div style="display:flex;gap:8px;margin-bottom:6px;">';
+                html += '<label style="flex:0 0 auto;font-size:11px;color:var(--muted);">Tool';
+                html += '<select data-idx="' + idx + '" data-tcidx="' + tcIdx + '" data-tcfield="name" onchange="seedToolCallFieldChange(this)" style="background:#0f1730;color:#4ade80;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;min-width:180px;">';
+                html += '<option value="set_system_prompt"' + (tcName === 'set_system_prompt' ? ' selected' : '') + '>set_system_prompt</option>';
+                html += '<option value="add_system_message"' + (tcName === 'add_system_message' ? ' selected' : '') + '>add_system_message</option>';
+                html += '</select></label>';
+                html += '<input data-idx="' + idx + '" data-tcidx="' + tcIdx + '" data-tcfield="id" value="' + _escHtml(tc.id || '') + '" onchange="seedToolCallFieldChange(this)" placeholder="auto-generated ID" style="flex:1;font-size:11px;background:#0f1730;color:#888;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-family:var(--mono);" />';
+                html += '</div>';
+                // Friendly content field instead of raw JSON
+                const argKey = tcName === 'set_system_prompt' ? 'prompt' : 'content';
+                const argLabel = tcName === 'set_system_prompt' ? 'New system prompt' : 'System message content';
+                const argVal = argsObj[argKey] || '';
+                html += '<div class="muted" style="font-size:11px;margin-bottom:2px;">' + _escHtml(argLabel) + ':</div>';
+                html += '<textarea data-idx="' + idx + '" data-tcidx="' + tcIdx + '" data-tcfield="arguments" data-argkey="' + argKey + '" onchange="seedToolCallFieldChange(this)" ';
+                html += 'style="width:100%;min-height:60px;font-family:var(--mono);font-size:12px;background:#0f1730;color:#e2e8f0;border:1px solid #3b2070;border-radius:6px;padding:8px;resize:vertical;">';
+                html += _escHtml(argVal);
+                html += '</textarea>';
+                html += '</div>';
+              });
+              html += '</div>';
+            }
+            html += '<button onclick="seedAddToolCall(' + idx + ')" style="font-size:11px;padding:3px 10px;margin-bottom:4px;background:#2a1040;border:1px solid #3b2070;color:#c4b5fd;">+ Add Tool Call</button>';
+          }
+          // tool_call_id for tool role messages — auto-linked display
+          if (msg.role === 'tool') {
+            const linkedId = msg.tool_call_id || '';
+            html += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;padding:4px 8px;background:#2a0f2a;border-radius:6px;">';
+            html += '<span style="font-size:11px;color:#f472b6;">Responds to tool call:</span>';
+            html += '<input data-idx="' + idx + '" data-field="tool_call_id" onchange="seedMsgFieldChange(this)" value="' + _escHtml(linkedId) + '" style="flex:1;font-size:12px;background:#0f1730;color:#f472b6;border:1px solid #3b2070;border-radius:6px;padding:4px 8px;font-family:var(--mono);" />';
+            html += '</div>';
           }
           // Content
           html += '<div class="muted" style="font-size:11px;margin-bottom:2px;">content:</div>';
@@ -2852,6 +2906,18 @@
         const field = el.dataset.field;
         if (field === 'role') {
           _seedData[idx].role = el.value;
+          // When switching to tool role, add tool_call_id if missing
+          if (el.value === 'tool' && !_seedData[idx].tool_call_id) {
+            _seedData[idx].tool_call_id = '';
+          }
+          // When switching to assistant, clean up tool-specific fields
+          if (el.value !== 'tool') {
+            delete _seedData[idx].tool_call_id;
+          }
+          if (el.value !== 'assistant') {
+            delete _seedData[idx].tool_calls;
+          }
+          renderSeedMessages();
         } else {
           _seedData[idx][field] = el.value;
         }
@@ -2877,6 +2943,50 @@
         renderSeedMessages();
       }
 
+      function seedAddToolCall(msgIdx) {
+        if (!_seedData[msgIdx].tool_calls) _seedData[msgIdx].tool_calls = [];
+        const tcId = 'tc_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+        _seedData[msgIdx].tool_calls.push({
+          id: tcId,
+          type: 'function',
+          function: { name: '', arguments: '{}' }
+        });
+        // Also add a corresponding tool result message after this one
+        const toolResultIdx = msgIdx + 1 + _seedData[msgIdx].tool_calls.length - 1;
+        // Don't auto-add tool result here — user can add manually with + Message
+        renderSeedMessages();
+      }
+
+      function seedRemoveToolCall(msgIdx, tcIdx) {
+        if (!_seedData[msgIdx].tool_calls) return;
+        _seedData[msgIdx].tool_calls.splice(tcIdx, 1);
+        if (_seedData[msgIdx].tool_calls.length === 0) delete _seedData[msgIdx].tool_calls;
+        renderSeedMessages();
+      }
+
+      function seedToolCallFieldChange(el) {
+        const msgIdx = parseInt(el.dataset.idx);
+        const tcIdx = parseInt(el.dataset.tcidx);
+        const field = el.dataset.tcfield;
+        if (!_seedData[msgIdx].tool_calls || !_seedData[msgIdx].tool_calls[tcIdx]) return;
+        const tc = _seedData[msgIdx].tool_calls[tcIdx];
+        if (field === 'id') {
+          tc.id = el.value;
+        } else if (field === 'name') {
+          if (!tc.function) tc.function = {};
+          tc.function.name = el.value;
+          // Re-render so the label and arg key update
+          renderSeedMessages();
+        } else if (field === 'arguments') {
+          if (!tc.function) tc.function = {};
+          // The textarea shows the friendly value, wrap it back into JSON
+          const argKey = el.dataset.argkey || 'prompt';
+          const obj = {};
+          obj[argKey] = el.value;
+          tc.function.arguments = JSON.stringify(obj);
+        }
+      }
+
       async function loadSeed() {
         const name = $('seedSelect').value;
         if (!name) { alert('Select a seed file'); return; }
@@ -2897,11 +3007,25 @@
         const name = $('seedSelect').value;
         if (!name) { alert('Select a seed file'); return; }
         if (!_seedData) { alert('No seed loaded'); return; }
-        // Sync all textarea values before saving
-        $('seedMessages').querySelectorAll('textarea').forEach(ta => {
-          const idx = parseInt(ta.dataset.idx);
-          const field = ta.dataset.field;
-          if (_seedData[idx]) _seedData[idx][field] = ta.value;
+        // Sync all textarea and input values before saving
+        $('seedMessages').querySelectorAll('textarea, input').forEach(el => {
+          const idx = parseInt(el.dataset.idx);
+          if (isNaN(idx) || !_seedData[idx]) return;
+          const field = el.dataset.field;
+          const tcIdx = el.dataset.tcidx;
+          const tcField = el.dataset.tcfield;
+          if (tcField !== undefined && tcIdx !== undefined) {
+            // Tool call field
+            const ti = parseInt(tcIdx);
+            const tc = (_seedData[idx].tool_calls || [])[ti];
+            if (tc) {
+              if (tcField === 'id') tc.id = el.value;
+              else if (tcField === 'name') { if (!tc.function) tc.function = {}; tc.function.name = el.value; }
+              else if (tcField === 'arguments') { if (!tc.function) tc.function = {}; tc.function.arguments = el.value; }
+            }
+          } else if (field) {
+            _seedData[idx][field] = el.value;
+          }
         });
         if (!confirm('Save ' + _seedData.length + ' messages to ' + name + '.json?\n(Backup will be created automatically)')) return;
         try {
@@ -2922,6 +3046,33 @@
         _seedData.push({ role: 'system', content: '' });
         renderSeedMessages();
         // Scroll to bottom of seed messages
+        const container = $('seedMessages');
+        container.lastElementChild?.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      function seedAddToolCallPair() {
+        if (!_seedData) _seedData = [];
+        const tcId = 'tc_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+        // Add assistant message with tool_calls
+        _seedData.push({
+          role: 'assistant',
+          content: '',
+          tool_calls: [{
+            id: tcId,
+            type: 'function',
+            function: {
+              name: 'set_system_prompt',
+              arguments: JSON.stringify({ prompt: '' })
+            }
+          }]
+        });
+        // Add matching tool result message
+        _seedData.push({
+          role: 'tool',
+          tool_call_id: tcId,
+          content: JSON.stringify({ success: true, message: 'System prompt updated.' })
+        });
+        renderSeedMessages();
         const container = $('seedMessages');
         container.lastElementChild?.scrollIntoView({ behavior: 'smooth' });
       }

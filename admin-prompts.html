@@ -75,6 +75,36 @@ textarea {
   display: flex; justify-content: space-between;
 }
 
+/* Rewind system */
+.rewind-btn { display:inline-flex;align-items:center;font-size:10px;padding:2px 6px;border-radius:4px;background:transparent;border:1px solid transparent;color:var(--muted);cursor:pointer;opacity:0;transition:opacity 0.15s; }
+.rewind-btn.visible { opacity:1; }
+.rewind-btn:hover { background:#2a1a10;border-color:#d97706;color:#fbbf24; }
+.field-modified { box-shadow:0 0 0 1px #d97706 !important; }
+.history-drawer { max-height:300px;overflow-y:auto;margin-top:8px;border:1px solid var(--border);border-radius:8px;background:#0a0e1a; }
+.history-row { display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #1a1f30;font-size:12px;cursor:pointer;transition:background 0.1s; }
+.history-row:hover { background:#111830; }
+.history-row:last-child { border-bottom:none; }
+.history-action { font-size:10px;padding:1px 6px;border-radius:3px;font-weight:600; }
+.history-action.update { background:#1a3a2e;color:#4ade80; }
+.history-action.restore { background:#1a2a4a;color:#60a5fa; }
+.history-action.pre-restore { background:#3a2a1a;color:#fbbf24; }
+.spreadsheet-container { overflow:auto;max-height:calc(100vh - 120px); }
+.spreadsheet { border-collapse:collapse;font-size:11px;font-family:var(--mono);white-space:nowrap; }
+.spreadsheet th { position:sticky;top:0;z-index:2;background:#1a1f30;color:var(--muted);font-weight:600;padding:6px 10px;border:1px solid #2a2f40;text-align:left;font-size:10px;cursor:pointer;user-select:none; }
+.spreadsheet th:hover { background:#222840; }
+.spreadsheet th.sorted-asc::after { content:' \25b2';color:#4ade80; }
+.spreadsheet th.sorted-desc::after { content:' \25bc';color:#f87171; }
+.spreadsheet td { padding:5px 10px;border:1px solid #1a1f30;max-width:200px;overflow:hidden;text-overflow:ellipsis;color:#e2e8f0; }
+.spreadsheet tr:nth-child(even) { background:#0d1220; }
+.spreadsheet tr:nth-child(odd) { background:#0a0e1a; }
+.spreadsheet tr:hover { background:#111830 !important; }
+.spreadsheet td.bool-true { color:#4ade80; }
+.spreadsheet td.bool-false { color:#6b7280; }
+.spreadsheet td.num { color:#60a5fa;text-align:right; }
+.spreadsheet td.alias-cell { color:#c4b5fd;font-weight:600;cursor:pointer; }
+.spreadsheet td.alias-cell:hover { text-decoration:underline; }
+.ss-toolbar { display:flex;gap:8px;align-items:center;margin-bottom:8px; }
+.ss-toolbar input { padding:6px 10px;border-radius:6px;background:#0a0e1a;border:1px solid var(--border);color:var(--text);font-size:12px;min-width:200px; }
 /* Model Builder */
 .builder-container { padding: 20px; max-width: 1200px; }
 .builder-grid {
@@ -339,6 +369,7 @@ textarea {
       <a class="tab" data-tab="search" href="#search" onclick="switchTab('search');return false">Search</a>
       <a class="tab" data-tab="seeds" href="#seeds" onclick="switchTab('seeds');return false">Seeds</a>
       <a class="tab" data-tab="test" href="#test" onclick="switchTab('test');return false">Test</a>
+      <a class="tab" data-tab="spreadsheet" href="#spreadsheet" onclick="switchTab('spreadsheet');return false">Spreadsheet</a>
     </div>
 
     <!-- MODEL BUILDER -->
@@ -365,7 +396,7 @@ textarea {
               <div class="form-section-header">Identity</div>
               <div class="form-row">
                 <div class="form-field">
-                  <label>Model Alias</label>
+                  <label>Model Alias <span class="rewind-btn" data-rewind-for="bAlias" onclick="rewindField('bAlias')" title="Revert to saved">&#8630;</span></label>
                   <input type="text" id="bAlias" placeholder="e.g. mymodel" style="width:140px" oninput="onBuilderChange()">
                 </div>
                 <div class="form-field">
@@ -380,11 +411,11 @@ textarea {
                   </select>
                 </div>
                 <div class="form-field">
-                  <label>Slash Command</label>
+                  <label>Slash Command <span class="rewind-btn" data-rewind-for="bSlash" onclick="rewindField('bSlash')" title="Revert to saved">&#8630;</span></label>
                   <input type="text" id="bSlash" placeholder="/mymodel" style="width:120px" oninput="onBuilderChange()">
                 </div>
                 <div class="form-field">
-                  <label>Description</label>
+                  <label>Description <span class="rewind-btn" data-rewind-for="bNotes" onclick="rewindField('bNotes')" title="Revert to saved">&#8630;</span></label>
                   <input type="text" id="bNotes" placeholder="Optional" style="width:200px">
                 </div>
               </div>
@@ -416,9 +447,22 @@ textarea {
               </div>
               <textarea id="bSeedText" style="min-height:80px;max-height:120px;width:100%;margin-top:6px" oninput="onSeedTextEdit()" placeholder="Select a seed above to load content, or paste JSON..."></textarea>
             </div>
+            <div class="form-section" id="identity-tool-calls">
+              <div class="form-section-header">
+                <span>Identity Tool Calls <span id="bToolCallCount" style="font-size:10px;color:var(--muted);font-weight:400;margin-left:8px">0 tool calls in seed</span></span>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <button onclick="addIdentityToolCall('set_system_prompt')" style="padding:3px 10px;font-size:11px;background:#2a1040;border:1px solid #5b3080;color:#c4b5fd">+ Set System Prompt</button>
+                  <button onclick="addIdentityToolCall('add_system_message')" style="padding:3px 10px;font-size:11px;background:#1a2040;border:1px solid #3050a0;color:#93c5fd">+ Add System Message</button>
+                </div>
+              </div>
+              <div id="bToolCallList" style="margin-top:6px"></div>
+              <div style="margin-top:6px;font-size:11px;color:var(--muted)">
+                These tool calls are added to the seed so the model feels like it chose its own identity. When the seed loads, <code>set_system_prompt</code> calls automatically override the system prompt.
+              </div>
+            </div>
             <div class="form-section">
               <div class="form-section-header">
-                <span>Manual Prefill Think Block <span id="bManualThinkChars" style="font-size:10px;color:var(--muted);font-weight:400;margin-left:8px">0 chars</span></span>
+                <span>Manual Prefill Think Block <span class="rewind-btn" data-rewind-for="bManualThink" onclick="rewindField('bManualThink')" title="Revert to saved">&#8630;</span> <span id="bManualThinkChars" style="font-size:10px;color:var(--muted);font-weight:400;margin-left:8px">0 chars</span></span>
               </div>
               <textarea id="bManualThink" style="min-height:70px;max-height:120px;width:100%;margin-top:6px" oninput="onManualThinkEdit()" placeholder="Optional. Adds an extra filled &lt;think&gt; block before the model's final open reasoning block for p1/q1/s1 prefill models."></textarea>
               <div class="form-row" style="margin-top:8px;align-items:flex-end;gap:12px">
@@ -438,7 +482,7 @@ textarea {
             </div>
             <div class="form-section">
               <div class="form-section-header">
-                <span>Manual Final Think Block <span id="bManualFinalThinkChars" style="font-size:10px;color:var(--muted);font-weight:400;margin-left:8px">0 chars</span></span>
+                <span>Manual Final Think Block <span class="rewind-btn" data-rewind-for="bManualFinalThink" onclick="rewindField('bManualFinalThink')" title="Revert to saved">&#8630;</span> <span id="bManualFinalThinkChars" style="font-size:10px;color:var(--muted);font-weight:400;margin-left:8px">0 chars</span></span>
               </div>
               <textarea id="bManualFinalThink" style="min-height:70px;max-height:120px;width:100%;margin-top:6px" oninput="onManualFinalThinkEdit()" placeholder="Optional. Final manual think block. In append mode it reopens think for model reasoning; in replace mode it becomes response-only for that turn."></textarea>
               <div class="form-row" style="margin-top:8px;align-items:flex-end;gap:12px">
@@ -453,6 +497,13 @@ textarea {
                   </label>
                 </div>
               </div>
+            </div>
+            <div class="form-section" id="version-history-section">
+              <div class="form-section-header">
+                <span>Version History <span id="bHistoryCount" style="font-size:10px;color:var(--muted);font-weight:400;margin-left:8px"></span></span>
+                <button onclick="loadCloneHistory()" style="padding:3px 10px;font-size:11px">Load History</button>
+              </div>
+              <div class="history-drawer" id="bHistoryList" style="display:none"></div>
             </div>
             <div class="form-section" id="injection-toggles">
               <div class="form-section-header">
@@ -686,6 +737,22 @@ textarea {
     </div>
   </div>
 
+    <!-- SPREADSHEET -->
+    <div class="tab-content" id="tab-spreadsheet">
+      <div class="ss-toolbar">
+        <input id="ssFilter" type="text" placeholder="Filter models..." oninput="filterSpreadsheet()">
+        <button class="primary" onclick="loadSpreadsheet()">Refresh</button>
+        <span id="ssCount" style="color:var(--muted);font-size:12px"></span>
+      </div>
+      <div class="spreadsheet-container">
+        <table class="spreadsheet" id="ssTable">
+          <thead id="ssHead"></thead>
+          <tbody id="ssBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -910,6 +977,9 @@ async function saveSeedFromPopover() {
   if (SP_VIEW === 'editor') editorToRaw();
   var seedId = SEED_INLINE_STATE.id;
   if (!seedId) { alert('No seed selected.'); return; }
+  // Inject identity tool calls back into seed before saving
+  var rawTextArea = $('bSeedText');
+  if (rawTextArea) rawTextArea.value = injectToolCallsIntoSeed(rawTextArea.value);
   var raw = $('spText').value;
   try { JSON.parse(raw); } catch(e) { alert('Invalid JSON: '+e.message); return; }
   if (!confirm('Save seed "'+seedId+'"?')) return;
@@ -977,6 +1047,7 @@ async function api(url, opts={}) {
 
 // ---- Tabs ----
 function switchTab(name) {
+  if (name === 'spreadsheet' && !SS_DATA.length) loadSpreadsheet();
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.toggle('active', t.id === 'tab-'+name));
   window.location.hash = name;
@@ -1152,6 +1223,302 @@ function getInjectionConfig() {
   return anyDisabled ? CURRENT_INJECTION_CONFIG : null;
 }
 
+// ---- Identity Tool Calls (seed-embedded) ----
+var IDENTITY_TOOL_CALLS = []; // [{name, content, tc_id}]
+
+function renderIdentityToolCalls() {
+  var container = $('bToolCallList');
+  if (!container) return;
+  $('bToolCallCount').textContent = IDENTITY_TOOL_CALLS.length + ' tool call' + (IDENTITY_TOOL_CALLS.length !== 1 ? 's' : '') + ' in seed';
+  if (IDENTITY_TOOL_CALLS.length === 0) {
+    container.innerHTML = '<div style="padding:8px;color:var(--muted);font-size:12px;font-style:italic;">No identity tool calls. The model will use the default system prompt.</div>';
+    return;
+  }
+  var h = '';
+  IDENTITY_TOOL_CALLS.forEach(function(tc, i) {
+    var isPrompt = tc.name === 'set_system_prompt';
+    var borderColor = isPrompt ? '#5b3080' : '#3050a0';
+    var bgColor = isPrompt ? '#1a0f2a' : '#0f1a2a';
+    var label = isPrompt ? 'System Prompt Override' : 'Injected System Message';
+    var placeholder = isPrompt ? 'Write the system prompt the model chose for itself...' : 'Write the system message content...';
+    h += '<div style="background:'+bgColor+';border:1px solid '+borderColor+';border-radius:8px;padding:12px;margin-bottom:8px;">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+    h += '<div style="display:flex;align-items:center;gap:8px;">';
+    h += '<span style="font-size:12px;font-weight:600;color:'+(isPrompt ? '#c4b5fd' : '#93c5fd')+'">'+label+'</span>';
+    h += '<span style="font-size:10px;color:var(--muted);font-family:var(--mono)">'+tc.name+'()</span>';
+    h += '</div>';
+    h += '<button onclick="removeIdentityToolCall('+i+')" style="font-size:11px;padding:3px 10px;background:#4a1a1a;border:1px solid #6b2d2d;color:#fca5a5;border-radius:4px;cursor:pointer">Remove</button>';
+    h += '</div>';
+    h += '<textarea id="itc_content_'+i+'" oninput="updateIdentityToolCall('+i+')" placeholder="'+placeholder+'" ';
+    h += 'style="width:100%;min-height:80px;font-family:var(--mono);font-size:12px;background:#0a0e1a;color:#e2e8f0;border:1px solid '+borderColor+';border-radius:6px;padding:10px;resize:vertical;">'+_esc(tc.content || '')+'</textarea>';
+    h += '</div>';
+  });
+  container.innerHTML = h;
+}
+
+function _esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function addIdentityToolCall(name) {
+  IDENTITY_TOOL_CALLS.push({name: name, content: '', tc_id: 'tc_' + Date.now().toString(36)});
+  renderIdentityToolCalls();
+  onBuilderChange();
+}
+
+function removeIdentityToolCall(idx) {
+  IDENTITY_TOOL_CALLS.splice(idx, 1);
+  renderIdentityToolCalls();
+  onBuilderChange();
+}
+
+function updateIdentityToolCall(idx) {
+  var ta = $('itc_content_' + idx);
+  if (ta && IDENTITY_TOOL_CALLS[idx]) {
+    IDENTITY_TOOL_CALLS[idx].content = ta.value;
+    onBuilderChange();
+  }
+}
+
+function injectToolCallsIntoSeed(seedText) {
+  // Parse current seed, append tool call pairs, return updated JSON string
+  if (IDENTITY_TOOL_CALLS.length === 0) return seedText;
+  var messages;
+  try { messages = JSON.parse(seedText || '[]'); } catch(e) { return seedText; }
+  if (!Array.isArray(messages)) return seedText;
+
+  IDENTITY_TOOL_CALLS.forEach(function(tc) {
+    var argKey = tc.name === 'set_system_prompt' ? 'prompt' : 'content';
+    var args = {};
+    args[argKey] = tc.content;
+    // Assistant message with tool_calls
+    messages.push({
+      role: 'assistant',
+      content: '',
+      tool_calls: [{
+        id: tc.tc_id,
+        type: 'function',
+        function: { name: tc.name, arguments: JSON.stringify(args) }
+      }]
+    });
+    // Tool result
+    messages.push({
+      role: 'tool',
+      tool_call_id: tc.tc_id,
+      content: JSON.stringify({success: true, message: tc.name + ' applied.'})
+    });
+  });
+
+  return JSON.stringify(messages, null, 2);
+}
+
+function extractToolCallsFromSeed(seedText) {
+  // Parse seed JSON and extract identity tool calls into IDENTITY_TOOL_CALLS
+  IDENTITY_TOOL_CALLS = [];
+  var messages;
+  try { messages = JSON.parse(seedText || '[]'); } catch(e) { return seedText; }
+  if (!Array.isArray(messages)) return seedText;
+
+  var cleanMessages = [];
+  var skipNext = false;
+  for (var i = 0; i < messages.length; i++) {
+    if (skipNext) { skipNext = false; continue; }
+    var msg = messages[i];
+    if (msg.role === 'assistant' && msg.tool_calls && msg.tool_calls.length > 0) {
+      var tc = msg.tool_calls[0];
+      var tcName = (tc.function || {}).name || '';
+      if (tcName === 'set_system_prompt' || tcName === 'add_system_message') {
+        var args = {};
+        try { args = JSON.parse((tc.function || {}).arguments || '{}'); } catch(e) {}
+        var argKey = tcName === 'set_system_prompt' ? 'prompt' : 'content';
+        IDENTITY_TOOL_CALLS.push({
+          name: tcName,
+          content: args[argKey] || '',
+          tc_id: tc.id || 'tc_' + Date.now().toString(36)
+        });
+        // Skip the next message too (it's the tool result)
+        if (i + 1 < messages.length && messages[i+1].role === 'tool') skipNext = true;
+        continue;
+      }
+    }
+    cleanMessages.push(msg);
+  }
+
+  renderIdentityToolCalls();
+  return JSON.stringify(cleanMessages, null, 2);
+}
+
+// ---- Rewind System ----
+var CLONE_ORIGINAL = null;
+
+function storeOriginal(clone) {
+  CLONE_ORIGINAL = clone ? JSON.parse(JSON.stringify(clone)) : null;
+}
+
+function checkFieldModified(fieldId, origValue) {
+  var el = $(fieldId);
+  if (!el) return;
+  var current = el.type === 'checkbox' ? el.checked : el.value;
+  var orig = el.type === 'checkbox' ? !!origValue : String(origValue || '');
+  var btn = document.querySelector('[data-rewind-for="' + fieldId + '"]');
+  if (!btn) return;
+  if (String(current) !== String(orig)) {
+    el.classList.add('field-modified');
+    btn.classList.add('visible');
+  } else {
+    el.classList.remove('field-modified');
+    btn.classList.remove('visible');
+  }
+}
+
+function rewindField(fieldId) {
+  if (!CLONE_ORIGINAL) return;
+  var el = $(fieldId);
+  if (!el) return;
+  var map = {
+    bAlias:'alias', bSlash:'slash_command', bNotes:'notes',
+    bManualThink:'manual_prefill_think', bManualThinkRegex:'manual_prefill_think_regex',
+    bManualThinkVoyageQuery:'manual_prefill_think_voyage_query',
+    bManualThinkVoyageThreshold:'manual_prefill_think_voyage_threshold',
+    bManualFinalThink:'manual_final_think', bManualFinalThinkRegex:'manual_final_think_regex',
+    bManualFinalThinkReplace:'manual_final_think_replace',
+  };
+  var key = map[fieldId];
+  var val = key ? CLONE_ORIGINAL[key] : '';
+  if (el.type === 'checkbox') el.checked = !!val;
+  else el.value = val || '';
+  el.classList.remove('field-modified');
+  var btn = document.querySelector('[data-rewind-for="' + fieldId + '"]');
+  if (btn) btn.classList.remove('visible');
+  onBuilderChange();
+}
+
+function checkAllFields() {
+  if (!CLONE_ORIGINAL) return;
+  var fields = {
+    bAlias:'alias', bSlash:'slash_command', bNotes:'notes',
+    bManualThink:'manual_prefill_think', bManualThinkRegex:'manual_prefill_think_regex',
+    bManualThinkVoyageQuery:'manual_prefill_think_voyage_query',
+    bManualThinkVoyageThreshold:'manual_prefill_think_voyage_threshold',
+    bManualFinalThink:'manual_final_think', bManualFinalThinkRegex:'manual_final_think_regex',
+    bManualFinalThinkReplace:'manual_final_think_replace',
+  };
+  for (var fid in fields) checkFieldModified(fid, CLONE_ORIGINAL[fields[fid]]);
+}
+
+// ---- Version History ----
+async function loadCloneHistory() {
+  var alias = ($('bAlias').value || '').trim().toLowerCase();
+  if (!alias) { alert('No model selected'); return; }
+  try {
+    var data = await api('/api/admin/model-clones/history/' + encodeURIComponent(alias));
+    var versions = data.versions || [];
+    $('bHistoryCount').textContent = versions.length + ' versions';
+    var drawer = $('bHistoryList');
+    drawer.style.display = 'block';
+    if (!versions.length) {
+      drawer.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:12px">No history yet. Save the model to create the first snapshot.</div>';
+      return;
+    }
+    var h = '';
+    versions.forEach(function(v) {
+      var snap = v.snapshot || {};
+      var d = new Date(v.created_at);
+      var ts = d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
+      var base = snap.base_model_input || snap.base_model || '';
+      var info = base;
+      if (v.prompt_chars) info += ' | prompt:' + v.prompt_chars + 'c';
+      if (snap.manual_prefill_think) info += ' | prefill';
+      if (snap.manual_final_think) info += ' | final';
+      h += '<div class="history-row">';
+      h += '<div><span class="history-action ' + (v.action||'update') + '">' + (v.action||'update') + '</span>';
+      h += ' <span style="color:var(--muted);margin-left:6px">' + ts + '</span></div>';
+      h += '<div style="display:flex;gap:8px;align-items:center">';
+      h += '<span style="color:var(--muted);font-size:11px">' + info + '</span>';
+      h += '<button onclick="restoreVersion(' + v.id + ',\'' + v.alias + '\')" style="padding:2px 8px;font-size:10px;background:#1a2a4a;border:1px solid #3050a0;color:#93c5fd;border-radius:4px;cursor:pointer">Restore</button>';
+      h += '</div></div>';
+    });
+    drawer.innerHTML = h;
+  } catch(e) { alert('Failed: ' + e.message); }
+}
+
+async function restoreVersion(vid, alias) {
+  if (!confirm('Restore ' + alias + ' to version #' + vid + '?\n\nCurrent state will be saved first.')) return;
+  try {
+    await api('/api/admin/model-clones/restore', {method:'POST', body:JSON.stringify({version_id:vid})});
+    setStatus('Restored ' + alias + ' from version #' + vid);
+    loadModelList();
+    setTimeout(function() {
+      document.querySelectorAll('#modelListItems .model-item').forEach(function(el) {
+        if (el.dataset.alias === alias) el.click();
+      });
+    }, 500);
+  } catch(e) { alert('Restore failed: ' + e.message); }
+}
+
+// ---- Spreadsheet ----
+var SS_DATA = [], SS_SORT_COL = null, SS_SORT_DIR = 'asc';
+var SS_COLUMNS = [
+  {key:'alias',label:'Alias',type:'text'},{key:'base_model',label:'Base',type:'text'},
+  {key:'slash_command',label:'Slash',type:'text'},{key:'enabled',label:'On',type:'bool'},
+  {key:'seed_id',label:'Seed',type:'text'},{key:'prompt_source',label:'Prompt',type:'text'},
+  {key:'prompt_chars',label:'P.Len',type:'num'},{key:'prefill_think',label:'Pf',type:'bool'},
+  {key:'prefill_chars',label:'Pf.Len',type:'num'},{key:'final_think',label:'Fn',type:'bool'},
+  {key:'final_chars',label:'Fn.Len',type:'num'},{key:'final_replace',label:'Repl',type:'bool'},
+  {key:'inj_rhodes_os',label:'ROS',type:'bool'},{key:'inj_briefing',label:'Brf',type:'bool'},
+  {key:'inj_articles',label:'Art',type:'bool'},{key:'inj_memories',label:'Mem',type:'bool'},
+  {key:'inj_known_cases',label:'KC',type:'bool'},{key:'inj_person',label:'Per',type:'bool'},
+  {key:'inj_verification',label:'Ver',type:'bool'},{key:'notes',label:'Notes',type:'text'},
+];
+
+async function loadSpreadsheet() {
+  try {
+    var data = await api('/api/admin/model-clones/spreadsheet');
+    SS_DATA = data.rows || [];
+    $('ssCount').textContent = SS_DATA.length + ' models';
+    renderSpreadsheet();
+  } catch(e) { $('ssBody').innerHTML = '<tr><td colspan="99" style="color:var(--bad)">Error: '+e.message+'</td></tr>'; }
+}
+
+function renderSpreadsheet() {
+  var filter = ($('ssFilter').value || '').toLowerCase();
+  var rows = SS_DATA;
+  if (filter) rows = rows.filter(function(r) {
+    return (r.alias||'').includes(filter)||(r.base_model||'').includes(filter)||(r.notes||'').toLowerCase().includes(filter);
+  });
+  if (SS_SORT_COL) {
+    var col = SS_COLUMNS.find(function(c){return c.key===SS_SORT_COL;});
+    rows = rows.slice().sort(function(a,b) {
+      var va=a[SS_SORT_COL],vb=b[SS_SORT_COL];
+      if(col&&col.type==='num'){va=Number(va)||0;vb=Number(vb)||0;}
+      else if(col&&col.type==='bool'){va=va?1:0;vb=vb?1:0;}
+      else{va=String(va||'').toLowerCase();vb=String(vb||'').toLowerCase();}
+      return SS_SORT_DIR==='asc'?(va<vb?-1:va>vb?1:0):(va>vb?-1:va<vb?1:0);
+    });
+  }
+  var h='<tr>';
+  SS_COLUMNS.forEach(function(c){
+    var cls=SS_SORT_COL===c.key?(SS_SORT_DIR==='asc'?'sorted-asc':'sorted-desc'):'';
+    h+='<th class="'+cls+'" onclick="ssSort(\''+c.key+'\')">'+c.label+'</th>';
+  });
+  $('ssHead').innerHTML=h+'</tr>';
+  var b='';
+  rows.forEach(function(r){
+    b+='<tr>';
+    SS_COLUMNS.forEach(function(c){
+      var v=r[c.key];
+      if(c.key==='alias') b+='<td class="alias-cell" onclick="ssClickAlias(\''+v+'\')">'+v+'</td>';
+      else if(c.type==='bool') b+='<td class="'+(v?'bool-true':'bool-false')+'">'+(v?'\u2713':'\u00b7')+'</td>';
+      else if(c.type==='num') b+='<td class="num">'+(v||0)+'</td>';
+      else{var s=String(v||'');if(s.length>30)s=s.substring(0,30)+'\u2026';b+='<td>'+s+'</td>';}
+    });
+    b+='</tr>';
+  });
+  if(!rows.length)b='<tr><td colspan="99" style="color:var(--muted);padding:20px">No models</td></tr>';
+  $('ssBody').innerHTML=b;
+}
+function ssSort(k){if(SS_SORT_COL===k)SS_SORT_DIR=SS_SORT_DIR==='asc'?'desc':'asc';else{SS_SORT_COL=k;SS_SORT_DIR='asc';}renderSpreadsheet();}
+function filterSpreadsheet(){renderSpreadsheet();}
+function ssClickAlias(a){switchTab('builder');setTimeout(function(){document.querySelectorAll('#modelListItems .model-item').forEach(function(el){if(el.dataset.alias===a)el.click();});},200);}
+
 // ---- Model Builder ----
 function renderModelList() {
   if (!MODEL_CLONES.length) {
@@ -1203,6 +1570,8 @@ function newModel() {
 }
 
 async function loadModelIntoBuilder(alias) {
+  var _clone = MODEL_CLONES.find(c => c.alias === alias);
+  storeOriginal(_clone);
   const clone = MODEL_CLONES.find(c => c.alias === alias);
   if (!clone) return;
   BUILDER_STATE = { isNew: false, originalAlias: alias };
@@ -1275,6 +1644,7 @@ async function loadModelIntoBuilder(alias) {
 }
 
 function onBuilderChange() {
+  checkAllFields();
   $('saveModelBtn').disabled = !$('bAlias').value.trim();
 }
 
@@ -1305,10 +1675,12 @@ async function onSeedChange() {
   // Load seed content inline
   $('bSeedText').value = 'Loading...';
   SEED_INLINE_STATE = { id: seedId, originalText: '' };
+  IDENTITY_TOOL_CALLS = [];
   try {
     const data = await api('/api/admin/seed?id='+encodeURIComponent(seedId));
     if (data.exists) {
-      const raw = data.raw_content || JSON.stringify(data.messages||[],null,2);
+      var raw = data.raw_content || JSON.stringify(data.messages||[],null,2);
+      raw = extractToolCallsFromSeed(raw);
       $('bSeedText').value = raw;
       SEED_INLINE_STATE.originalText = raw;
       $('bSeedMsgCount').textContent = data.message_count+' messages | '+(data.file_size||0)+' bytes';
@@ -1409,12 +1781,31 @@ async function saveModel() {
   payload.manual_final_think_replace = !!manual_final_think_replace;
   // Include selected seed_id if a seed is selected
   if (SEED_INLINE_STATE && SEED_INLINE_STATE.id) payload.seed_id = SEED_INLINE_STATE.id;
+  // If identity tool calls exist but no seed loaded, use default seed
+  if (IDENTITY_TOOL_CALLS.length > 0 && (!SEED_INLINE_STATE || !SEED_INLINE_STATE.id)) {
+    payload.seed_id = 'r18';
+    SEED_INLINE_STATE = {id: 'r18', originalText: ''};
+  }
   const injCfg = getInjectionConfig();
   if (injCfg) payload.injection_config = CURRENT_INJECTION_CONFIG;
 
   try {
     const data = await api('/api/admin/model-clones', {method:'POST', body: JSON.stringify(payload)});
     if (!data.success) { alert('Save failed: '+(data.error||'unknown')); return; }
+    // Auto-save identity tool calls into seed
+    if (IDENTITY_TOOL_CALLS.length > 0 && SEED_INLINE_STATE && SEED_INLINE_STATE.id) {
+      try {
+        var seedRaw = $('bSeedText').value || '';
+        var seedWithToolCalls = injectToolCallsIntoSeed(seedRaw);
+        await api('/api/admin/seed', {method:'POST', body: JSON.stringify({
+          id: SEED_INLINE_STATE.id,
+          raw_content: seedWithToolCalls
+        })});
+        setStatus('Saved model + seed with ' + IDENTITY_TOOL_CALLS.length + ' identity tool call(s)');
+      } catch(e) {
+        console.warn('Failed to auto-save seed with tool calls:', e);
+      }
+    }
     var savedSeedId = (SEED_INLINE_STATE && SEED_INLINE_STATE.id) ? SEED_INLINE_STATE.id : '(default)';
     var savedPrompt = (prompt_text && prompt_text.trim()) ? prompt_text.trim().length+' chars' : '(base model prompt)';
     var savedManualThink = (manual_prefill_think && manual_prefill_think.trim()) ? (manual_prefill_think.trim().length+' chars') : 'off';
