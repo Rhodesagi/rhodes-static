@@ -1310,6 +1310,7 @@ function injectToolCallsIntoSeed(seedText) {
   return JSON.stringify(messages, null, 2);
 }
 
+var _HAD_IDENTITY_TOOL_CALLS = false;
 function extractToolCallsFromSeed(seedText) {
   // Parse seed JSON and extract identity tool calls into IDENTITY_TOOL_CALLS
   IDENTITY_TOOL_CALLS = [];
@@ -1342,6 +1343,7 @@ function extractToolCallsFromSeed(seedText) {
     cleanMessages.push(msg);
   }
 
+  _HAD_IDENTITY_TOOL_CALLS = IDENTITY_TOOL_CALLS.length > 0;
   renderIdentityToolCalls();
   return JSON.stringify(cleanMessages, null, 2);
 }
@@ -1793,15 +1795,26 @@ async function saveModel() {
     const data = await api('/api/admin/model-clones', {method:'POST', body: JSON.stringify(payload)});
     if (!data.success) { alert('Save failed: '+(data.error||'unknown')); return; }
     // Auto-save identity tool calls into seed
-    if (IDENTITY_TOOL_CALLS.length > 0 && SEED_INLINE_STATE && SEED_INLINE_STATE.id) {
+    if ((IDENTITY_TOOL_CALLS.length > 0 || _HAD_IDENTITY_TOOL_CALLS) && SEED_INLINE_STATE && SEED_INLINE_STATE.id) {
       try {
         var seedRaw = $('bSeedText').value || '';
+        // If textarea is empty, load the base seed from server first
+        if (!seedRaw.trim() || seedRaw.trim() === '[]' || seedRaw.includes('seed not found')) {
+          try {
+            var _seedFetch = await api('/api/admin/seed?id=' + encodeURIComponent(SEED_INLINE_STATE.id));
+            seedRaw = _seedFetch.raw_content || JSON.stringify(_seedFetch.messages || [], null, 2);
+          } catch(_e) { seedRaw = '[]'; }
+        }
         var seedWithToolCalls = injectToolCallsIntoSeed(seedRaw);
         await api('/api/admin/seed', {method:'POST', body: JSON.stringify({
           id: SEED_INLINE_STATE.id,
           raw_content: seedWithToolCalls
         })});
-        setStatus('Saved model + seed with ' + IDENTITY_TOOL_CALLS.length + ' identity tool call(s)');
+        _HAD_IDENTITY_TOOL_CALLS = IDENTITY_TOOL_CALLS.length > 0;
+        var _tcMsg = IDENTITY_TOOL_CALLS.length > 0
+          ? 'Saved model + seed with ' + IDENTITY_TOOL_CALLS.length + ' identity tool call(s)'
+          : 'Saved model + cleaned seed (tool calls removed)';
+        setStatus(_tcMsg);
       } catch(e) {
         console.warn('Failed to auto-save seed with tool calls:', e);
       }
