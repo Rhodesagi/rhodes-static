@@ -518,6 +518,22 @@ textarea {
               </div>
               <div class="toggle-grid" id="injectionToggles"></div>
             </div>
+            <div class="form-section" id="thought-sanitize-section">
+              <div class="form-section-header">
+                <span>Thought Sanitization</span>
+                <div style="display:flex;gap:12px;align-items:center">
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px">
+                    <input type="checkbox" id="bThoughtSanitize" onchange="onBuilderChange()" style="width:16px;height:16px;cursor:pointer">
+                    Enable for this model
+                  </label>
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5">
+                <strong>Two-pass flow (Kimi/Grok only):</strong> Model generates full reasoning &rarr; safety reactions stripped &rarr; cleaned thought resubmitted as prefill &rarr; model generates response from sanitized reasoning.<br>
+                Keeps factual observations (<em>"this topic is controversial"</em>), removes safety reactions (<em>"so I should be careful"</em>).<br>
+                U-line models (u1.12e) always have this ON. This toggle enables it per-clone.
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1535,6 +1551,7 @@ function renderModelList() {
     const base = c.base_model_input || c.base_model || '';
     const promptInfo = c.prompt_exists ? (c.prompt_chars||0)+' chars' : 'no prompt';
     const hasCustomInj = !!(c.injection_config && Object.values(c.injection_config).some(v=>v===false));
+      const hasThoughtSanitize = !!c.thought_sanitize;
     const hasManualThink = !!(c.manual_prefill_think && String(c.manual_prefill_think).trim());
     const hasManualThinkGate = !!((c.manual_prefill_think_regex && String(c.manual_prefill_think_regex).trim()) || (c.manual_prefill_think_voyage_query && String(c.manual_prefill_think_voyage_query).trim()));
     const hasFinalThink = !!(c.manual_final_think && String(c.manual_final_think).trim());
@@ -1640,6 +1657,7 @@ async function loadModelIntoBuilder(alias) {
   }
   // Load injection config
   CURRENT_INJECTION_CONFIG = clone.injection_config || {};
+  $('bThoughtSanitize').checked = !!clone.thought_sanitize;
   renderInjectionToggles();
   $('builderTitle').textContent = 'Edit: ' + alias;
   $('saveModelBtn').disabled = false;
@@ -1793,6 +1811,7 @@ async function saveModel() {
   }
   const injCfg = getInjectionConfig();
   if (injCfg) payload.injection_config = CURRENT_INJECTION_CONFIG;
+  payload.thought_sanitize = !!$('bThoughtSanitize').checked;
 
   try {
     const data = await api('/api/admin/model-clones', {method:'POST', body: JSON.stringify(payload)});
@@ -2203,6 +2222,8 @@ window.addEventListener('hashchange', () => {
   if (hash) switchTab(hash);
 });
 init();
-</script>
+
+
+    </script>
 </body>
 </html>
