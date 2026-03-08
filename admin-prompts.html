@@ -501,6 +501,23 @@ textarea {
                 </div>
               </div>
             </div>
+            <div class="form-section" id="congress-tool-section">
+              <div class="form-section-header">
+                <span>Congress.gov Tool Overrides</span>
+              </div>
+              <div class="form-field" style="margin-top:6px">
+                <label>Prefill Call JSON <span class="rewind-btn" data-rewind-for="bCongressPrefillCall" onclick="rewindField('bCongressPrefillCall')" title="Revert to saved">&#8630;</span></label>
+                <textarea id="bCongressPrefillCall" style="min-height:60px;max-height:120px;width:100%;margin-top:6px" oninput="onBuilderChange()" placeholder='Optional. JSON used as default prefill_call for congress_read_law tool. Example: {"mode":"manual"}'></textarea>
+              </div>
+              <div class="form-field" style="margin-top:10px">
+                <label>Prefill Result JSON <span class="rewind-btn" data-rewind-for="bCongressPrefillResult" onclick="rewindField('bCongressPrefillResult')" title="Revert to saved">&#8630;</span></label>
+                <textarea id="bCongressPrefillResult" style="min-height:60px;max-height:140px;width:100%;margin-top:6px" oninput="onBuilderChange()" placeholder='Optional. JSON/text returned by default without live fetch.'></textarea>
+              </div>
+              <div class="form-field" style="margin-top:10px">
+                <label>Intercept Rules JSON Array <span class="rewind-btn" data-rewind-for="bCongressIntercepts" onclick="rewindField('bCongressIntercepts')" title="Revert to saved">&#8630;</span></label>
+                <textarea id="bCongressIntercepts" style="min-height:90px;max-height:180px;width:100%;margin-top:6px" oninput="onBuilderChange()" placeholder='Optional. Example: [{"pattern":"117-2","mode":"contains","fill_result":"override"}]'></textarea>
+              </div>
+            </div>
             <div class="form-section" id="version-history-section">
               <div class="form-section-header">
                 <span>Version History <span id="bHistoryCount" style="font-size:10px;color:var(--muted);font-weight:400;margin-left:8px"></span></span>
@@ -1374,11 +1391,20 @@ function storeOriginal(clone) {
   CLONE_ORIGINAL = clone ? JSON.parse(JSON.stringify(clone)) : null;
 }
 
+const JSON_TEXT_FIELDS = new Set(['bCongressPrefillCall','bCongressPrefillResult','bCongressIntercepts']);
+
+function toJsonFieldText(fieldId, value) {
+  if (value === null || value === undefined) return '';
+  if (!JSON_TEXT_FIELDS.has(fieldId)) return String(value || '');
+  if (typeof value === 'string') return value;
+  try { return JSON.stringify(value, null, 2); } catch(e) { return String(value); }
+}
+
 function checkFieldModified(fieldId, origValue) {
   var el = $(fieldId);
   if (!el) return;
   var current = el.type === 'checkbox' ? el.checked : el.value;
-  var orig = el.type === 'checkbox' ? !!origValue : String(origValue || '');
+  var orig = el.type === 'checkbox' ? !!origValue : toJsonFieldText(fieldId, origValue);
   var btn = document.querySelector('[data-rewind-for="' + fieldId + '"]');
   if (!btn) return;
   if (String(current) !== String(orig)) {
@@ -1401,11 +1427,15 @@ function rewindField(fieldId) {
     bManualThinkVoyageThreshold:'manual_prefill_think_voyage_threshold',
     bManualFinalThink:'manual_final_think', bManualFinalThinkRegex:'manual_final_think_regex',
     bManualFinalThinkReplace:'manual_final_think_replace',
+    bCongressPrefillCall:'congress_read_law_prefill_call', bCongressPrefillResult:'congress_read_law_prefill_result',
+    bCongressIntercepts:'congress_read_law_intercepts',
+    bCongressPrefillCall:'congress_read_law_prefill_call', bCongressPrefillResult:'congress_read_law_prefill_result',
+    bCongressIntercepts:'congress_read_law_intercepts',
   };
   var key = map[fieldId];
   var val = key ? CLONE_ORIGINAL[key] : '';
   if (el.type === 'checkbox') el.checked = !!val;
-  else el.value = val || '';
+  else el.value = toJsonFieldText(fieldId, val);
   el.classList.remove('field-modified');
   var btn = document.querySelector('[data-rewind-for="' + fieldId + '"]');
   if (btn) btn.classList.remove('visible');
@@ -1555,9 +1585,10 @@ function renderModelList() {
     const hasManualThink = !!(c.manual_prefill_think && String(c.manual_prefill_think).trim());
     const hasManualThinkGate = !!((c.manual_prefill_think_regex && String(c.manual_prefill_think_regex).trim()) || (c.manual_prefill_think_voyage_query && String(c.manual_prefill_think_voyage_query).trim()));
     const hasFinalThink = !!(c.manual_final_think && String(c.manual_final_think).trim());
+    const hasCongress = (c.congress_read_law_prefill_call !== null && c.congress_read_law_prefill_call !== undefined) || (c.congress_read_law_prefill_result !== null && c.congress_read_law_prefill_result !== undefined) || ((c.congress_read_law_intercepts||[]).length > 0);
     return '<div class="model-item'+active+'" onclick="loadModelIntoBuilder(\''+esc(c.alias||'')+'\')">'
       + '<div class="name">'+esc(c.alias||'')+'</div>'
-      + '<div class="info">'+esc(base)+' &middot; '+esc(c.slash_command||'')+' &middot; '+promptInfo+(hasCustomInj ? ' &middot; <span style="color:var(--warn)">inj:custom</span>' : '')+(hasManualThink ? ' &middot; <span style="color:var(--ok)">think:manual'+(hasManualThinkGate?'[gated]':'')+'</span>' : '')+(hasFinalThink ? ' &middot; <span style="color:var(--ok)">think:final</span>' : '')+'</div>'
+      + '<div class="info">'+esc(base)+' &middot; '+esc(c.slash_command||'')+' &middot; '+promptInfo+(hasCustomInj ? ' &middot; <span style="color:var(--warn)">inj:custom</span>' : '')+(hasManualThink ? ' &middot; <span style="color:var(--ok)">think:manual'+(hasManualThinkGate?'[gated]':'')+'</span>' : '')+(hasFinalThink ? ' &middot; <span style="color:var(--ok)">think:final</span>' : '')+(hasCongress ? ' &middot; <span style="color:var(--ok)">congress:cfg</span>' : '')+'</div>'
       + '</div>';
   }).join('');
 }
@@ -1578,6 +1609,9 @@ function newModel() {
   $('bManualFinalThink').value = '';
   $('bManualFinalThinkRegex').value = '';
   $('bManualFinalThinkReplace').checked = false;
+  $('bCongressPrefillCall').value = '';
+  $('bCongressPrefillResult').value = '';
+  $('bCongressIntercepts').value = '';
   $('bPromptChars').textContent = '0 chars';
   $('bManualThinkChars').textContent = '0 chars';
   $('bManualFinalThinkChars').textContent = '0 chars';
@@ -1647,6 +1681,9 @@ async function loadModelIntoBuilder(alias) {
   $('bManualFinalThinkRegex').value = clone.manual_final_think_regex || '';
   $('bManualFinalThinkReplace').checked = !!clone.manual_final_think_replace;
   onManualFinalThinkEdit();
+  $('bCongressPrefillCall').value = toJsonFieldText('bCongressPrefillCall', clone.congress_read_law_prefill_call);
+  $('bCongressPrefillResult').value = toJsonFieldText('bCongressPrefillResult', clone.congress_read_law_prefill_result);
+  $('bCongressIntercepts').value = toJsonFieldText('bCongressIntercepts', clone.congress_read_law_intercepts);
   SEED_INLINE_STATE = {id:null, originalText:''};
   // Load clone-specific seed if configured (MUST be after SEED_INLINE_STATE reset)
   if (clone.seed_id) {
@@ -1681,6 +1718,21 @@ function onManualThinkEdit() {
 
 function onManualFinalThinkEdit() {
   $('bManualFinalThinkChars').textContent = ($('bManualFinalThink').value||'').length.toLocaleString()+' chars';
+}
+
+function parseLooseJson(raw, label) {
+  var text = String(raw || '').trim();
+  if (!text) return null;
+  try { return JSON.parse(text); } catch(e) { return text; }
+}
+
+function parseJsonArray(raw, label) {
+  var text = String(raw || '').trim();
+  if (!text) return null;
+  var parsed;
+  try { parsed = JSON.parse(text); } catch(e) { throw new Error(label + ' must be valid JSON array: ' + e.message); }
+  if (!Array.isArray(parsed)) throw new Error(label + ' must be a JSON array.');
+  return parsed;
 }
 
 var SEED_INLINE_STATE = { id: null, originalText: '' };
@@ -1773,8 +1825,23 @@ async function saveModel() {
   const manual_final_think = $('bManualFinalThink').value;
   const manual_final_think_regex = $('bManualFinalThinkRegex').value;
   const manual_final_think_replace = $('bManualFinalThinkReplace').checked;
+  const congress_prefill_call_raw = $('bCongressPrefillCall').value;
+  const congress_prefill_result_raw = $('bCongressPrefillResult').value;
+  const congress_intercepts_raw = $('bCongressIntercepts').value;
   if (!alias) { alert('Alias required.'); return; }
   if (!base_model) { alert('Base model required.'); return; }
+
+  var congress_prefill_call = null;
+  var congress_prefill_result = null;
+  var congress_intercepts = null;
+  try {
+    congress_prefill_call = parseLooseJson(congress_prefill_call_raw, 'Congress Prefill Call JSON');
+    congress_prefill_result = parseLooseJson(congress_prefill_result_raw, 'Congress Prefill Result JSON');
+    congress_intercepts = parseJsonArray(congress_intercepts_raw, 'Congress Intercepts JSON');
+  } catch(_e) {
+    alert(_e.message);
+    return;
+  }
 
   if (!BUILDER_STATE.isNew && BUILDER_STATE.originalAlias && BUILDER_STATE.originalAlias !== alias) {
     try {
@@ -1802,6 +1869,9 @@ async function saveModel() {
   payload.manual_final_think = (manual_final_think && manual_final_think.trim()) ? manual_final_think : null;
   payload.manual_final_think_regex = (manual_final_think_regex && manual_final_think_regex.trim()) ? manual_final_think_regex.trim() : null;
   payload.manual_final_think_replace = !!manual_final_think_replace;
+  payload.congress_read_law_prefill_call = congress_prefill_call;
+  payload.congress_read_law_prefill_result = congress_prefill_result;
+  payload.congress_read_law_intercepts = congress_intercepts;
   // Include selected seed_id if a seed is selected
   if (SEED_INLINE_STATE && SEED_INLINE_STATE.id) payload.seed_id = SEED_INLINE_STATE.id;
   // If identity tool calls exist but no seed loaded, use default seed
@@ -1860,7 +1930,11 @@ async function saveModel() {
     }
     var disabledInj = INJECTION_TYPES.filter(t => CURRENT_INJECTION_CONFIG[t.key] === false).map(t => t.label);
     var injSummary = disabledInj.length ? ' | disabled: ' + disabledInj.join(', ') : ' | all injections on';
-    var summary = 'Saved: ' + alias + ' | base=' + base_model + ' | cmd=' + slash_command + ' | prompt=' + savedPrompt + ' | seed=' + savedSeedId + ' | manual-think=' + savedManualThink + ' | final-think=' + savedFinalThink + injSummary;
+    var congressSummary = [];
+    if (congress_prefill_call !== null) congressSummary.push('call');
+    if (congress_prefill_result !== null) congressSummary.push('result');
+    if (congress_intercepts && congress_intercepts.length) congressSummary.push('intercepts:'+congress_intercepts.length);
+    var summary = 'Saved: ' + alias + ' | base=' + base_model + ' | cmd=' + slash_command + ' | prompt=' + savedPrompt + ' | seed=' + savedSeedId + ' | manual-think=' + savedManualThink + ' | final-think=' + savedFinalThink + (congressSummary.length ? ' | congress=' + congressSummary.join('+') : '') + injSummary;
     setStatus(summary);
     showSaveConfirmation(summary);
     BUILDER_STATE = {isNew: false, originalAlias: alias};
