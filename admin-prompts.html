@@ -450,6 +450,56 @@ textarea {
               </div>
               <textarea id="bSeedText" style="min-height:80px;max-height:120px;width:100%;margin-top:6px" oninput="onSeedTextEdit()" placeholder="Select a seed above to load content, or paste JSON..."></textarea>
             </div>
+            <div class="form-section" id="seed-tool-call-builder">
+              <div class="form-section-header">
+                <span>Seed Tool Call + Result</span>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <button onclick="appendSeedToolCall()" style="padding:3px 10px;font-size:11px;background:#14331f;border:1px solid #1f6b3d;color:#86efac">Insert Into Seed</button>
+                  <button onclick="clearSeedToolCallDraft()" style="padding:3px 10px;font-size:11px">Reset</button>
+                </div>
+              </div>
+              <div class="form-row" style="margin-top:6px;gap:10px;align-items:flex-end">
+                <div class="form-field" style="min-width:180px">
+                  <label>Preset</label>
+                  <select id="bSeedToolPreset" onchange="applySeedToolPreset()" style="min-width:180px">
+                    <option value="custom">Custom</option>
+                    <option value="congress_read_law">Law Search (congress_read_law)</option>
+                    <option value="web_search">Web Search</option>
+                    <option value="web_fetch">Web Fetch</option>
+                  </select>
+                </div>
+                <div class="form-field" style="flex:1;min-width:220px">
+                  <label>Tool Name</label>
+                  <input type="text" id="bSeedToolName" placeholder="congress_read_law" style="font-family:var(--mono)">
+                </div>
+                <div class="form-field" style="min-width:180px">
+                  <label>Insert Position</label>
+                  <select id="bSeedToolInsertMode" style="min-width:180px">
+                    <option value="append">Append at end</option>
+                    <option value="prepend">Insert at start</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row" style="margin-top:8px;gap:10px">
+                <div class="form-field" style="flex:1;min-width:220px">
+                  <label>Assistant Content (optional)</label>
+                  <input type="text" id="bSeedToolAssistant" placeholder="Optional assistant message content" style="font-family:var(--mono)">
+                </div>
+              </div>
+              <div class="form-row" style="margin-top:8px;gap:10px">
+                <div class="form-field" style="flex:1;min-width:280px">
+                  <label>Tool Arguments JSON</label>
+                  <textarea id="bSeedToolArgs" style="min-height:70px;max-height:130px;width:100%;margin-top:6px">{}</textarea>
+                </div>
+                <div class="form-field" style="flex:1;min-width:280px">
+                  <label>Tool Result (JSON or plain text)</label>
+                  <textarea id="bSeedToolResult" style="min-height:70px;max-height:130px;width:100%;margin-top:6px">{"success":true}</textarea>
+                </div>
+              </div>
+              <div style="margin-top:6px;font-size:11px;color:var(--muted)">
+                Inserts a valid assistant tool-call message and matching tool-result message directly into Warmup Seed JSON.
+              </div>
+            </div>
             <div class="form-section" id="identity-tool-calls">
               <div class="form-section-header">
                 <span>Identity Tool Calls <span id="bToolCallCount" style="font-size:10px;color:var(--muted);font-weight:400;margin-left:8px">0 tool calls in seed</span></span>
@@ -503,15 +553,15 @@ textarea {
             </div>
             <div class="form-section" id="congress-tool-section">
               <div class="form-section-header">
-                <span>Congress.gov Tool Overrides</span>
+                <span>Law Search Tool Overrides (congress_read_law)</span>
               </div>
               <div class="form-field" style="margin-top:6px">
-                <label>Prefill Call JSON <span class="rewind-btn" data-rewind-for="bCongressPrefillCall" onclick="rewindField('bCongressPrefillCall')" title="Revert to saved">&#8630;</span></label>
-                <textarea id="bCongressPrefillCall" style="min-height:60px;max-height:120px;width:100%;margin-top:6px" oninput="onBuilderChange()" placeholder='Optional. JSON used as default prefill_call for congress_read_law tool. Example: {"mode":"manual"}'></textarea>
+                <label>Law Search Tool Call <span class="rewind-btn" data-rewind-for="bCongressPrefillCall" onclick="rewindField('bCongressPrefillCall')" title="Revert to saved">&#8630;</span></label>
+                <textarea id="bCongressPrefillCall" style="min-height:60px;max-height:120px;width:100%;margin-top:6px" oninput="onBuilderChange()" placeholder='Optional. Default tool-call payload for law search. Example: {"query":"Public Law 117-2","query_source":"congress_api"}'></textarea>
               </div>
               <div class="form-field" style="margin-top:10px">
-                <label>Prefill Result JSON <span class="rewind-btn" data-rewind-for="bCongressPrefillResult" onclick="rewindField('bCongressPrefillResult')" title="Revert to saved">&#8630;</span></label>
-                <textarea id="bCongressPrefillResult" style="min-height:60px;max-height:140px;width:100%;margin-top:6px" oninput="onBuilderChange()" placeholder='Optional. JSON/text returned by default without live fetch.'></textarea>
+                <label>Law Search Tool Result <span class="rewind-btn" data-rewind-for="bCongressPrefillResult" onclick="rewindField('bCongressPrefillResult')" title="Revert to saved">&#8630;</span></label>
+                <textarea id="bCongressPrefillResult" style="min-height:60px;max-height:140px;width:100%;margin-top:6px" oninput="onBuilderChange()" placeholder='Optional. Default tool-result payload for law search; returned without live fetch.'></textarea>
               </div>
               <div class="form-field" style="margin-top:10px">
                 <label>Intercept Rules JSON Array <span class="rewind-btn" data-rewind-for="bCongressIntercepts" onclick="rewindField('bCongressIntercepts')" title="Revert to saved">&#8630;</span></label>
@@ -1259,6 +1309,109 @@ function getInjectionConfig() {
   return anyDisabled ? CURRENT_INJECTION_CONFIG : null;
 }
 
+function applySeedToolPreset() {
+  var preset = ($('bSeedToolPreset').value || 'custom');
+  if (preset === 'congress_read_law') {
+    $('bSeedToolName').value = 'congress_read_law';
+    $('bSeedToolArgs').value = JSON.stringify({query: 'Public Law 117-2', query_source: 'congress_api'}, null, 2);
+    $('bSeedToolResult').value = JSON.stringify({success: true, content: 'Law lookup completed.'}, null, 2);
+  } else if (preset === 'web_search') {
+    $('bSeedToolName').value = 'web_search';
+    $('bSeedToolArgs').value = JSON.stringify({query: 'site:congress.gov Public Law 117-2'}, null, 2);
+    $('bSeedToolResult').value = JSON.stringify({success: true, content: 'Search seeded.'}, null, 2);
+  } else if (preset === 'web_fetch') {
+    $('bSeedToolName').value = 'web_fetch';
+    $('bSeedToolArgs').value = JSON.stringify({url: 'https://www.congress.gov/'}, null, 2);
+    $('bSeedToolResult').value = JSON.stringify({success: true, content: 'Fetch seeded.'}, null, 2);
+  }
+}
+
+function clearSeedToolCallDraft() {
+  if ($('bSeedToolPreset')) $('bSeedToolPreset').value = 'custom';
+  if ($('bSeedToolInsertMode')) $('bSeedToolInsertMode').value = 'append';
+  if ($('bSeedToolName')) $('bSeedToolName').value = '';
+  if ($('bSeedToolAssistant')) $('bSeedToolAssistant').value = '';
+  if ($('bSeedToolArgs')) $('bSeedToolArgs').value = '{}';
+  if ($('bSeedToolResult')) $('bSeedToolResult').value = '{"success":true}';
+}
+
+function appendSeedToolCall() {
+  var toolName = ($('bSeedToolName').value || '').trim();
+  if (!toolName) {
+    alert('Tool name is required.');
+    return;
+  }
+
+  var seedRaw = $('bSeedText').value || '[]';
+  var messages;
+  try {
+    messages = JSON.parse(seedRaw);
+  } catch (e) {
+    alert('Warmup seed JSON is invalid: ' + e.message);
+    return;
+  }
+  if (!Array.isArray(messages)) {
+    alert('Warmup seed must be a JSON array of messages.');
+    return;
+  }
+
+  var argsRaw = ($('bSeedToolArgs').value || '').trim() || '{}';
+  var argsParsed;
+  try {
+    argsParsed = JSON.parse(argsRaw);
+  } catch (e) {
+    alert('Tool arguments must be valid JSON: ' + e.message);
+    return;
+  }
+
+  var resultRaw = ($('bSeedToolResult').value || '').trim();
+  var resultContent;
+  if (!resultRaw) {
+    resultContent = JSON.stringify({success: true, message: toolName + ' executed.'});
+  } else {
+    try {
+      resultContent = JSON.stringify(JSON.parse(resultRaw));
+    } catch (e) {
+      resultContent = resultRaw;
+    }
+  }
+
+  var assistantContent = $('bSeedToolAssistant').value || '';
+  var tcId = 'tc_seed_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+
+  var assistantMsg = {
+    role: 'assistant',
+    content: assistantContent,
+    tool_calls: [{
+      id: tcId,
+      type: 'function',
+      function: {
+        name: toolName,
+        arguments: JSON.stringify(argsParsed)
+      }
+    }]
+  };
+
+  var toolMsg = {
+    role: 'tool',
+    tool_call_id: tcId,
+    content: resultContent
+  };
+
+  var mode = ($('bSeedToolInsertMode') && $('bSeedToolInsertMode').value) || 'append';
+  if (mode === 'prepend') {
+    messages.unshift(toolMsg);
+    messages.unshift(assistantMsg);
+  } else {
+    messages.push(assistantMsg);
+    messages.push(toolMsg);
+  }
+
+  $('bSeedText').value = JSON.stringify(messages, null, 2);
+  onSeedTextEdit();
+  setStatus('Inserted tool call pair into warmup seed: ' + toolName + '()');
+}
+
 // ---- Identity Tool Calls (seed-embedded) ----
 var IDENTITY_TOOL_CALLS = []; // [{name, content, tc_id}]
 
@@ -1429,8 +1582,6 @@ function rewindField(fieldId) {
     bManualFinalThinkReplace:'manual_final_think_replace',
     bCongressPrefillCall:'congress_read_law_prefill_call', bCongressPrefillResult:'congress_read_law_prefill_result',
     bCongressIntercepts:'congress_read_law_intercepts',
-    bCongressPrefillCall:'congress_read_law_prefill_call', bCongressPrefillResult:'congress_read_law_prefill_result',
-    bCongressIntercepts:'congress_read_law_intercepts',
   };
   var key = map[fieldId];
   var val = key ? CLONE_ORIGINAL[key] : '';
@@ -1451,6 +1602,8 @@ function checkAllFields() {
     bManualThinkVoyageThreshold:'manual_prefill_think_voyage_threshold',
     bManualFinalThink:'manual_final_think', bManualFinalThinkRegex:'manual_final_think_regex',
     bManualFinalThinkReplace:'manual_final_think_replace',
+    bCongressPrefillCall:'congress_read_law_prefill_call', bCongressPrefillResult:'congress_read_law_prefill_result',
+    bCongressIntercepts:'congress_read_law_intercepts',
   };
   for (var fid in fields) checkFieldModified(fid, CLONE_ORIGINAL[fields[fid]]);
 }
@@ -1602,6 +1755,7 @@ function newModel() {
   $('bPromptSource').value = '';
   $('bPromptText').value = '';
   $('bSeedId').value = '';
+  clearSeedToolCallDraft();
   $('bManualThink').value = '';
   $('bManualThinkRegex').value = '';
   $('bManualThinkVoyageQuery').value = '';
@@ -1670,6 +1824,7 @@ async function loadModelIntoBuilder(alias) {
   $('bSeedText').value = '';
   $('bSeedMsgCount').textContent = '';
   $('bSeedDirty').textContent = '';
+  clearSeedToolCallDraft();
   $('bManualThink').value = clone.manual_prefill_think || '';
   $('bManualThinkRegex').value = clone.manual_prefill_think_regex || '';
   $('bManualThinkVoyageQuery').value = clone.manual_prefill_think_voyage_query || '';
