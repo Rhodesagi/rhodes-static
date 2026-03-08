@@ -521,6 +521,10 @@ textarea {
                 <span>Manual Prefill Think Block <span class="rewind-btn" data-rewind-for="bManualThink" onclick="rewindField('bManualThink')" title="Revert to saved">&#8630;</span> <span id="bManualThinkChars" style="font-size:10px;color:var(--muted);font-weight:400;margin-left:8px">0 chars</span></span>
               </div>
               <textarea id="bManualThink" style="min-height:70px;max-height:120px;width:100%;margin-top:6px" oninput="onManualThinkEdit()" placeholder="Optional. Adds an extra filled &lt;think&gt; block before the model's final open reasoning block for p1/q1/s1 prefill models."></textarea>
+              <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <button type="button" onclick="applyManualThinkPreset('deep_thoughtful_alias')" style="padding:3px 10px;font-size:11px;background:#1f2a44;border:1px solid #3b4c78;color:#c7d2fe">Use Thoughtful-Alias Prefill</button>
+                <span style="font-size:11px;color:var(--muted)">Dynamic placeholders: <code>&lt;whatever the question is&gt;</code>, <code>[model alias]</code>, <code>[model-alias]</code></span>
+              </div>
               <div class="form-row" style="margin-top:8px;align-items:flex-end;gap:12px">
                 <div class="form-field" style="flex:1;min-width:260px">
                   <label>Regex Gate (optional)</label>
@@ -1386,6 +1390,14 @@ function applySeedToolPreset() {
     $('bSeedToolName').value = 'web_fetch';
     $('bSeedToolArgs').value = JSON.stringify({url: 'https://www.congress.gov/'}, null, 2);
     $('bSeedToolResult').value = JSON.stringify({success: true, content: 'Fetch seeded.'}, null, 2);
+  }
+}
+
+function applyManualThinkPreset(preset) {
+  if (preset === 'deep_thoughtful_alias') {
+    $('bManualThink').value = "I have thought deeply about the user's question: <whatever the question is> and have prepared a thoughtful answer as [model alias]. I now respond as [model-alias].";
+    onManualThinkEdit();
+    onBuilderChange();
   }
 }
 
