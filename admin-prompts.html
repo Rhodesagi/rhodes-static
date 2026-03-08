@@ -103,6 +103,9 @@ textarea {
 .spreadsheet td.num { color:#60a5fa;text-align:right; }
 .spreadsheet td.alias-cell { color:#c4b5fd;font-weight:600;cursor:pointer; }
 .spreadsheet td.alias-cell:hover { text-decoration:underline; }
+.spreadsheet td.action-cell { white-space:nowrap; }
+.spreadsheet td.action-cell button { font-size:10px;padding:3px 8px;border-radius:6px;background:#1e2a57;color:#e2e8f0;border:1px solid #35457b;cursor:pointer; }
+.spreadsheet td.action-cell button:hover { background:#273673; }
 .ss-toolbar { display:flex;gap:8px;align-items:center;margin-bottom:8px; }
 .ss-toolbar input { padding:6px 10px;border-radius:6px;background:#0a0e1a;border:1px solid var(--border);color:var(--text);font-size:12px;min-width:200px; }
 /* Model Builder */
@@ -846,6 +849,7 @@ const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 let ALL_PROMPTS = [];
 let ALL_SEEDS = [];
 let MODEL_CLONES = [];
+let BASE_MODELS = [];
 let GLOBAL_SEARCH = { query: '', total: 0, count: 0, results: [] };
 let EDITOR_STATE = {};
 let SEED_MODAL_STATE = {};
@@ -1163,10 +1167,69 @@ async function loadAllSeeds() {
   }
 }
 
+function ensureBaseModelOption(modelValue, labelText) {
+  const sel = $('bBaseModel');
+  const value = String(modelValue || '').trim().toLowerCase();
+  if (!value) return;
+  const has = Array.from(sel.options).some(o => String(o.value || '').trim().toLowerCase() === value);
+  if (!has) {
+    const opt = document.createElement('option');
+    opt.value = value;
+    opt.textContent = labelText || value;
+    sel.appendChild(opt);
+  }
+}
+
+function populateBaseModelOptions() {
+  const sel = $('bBaseModel');
+  if (!sel) return;
+  const current = String(sel.value || '').trim().toLowerCase();
+  const defaults = [
+    'p1.12e','p1.12d','r1.0a','r1.0b','r1.0c','r1.12f','u1.12e','u1.12f','u1.0e'
+  ];
+  const cloneAliases = (MODEL_CLONES || []).filter(c => c && c.alias).map(c => String(c.alias).trim().toLowerCase());
+  const merged = [];
+  const seen = new Set();
+  function add(v) {
+    var m = String(v || '').trim().toLowerCase();
+    if (!m || seen.has(m)) return;
+    seen.add(m);
+    merged.push(m);
+  }
+  defaults.forEach(add);
+  (BASE_MODELS || []).forEach(add);
+  cloneAliases.forEach(add);
+  sel.innerHTML = merged.map(v => '<option value="'+esc(v)+'">'+esc(v)+'</option>').join('');
+  if (current) {
+    ensureBaseModelOption(current, current);
+    sel.value = current;
+  } else if (merged.length) {
+    sel.value = merged[0];
+  }
+}
+
+function buildFromBaseModel(baseModel, opts) {
+  var normalized = String(baseModel || '').trim().toLowerCase();
+  if (!normalized) return;
+  opts = opts || {};
+  switchTab('builder');
+  newModel();
+  ensureBaseModelOption(normalized, normalized);
+  $('bBaseModel').value = normalized;
+  if (opts.forceAlias) {
+    $('bAlias').value = normalized;
+    $('bSlash').value = '/' + normalized;
+  }
+  $('builderTitle').textContent = opts.title || ('New Model from ' + normalized);
+  onBuilderChange();
+}
+
 async function loadModelClones() {
   try {
     const data = await api('/api/admin/model-clones');
     MODEL_CLONES = data.clones || [];
+    BASE_MODELS = data.base_models || [];
+    populateBaseModelOptions();
     renderModelList();
     populateTestModelDropdown();
   } catch(e) {
@@ -1659,9 +1722,9 @@ async function restoreVersion(vid, alias) {
 }
 
 // ---- Spreadsheet ----
-var SS_DATA = [], SS_SORT_COL = null, SS_SORT_DIR = 'asc';
+var SS_DATA = [], SS_VISIBLE_ROWS = [], SS_SORT_COL = null, SS_SORT_DIR = 'asc';
 var SS_COLUMNS = [
-  {key:'alias',label:'Alias',type:'text'},{key:'base_model',label:'Base',type:'text'},
+  {key:'kind',label:'Type',type:'text'},{key:'alias',label:'Alias',type:'text'},{key:'base_model',label:'Base',type:'text'},
   {key:'slash_command',label:'Slash',type:'text'},{key:'enabled',label:'On',type:'bool'},
   {key:'seed_id',label:'Seed',type:'text'},{key:'prompt_source',label:'Prompt',type:'text'},
   {key:'prompt_chars',label:'P.Len',type:'num'},{key:'prefill_think',label:'Pf',type:'bool'},
@@ -1671,13 +1734,18 @@ var SS_COLUMNS = [
   {key:'inj_articles',label:'Art',type:'bool'},{key:'inj_memories',label:'Mem',type:'bool'},
   {key:'inj_known_cases',label:'KC',type:'bool'},{key:'inj_person',label:'Per',type:'bool'},
   {key:'inj_verification',label:'Ver',type:'bool'},{key:'notes',label:'Notes',type:'text'},
+  {key:'actions',label:'Actions',type:'action'},
 ];
 
 async function loadSpreadsheet() {
   try {
     var data = await api('/api/admin/model-clones/spreadsheet');
     SS_DATA = data.rows || [];
-    $('ssCount').textContent = SS_DATA.length + ' models';
+    if (Array.isArray(data.base_models) && data.base_models.length) {
+      BASE_MODELS = data.base_models;
+      populateBaseModelOptions();
+    }
+    $('ssCount').textContent = SS_DATA.length + ' rows';
     renderSpreadsheet();
   } catch(e) { $('ssBody').innerHTML = '<tr><td colspan="99" style="color:var(--bad)">Error: '+e.message+'</td></tr>'; }
 }
@@ -1686,7 +1754,10 @@ function renderSpreadsheet() {
   var filter = ($('ssFilter').value || '').toLowerCase();
   var rows = SS_DATA;
   if (filter) rows = rows.filter(function(r) {
-    return (r.alias||'').includes(filter)||(r.base_model||'').includes(filter)||(r.notes||'').toLowerCase().includes(filter);
+    return (r.alias||'').toLowerCase().includes(filter)
+      || (r.base_model||'').toLowerCase().includes(filter)
+      || (r.kind||'').toLowerCase().includes(filter)
+      || (r.notes||'').toLowerCase().includes(filter);
   });
   if (SS_SORT_COL) {
     var col = SS_COLUMNS.find(function(c){return c.key===SS_SORT_COL;});
@@ -1704,12 +1775,22 @@ function renderSpreadsheet() {
     h+='<th class="'+cls+'" onclick="ssSort(\''+c.key+'\')">'+c.label+'</th>';
   });
   $('ssHead').innerHTML=h+'</tr>';
+  SS_VISIBLE_ROWS = rows;
   var b='';
-  rows.forEach(function(r){
+  rows.forEach(function(r, idx){
+    var kind = String(r.kind || '').toLowerCase();
+    var alias = String(r.alias || '').trim().toLowerCase();
+    var isBase = kind === 'base';
+    var isBaseOverride = kind === 'base_override' || (kind === 'clone' && (BASE_MODELS||[]).includes(alias));
     b+='<tr>';
     SS_COLUMNS.forEach(function(c){
       var v=r[c.key];
-      if(c.key==='alias') b+='<td class="alias-cell" onclick="ssClickAlias(\''+v+'\')">'+v+'</td>';
+      if(c.key==='alias') b+='<td class="alias-cell" onclick="ssClickAliasByIndex('+idx+')">'+esc(v || '')+'</td>';
+      else if(c.key==='actions') {
+        var label = isBase ? 'Build' : 'Edit';
+        if (isBaseOverride) label = 'Edit';
+        b+='<td class="action-cell"><button onclick="ssClickAliasByIndex('+idx+')">'+label+'</button></td>';
+      }
       else if(c.type==='bool') b+='<td class="'+(v?'bool-true':'bool-false')+'">'+(v?'\u2713':'\u00b7')+'</td>';
       else if(c.type==='num') b+='<td class="num">'+(v||0)+'</td>';
       else{var s=String(v||'');if(s.length>30)s=s.substring(0,30)+'\u2026';b+='<td>'+s+'</td>';}
@@ -1721,20 +1802,65 @@ function renderSpreadsheet() {
 }
 function ssSort(k){if(SS_SORT_COL===k)SS_SORT_DIR=SS_SORT_DIR==='asc'?'desc':'asc';else{SS_SORT_COL=k;SS_SORT_DIR='asc';}renderSpreadsheet();}
 function filterSpreadsheet(){renderSpreadsheet();}
-function ssClickAlias(a){switchTab('builder');setTimeout(function(){document.querySelectorAll('#modelListItems .model-item').forEach(function(el){if(el.dataset.alias===a)el.click();});},200);}
+function ssClickAliasByIndex(idx) {
+  var row = SS_VISIBLE_ROWS[idx];
+  if (!row) return;
+  ssClickAlias(row.alias, row.kind, row.base_model);
+}
+function ssClickAlias(a, kind, baseModel){
+  var alias = String(a || '').trim().toLowerCase();
+  var normalizedKind = String(kind || '').trim().toLowerCase();
+  var normalizedBase = String(baseModel || alias || '').trim().toLowerCase();
+  if (!alias && !normalizedBase) return;
+  if (normalizedKind === 'base') {
+    buildFromBaseModel(normalizedBase || alias, {forceAlias:true, title:'New Base Override: ' + (normalizedBase || alias)});
+    return;
+  }
+  var exists = (MODEL_CLONES || []).some(function(c){ return (c && c.alias) ? String(c.alias).trim().toLowerCase() === alias : false; });
+  if (exists) {
+    switchTab('builder');
+    loadModelIntoBuilder(alias);
+    return;
+  }
+  if ((BASE_MODELS || []).includes(alias)) {
+    buildFromBaseModel(alias, {forceAlias:true, title:'New Base Override: ' + alias});
+  }
+}
 
 // ---- Model Builder ----
 function renderModelList() {
-  if (!MODEL_CLONES.length) {
+  const runtimeBases = Array.from(new Set((BASE_MODELS || []).map(m => String(m || '').trim().toLowerCase()).filter(Boolean)));
+  const cloneRows = (MODEL_CLONES || []).filter(c => c && c.alias && !runtimeBases.includes(String(c.alias).trim().toLowerCase()));
+  const overridesByAlias = new Map();
+  (MODEL_CLONES || []).forEach(function(c){
+    if (!c || !c.alias) return;
+    overridesByAlias.set(String(c.alias).trim().toLowerCase(), c);
+  });
+  if (!runtimeBases.length && !cloneRows.length) {
     $('modelListItems').innerHTML = '<div style="padding:12px;color:var(--muted)">No models. Click + New.</div>';
     return;
   }
-  $('modelListItems').innerHTML = MODEL_CLONES.map(c => {
+  var baseHtml = runtimeBases.map(function(baseAlias){
+    var override = overridesByAlias.get(baseAlias);
+    var active = BUILDER_STATE.originalAlias === baseAlias ? ' active' : '';
+    if (override) {
+      var promptInfo = override.prompt_exists ? (override.prompt_chars||0)+' chars' : 'base prompt';
+      var hasCongress = (override.congress_read_law_prefill_call !== null && override.congress_read_law_prefill_call !== undefined) || (override.congress_read_law_prefill_result !== null && override.congress_read_law_prefill_result !== undefined) || ((override.congress_read_law_intercepts||[]).length > 0);
+      return '<div class="model-item'+active+'" onclick="loadModelIntoBuilder(\''+esc(baseAlias)+'\')">'
+        + '<div class="name">'+esc(baseAlias)+'</div>'
+        + '<div class="info">base override &middot; '+promptInfo+(hasCongress ? ' &middot; <span style="color:var(--ok)">congress:cfg</span>' : '')+'</div>'
+        + '</div>';
+    }
+    return '<div class="model-item'+active+'" onclick="buildFromBaseModel(\''+esc(baseAlias)+'\', {forceAlias:true, title:\'New Base Override: '+esc(baseAlias)+'\'})">'
+      + '<div class="name">'+esc(baseAlias)+'</div>'
+      + '<div class="info">base model &middot; click to create override</div>'
+      + '</div>';
+  }).join('');
+  var cloneHtml = cloneRows.map(function(c){
     const active = BUILDER_STATE.originalAlias === c.alias ? ' active' : '';
     const base = c.base_model_input || c.base_model || '';
     const promptInfo = c.prompt_exists ? (c.prompt_chars||0)+' chars' : 'no prompt';
     const hasCustomInj = !!(c.injection_config && Object.values(c.injection_config).some(v=>v===false));
-      const hasThoughtSanitize = !!c.thought_sanitize;
     const hasManualThink = !!(c.manual_prefill_think && String(c.manual_prefill_think).trim());
     const hasManualThinkGate = !!((c.manual_prefill_think_regex && String(c.manual_prefill_think_regex).trim()) || (c.manual_prefill_think_voyage_query && String(c.manual_prefill_think_voyage_query).trim()));
     const hasFinalThink = !!(c.manual_final_think && String(c.manual_final_think).trim());
@@ -1744,12 +1870,24 @@ function renderModelList() {
       + '<div class="info">'+esc(base)+' &middot; '+esc(c.slash_command||'')+' &middot; '+promptInfo+(hasCustomInj ? ' &middot; <span style="color:var(--warn)">inj:custom</span>' : '')+(hasManualThink ? ' &middot; <span style="color:var(--ok)">think:manual'+(hasManualThinkGate?'[gated]':'')+'</span>' : '')+(hasFinalThink ? ' &middot; <span style="color:var(--ok)">think:final</span>' : '')+(hasCongress ? ' &middot; <span style="color:var(--ok)">congress:cfg</span>' : '')+'</div>'
       + '</div>';
   }).join('');
+  var html = '';
+  if (runtimeBases.length) {
+    html += '<div style="padding:8px 10px 4px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em">Base Models</div>' + baseHtml;
+  }
+  if (cloneRows.length) {
+    html += '<div style="padding:10px 10px 4px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em">Custom Clones</div>' + cloneHtml;
+  }
+  $('modelListItems').innerHTML = html;
 }
 
 function newModel() {
   BUILDER_STATE = { isNew: true, originalAlias: null };
   $('bAlias').value = '';
-  $('bBaseModel').value = 'p1.12e';
+  populateBaseModelOptions();
+  if (!$('bBaseModel').value) {
+    ensureBaseModelOption('p1.12e', 'p1.12e');
+    $('bBaseModel').value = 'p1.12e';
+  }
   $('bSlash').value = '';
   $('bNotes').value = '';
   $('bPromptSource').value = '';
@@ -2148,10 +2286,11 @@ function populateTestModelDropdown() {
     ['deepseek-chat','DeepSeek'],['r1.0a','Opus'],['r1.0b','Sonnet'],
     ['r1.0c','Haiku'],['r1.12e','Kimi'],['r1.12f','Grok'],['u1.12e','Kimi Sanitized'],['u1.12f','Grok Sanitized']
   ];
+  const baseOpts = (BASE_MODELS||[]).filter(Boolean).map(m=>[String(m).trim().toLowerCase(),'Base: '+String(m).trim().toLowerCase()]);
   const cloneOpts = (MODEL_CLONES||[]).filter(c=>c&&c.alias).map(c=>[c.alias,'Clone: '+c.alias]);
   const seen = new Set();
   const merged = [];
-  for (const [v,l] of defaults.concat(cloneOpts)) {
+  for (const [v,l] of defaults.concat(baseOpts, cloneOpts)) {
     if (seen.has(v)) continue; seen.add(v);
     merged.push([v,l]);
   }
