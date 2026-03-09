@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rhodes Chess - Real-time Multiplayer</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="login-screen" class="screen active">
+            <div class="login-box">
+                <h1>♔ Rhodes Chess ♚</h1>
+                <p>Real-time Multiplayer Chess</p>
+                <input type="text" id="username-input" placeholder="Enter your username" maxlength="20">
+                <button id="login-btn">Play</button>
+                <div class="features">
+                    <span>⚡ Real-time</span>
+                    <span>🏆 ELO Rated</span>
+                    <span>👥 Spectate</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lobby Screen -->
+        <div id="lobby-screen" class="screen">
+            <header>
+                <h1>♔ Rhodes Chess</h1>
+                <div class="user-info">
+                    <span id="user-display"></span>
+                    <span id="elo-display"></span>
+                    <button id="logout-btn">Logout</button>
+                </div>
+            </header>
+            <main class="lobby-content">
+                <div class="lobby-section">
+                    <h2>Find a Game</h2>
+                    <button id="find-game-btn" class="btn-primary">Find Match</button>
+                    <button id="cancel-search-btn" class="btn-secondary" style="display:none;">Cancel</button>
+                    <p id="search-status"></p>
+                </div>
+                <div class="lobby-section">
+                    <h2>Leaderboard</h2>
+                    <table id="leaderboard-table">
+                        <thead>
+                            <tr><th>Rank</th><th>Player</th><th>ELO</th><th>W</th><th>L</th><th>D</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <button id="refresh-leaderboard" class="btn-small">Refresh</button>
+                </div>
+                <div class="lobby-section">
+                    <h2>Your Games</h2>
+                    <div id="game-history"></div>
+                    <button id="refresh-history" class="btn-small">Refresh</button>
+                </div>
+            </main>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <header>
+                <h1>Rhodes Chess</h1>
+                <div class="game-info">
+                    <span id="game-status"></span>
+                    <button id="resign-btn" class="btn-danger">Resign</button>
+                    <button id="offer-draw-btn" class="btn-secondary">Offer Draw</button>
+                    <button id="leave-game-btn">Leave</button>
+                </div>
+            </header>
+            <main class="game-content">
+                <div class="game-layout">
+                    <!-- Opponent Info -->
+                    <div class="player-bar opponent">
+                        <div class="player-info">
+                            <span class="player-name" id="opponent-name"></span>
+                            <span class="player-elo" id="opponent-elo"></span>
+                        </div>
+                        <div class="timer" id="opponent-timer">10:00</div>
+                        <div class="captured-pieces" id="opponent-captured"></div>
+                    </div>
+
+                    <!-- Chess Board -->
+                    <div class="board-container">
+                        <div id="chess-board"></div>
+                        <div id="promotion-modal" class="modal" style="display:none;">
+                            <div class="modal-content">
+                                <h3>Promote to:</h3>
+                                <div class="promotion-options">
+                                    <button data-piece="queen">♕ Queen</button>
+                                    <button data-piece="rook">♖ Rook</button>
+                                    <button data-piece="bishop">♗ Bishop</button>
+                                    <button data-piece="knight">♘ Knight</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="draw-offer-modal" class="modal" style="display:none;">
+                            <div class="modal-content">
+                                <h3>Draw Offered</h3>
+                                <p>Your opponent offers a draw</p>
+                                <button id="accept-draw-btn" class="btn-primary">Accept</button>
+                                <button id="decline-draw-btn" class="btn-secondary">Decline</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Player Info -->
+                    <div class="player-bar you">
+                        <div class="player-info">
+                            <span class="player-name" id="your-name"></span>
+                            <span class="player-elo" id="your-elo"></span>
+                        </div>
+                        <div class="timer" id="your-timer">10:00</div>
+                        <div class="captured-pieces" id="your-captured"></div>
+                    </div>
+                </div>
+
+                <!-- Move History -->
+                <div class="move-history-panel">
+                    <h3>Move History</h3>
+                    <div id="move-list"></div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Replay Screen -->
+        <div id="replay-screen" class="screen">
+            <header>
+                <h1>Game Replay</h1>
+                <button id="back-to-lobby">Back to Lobby</button>
+            </header>
+            <main class="replay-content">
+                <div class="replay-layout">
+                    <div id="replay-board"></div>
+                    <div class="replay-controls">
+                        <button id="replay-start">⏮ Start</button>
+                        <button id="replay-prev">◀ Prev</button>
+                        <button id="replay-next">▶ Next</button>
+                        <button id="replay-end">⏭ End</button>
+                    </div>
+                    <div class="replay-info">
+                        <p id="replay-players"></p>
+                        <p id="replay-result"></p>
+                        <pre id="replay-pgn"></pre>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Spectator Screen -->
+        <div id="spectate-screen" class="screen">
+            <header>
+                <h1>Spectating</h1>
+                <button id="stop-spectating">Stop Spectating</button>
+            </header>
+            <main class="spectate-content">
+                <div class="spectate-layout">
+                    <div class="player-bar white">
+                        <span id="spectate-white"></span>
+                        <div class="timer" id="spectate-white-timer">10:00</div>
+                    </div>
+                    <div id="spectate-board"></div>
+                    <div class="player-bar black">
+                        <span id="spectate-black"></span>
+                        <div class="timer" id="spectate-black-timer">10:00</div>
+                    </div>
+                </div>
+                <div class="spectate-move-history">
+                    <h3>Moves</h3>
+                    <div id="spectate-moves"></div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="js/chess.js"></script>
+</body>
+</html>

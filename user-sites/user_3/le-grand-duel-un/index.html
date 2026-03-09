@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le Grand Duel - Musket Duel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #gameContainer {
+            display: flex;
+            flex-direction: column;
+            border: 2px solid #4a3728;
+        }
+        .playerView {
+            position: relative;
+            width: 800px;
+            height: 300px;
+            background: #1a1a1a;
+        }
+        #player1View {
+            border-bottom: 1px solid #4a3728;
+        }
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+        }
+        #ui {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            font-size: 12px;
+            border: 1px solid #4a3728;
+        }
+        #instructions {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #8b7355;
+        }
+        #instructions h3 {
+            color: #d4af37;
+            margin-bottom: 10px;
+        }
+        .key {
+            display: inline-block;
+            background: #4a3728;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #d4af37;
+            margin: 0 2px;
+        }
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            background: transparent;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        .aiming #crosshair {
+            display: none;
+        }
+        #musketSight {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: none;
+        }
+        .aiming #musketSight {
+            display: block;
+        }
+        #winner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: #d4af37;
+            text-shadow: 2px 2px 4px #000;
+            display: none;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div class="playerView" id="player1View">
+            <canvas id="canvas1" width="800" height="300"></canvas>
+            <div id="musketSight">
+                <svg width="100%" height="100%" viewBox="0 0 800 300">
+                    <!-- Iron sight rear notch -->
+                    <rect x="380" y="140" width="40" height="3" fill="#2a1f15"/>
+                    <rect x="380" y="140" width="3" height="15" fill="#2a1f15"/>
+                    <rect x="417" y="140" width="3" height="15" fill="#2a1f15"/>
+                    <!-- Front sight post -->
+                    <rect x="398" y="160" width="4" height="25" fill="#1a1208"/>
+                    <rect x="396" y="158" width="8" height="4" fill="#1a1208"/>
+                </svg>
+            </div>
+            <div id="ui">
+                <div>Powder: <span id="powder">Ready</span></div>
+                <div>Ball: <span id="ball">Ready</span></div>
+                <div>Ramrod: <span id="ramrod">Ready</span></div>
+                <div>State: <span id="state">READY TO FIRE</span></div>
+            </div>
+            <div id="winner"></div>
+        </div>
+    </div>
+    
+    <div id="instructions">
+        <h3>⚔️ LE GRAND DUEL ⚔️</h3>
+        <p>Two officers. One bullet each. Honor demands satisfaction.</p>
+        <p>
+            <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> Move | 
+            <span class="key">Q</span><span class="key">E</span> Turn Musket | 
+            <span class="key">X</span> Iron Sights | 
+            <span class="key">F</span> Fire | 
+            <span class="key">R</span> Reload
+        </p>
+        <p style="margin-top:10px;color:#666;font-size:11px;">Aim true. Reloading takes time. Your opponent waits for no man.</p>
+    </div>
+
+    <script>
+        // Game Constants
+        const canvas = document.getElementById('canvas1');
+        const ctx = canvas.getContext('2d');
+        const SCREEN_WIDTH = 800;
+        const SCREEN_HEIGHT = 300;
+        const FOV = Math.PI / 3;
+        const WALL_STRIP_WIDTH = 1;
+        const NUM_RAYS = SCREEN_WIDTH / WALL_STRIP_WIDTH;
+        const MAP_SIZE = 16;
+        const TILE_SIZE = 64;
+        
+        // Map - 1 = wall, 0 = empty
+        const map = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,1,1,0,0,0,0,0,0,1,1,0,0,1],
+            [1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1],
+            [1,0,0,1,1,0,0,0,0,0,0,1,1,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+        
+        // Wall colors
+        const wallColors = ['#3d2817', '#4a3728', '#2d1f16', '#5c4033'];
+        
+        // Player states
+        const RELOAD_STATE = {
+            READY: 0,
+            POUR_POWDER: 1,
+            INSERT_BALL: 2,
+            RAMROD_1: 3,
+            RAMROD_2: 4,
+            RAMROD_3: 5,
+            REMOVE_ROD: 6,
+            PRIME_PAN: 7,
+            COCK_HAMMER: 8
+        };
+        
+        class Player {
+            constructor(x, y, angle, color) {
+                this.x = x;
+                this.y = y;
+                this.angle = angle;
+                this.color = color;
+                this.speed = 2;
+                this.rotSpeed = 0.03;
+                this.alive = true;
+                
+                // Musket state
+                this.loaded = true;
+                this.primed = true;
+                this.aiming = false;
+                this.reloadState = RELOAD_STATE.READY;
+                this.reloadTimer = 0;
+                this.reloadProgress = 0;
+                
+                // Animation states
+                this.musketAngle = 0;
+                this.musketTilt = 0;
+                this.recoil = 0;
+                this.handPos = { x: 0, y: 0 };
+                
+                // Visual reload states
+                this.hasPowder = true;
+                this.hasBall = true;
+                this.ramrodIn = false;
+            }
+            
+            update() {
+                if (!this.alive) return;
+                
+                // Handle reload animation
+                if (this.reloadState !== RELOAD_STATE.READY) {
+                    this.reloadTimer++;
+                    const stageDuration = 40;
+                    this.reloadProgress = this.reloadTimer / stageDuration;
+                    
+                    if (this.reloadTimer >= stageDuration) {
+                        this.advanceReloadStage();
+                        this.reloadTimer = 0;
+                    }
+                }
+                
+                // Decay recoil
+                this.recoil *= 0.9;
+                
+                // Smooth musket rotation
+                this.musketAngle += (0 - this.musketAngle) * 0.1;
+                this.musketTilt += (0 - this.musketTilt) * 0.1;
+            }
+            
+            advanceReloadStage() {
+                switch(this.reloadState) {
+                    case RELOAD_STATE.POUR_POWDER:
+                        this.hasPowder = true;
+                        this.reloadState = RELOAD_STATE.INSERT_BALL;
+                        break;
+                    case RELOAD_STATE.INSERT_BALL:
+                        this.hasBall = true;
+                        this.reloadState = RELOAD_STATE.RAMROD_1;
+                        break;
+                    case RELOAD_STATE.RAMROD_1:
+                        this.ramrodIn = true;
+                        this.reloadState = RELOAD_STATE.RAMROD_2;
+                        break;
+                    case RELOAD_STATE.RAMROD_2:
+                        this.reloadState = RELOAD_STATE.RAMROD_3;
+                        break;
+                    case RELOAD_STATE.RAMROD_3:
+                        this.reloadState = RELOAD_STATE.REMOVE_ROD;
+                        break;
+                    case RELOAD_STATE.REMOVE_ROD:
+                        this.ramrodIn = false;
+                        this.reloadState = RELOAD_STATE.PRIME_PAN;
+                        break;
+                    case RELOAD_STATE.PRIME_PAN:
+                        this.primed = true;
+                        this.reloadState = RELOAD_STATE.COCK_HAMMER;
+                        break;
+                    case RELOAD_STATE.COCK_HAMMER:
+                        this.loaded = true;
+                        this.reloadState = RELOAD_STATE.READY;
+                        break;
+                }
+            }
+            
+            moveForward() {
+                if (!this.alive) return;
+                const newX = this.x + Math.cos(this.angle) * this.speed;
+                const newY = this.y + Math.sin(this.angle) * this.speed;
+                if (!this.checkCollision(newX, this.y)) this.x = newX;
+                if (!this.checkCollision(this.x, newY)) this.y = newY;
+            }
+            
+            moveBackward() {
+                if (!this.alive) return;
+                const newX = this.x - Math.cos(this.angle) * this.speed;
+                const newY = this.y - Math.sin(this.angle) * this.speed;
+                if (!this.checkCollision(newX, this.y)) this.x = newX;
+                if (!this.checkCollision(this.x, newY)) this.y = newY;
+            }
+            
+            strafeLeft() {
+                if (!this.alive) return;
+                const newX = this.x + Math.cos(this.angle - Math.PI/2) * this.speed;
+                const newY = this.y + Math.sin(this.angle - Math.PI/2) * this.speed;
+                if (!this.checkCollision(newX, this.y)) this.x = newX;
+                if (!this.checkCollision(this.x, newY)) this.y = newY;
+            }
+            
+            strafeRight() {
+                if (!this.alive) return;
+                const newX = this.x + Math.cos(this.angle + Math.PI/2) * this.speed;
+                const newY = this.y + Math.sin(this.angle + Math.PI/2) * this.speed;
+                if (!this.checkCollision(newX, this.y)) this.x = newX;
+                if (!this.checkCollision(this.x, newY)) this.y = newY;
+            }
+            
+            turnMusketLeft() {
+                if (!this.alive) return;
+                this.musketAngle = -0.3;
+                this.angle -= this.rotSpeed;
+            }
+            
+            turnMusketRight() {
+                if (!this.alive) return;
+                this.musketAngle = 0.3;
+                this.angle += this.rotSpeed;
+            }
+            
+            aim() {
+                this.aiming = true;
+                document.getElementById('player1View').classList.add('aiming');
+            }
+            
+            stopAim() {
+                this.aiming = false;
+                document.getElementById('player1View').classList.remove('aiming');
+            }
+            
+            fire() {
+                if (!this.alive || !this.loaded || !this.primed || this.reloadState !== RELOAD_STATE.READY) {
+                    return false;
+                }
+                
+                this.loaded = false;
+                this.primed = false;
+                this.hasPowder = false;
+                this.hasBall = false;
+                this.recoil = 15;
+                
+                // Cast ray to check hit
+                const hit = this.castRay(this.angle + this.musketAngle * 0.5);
+                if (hit && hit.playerHit) {
+                    hit.playerHit.alive = false;
+                    return true;
+                }
+                return false;
+            }
+            
+            reload() {
+                if (this.reloadState === RELOAD_STATE.READY && !this.loaded) {
+                    this.reloadState = RELOAD_STATE.POUR_POWDER;
+                    this.hasPowder = false;
+                    this.hasBall = false;
+                    this.ramrodIn = false;
+                    this.primed = false;
+                }
+            }
+            
+            checkCollision(x, y) {
+                const mapX = Math.floor(x / TILE_SIZE);
+                const mapY = Math.floor(y / TILE_SIZE);
+                return map[mapY] && map[mapY][mapX] === 1;
+            }
+            
+            castRay(rayAngle) {
+                let x = this.x;
+                let y = this.y;
+                const dx = Math.cos(rayAngle);
+                const dy = Math.sin(rayAngle);
+                let distance = 0;
+                
+                while (distance < 1000) {
+                    x += dx * 2;
+                    y += dy * 2;
+                    distance += 2;
+                    
+                    // Check wall collision
+                    const mapX = Math.floor(x / TILE_SIZE);
+                    const mapY = Math.floor(y / TILE_SIZE);
+                    
+                    if (map[mapY] && map[mapY][mapX] === 1) {
+                        return { distance, x, y, wall: true };
+                    }
+                    
+                    // Check player collision
+                    if (player2 && player2.alive) {
+                        const distToP2 = Math.sqrt((x - player2.x)**2 + (y - player2.y)**2);
+                        if (distToP2 < 20) {
+                            return { distance, x, y, wall: false, playerHit: player2 };
+                        }
+                    }
+                }
+                
+                return null;
+            }
+        }
+        
+        // Initialize players
+        const player1 = new Player(100, 100, 0, '#8b4513');
+        const player2 = new Player(900, 900, Math.PI, '#654321');
+        
+        // Input handling
+        const keys = {};
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            
+            if (e.key.toLowerCase() === 'x') {
+                player1.aim();
+            }
+            if (e.key.toLowerCase() === 'f') {
+                const hit = player1.fire();
+                if (hit) {
+                    document.getElementById('winner').textContent = 'VICTORY!';
+                    document.getElementById('winner').style.display = 'block';
+                }
+            }
+            if (e.key.toLowerCase() === 'r') {
+                player1.reload();
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+            if (e.key.toLowerCase() === 'x') {
+                player1.stopAim();
+            }
+        });
+        
+        // Raycasting function
+        function castRayForRender(x, y, angle) {
+            let rayX = x;
+            let rayY = y;
+            const dx = Math.cos(angle);
+            const dy = Math.sin(angle);
+            let distance = 0;
+            
+            while (distance < 2000) {
+                rayX += dx;
+                rayY += dy;
+                distance += 1;
+                
+                const mapX = Math.floor(rayX / TILE_SIZE);
+                const mapY = Math.floor(rayY / TILE_SIZE);
+                
+                if (map[mapY] && map[mapY][mapX] === 1) {
+                    // Check for player2 visibility
+                    let hitPlayer = false;
+                    if (player2 && player2.alive) {
+                        const distToP2 = Math.sqrt((rayX - player2.x)**2 + (rayY - player2.y)**2);
+                        if (distToP2 < 30 && distance > distToP2) {
+                            hitPlayer = true;
+                        }
+                    }
+                    return { distance, x: rayX, y: rayY, hitPlayer };
+                }
+            }
+            
+            return { distance: 2000, x: rayX, y: rayY, hitPlayer: false };
+        }
+        
+        // Rendering
+        function render() {
+            // Clear canvas
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+            
+            // Draw sky
+            const gradient = ctx.createLinearGradient(0, 0, 0, SCREEN_HEIGHT/2);
+            gradient.addColorStop(0, '#1a1a2e');
+            gradient.addColorStop(1, '#2d2d44');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT/2);
+            
+            // Draw floor
+            const floorGradient = ctx.createLinearGradient(0, SCREEN_HEIGHT/2, 0, SCREEN_HEIGHT);
+            floorGradient.addColorStop(0, '#1a1208');
+            floorGradient.addColorStop(1, '#0d0904');
+            ctx.fillStyle = floorGradient;
+            ctx.fillRect(0, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT/2);
+            
+            // Cast rays for 3D view
+            const startAngle = player1.angle - FOV / 2;
+            
+            for (let i = 0; i < NUM_RAYS; i++) {
+                const rayAngle = startAngle + (i / NUM_RAYS) * FOV;
+                const hit = castRayForRender(player1.x, player1.y, rayAngle);
+                
+                // Fish-eye correction
+                const angleDiff = rayAngle - player1.angle;
+                const correctedDist = hit.distance * Math.cos(angleDiff);
+                
+                // Calculate wall height
+                const wallHeight = (TILE_SIZE / correctedDist) * 300;
+                const wallTop = (SCREEN_HEIGHT - wallHeight) / 2;
+                
+                // Draw wall strip
+                const colorIndex = Math.floor(hit.x / TILE_SIZE + hit.y / TILE_SIZE) % wallColors.length;
+                const brightness = Math.max(0.2, 1 - correctedDist / 800);
+                const baseColor = wallColors[colorIndex];
+                ctx.fillStyle = adjustBrightness(baseColor, brightness);
+                ctx.fillRect(i * WALL_STRIP_WIDTH, wallTop, WALL_STRIP_WIDTH, wallHeight);
+                
+                // Draw player2 if visible
+                if (hit.hitPlayer) {
+                    const p2Dist = Math.sqrt((player2.x - player1.x)**2 + (player2.y - player1.y)**2);
+                    const p2Height = (64 / p2Dist) * 300;
+                    const p2Top = (SCREEN_HEIGHT - p2Height) / 2;
+                    ctx.fillStyle = '#8b0000';
+                    ctx.fillRect(i * WALL_STRIP_WIDTH - 10, p2Top, 20, p2Height);
+                }
+            }
+            
+            // Draw musket overlay
+            drawMusket();
+            
+            // Draw smoke effect if fired
+            if (player1.recoil > 5) {
+                drawSmoke();
+            }
+        }
+        
+        function adjustBrightness(color, factor) {
+            const hex = color.replace('#', '');
+            const r = Math.floor(parseInt(hex.substr(0, 2), 16) * factor);
+            const g = Math.floor(parseInt(hex.substr(2, 2), 16) * factor);
+            const b = Math.floor(parseInt(hex.substr(4, 2), 16) * factor);
+            return `rgb(${r},${g},${b})`;
+        }
+        
+        function drawMusket() {
+            const centerX = SCREEN_WIDTH / 2;
+            const bottomY = SCREEN_HEIGHT;
+            
+            // Calculate sway based on movement
+            const swayX = Math.sin(Date.now() / 500) * 3 + player1.musketAngle * 100;
+            const swayY = Math.abs(Math.cos(Date.now() / 400)) * 2;
+            const recoilOffset = player1.recoil;
+            
+            // Musket stock (wood)
+            ctx.fillStyle = '#4a3728';
+            ctx.beginPath();
+            ctx.moveTo(centerX - 60 + swayX, bottomY - 80 - recoilOffset + swayY);
+            ctx.lineTo(centerX + 40 + swayX, bottomY - 60 - recoilOffset + swayY);
+            ctx.lineTo(centerX + 50 + swayX, bottomY - 20 - recoilOffset + swayY);
+            ctx.lineTo(centerX - 40 + swayX, bottomY - 30 - recoilOffset + swayY);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Stock detail
+            ctx.strokeStyle = '#2d1f16';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Barrel (metal)
+            ctx.fillStyle = '#2a2a2a';
+            ctx.fillRect(centerX - 30 + swayX, bottomY - 120 - recoilOffset + swayY, 20, 80);
+            
+            // Barrel bands
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(centerX - 32 + swayX, bottomY - 110 - recoilOffset + swayY, 24, 4);
+            ctx.fillRect(centerX - 32 + swayX, bottomY - 80 - recoilOffset + swayY, 24, 4);
+            
+            // Flintlock mechanism
+            ctx.fillStyle = '#3a3a3a';
+            ctx.fillRect(centerX - 35 + swayX, bottomY - 100 - recoilOffset + swayY, 8, 15);
+            
+            // Hammer
+            if (player1.primed) {
+                ctx.fillStyle = '#2a2a2a';
+                ctx.beginPath();
+                ctx.arc(centerX - 40 + swayX, bottomY - 105 - recoilOffset + swayY, 6, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // Hammer down (fired)
+                ctx.fillStyle = '#2a2a2a';
+                ctx.fillRect(centerX - 42 + swayX, bottomY - 98 - recoilOffset + swayY, 12, 4);
+            }
+            
+            // Reloading animations
+            if (player1.reloadState !== RELOAD_STATE.READY) {
+                drawReloadAnimation(centerX + swayX, bottomY - 50 + swayY);
+            }
+            
+            // Hands
+            drawHands(centerX + swayX, bottomY - 40 + swayY, recoilOffset);
+        }
+        
+        function drawReloadAnimation(x, y) {
+            const progress = player1.reloadProgress;
+            
+            switch(player1.reloadState) {
+                case RELOAD_STATE.POUR_POWDER:
+                    // Powder horn tipping
+                    ctx.fillStyle = '#8b7355';
+                    ctx.beginPath();
+                    ctx.moveTo(x + 80, y - 20 - progress * 30);
+                    ctx.lineTo(x + 100, y - 10 - progress * 30);
+                    ctx.lineTo(x + 95, y + 10 - progress * 30);
+                    ctx.closePath();
+                    ctx.fill();
+                    // Powder particles
+                    if (progress > 0.5) {
+                        ctx.fillStyle = '#d4af37';
+                        for (let i = 0; i < 5; i++) {
+                            ctx.fillRect(x + 85 + Math.random() * 10, y - progress * 40 + Math.random() * 10, 2, 2);
+                        }
+                    }
+                    break;
+                    
+                case RELOAD_STATE.INSERT_BALL:
+                    // Ball being inserted
+                    ctx.fillStyle = '#4a4a4a';
+                    ctx.beginPath();
+                    ctx.arc(x + 20, y - 60 + progress * 30, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+                    
+                case RELOAD_STATE.RAMROD_1:
+                case RELOAD_STATE.RAMROD_2:
+                case RELOAD_STATE.RAMROD_3:
+                    // Ramrod
+                    ctx.fillStyle = '#6b4423';
+                    const rodDepth = (player1.reloadState - RELOAD_STATE.RAMROD_1 + progress) * 20;
+                    ctx.fillRect(x + 60, y - 80 + rodDepth, 4, 60);
+                    break;
+                    
+                case RELOAD_STATE.REMOVE_ROD:
+                    // Pulling ramrod out
+                    ctx.fillStyle = '#6b4423';
+                    ctx.fillRect(x + 60, y - 80 - progress * 30, 4, 60);
+                    break;
+                    
+                case RELOAD_STATE.PRIME_PAN:
+                    // Priming powder
+                    ctx.fillStyle = '#d4af37';
+                    ctx.fillRect(x - 45, y - 100 - progress * 10, 4, 2);
+                    break;
+                    
+                case RELOAD_STATE.COCK_HAMMER:
+                    // Cocking hammer
+                    ctx.fillStyle = '#2a2a2a';
+                    const hammerAngle = progress * Math.PI / 4;
+                    const hx = x - 40 + Math.cos(hammerAngle) * 6;
+                    const hy = y - 65 - Math.sin(hammerAngle) * 6;
+                    ctx.beginPath();
+                    ctx.arc(hx, hy, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+            }
+        }
+        
+        function drawHands(x, y, recoil) {
+            // Left hand (supporting barrel)
+            ctx.fillStyle = '#dcb';
+            ctx.beginPath();
+            ctx.ellipse(x - 25, y - 30 - recoil * 0.5, 12, 15, -0.2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Right hand (trigger)
+            ctx.beginPath();
+            ctx.ellipse(x + 20, y - 20 - recoil * 0.3, 12, 15, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Fingers detail
+            ctx.strokeStyle = '#cba';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x - 30, y - 35 - recoil * 0.5);
+            ctx.lineTo(x - 20, y - 25 - recoil * 0.5);
+            ctx.moveTo(x + 15, y - 25 - recoil * 0.3);
+            ctx.lineTo(x + 25, y - 15 - recoil * 0.3);
+            ctx.stroke();
+        }
+        
+        function drawSmoke() {
+            const centerX = SCREEN_WIDTH / 2;
+            const bottomY = SCREEN_HEIGHT - 100;
+            
+            for (let i = 0; i < 20; i++) {
+                const x = centerX - 30 + Math.random() * 60;
+                const y = bottomY - Math.random() * 80;
+                const size = 10 + Math.random() * 30;
+                const alpha = (player1.recoil / 15) * 0.5;
+                
+                ctx.fillStyle = `rgba(200, 200, 200, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function updateUI() {
+            const stateNames = {
+                [RELOAD_STATE.READY]: player1.loaded ? 'READY TO FIRE' : 'EMPTY - PRESS R',
+                [RELOAD_STATE.POUR_POWDER]: 'POURING POWDER...',
+                [RELOAD_STATE.INSERT_BALL]: 'INSERTING BALL...',
+                [RELOAD_STATE.RAMROD_1]: 'RAMMING (1/3)...',
+                [RELOAD_STATE.RAMROD_2]: 'RAMMING (2/3)...',
+                [RELOAD_STATE.RAMROD_3]: 'RAMMING (3/3)...',
+                [RELOAD_STATE.REMOVE_ROD]: 'REMOVING ROD...',
+                [RELOAD_STATE.PRIME_PAN]: 'PRIMING PAN...',
+                [RELOAD_STATE.COCK_HAMMER]: 'COCKING HAMMER...'
+            };
+            
+            document.getElementById('powder').textContent = player1.hasPowder ? '✓ Ready' : '✗ Empty';
+            document.getElementById('powder').style.color = player1.hasPowder ? '#4a4' : '#a44';
+            
+            document.getElementById('ball').textContent = player1.hasBall ? '✓ Seated' : '✗ None';
+            document.getElementById('ball').style.color = player1.hasBall ? '#4a4' : '#a44';
+            
+            document.getElementById('ramrod').textContent = player1.ramrodIn ? 'In barrel' : 'Stored';
+            document.getElementById('ramrod').style.color = '#aa4';
+            
+            document.getElementById('state').textContent = stateNames[player1.reloadState];
+        }
+        
+        // Game loop
+        function gameLoop() {
+            // Handle input
+            if (keys['w']) player1.moveForward();
+            if (keys['s']) player1.moveBackward();
+            if (keys['a']) player1.strafeLeft();
+            if (keys['d']) player1.strafeRight();
+            if (keys['q']) player1.turnMusketLeft();
+            if (keys['e']) player1.turnMusketRight();
+            
+            // Update
+            player1.update();
+            
+            // Render
+            render();
+            updateUI();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start game
+        gameLoop();
+    </script>
+</body>
+</html>

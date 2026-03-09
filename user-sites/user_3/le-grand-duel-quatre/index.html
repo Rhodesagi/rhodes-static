@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le Grand Duel Quatre</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+        #gameContainer {
+            position: relative;
+            display: flex;
+            gap: 4px;
+            padding: 4px;
+            background: #111;
+        }
+        .playerView {
+            position: relative;
+            width: 480px;
+            height: 360px;
+            border: 2px solid #444;
+        }
+        .playerView.active {
+            border-color: #0a0;
+        }
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+        }
+        .ironSights {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: none;
+        }
+        .ironSights.aiming {
+            display: block;
+        }
+        .sightFront {
+            position: absolute;
+            bottom: 35%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 40px;
+            background: linear-gradient(to top, #222, #666, #222);
+            border-radius: 1px;
+        }
+        .sightFront::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 6px;
+            background: #444;
+            border-radius: 2px 2px 0 0;
+        }
+        .sightRear {
+            position: absolute;
+            bottom: 25%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 15px;
+            background: linear-gradient(to bottom, #333 40%, transparent 40%, transparent 60%, #333 60%);
+            border-left: 4px solid #555;
+            border-right: 4px solid #555;
+            border-radius: 2px;
+        }
+        .sightNotch {
+            position: absolute;
+            bottom: 28%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 50%;
+        }
+        .musketBody {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 80px;
+            background: linear-gradient(to right, #3d2817, #5a3d24, #3d2817);
+            border-radius: 0 60px 20px 0;
+            border-top: 8px solid #4a3728;
+        }
+        .musketBarrel {
+            position: absolute;
+            bottom: 55px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 18px;
+            background: linear-gradient(to bottom, #666, #888, #555);
+            border-radius: 4px;
+        }
+        .musketStock {
+            position: absolute;
+            bottom: 10px;
+            right: 20%;
+            width: 100px;
+            height: 50px;
+            background: linear-gradient(to right, #4a3728, #6b4e3a);
+            border-radius: 20px 0 10px 20px;
+        }
+        .musketStock::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 20%;
+            transform: translateY(-50%);
+            width: 25px;
+            height: 25px;
+            background: #333;
+            border-radius: 50%;
+            border: 3px solid #222;
+        }
+        .controls {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            font-size: 10px;
+            color: rgba(255,255,255,0.5);
+            background: rgba(0,0,0,0.7);
+            padding: 4px;
+            border-radius: 3px;
+        }
+        .reloading {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fa0;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px #000;
+            background: rgba(0,0,0,0.8);
+            padding: 8px 16px;
+            border-radius: 4px;
+            display: none;
+        }
+        .reloading.show { display: block; }
+        .ammo {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 12px;
+            color: #0f0;
+        }
+        .title {
+            text-align: center;
+            padding: 10px;
+            font-size: 18px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            background: linear-gradient(to bottom, #1a1a1a, #000);
+            border-bottom: 2px solid #333;
+        }
+        .instructions {
+            padding: 10px;
+            font-size: 11px;
+            color: #888;
+            text-align: center;
+        }
+        .flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.1s;
+        }
+        .flash.active {
+            opacity: 0.8;
+        }
+        .hitMarker {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #f00;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #f00;
+            display: none;
+        }
+        .hitMarker.show { display: block; }
+        .ramrodAnim {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 6px;
+            background: linear-gradient(to right, #8b4513, #a0522d, #8b4513);
+            border-radius: 3px;
+            display: none;
+        }
+        .ramrodAnim.show { display: block; }
+    </style>
+</head>
+<body>
+    <div class="title">⚔ Le Grand Duel Quatre ⚔</div>
+    <div class="instructions">
+        Player 1: WASD Move | Q/E Rotate Musket | X Aim | F Fire | R Reload | 
+        Player 2: Arrows Move | O/P Rotate Musket | K Aim | L Fire | ; Reload
+    </div>
+    <div id="gameContainer">
+        <div class="playerView" id="p1View">
+            <canvas id="canvas1" width="480" height="360"></canvas>
+            <div class="ironSights" id="sights1">
+                <div class="sightRear"></div>
+                <div class="sightNotch"></div>
+                <div class="sightFront"></div>
+                <div class="musketBarrel"></div>
+                <div class="musketStock"></div>
+            </div>
+            <div class="flash" id="flash1"></div>
+            <div class="reloading" id="reload1">Loading...</div>
+            <div class="hitMarker" id="hit1">HIT!</div>
+            <div class="ramrodAnim" id="ramrod1"></div>
+            <div class="ammo" id="ammo1">●</div>
+            <div class="controls">P1: WASD Q/E X F R</div>
+        </div>
+        <div class="playerView" id="p2View">
+            <canvas id="canvas2" width="480" height="360"></canvas>
+            <div class="ironSights" id="sights2">
+                <div class="sightRear"></div>
+                <div class="sightNotch"></div>
+                <div class="sightFront"></div>
+                <div class="musketBarrel"></div>
+                <div class="musketStock"></div>
+            </div>
+            <div class="flash" id="flash2"></div>
+            <div class="reloading" id="reload2">Loading...</div>
+            <div class="hitMarker" id="hit2">HIT!</div>
+            <div class="ramrodAnim" id="ramrod2"></div>
+            <div class="ammo" id="ammo2">●</div>
+            <div class="controls">P2: Arrows O/P K L ;</div>
+        </div>
+    </div>
+
+<script>
+// ============================================
+// LE GRAND DUEL QUATRE - Pseudo-3D Musket FPS
+// ============================================
+
+const MAP_SIZE = 16;
+const CELL_SIZE = 64;
+const FOV = Math.PI / 3;
+const STRIP_WIDTH = 4;
+
+// Map: 1=wall, 0=empty, 2=spawn
+const map = [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
+    [1,0,2,0,0,0,0,0,1,1,0,0,0,0,2,1],
+    [1,0,0,1,1,0,0,0,0,0,0,1,1,0,0,1],
+    [1,0,0,1,0,0,1,1,1,0,0,0,0,0,0,1],
+    [1,1,0,0,0,0,0,0,0,0,1,1,0,0,1,1],
+    [1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,0,0,0,0,1,1,0,0,1,0,0,0,1],
+    [1,0,1,0,0,0,0,1,1,0,0,1,0,0,0,1],
+    [1,0,0,0,1,1,0,0,0,0,0,0,0,1,0,1],
+    [1,1,0,0,0,0,0,1,0,0,1,1,0,1,0,1],
+    [1,0,0,1,1,0,0,1,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,1,0,0,1,0,0,1],
+    [1,2,0,0,0,1,0,0,0,1,0,0,0,0,2,1],
+    [1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+];
+
+// Textures - procedural stone/wood
+function generateTexture(color, variation) {
+    const c = document.createElement('canvas');
+    c.width = 64; c.height = 64;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = color;
+    ctx.fillRect(0,0,64,64);
+    for(let i=0;i<200;i++) {
+        ctx.fillStyle = `rgba(${variation},${variation},${variation},${Math.random()*0.3})`;
+        ctx.fillRect(Math.random()*64, Math.random()*64, 4, 4);
+    }
+    return ctx.getImageData(0,0,64,64);
+}
+
+const textures = {
+    wall1: generateTexture('#4a4a4a', 80),
+    wall2: generateTexture('#5c4033', 60),
+    wood: generateTexture('#3d2817', 40)
+};
+
+class Player {
+    constructor(id, x, y, angle) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.angle = angle;
+        this.musketAngle = 0; // Offset from view angle
+        this.aiming = false;
+        this.reloading = false;
+        this.reloadStage = 0;
+        this.reloadTimer = 0;
+        this.loaded = true;
+        this.primed = false;
+        this.health = 100;
+        this.radius = 12;
+        this.moveSpeed = 2;
+        this.rotSpeed = 0.04;
+        this.musketRotSpeed = 0.03;
+        
+        // Reload stages with timings (in frames at 60fps)
+        this.reloadStages = [
+            { name: "Bite cartridge", time: 20 },
+            { name: "Pour powder", time: 25 },
+            { name: "Insert ball & patch", time: 30 },
+            { name: "Draw ramrod", time: 15 },
+            { name: "Ram down", time: 40 },
+            { name: "Return ramrod", time: 15 },
+            { name: "Prime pan", time: 25 },
+            { name: "Close frizzen", time: 10 },
+            { name: "Full cock", time: 15 }
+        ];
+    }
+    
+    getMusketDir() {
+        return this.angle + this.musketAngle;
+    }
+    
+    startReload() {
+        if(this.reloading || this.loaded) return;
+        this.reloading = true;
+        this.reloadStage = 0;
+        this.reloadTimer = this.reloadStages[0].time;
+    }
+    
+    updateReload() {
+        if(!this.reloading) return;
+        this.reloadTimer--;
+        
+        // Update UI
+        const ui = document.getElementById('reload' + this.id);
+        const ramrod = document.getElementById('ramrod' + this.id);
+        if(ui) {
+            ui.classList.add('show');
+            ui.textContent = this.reloadStages[this.reloadStage]?.name || 'Ready';
+        }
+        
+        // Ramrod animation during stages 3-5
+        if(this.reloadStage >= 3 && this.reloadStage <= 5) {
+            if(ramrod) ramrod.classList.add('show');
+        } else {
+            if(ramrod) ramrod.classList.remove('show');
+        }
+        
+        if(this.reloadTimer <= 0) {
+            this.reloadStage++;
+            if(this.reloadStage >= this.reloadStages.length) {
+                this.reloading = false;
+                this.loaded = true;
+                this.primed = true;
+                if(ui) ui.classList.remove('show');
+                if(ramrod) ramrod.classList.remove('show');
+            } else {
+                this.reloadTimer = this.reloadStages[this.reloadStage].time;
+            }
+        }
+    }
+    
+    fire(otherPlayer) {
+        if(!this.loaded || !this.primed || this.reloading) return false;
+        
+        // Flash effect
+        const flash = document.getElementById('flash' + this.id);
+        if(flash) {
+            flash.classList.add('active');
+            setTimeout(() => flash.classList.remove('active'), 100);
+        }
+        
+        this.loaded = false;
+        this.primed = false;
+        
+        // Raycast for hit detection
+        const dir = this.getMusketDir();
+        const hit = castRay(this.x, this.y, dir, true);
+        
+        // Check if we hit the other player
+        const dx = otherPlayer.x - this.x;
+        const dy = otherPlayer.y - this.y;
+        const distToPlayer = Math.sqrt(dx*dx + dy*dy);
+        const angleToPlayer = Math.atan2(dy, dx);
+        
+        // Check if musket is aimed at player (within small tolerance when aiming)
+        const angleDiff = Math.abs(normalizeAngle(angleToPlayer - dir));
+        
+        if(this.aiming && angleDiff < 0.03 && distToPlayer < hit.distance && distToPlayer < 800) {
+            // Hit!
+            otherPlayer.health -= 45;
+            const hitMarker = document.getElementById('hit' + this.id);
+            if(hitMarker) {
+                hitMarker.classList.add('show');
+                setTimeout(() => hitMarker.classList.remove('show'), 500);
+            }
+            if(otherPlayer.health <= 0) {
+                setTimeout(() => resetGame(), 2000);
+            }
+            return true;
+        }
+        return false;
+    }
+}
+
+function normalizeAngle(a) {
+    while(a > Math.PI) a -= Math.PI*2;
+    while(a < -Math.PI) a += Math.PI*2;
+    return a;
+}
+
+// Raycasting
+function castRay(x, y, angle, checkPlayers = false) {
+    const sin = Math.sin(angle);
+    const cos = Math.cos(angle);
+    
+    let dx = cos > 0 ? 1 : -1;
+    let dy = sin > 0 ? 1 : -1;
+    
+    let ix = Math.floor(x / CELL_SIZE);
+    let iy = Math.floor(y / CELL_SIZE);
+    
+    let stepX = cos > 0 ? 1 : -1;
+    let stepY = sin > 0 ? 1 : -1;
+    
+    let sideDistX = cos > 0 ? (ix + 1) * CELL_SIZE - x : x - ix * CELL_SIZE;
+    let sideDistY = sin > 0 ? (iy + 1) * CELL_SIZE - y : y - iy * CELL_SIZE;
+    
+    if(cos !== 0) sideDistX /= Math.abs(cos);
+    if(sin !== 0) sideDistY /= Math.abs(sin);
+    
+    let deltaX = cos !== 0 ? CELL_SIZE / Math.abs(cos) : 999999;
+    let deltaY = sin !== 0 ? CELL_SIZE / Math.abs(sin) : 999999;
+    
+    let hit = false;
+    let side = 0;
+    let distance = 0;
+    
+    while(!hit && distance < 2000) {
+        if(sideDistX < sideDistY) {
+            sideDistX += deltaX;
+            ix += stepX;
+            side = 0;
+        } else {
+            sideDistY += deltaY;
+            iy += stepY;
+            side = 1;
+        }
+        
+        if(ix < 0 || ix >= MAP_SIZE || iy < 0 || iy >= MAP_SIZE || map[iy][ix] === 1) {
+            hit = true;
+            distance = side === 0 ? (ix * CELL_SIZE - x + (1-stepX)*CELL_SIZE/2) / cos 
+                                   : (iy * CELL_SIZE - y + (1-stepY)*CELL_SIZE/2) / sin;
+        }
+    }
+    
+    // Calculate wall texture X
+    let wallX;
+    if(side === 0) {
+        wallX = y + distance * sin;
+    } else {
+        wallX = x + distance * cos;
+    }
+    wallX = (wallX % CELL_SIZE) / CELL_SIZE;
+    
+    return { distance: Math.abs(distance), side, wallX, hit };
+}
+
+// Rendering
+function drawColumn(ctx, x, ray, player, otherPlayer) {
+    const height = Math.min(360, 36000 / (ray.distance + 0.1));
+    const y1 = (360 - height) / 2;
+    
+    // Wall shading based on distance and side
+    const shade = Math.max(0, 1 - ray.distance / 800);
+    const sideShade = ray.side === 1 ? 0.7 : 1;
+    const brightness = Math.floor(shade * sideShade * 255);
+    
+    // Get texture pixel
+    const texX = Math.floor(ray.wallX * 64);
+    const tex = textures.wall1;
+    const texPixel = tex.data[texY * 64 + texX];
+    
+    // Draw wall strip
+    ctx.fillStyle = `rgb(${brightness},${brightness},${brightness})`;
+    ctx.fillRect(x, y1, STRIP_WIDTH, height);
+    
+    // Floor
+    ctx.fillStyle = `rgb(${brightness*0.3},${brightness*0.25},${brightness*0.2})`;
+    ctx.fillRect(x, y1 + height, STRIP_WIDTH, 360 - y1 - height);
+    
+    // Ceiling
+    ctx.fillStyle = `rgb(${brightness*0.1},${brightness*0.1},${brightness*0.15})`;
+    ctx.fillRect(x, 0, STRIP_WIDTH, y1);
+}
+
+function renderPlayerView(canvas, player, otherPlayer) {
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Sky
+    ctx.fillStyle = '#1a2332';
+    ctx.fillRect(0, 0, width, height/2);
+    
+    // Ground
+    ctx.fillStyle = '#2a2520';
+    ctx.fillRect(0, height/2, width, height/2);
+    
+    const numRays = width / STRIP_WIDTH;
+    const angleStep = FOV / numRays;
+    
+    // Draw other player as sprite
+    const dx = otherPlayer.x - player.x;
+    const dy = otherPlayer.y - player.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const spriteAngle = Math.atan2(dy, dx);
+    const angleDiff = normalizeAngle(spriteAngle - player.angle);
+    
+    // Cast rays
+    for(let i=0; i<numRays; i++) {
+        const rayAngle = player.angle - FOV/2 + i * angleStep;
+        const ray = castRay(player.x, player.y, rayAngle);
+        
+        const colHeight = Math.min(height, height * 300 / (ray.distance * Math.cos(rayAngle - player.angle) + 0.1));
+        const y1 = (height - colHeight) / 2;
+        
+        // Wall color with distance fog
+        const fog = Math.min(1, ray.distance / 600);
+        const wallColor = ray.side === 0 ? 180 : 120;
+        const r = Math.floor(wallColor * (1-fog));
+        const g = Math.floor(wallColor * 0.8 * (1-fog));
+        const b = Math.floor(wallColor * 0.6 * (1-fog));
+        
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillRect(i*STRIP_WIDTH, y1, STRIP_WIDTH, colHeight);
+    }
+    
+    // Draw other player if visible
+    if(Math.abs(angleDiff) < FOV/2 && dist < 800) {
+        const spriteScreenX = width/2 + (angleDiff / (FOV/2)) * (width/2);
+        const spriteHeight = Math.min(height, height * 100 / (dist * Math.cos(angleDiff)));
+        
+        // Don't draw if behind wall
+        const rayToSprite = castRay(player.x, player.y, spriteAngle);
+        if(rayToSprite.distance > dist) {
+            ctx.fillStyle = '#c41e3a';
+            ctx.fillRect(spriteScreenX - spriteHeight/4, height/2 - spriteHeight/2, spriteHeight/2, spriteHeight);
+            // Head
+            ctx.fillStyle = '#fdbcb4';
+            ctx.beginPath();
+            ctx.arc(spriteScreenX, height/2 - spriteHeight/2 - spriteHeight/6, spriteHeight/8, 0, Math.PI*2);
+            ctx.fill();
+        }
+    }
+    
+    // Draw iron sights view when aiming
+    const sights = document.getElementById('sights' + player.id);
+    if(sights) {
+        if(player.aiming) sights.classList.add('aiming');
+        else sights.classList.remove('aiming');
+    }
+    
+    // Update ammo indicator
+    const ammo = document.getElementById('ammo' + player.id);
+    if(ammo) {
+        ammo.textContent = player.loaded ? '● READY' : player.reloading ? '○ RELOADING' : '○ EMPTY';
+        ammo.style.color = player.loaded ? '#0f0' : player.reloading ? '#fa0' : '#f00';
+    }
+}
+
+// Input handling
+const keys = {};
+document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+function updatePlayer(p, other, forward, back, left, right, turnLeft, turnRight, aim, fire, reload) {
+    // Movement
+    let moveX = 0, moveY = 0;
+    if(keys[forward]) {
+        moveX += Math.cos(p.angle) * p.moveSpeed;
+        moveY += Math.sin(p.angle) * p.moveSpeed;
+    }
+    if(keys[back]) {
+        moveX -= Math.cos(p.angle) * p.moveSpeed;
+        moveY -= Math.sin(p.angle) * p.moveSpeed;
+    }
+    if(keys[left]) {
+        moveX += Math.cos(p.angle - Math.PI/2) * p.moveSpeed;
+        moveY += Math.sin(p.angle - Math.PI/2) * p.moveSpeed;
+    }
+    if(keys[right]) {
+        moveX += Math.cos(p.angle + Math.PI/2) * p.moveSpeed;
+        moveY += Math.sin(p.angle + Math.PI/2) * p.moveSpeed;
+    }
+    
+    // Collision detection
+    const newX = p.x + moveX;
+    const newY = p.y + moveY;
+    const ix = Math.floor(newX / CELL_SIZE);
+    const iy = Math.floor(newY / CELL_SIZE);
+    
+    if(map[iy] && map[iy][ix] !== 1) {
+        // Check other player collision
+        const dx = other.x - newX;
+        const dy = other.y - newY;
+        if(Math.sqrt(dx*dx + dy*dy) > p.radius * 2) {
+            p.x = newX;
+            p.y = newY;
+        }
+    }
+    
+    // Musket rotation (separate from view)
+    if(keys[turnLeft]) p.musketAngle -= p.musketRotSpeed;
+    if(keys[turnRight]) p.musketAngle += p.musketRotSpeed;
+    
+    // Clamp musket angle
+    p.musketAngle = Math.max(-Math.PI/4, Math.min(Math.PI/4, p.musketAngle));
+    
+    // Aiming (raises iron sights)
+    if(keys[aim]) p.aiming = true;
+    else p.aiming = false;
+    
+    // Fire
+    if(keys[fire]) {
+        p.fire(other);
+        keys[fire] = false; // Prevent autofire
+    }
+    
+    // Reload
+    if(keys[reload] && !p.reloading) {
+        p.startReload();
+        keys[reload] = false;
+    }
+    
+    p.updateReload();
+}
+
+// Game loop
+const p1 = new Player(1, 128, 128, 0);
+const p2 = new Player(2, 896, 896, Math.PI);
+
+const canvas1 = document.getElementById('canvas1');
+const canvas2 = document.getElementById('canvas2');
+
+function resetGame() {
+    p1.x = 128; p1.y = 128; p1.angle = 0; p1.health = 100; p1.loaded = true;
+    p2.x = 896; p2.y = 896; p2.angle = Math.PI; p2.health = 100; p2.loaded = true;
+}
+
+function gameLoop() {
+    // P1: WASD, Q/E, X, F, R
+    updatePlayer(p1, p2, 'w', 's', 'a', 'd', 'q', 'e', 'x', 'f', 'r');
+    
+    // P2: Arrows, O/P, K, L, ;
+    updatePlayer(p2, p1, 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'o', 'p', 'k', 'l', ';');
+    
+    // Render both views
+    renderPlayerView(canvas1, p1, p2);
+    renderPlayerView(canvas2, p2, p1);
+    
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+</body>
+</html>
