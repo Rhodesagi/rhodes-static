@@ -1115,13 +1115,17 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
         }
         // Format duration in human-readable form (seconds or minutes)
         function formatDuration(ms) {
+            if (ms < 1000) {
+                return Math.round(ms) + "ms";
+            }
             const seconds = ms / 1000;
             if (seconds < 60) {
                 return seconds.toFixed(1) + "s";
-            } else {
-                const minutes = seconds / 60;
-                return minutes.toFixed(1) + "m";
             }
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.round(seconds % 60);
+            if (secs === 0) return minutes + "m";
+            return minutes + "m " + secs + "s";
         }
         // Tool call tracking maps
         window._toolTimers = window._toolTimers || new Map();

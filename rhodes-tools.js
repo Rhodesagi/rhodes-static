@@ -38,7 +38,7 @@
             });
 
             // Format time as seconds
-            const totalSec = (liveElapsed / 1000).toFixed(1);
+            const totalSec = formatDuration(liveElapsed);
             const hasActive = window._toolTotals.activeTools.size > 0;
 
             const dotsHtml = hasActive ? '<span class="tool-totals-dots"><span>.</span><span>.</span><span>.</span></span>' : '';
@@ -47,7 +47,7 @@
                 '<span class="tool-totals-icon">\u2699</span>' +
                 '<span class="tool-totals-label">Total</span>' +
                 '<span class="tool-totals-count">' + window._toolTotals.count + ' call' + (window._toolTotals.count !== 1 ? 's' : '') + '</span>' +
-                '<span class="tool-totals-time">' + dotsHtml + '<span class="tool-totals-time-value">' + totalSec + 's</span></span>';
+                '<span class="tool-totals-time">' + dotsHtml + '<span class="tool-totals-time-value">' + totalSec + '</span></span>';
 
             // Append to tool log if not already there
             if (!totalsEl.isConnected && window.toolLogEl) {
