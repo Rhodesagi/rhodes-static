@@ -529,7 +529,7 @@
 
         .msg.ai {
             background: var(--ai);
-            border: none;
+            border: 1px solid #1a3a1a;
             border-radius: 12px;
             position: relative;
         }
