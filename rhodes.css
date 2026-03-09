@@ -29,8 +29,8 @@
             --magenta: #ff00cc;
             --green: #00ff66;
             --dim: #404040;
-            --user: #1a3a5c;
-            --ai: #1a1a1a;
+            --user: #0a2a0a;
+            --ai: transparent;
             --text: #e0e0e0;
         }
 
@@ -43,8 +43,8 @@
             --magenta: #990099;
             --green: #007722;
             --dim: #606860;
-            --user: #c0d8e8;
-            --ai: #d0d4d0;
+            --user: #c0e8c8;
+            --ai: transparent;
             --text: #101810;
         }
 
@@ -523,13 +523,13 @@
 
         .msg.user {
             background: var(--user);
-            border: 1px solid #2a5a8c;
+            border: 1px solid #1a4a1a;
             border-radius: 12px;
         }
 
         .msg.ai {
             background: var(--ai);
-            border: 1px solid var(--border);
+            border: none;
             border-radius: 12px;
             position: relative;
         }

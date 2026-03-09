@@ -404,17 +404,8 @@ textarea {
                 </div>
                 <div class="form-field">
                   <label>Base Model</label>
-                  <select id="bBaseModel" onchange="onBuilderChange()">
-                    <option value="p1.12e">Kimi (p1.12e)</option>
-                    <option value="p1.12d">DeepSeek (p1.12d)</option>
-                    <option value="r1.0a">Opus (r1.0a)</option>
-                    <option value="r1.0b">Sonnet (r1.0b)</option>
-                    <option value="r1.0c">Haiku (r1.0c)</option>
-                    <option value="r1.12f">Grok (r1.12f)</option>
-                    <option value="u1.12e">Kimi Sanitized (u1.12e)</option>
-                    <option value="u1.12f">Grok Sanitized (u1.12f)</option>
-                    <option value="u1.0e">Kimi Sanitized (u1.0e)</option>
-                  </select>
+                  <input type="text" id="bBaseModel" list="bBaseModelList" placeholder="e.g. p1.12e" style="width:140px" oninput="onBuilderChange()">
+                  <datalist id="bBaseModelList"></datalist>
                 </div>
                 <div class="form-field">
                   <label>Slash Command <span class="rewind-btn" data-rewind-for="bSlash" onclick="rewindField('bSlash')" title="Revert to saved">&#8630;</span></label>
@@ -1172,22 +1163,24 @@ async function loadAllSeeds() {
 }
 
 function ensureBaseModelOption(modelValue, labelText) {
-  const sel = $('bBaseModel');
+  const dl = $('bBaseModelList');
+  if (!dl) return;
   const value = String(modelValue || '').trim().toLowerCase();
   if (!value) return;
-  const has = Array.from(sel.options).some(o => String(o.value || '').trim().toLowerCase() === value);
+  const has = Array.from(dl.options).some(o => String(o.value || '').trim().toLowerCase() === value);
   if (!has) {
     const opt = document.createElement('option');
     opt.value = value;
-    opt.textContent = labelText || value;
-    sel.appendChild(opt);
+    opt.label = labelText || value;
+    dl.appendChild(opt);
   }
 }
 
 function populateBaseModelOptions() {
-  const sel = $('bBaseModel');
-  if (!sel) return;
-  const current = String(sel.value || '').trim().toLowerCase();
+  const dl = $('bBaseModelList');
+  const inp = $('bBaseModel');
+  if (!dl || !inp) return;
+  const current = String(inp.value || '').trim().toLowerCase();
   const defaults = [
     'p1.12e','p1.12d','r1.0a','r1.0b','r1.0c','r1.12f','u1.12e','u1.12f','u1.0e'
   ];
@@ -1203,12 +1196,12 @@ function populateBaseModelOptions() {
   defaults.forEach(add);
   (BASE_MODELS || []).forEach(add);
   cloneAliases.forEach(add);
-  sel.innerHTML = merged.map(v => '<option value="'+esc(v)+'">'+esc(v)+'</option>').join('');
+  dl.innerHTML = merged.map(v => '<option value="'+esc(v)+'">').join('');
   if (current) {
     ensureBaseModelOption(current, current);
-    sel.value = current;
+    inp.value = current;
   } else if (merged.length) {
-    sel.value = merged[0];
+    inp.value = merged[0];
   }
 }
 
@@ -1937,12 +1930,7 @@ async function loadModelIntoBuilder(alias) {
   BUILDER_STATE = { isNew: false, originalAlias: alias };
   $('bAlias').value = clone.alias || '';
   const baseInput = clone.base_model_input || clone.base_model || '';
-  const baseOpts = Array.from($('bBaseModel').options).map(o => o.value);
-  if (!baseOpts.includes(baseInput)) {
-    const opt = document.createElement('option');
-    opt.value = baseInput; opt.textContent = baseInput;
-    $('bBaseModel').appendChild(opt);
-  }
+  ensureBaseModelOption(baseInput, baseInput);
   $('bBaseModel').value = baseInput;
   $('bSlash').value = clone.slash_command || '';
   $('bNotes').value = clone.notes || '';
