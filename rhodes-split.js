@@ -2504,8 +2504,9 @@ function _shouldAutoScroll(el) {
 }
 
 function _autoScrollPane(chatEl) {
+    if (!chatEl) return;
     if (_shouldAutoScroll(chatEl)) {
-        _autoScrollPane(chatEl);
+        chatEl.scrollTop = chatEl.scrollHeight;
     }
 }
 
