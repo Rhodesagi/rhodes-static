@@ -1876,14 +1876,33 @@ function renderModelList() {
       + '</div>';
   }).join('');
   var html = '';
-  if (runtimeBases.length) {
-    html += '<div style="padding:8px 10px 4px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em">Base Models</div>' + baseHtml;
-  }
   if (cloneRows.length) {
-    html += '<div style="padding:10px 10px 4px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em">Custom Clones</div>' + cloneHtml;
+    html += '<div style="padding:8px 10px 4px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em">Custom Clones</div>' + cloneHtml;
+  }
+  if (runtimeBases.length) {
+    var baseCollapsed = localStorage.getItem('baseModelsCollapsed') !== 'false';
+    html += '<div style="padding:12px 10px 8px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;user-select:none;border-top:1px solid var(--border)" data-action="toggleBaseModels">'
+      + '<span id="baseModelsArrow" style="display:inline-block;transition:transform .2s;transform:rotate(' + (baseCollapsed ? '0' : '90') + 'deg);margin-right:4px">\u25B6</span>Base Models (' + runtimeBases.length + ')</div>'
+      + '<div id="baseModelsList" style="' + (baseCollapsed ? 'display:none' : '') + '">' + baseHtml + '</div>';
   }
   $('modelListItems').innerHTML = html;
 }
+
+function toggleBaseModels() {
+  var list = $('baseModelsList');
+  var arrow = $('baseModelsArrow');
+  if (!list) return;
+  var collapsed = list.style.display === 'none';
+  list.style.display = collapsed ? '' : 'none';
+  if (arrow) arrow.style.transform = collapsed ? 'rotate(90deg)' : 'rotate(0deg)';
+  localStorage.setItem('baseModelsCollapsed', collapsed ? 'false' : 'true');
+}
+
+// Event delegation for dynamically generated sidebar actions
+document.addEventListener('click', function(e) {
+  var el = e.target.closest('[data-action="toggleBaseModels"]');
+  if (el) { toggleBaseModels(); return; }
+});
 
 function newModel() {
   BUILDER_STATE = { isNew: true, originalAlias: null };

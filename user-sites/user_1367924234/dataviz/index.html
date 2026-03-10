@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epidemic Data Visualization Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #fff;
+            font-size: 28px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 20px;
+        }
+        
+        .sidebar {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .sidebar h3 {
+            margin-bottom: 15px;
+            color: #64b5f6;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .country-checkbox {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        
+        .country-checkbox:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .country-checkbox input {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            accent-color: #64b5f6;
+        }
+        
+        .color-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .chart-container {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .chart-title {
+            font-size: 16px;
+            color: #fff;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .toggle-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #e0e0e0;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        
+        .toggle-btn:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        
+        .toggle-btn.active {
+            background: #64b5f6;
+            border-color: #64b5f6;
+            color: #1a1a2e;
+        }
+        
+        .play-btn {
+            background: #4caf50;
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .play-btn:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+        
+        canvas {
+            width: 100%;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.2);
+        }
+        
+        .slider-container {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .date-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.1);
+            outline: none;
+        }
+        
+        .date-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #64b5f6;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        
+        .date-display {
+            min-width: 100px;
+            text-align: center;
+            font-family: monospace;
+            font-size: 14px;
+            color: #64b5f6;
+        }
+        
+        .bottom-charts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 900px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            .bottom-charts {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 3px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🦠 Global Epidemic Tracker</h1>
+    
+    <div class="dashboard">
+        <div class="sidebar">
+            <h3>Select Countries</h3>
+            <div id="countrySelector"></div>
+        </div>
+        
+        <div class="main-content">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <span class="chart-title">Daily Cases Over Time</span>
+                    <div class="controls">
+                        <button class="toggle-btn" id="scaleToggle">Linear</button>
+                        <button class="play-btn" id="playBtn">▶</button>
+                    </div>
+                </div>
+                <canvas id="lineChart"></canvas>
+                <div class="slider-container">
+                    <input type="range" class="date-slider" id="dateSlider" min="0" max="364" value="364">
+                    <span class="date-display" id="dateDisplay">Dec 31, 2023</span>
+                </div>
+            </div>
+            
+            <div class="bottom-charts">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <span class="chart-title">Total Cases by Country</span>
+                    </div>
+                    <canvas id="barChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <span class="chart-title">Global Severity Map</span>
+                    </div>
+                    <canvas id="mapChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const COUNTRIES = [
+            { name: 'United States', color: '#ff6b6b', row: 2, col: 2 },
+            { name: 'China', color: '#4ecdc4', row: 2, col: 7 },
+            { name: 'Brazil', color: '#ffe66d', row: 5, col: 3 },
+            { name: 'India', color: '#95e1d3', row: 3, col: 6 },
+            { name: 'Russia', color: '#f38181', row: 1, col: 6 },
+            { name: 'Germany', color: '#aa96da', row: 1, col: 4 },
+            { name: 'Japan', color: '#fcbad3', row: 2, col: 8 },
+            { name: 'UK', color: '#a8d8ea', row: 1, col: 3 },
+            { name: 'France', color: '#ffd93d', row: 1, col: 3 },
+            { name: 'Italy', color: '#6bcb77', row: 2, col: 4 }
+        ];
+        
+        const DAYS = 365;
+        const GRID_ROWS = 6;
+        const GRID_COLS = 10;
+        
+        // Generate fake epidemic data
+        function generateEpidemicData() {
+            const data = {};
+            
+            COUNTRIES.forEach(country => {
+                const cases = [];
+                const population = 10000000 + Math.random() * 90000000;
+                const peakDay = 100 + Math.random() * 150;
+                const peakRate = 50000 + Math.random() * 150000;
+                const spread = 40 + Math.random() * 30;
+                
+                for (let day = 0; day < DAYS; day++) {
+                    // Sigmoid-like epidemic curve with noise
+                    const x = (day - peakDay) / spread;
+                    const baseCases = peakRate / (1 + Math.exp(-x));
+                    const weeklyCycle = 1 + 0.15 * Math.sin(day * 2 * Math.PI / 7);
+                    const noise = (0.9 + Math.random() * 0.2);
+                    const reportingLag = day > peakDay ? 0.98 : 1;
+                    
+                    let dailyCases = Math.max(0, Math.round(baseCases * weeklyCycle * noise * reportingLag));
+                    
+                    // Add second wave for some countries
+                    if (day > 250 && Math.random() > 0.5) {
+                        const wave2 = peakRate * 0.4 / (1 + Math.exp(-(day - 300) / 20));
+                        dailyCases += Math.round(wave2 * (0.9 + Math.random() * 0.2));
+                    }
+                    
+                    cases.push(dailyCases);
+                }
+                
+                data[country.name] = {
+                    cases: cases,
+                    total: cases.reduce((a, b) => a + b, 0),
+                    color: country.color,
+                    row: country.row,
+                    col: country.col,
+                    selected: true
+                };
+            });
+            
+            return data;
+        }
+        
+        // Data storage
+        const epidemicData = generateEpidemicData();
+        let currentDay = DAYS - 1;
+        let isPlaying = false;
+        let isLogScale = false;
+        let animationId = null;
+        
+        // Canvas setup
+        const lineCanvas = document.getElementById('lineChart');
+        const barCanvas = document.getElementById('barChart');
+        const mapCanvas = document.getElementById('mapChart');
+        
+        function setupCanvas(canvas) {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            return { ctx, width: rect.width, height: rect.height };
+        }
+        
+        // Format date
+        function formatDate(dayIndex) {
+            const date = new Date(2023, 0, 1);
+            date.setDate(date.getDate() + dayIndex);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+        
+        // Draw line chart
+        function drawLineChart() {
+            const { ctx, width, height } = setupCanvas(lineCanvas);
+            const padding = { top: 20, right: 20, bottom: 40, left: 60 };
+            const chartWidth = width - padding.left - padding.right;
+            const chartHeight = height - padding.top - padding.bottom;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Get selected countries
+            const selectedCountries = COUNTRIES.filter(c => epidemicData[c.name].selected);
+            if (selectedCountries.length === 0) return;
+            
+            // Calculate max value
+            let maxValue = 0;
+            selectedCountries.forEach(country => {
+                const data = epidemicData[country.name].cases.slice(0, currentDay + 1);
+                const max = Math.max(...data);
+                if (max > maxValue) maxValue = max;
+            });
+            
+            if (maxValue === 0) maxValue = 1;
+            
+            if (isLogScale) {
+                maxValue = Math.ceil(Math.log10(maxValue));
+            }
+            
+            // Draw grid
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = 1;
+            
+            // Horizontal grid lines
+            for (let i = 0; i <= 5; i++) {
+                const y = padding.top + (chartHeight * i / 5);
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(width - padding.right, y);
+                ctx.stroke();
+                
+                // Y-axis labels
+                ctx.fillStyle = '#888';
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'right';
+                let label;
+                if (isLogScale) {
+                    label = Math.pow(10, maxValue - (maxValue * i / 5));
+                    label = label >= 1000000 ? (label/1000000).toFixed(1) + 'M' : 
+                            label >= 1000 ? (label/1000).toFixed(0) + 'K' : label.toFixed(0);
+                } else {
+                    label = maxValue - (maxValue * i / 5);
+                    label = label >= 1000000 ? (label/1000000).toFixed(1) + 'M' : 
+                            label >= 1000 ? (label/1000).toFixed(0) + 'K' : label.toFixed(0);
+                }
+                ctx.fillText(label, padding.left - 8, y + 4);
+            }
+            
+            // X-axis labels (months)
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#888';
+            for (let i = 0; i < 12; i++) {
+                const x = padding.left + (chartWidth * i / 11);
+                ctx.fillText(months[i], x, height - 15);
+            }
+            
+            // Draw lines for each country
+            selectedCountries.forEach(country => {
+                const data = epidemicData[country.name].cases.slice(0, currentDay + 1);
+                
+                ctx.strokeStyle = country.color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                
+                data.forEach((value, index) => {
+                    const x = padding.left + (chartWidth * index / (DAYS - 1));
+                    let y;
+                    if (isLogScale) {
+                        const logVal = value > 0 ? Math.log10(value) : 0;
+                        y = padding.top + chartHeight - (chartHeight * logVal / maxValue);
+                    } else {
+                        y = padding.top + chartHeight - (chartHeight * value / maxValue);
+                    }
+                    
+                    if (index === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                });
+                
+                ctx.stroke();
+                
+                // Draw current point
+                if (data.length > 0) {
+                    const lastValue = data[data.length - 1];
+                    const lastX = padding.left + (chartWidth * (data.length - 1) / (DAYS - 1));
+                    let lastY;
+                    if (isLogScale) {
+                        const logVal = lastValue > 0 ? Math.log10(lastValue) : 0;
+                        lastY = padding.top + chartHeight - (chartHeight * logVal / maxValue);
+                    } else {
+                        lastY = padding.top + chartHeight - (chartHeight * lastValue / maxValue);
+                    }
+                    
+                    ctx.fillStyle = country.color;
+                    ctx.beginPath();
+                    ctx.arc(lastX, lastY, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            
+            // Draw current day vertical line
+            const currentX = padding.left + (chartWidth * currentDay / (DAYS - 1));
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(currentX, padding.top);
+            ctx.lineTo(currentX, height - padding.bottom);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        // Draw bar chart
+        function drawBarChart() {
+            const { ctx, width, height } = setupCanvas(barCanvas);
+            const padding = { top: 20, right: 20, bottom: 60, left: 80 };
+            const chartWidth = width - padding.left - padding.right;
+            const chartHeight = height - padding.top - padding.bottom;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            const selectedCountries = COUNTRIES.filter(c => epidemicData[c.name].selected);
+            if (selectedCountries.length === 0) return;
+            
+            // Calculate totals up to current day
+            const totals = selectedCountries.map(country => ({
+                name: country.name,
+                total: epidemicData[country.name].cases.slice(0, currentDay + 1).reduce((a, b) => a + b, 0),
+                color: country.color
+            })).sort((a, b) => b.total - a.total);
+            
+            const maxTotal = Math.max(...totals.map(t => t.total), 1);
+            
+            // Draw bars
+            const barWidth = chartWidth / totals.length * 0.7;
+            const barSpacing = chartWidth / totals.length * 0.3;
+            
+            totals.forEach((item, index) => {
+                const barHeight = (item.total / maxTotal) * chartHeight;
+                const x = padding.left + (index * (barWidth + barSpacing)) + barSpacing / 2;
+                const y = padding.top + chartHeight - barHeight;
+                
+                // Draw bar with gradient
+                const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+                gradient.addColorStop(0, item.color);
+                gradient.addColorStop(1, item.color + '80');
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(x, y, barWidth, barHeight);
+                
+                // Draw country name
+                ctx.save();
+                ctx.translate(x + barWidth / 2, height - 10);
+                ctx.rotate(-Math.PI / 4);
+                ctx.fillStyle = '#aaa';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText(item.name.split(' ')[0], 0, 0);
+                ctx.restore();
+                
+                // Draw value on top
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                const label = item.total >= 1000000 ? (item.total/1000000).toFixed(1) + 'M' : 
+                              item.total >= 1000 ? (item.total/1000).toFixed(0) + 'K' : item.total.toFixed(0);
+                ctx.fillText(label, x + barWidth / 2, y - 5);
+            });
+        }
+        
+        // Draw world map grid
+        function drawMapChart() {
+            const { ctx, width, height } = setupCanvas(mapCanvas);
+            const padding = 20;
+            const gridWidth = width - padding * 2;
+            const gridHeight = height - padding * 2;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            // Calculate current severity for each country
+            const selectedCountries = COUNTRIES.filter(c => epidemicData[c.name].selected);
+            const maxDaily = Math.max(...selectedCountries.map(c => 
+                Math.max(...epidemicData[c.name].cases.slice(0, currentDay + 1))
+            ), 1);
+            
+            // Draw grid cells
+            const cellWidth = gridWidth / GRID_COLS;
+            const cellHeight = gridHeight / GRID_ROWS;
+            
+            // Draw base grid
+            for (let row = 0; row < GRID_ROWS; row++) {
+                for (let col = 0; col < GRID_COLS; col++) {
+                    const x = padding + col * cellWidth;
+                    const y = padding + row * cellHeight;
+                    
+                    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+                    ctx.fillRect(x + 1, y + 1, cellWidth - 2, cellHeight - 2);
+                }
+            }
+            
+            // Draw country cells
+            selectedCountries.forEach(country => {
+                const currentCases = epidemicData[country.name].cases[currentDay];
+                const maxCases = Math.max(...epidemicData[country.name].cases);
+                const intensity = maxCases > 0 ? currentCases / maxCases : 0;
+                
+                const x = padding + country.col * cellWidth;
+                const y = padding + country.row * cellHeight;
+                
+                // Color based on intensity
+                const r = parseInt(country.color.slice(1, 3), 16);
+                const g = parseInt(country.color.slice(3, 5), 16);
+                const b = parseInt(country.color.slice(5, 7), 16);
+                
+                ctx.fillStyle = \`rgba(\${r}, \${g}, \${b}, \${0.2 + intensity * 0.8})\`;
+                ctx.fillRect(x + 2, y + 2, cellWidth - 4, cellHeight - 4);
+                
+                // Draw border
+                ctx.strokeStyle = country.color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x + 2, y + 2, cellWidth - 4, cellHeight - 4);
+                
+                // Draw country name
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(country.name.substring(0, 3).toUpperCase(), x + cellWidth / 2, y + cellHeight / 2 + 3);
+                
+                // Draw current cases
+                ctx.font = '8px sans-serif';
+                ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                const label = currentCases >= 1000 ? (currentCases/1000).toFixed(1) + 'k' : currentCases.toString();
+                ctx.fillText(label, x + cellWidth / 2, y + cellHeight - 6);
+            });
+        }
+        
+        // Update all charts
+        function updateCharts() {
+            drawLineChart();
+            drawBarChart();
+            drawMapChart();
+        }
+        
+        // Create country selector
+        function createCountrySelector() {
+            const container = document.getElementById('countrySelector');
+            
+            COUNTRIES.forEach(country => {
+                const label = document.createElement('label');
+                label.className = 'country-checkbox';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = true;
+                checkbox.addEventListener('change', (e) => {
+                    epidemicData[country.name].selected = e.target.checked;
+                    updateCharts();
+                });
+                
+                const color = document.createElement('span');
+                color.className = 'color-indicator';
+                color.style.backgroundColor = country.color;
+                
+                const text = document.createElement('span');
+                text.textContent = country.name;
+                
+                label.appendChild(checkbox);
+                label.appendChild(color);
+                label.appendChild(text);
+                container.appendChild(label);
+            });
+        }
+        
+        // Animation loop
+        function animate() {
+            if (!isPlaying) return;
+            
+            currentDay++;
+            if (currentDay >= DAYS) {
+                currentDay = 0;
+            }
+            
+            document.getElementById('dateSlider').value = currentDay;
+            document.getElementById('dateDisplay').textContent = formatDate(currentDay);
+            updateCharts();
+            
+            animationId = setTimeout(() => {
+                requestAnimationFrame(animate);
+            }, 50);
+        }
+        
+        // Event listeners
+        document.getElementById('dateSlider').addEventListener('input', (e) => {
+            currentDay = parseInt(e.target.value);
+            document.getElementById('dateDisplay').textContent = formatDate(currentDay);
+            updateCharts();
+        });
+        
+        document.getElementById('playBtn').addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            document.getElementById('playBtn').textContent = isPlaying ? '⏸' : '▶';
+            if (isPlaying) {
+                animate();
+            } else {
+                clearTimeout(animationId);
+            }
+        });
+        
+        document.getElementById('scaleToggle').addEventListener('click', (e) => {
+            isLogScale = !isLogScale;
+            e.target.textContent = isLogScale ? 'Logarithmic' : 'Linear';
+            e.target.classList.toggle('active', isLogScale);
+            updateCharts();
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            updateCharts();
+        });
+        
+        // Initialize
+        createCountrySelector();
+        updateCharts();
+    </script>
+</body>
+</html>
