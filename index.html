@@ -113,9 +113,9 @@ function toggleSplitView() {
     <link rel="apple-touch-icon" sizes="180x180" href="/rhodes-icon-180.png">
 
     <!-- Firebase Auth for Google Sign-In -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js?v=1771899160"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js?v=1771899160"></script>
-    <link rel="stylesheet" href="/rhodes.css?v=1772508200">
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js?v=1773116988"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js?v=1773116988"></script>
+    <link rel="stylesheet" href="/rhodes.css?v=1773116988">
 <script>const params=new URLSearchParams(window.location.search);
 if(params.get("nologo")==="1"){document.write(`<style>.logo{visibility:hidden!important}
     /* Slash command autocomplete dropdown */
@@ -471,15 +471,18 @@ if(params.get("chatpad")==="1"){document.write(`<style>#chat{padding-top:180px!i
     </style>`);}
 </script>
     <!-- Silero VAD for speech detection -->
-    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.js?v=1771899160"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.19/dist/bundle.min.js?v=1771899160"></script>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.js?v=1773116988"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.19/dist/bundle.min.js?v=1773116988"></script>
 
     <!-- Service Worker Registration -->
     <script>
     if ('serviceWorker' in navigator) {
-        // Nuke all service workers on load - they cause stale cache
+        // Nuke all service workers AND clear all caches
         navigator.serviceWorker.getRegistrations().then(function(regs) {
-            regs.forEach(function(r) { r.unregister(); });
+            regs.forEach(function(r) { r.unregister().then(function() { console.log('[SW] Unregistered:', r.scope); }); });
+        });
+        caches.keys().then(function(names) {
+            names.forEach(function(name) { caches.delete(name); console.log('[SW] Deleted cache:', name); });
         });
     }
     </script>
@@ -1031,20 +1034,20 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
 
     <!-- Courses Panel -->
 
-    <script src="/credentials-popup.js?v=1772171004"></script>
-    <script src="/rhodes-tools.js?v=1773092958"></script>
-    <script src="/rhodes-sessions.js?v=1772171004"></script>
-    <script src="/rhodes-auth.js?v=1772171004"></script>
-    <script src="/rhodes-share.js?v=1772171004"></script>
-    <script src="/rhodes-ws.js?v=1772171004"></script>
-    <script src="/rhodes-media.js?v=1772171004"></script>
-    <script src="/rhodes-send.js?v=1772408674"></script>
-    <script src="/rhodes-voice.js?v=1772171004"></script>
-    <script src="/face-api.min.js?v=1771899160"></script>
-    <script src="/rhodes-valence.js?v=1772171004"></script>
-    <script src="/rhodes.js?v=1772502638"></script>
-    <script src="/rhodes-split.js?v=1772502638"></script>
-    <script src="/rhodes-cloud-storage.js?v=1772171004"></script>
+    <script src="/credentials-popup.js?v=1773116988"></script>
+    <script src="/rhodes-tools.js?v=1773116988"></script>
+    <script src="/rhodes-sessions.js?v=1773118370"></script>
+    <script src="/rhodes-auth.js?v=1773116988"></script>
+    <script src="/rhodes-share.js?v=1773116988"></script>
+    <script src="/rhodes-ws.js?v=1773116988"></script>
+    <script src="/rhodes-media.js?v=1773116988"></script>
+    <script src="/rhodes-send.js?v=1773116988"></script>
+    <script src="/rhodes-voice.js?v=1773116988"></script>
+    <script src="/face-api.min.js?v=1773116988"></script>
+    <script src="/rhodes-valence.js?v=1773116988"></script>
+    <script src="/rhodes.js?v=1773116988"></script>
+    <script src="/rhodes-split.js?v=1773116988"></script>
+    <script src="/rhodes-cloud-storage.js?v=1773116988"></script>
 
     <!-- PWA Service Worker & Install -->
     <script>

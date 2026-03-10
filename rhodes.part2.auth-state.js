@@ -1444,7 +1444,7 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
             }
 
             chat.appendChild(div);
-            chat.scrollTop = chat.scrollHeight;
+            _autoScrollChat(chat);
             updateIntroCentering();
             return div;
         }
@@ -1501,7 +1501,7 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
                 </div>
             `;
             chat.appendChild(div);
-            chat.scrollTop = chat.scrollHeight;
+            _autoScrollChat(chat);
             updateIntroCentering();
         }
 
@@ -1527,7 +1527,7 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
             }
 
             chat.appendChild(div);
-            chat.scrollTop = chat.scrollHeight;
+            _autoScrollChat(chat);
             updateIntroCentering();
             return div;
         }
@@ -1563,5 +1563,5 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
                 el.appendChild(shareBtnEl);
             }
 
-            chat.scrollTop = chat.scrollHeight;
+            _autoScrollChat(chat);
         }

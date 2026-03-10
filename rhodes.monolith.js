@@ -1,3 +1,15 @@
+
+// Smart auto-scroll: only scroll if user is near bottom and not selecting text
+function _shouldAutoScrollChat(el) {
+    if (!el) return false;
+    var sel = window.getSelection();
+    if (sel && sel.toString().length > 0 && el.contains(sel.anchorNode)) return false;
+    return (el.scrollHeight - el.scrollTop - el.clientHeight) < 150;
+}
+function _autoScrollChat(el) {
+    if (_shouldAutoScrollChat(el)) _autoScrollChat(el);
+}
+
 // =============================================================================
 // RHODES CONFIGURATION MODULE
 // =============================================================================
@@ -463,7 +475,7 @@ if (window.rhodesIOS.isIOS) {
             div.innerHTML = cardHtml;
             document.getElementById('chat').appendChild(div);
             var chatEl = document.getElementById('chat');
-            chatEl.scrollTop = chatEl.scrollHeight;
+            _autoScrollChat(chatEl);
         };
 
 
@@ -2015,7 +2027,7 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
             }
 
             chat.appendChild(div);
-            chat.scrollTop = chat.scrollHeight;
+            _autoScrollChat(chat);
             updateIntroCentering();
             return div;
         }
@@ -2072,7 +2084,7 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
                 </div>
             `;
             chat.appendChild(div);
-            chat.scrollTop = chat.scrollHeight;
+            _autoScrollChat(chat);
             updateIntroCentering();
         }
 
@@ -2098,7 +2110,7 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
             }
 
             chat.appendChild(div);
-            chat.scrollTop = chat.scrollHeight;
+            _autoScrollChat(chat);
             updateIntroCentering();
             return div;
         }
@@ -2134,7 +2146,7 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
                 el.appendChild(shareBtnEl);
             }
 
-            chat.scrollTop = chat.scrollHeight;
+            _autoScrollChat(chat);
         }
 
         // ============================================
@@ -2295,7 +2307,7 @@ function showDownloads() {
                 clearInterval(window.toolTimerInterval);
                 window.toolTimerInterval = null;
             }
-            chat.scrollTop = chat.scrollHeight;
+            _autoScrollChat(chat);
         }
 
         // Firebase initialization
@@ -2841,7 +2853,7 @@ function showDownloads() {
                             details.appendChild(pre);
                             div.appendChild(details);
                             const chatEl = document.getElementById('chat');
-                            if (chatEl) { chatEl.appendChild(div); chatEl.scrollTop = chatEl.scrollHeight; }
+                            if (chatEl) { chatEl.appendChild(div); _autoScrollChat(chatEl); }
                             window._reasoningEl = div;
                             window._reasoningPre = pre;
                             window._reasoningSummary = summary;
@@ -2852,7 +2864,7 @@ function showDownloads() {
                         window._reasoningSummary.innerHTML = 'Thinking <span style="opacity:0.5;font-size:11px;">(' + tokEst + ' tokens)</span> <span style="opacity:0.6">...</span>';
                         window._reasoningPre.scrollTop = window._reasoningPre.scrollHeight;
                         const chatEl = document.getElementById('chat');
-                        if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
+                        if (chatEl) _autoScrollChat(chatEl);
                     }
                 } else if (msg.msg_type === 'ai_message_chunk') {
                     // Streaming chunk - append to current message
@@ -3723,7 +3735,7 @@ function showDownloads() {
                         window._toolItems.set(toolKey, { el: wrapperDiv, lastStatus: status });
                         if (typeof updateToolTotalsDisplay === 'function') updateToolTotalsDisplay();
                     }
-                    document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
+                    _autoScrollChat(document.getElementById('chat'));
 
 
                 } else if (msg.msg_type === 'interrupt_ack') {
@@ -3972,7 +3984,7 @@ function showDownloads() {
                         msgDiv.style.cssText = 'background:rgba(0,255,65,0.1);padding:8px;margin:5px 0;border-radius:3px;text-align:right;';
                         msgDiv.textContent = message;
                         messagesArea.appendChild(msgDiv);
-                        messagesArea.scrollTop = messagesArea.scrollHeight;
+                        _autoScrollChat(messagesArea);
                     }
                 }
             } else {
@@ -4004,7 +4016,7 @@ function showDownloads() {
                 </div>
             `;
             chat.appendChild(loadingEl);
-            chat.scrollTop = chat.scrollHeight;
+            _autoScrollChat(chat);
 
             // Cycle through loading texts
             let textIdx = 0;
@@ -5811,7 +5823,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }, 0);
 
         // Auto-scroll
-        if (chat) chat.scrollTop = chat.scrollHeight;
+        if (chat) _autoScrollChat(chat);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

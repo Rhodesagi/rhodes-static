@@ -701,10 +701,15 @@
             align-items: center;
             justify-content: space-between;
             gap: 8px;
+            flex-wrap: wrap;
         }
         .split-group-info {
             cursor: pointer;
             flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .split-group-info:hover {
             opacity: 0.8;

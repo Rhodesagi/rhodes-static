@@ -1,3 +1,15 @@
+
+// Smart auto-scroll: only scroll if user is near bottom and not selecting text
+function _shouldAutoScrollChat(el) {
+    if (!el) return false;
+    var sel = window.getSelection();
+    if (sel && sel.toString().length > 0 && el.contains(sel.anchorNode)) return false;
+    return (el.scrollHeight - el.scrollTop - el.clientHeight) < 150;
+}
+function _autoScrollChat(el) {
+    if (_shouldAutoScrollChat(el)) _autoScrollChat(el);
+}
+
 /* RHODES v2 module: rhodes.part3.ui-core.js */
 /* Source: contiguous slice of rhodes.monolith.js */
 
@@ -174,7 +186,7 @@ function showDownloads() {
                 clearInterval(window.toolTimerInterval);
                 window.toolTimerInterval = null;
             }
-            chat.scrollTop = chat.scrollHeight;
+            _autoScrollChat(chat);
         }
 
         function _normalizeReqId(payloadReqId, fallbackReqId) {
@@ -797,7 +809,7 @@ function showDownloads() {
                             details.appendChild(pre);
                             div.appendChild(details);
                             const chatEl = document.getElementById('chat');
-                            if (chatEl) { chatEl.appendChild(div); chatEl.scrollTop = chatEl.scrollHeight; }
+                            if (chatEl) { chatEl.appendChild(div); _autoScrollChat(chatEl); }
                             window._reasoningEl = div;
                             window._reasoningPre = pre;
                             window._reasoningSummary = summary;
@@ -808,8 +820,13 @@ function showDownloads() {
                         window._reasoningSummary.innerHTML = 'Thinking <span style="opacity:0.5;font-size:11px;">(' + tokEst + ' tokens)</span> <span style="opacity:0.6">...</span>';
                         window._reasoningPre.scrollTop = window._reasoningPre.scrollHeight;
                         const chatEl = document.getElementById('chat');
-                        if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
+                        if (chatEl) _autoScrollChat(chatEl);
                     }
+                } else if (msg.msg_type === 'system_message' && msg.payload && msg.payload.status === 'queued') {
+                    // Queue notification - show as a toast, NOT as model response
+                    const _qn = msg.payload.pending || '?';
+                    showToast('Message queued (' + _qn + ' pending) — waiting for current response to finish');
+                    return;
                 } else if (msg.msg_type === 'ai_message_chunk') {
                     // Streaming chunk - append to current message
                     // Close reasoning display when content starts streaming
@@ -1735,7 +1752,7 @@ function showDownloads() {
                         window._toolItems.set(toolKey, { el: wrapperDiv, lastStatus: status });
                         if (typeof updateToolTotalsDisplay === 'function') updateToolTotalsDisplay();
                     }
-                    document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
+                    _autoScrollChat(document.getElementById('chat'));
 
 
                 } else if (msg.msg_type === 'interrupt_ack') {

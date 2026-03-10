@@ -159,7 +159,7 @@ window.installRhodesSessionUi = function installRhodesSessionUi(deps) {
 
                 html += '<div class="split-group-item">';
                 html += '<div class="split-group-row">';
-                html += "<div class=\"split-group-info\" onclick=\"var el=document.getElementById('" + gid + "');el.style.display=el.style.display==='none'?'block':'none'\">";
+                html += "<div class=\"split-group-info\" onclick=\"event.stopPropagation();window._multisandboxMode=true;var _rd=" + resumeJson + ";window.enterSplitMode(" + resumePaneCount + ",_rd)\">";
                 html += '<span style="font-size:11px;font-weight:bold;color:var(--cyan);">' + resumePaneCount + '-pane split</span>';
                 html += '<span style="font-size:10px;color:var(--dim);margin-left:8px;">' + escHtml((date && time) ? (date + ' ' + time) : (date || time)) + '</span>';
                 html += '<span style="font-size:10px;color:var(--dim);margin-left:6px;">' + totalMsgs + ' msgs</span>';
@@ -167,7 +167,17 @@ window.installRhodesSessionUi = function installRhodesSessionUi(deps) {
                 html += "<button class=\"split-resume-btn\" onclick=\"event.stopPropagation();window._multisandboxMode=true;var _rd=" + resumeJson + ";window.enterSplitMode(" + resumePaneCount + ",_rd)\">▶ Resume</button>";
                 html += '</div>';
                 html += '<div id="' + gid + '" style="display:none;padding:4px 0 4px 12px;">';
-                group.forEach(s => { html += renderItem(s); });
+                group.forEach(function(s) {
+                    // Render split sub-items with click that resumes full split group
+                    var title = (s.title || '').trim() || s.session_id || 'Session';
+                    var count = (s.message_count || 0);
+                    var paneMatch = s.session_id.match(/split-(\d+)/);
+                    var paneLabel = paneMatch ? 'Pane ' + paneMatch[1] : '';
+                    html += '<div class="session-item" style="cursor:pointer;" onclick="event.stopPropagation();window._multisandboxMode=true;var _rd=' + resumeJson + ';window.enterSplitMode(' + resumePaneCount + ',_rd)">';
+                    html += '<div class="session-preview">' + (paneLabel ? '<span style="color:var(--cyan);font-size:10px;margin-right:6px;">' + paneLabel + '</span>' : '') + escHtml(title) + '</div>';
+                    html += '<div class="session-meta">' + count + ' messages</div>';
+                    html += '</div>';
+                });
                 html += '</div>';
                 html += '</div>';
             });

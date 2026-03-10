@@ -210,7 +210,7 @@
                         msgDiv.style.cssText = 'background:rgba(0,255,65,0.1);padding:8px;margin:5px 0;border-radius:3px;text-align:right;';
                         msgDiv.textContent = message;
                         messagesArea.appendChild(msgDiv);
-                        messagesArea.scrollTop = messagesArea.scrollHeight;
+                        _autoScrollChat(messagesArea);
                     }
                 }
             } else {
@@ -260,7 +260,7 @@
                 </div>
             `;
             chat.appendChild(loadingEl);
-            chat.scrollTop = chat.scrollHeight;
+            _autoScrollChat(chat);
 
             // Cycle through loading texts
             let textIdx = 0;

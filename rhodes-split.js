@@ -1255,7 +1255,7 @@ function handlePaneChunkMessage(paneNum, msg, chatEl) {
         chatEl.appendChild(streamEl);
     }
     streamEl.textContent += chunk;
-    chatEl.scrollTop = chatEl.scrollHeight;
+    _autoScrollPane(chatEl);
 }
 
 function handlePaneInterruptAckMessage(paneNum, msg, chatEl) {
@@ -1269,7 +1269,7 @@ function handlePaneInterruptAckMessage(paneNum, msg, chatEl) {
     interruptDiv.style.cssText = 'color:var(--yellow);font-style:italic;margin:4px 0;font-size:0.9em;';
     interruptDiv.textContent = '[Interrupted]';
     chatEl.appendChild(interruptDiv);
-    chatEl.scrollTop = chatEl.scrollHeight;
+    _autoScrollPane(chatEl);
     console.log('[SPLIT] Instance', paneNum, 'interrupted');
 }
 
@@ -1313,7 +1313,7 @@ function handlePaneAiMessage(paneNum, msg, chatEl) {
                     sharedDiv.style.cssText = 'color:var(--magenta);margin:8px 0;padding:8px;border-left:3px solid var(--magenta);background:rgba(255,0,255,0.05);';
                     sharedDiv.innerHTML = '<strong>[From ' + senderName + ']:</strong> ' + sharedContent.replace(/</g, '&lt;').replace(/>/g, '&gt;');
                     otherChat.appendChild(sharedDiv);
-                    otherChat.scrollTop = otherChat.scrollHeight;
+                    _autoScrollPane(otherChat);
                 }
             }
         }
@@ -1346,7 +1346,7 @@ function handlePaneAiMessage(paneNum, msg, chatEl) {
                             replyDiv.innerHTML = '<strong>[' + senderLetter + ' → ' + targetMsgId + ']:</strong> ' + replyContent.replace(/</g, '&lt;').replace(/>/g, '&gt;');
                             replyDiv.setAttribute('data-reply-to', targetMsgId);
                             otherChat.appendChild(replyDiv);
-                            otherChat.scrollTop = otherChat.scrollHeight;
+                            _autoScrollPane(otherChat);
                         }
                     }
                 }
@@ -1371,7 +1371,7 @@ function handlePaneAiMessage(paneNum, msg, chatEl) {
                         privateDiv.innerHTML = '<strong>[Private from ' + senderLetter + ' → ' + targetMsgId + ']:</strong> ' + replyContent.replace(/</g, '&lt;').replace(/>/g, '&gt;');
                         privateDiv.setAttribute('data-reply-to', targetMsgId);
                         targetChat.appendChild(privateDiv);
-                        targetChat.scrollTop = targetChat.scrollHeight;
+                        _autoScrollPane(targetChat);
                     }
                     const confirmDiv = document.createElement('div');
                     confirmDiv.style.cssText = 'color:var(--dim);margin:4px 0 4px 20px;font-size:11px;font-style:italic;';
@@ -1407,7 +1407,7 @@ function handlePaneAiMessage(paneNum, msg, chatEl) {
                 privDiv.style.cssText = 'color:var(--cyan);margin:8px 0;padding:8px;border-left:3px solid var(--cyan);background:rgba(0,255,213,0.05);';
                 privDiv.innerHTML = '<strong>[Private from ' + senderName2 + ']:</strong> ' + privateContent.replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 targetChat.appendChild(privDiv);
-                targetChat.scrollTop = targetChat.scrollHeight;
+                _autoScrollPane(targetChat);
             }
             showToast(senderName2 + ' -> ' + (instanceNames[targetPane] || targetPane) + ' (private)');
         }
@@ -1554,7 +1554,7 @@ function handlePaneToolEvent(paneNum, msg) {
         chatEl.appendChild(wrapper);
         window._paneToolItems.set(toolKey, { el: wrapper });
     }
-    chatEl.scrollTop = chatEl.scrollHeight;
+    _autoScrollPane(chatEl);
 }
 
 function handlePaneThinkingMessage(paneNum, msg, chatEl) {
@@ -1563,7 +1563,7 @@ function handlePaneThinkingMessage(paneNum, msg, chatEl) {
     thinkEl.style.cssText = 'color:var(--dim);font-style:italic;margin:4px 0;';
     thinkEl.textContent = '... thinking ...';
     chatEl.appendChild(thinkEl);
-    chatEl.scrollTop = chatEl.scrollHeight;
+    _autoScrollPane(chatEl);
     setTimeout(() => thinkEl.remove(), 3000);
 }
 
@@ -1591,7 +1591,7 @@ function handlePaneReasoningChunkMessage(paneNum, msg, chatEl) {
     }
     var pre = reasonEl.querySelector('pre');
     if (pre) pre.textContent += chunk;
-    chatEl.scrollTop = chatEl.scrollHeight;
+    _autoScrollPane(chatEl);
 }
 
 const paneMessageHandlers = {
@@ -1701,7 +1701,7 @@ function addInstanceMessage(paneNum, type, content, responseTimeLabel = '') {
     }
 
     chatEl.appendChild(msgEl);
-    chatEl.scrollTop = chatEl.scrollHeight;
+    _autoScrollPane(chatEl);
 }
 
 function addInstanceToolMessage(paneNum, header, args, result) {
@@ -1740,7 +1740,7 @@ function addInstanceToolMessage(paneNum, header, args, result) {
     }
     
     chatEl.appendChild(toolEl);
-    chatEl.scrollTop = chatEl.scrollHeight;
+    _autoScrollPane(chatEl);
 }
 
 window.sendToInstance = function(paneNum, text) {
@@ -1796,7 +1796,7 @@ window.sendToInstance = function(paneNum, text) {
                 sysDiv.style.fontStyle = 'italic';
                 sysDiv.textContent = '[SYS] ' + instruction;
                 chatEl.appendChild(sysDiv);
-                chatEl.scrollTop = chatEl.scrollHeight;
+                _autoScrollPane(chatEl);
             }
             const inputEl = document.getElementById('instance-' + paneNum + '-input');
             if (inputEl) inputEl.value = '';
@@ -1838,7 +1838,7 @@ window.sendToInstance = function(paneNum, text) {
         userMsg.style.borderRadius = '4px';
         userMsg.textContent = '> ' + text;
         chatEl.appendChild(userMsg);
-        chatEl.scrollTop = chatEl.scrollHeight;
+        _autoScrollPane(chatEl);
         console.log('[SPLIT-DEBUG] Added user message to pane', paneNum);
     } else {
         console.error('[SPLIT-DEBUG] chatEl not found for pane', paneNum);
@@ -1946,7 +1946,7 @@ window.sendToAllInstances = function(text) {
                         sysDiv.style.cssText = 'color:var(--cyan);margin:5px 0;font-style:italic;font-size:12px;';
                         sysDiv.textContent = '[Switching to ' + modelName.toUpperCase() + '...]';
                         chatEl.appendChild(sysDiv);
-                        chatEl.scrollTop = chatEl.scrollHeight;
+                        _autoScrollPane(chatEl);
                     }
                 }
             }
@@ -1974,7 +1974,7 @@ window.sendToAllInstances = function(text) {
                         sysDiv.style.fontStyle = 'italic';
                         sysDiv.textContent = '[SYS] ' + instruction;
                         chatEl.appendChild(sysDiv);
-                        chatEl.scrollTop = chatEl.scrollHeight;
+                        _autoScrollPane(chatEl);
                     }
                 }
             }
@@ -2036,7 +2036,7 @@ window.sendToAllInstances = function(text) {
                     sysDiv.style.cssText = 'color:var(--yellow);margin:8px 0;font-style:italic;font-size:12px;';
                     sysDiv.textContent = '[' + modeLabel + ' mode. Messages: A1, B2, G3, D4. Share/Reply limit: 1/round]';
                     chatEl.appendChild(sysDiv);
-                    chatEl.scrollTop = chatEl.scrollHeight;
+                    _autoScrollPane(chatEl);
                 }
             }
         }
@@ -2083,7 +2083,7 @@ window.sendToAllInstances = function(text) {
                     sysDiv.style.cssText = 'color:var(--cyan);margin:8px 0;font-style:italic;font-size:12px;';
                     sysDiv.textContent = '[Round counts disclosed to ' + instanceNames[i] + ']';
                     chatEl.appendChild(sysDiv);
-                    chatEl.scrollTop = chatEl.scrollHeight;
+                    _autoScrollPane(chatEl);
                 }
             }
         }
@@ -2132,7 +2132,7 @@ window.sendToAllInstances = function(text) {
                 userMsg.style.borderRadius = '4px';
                 userMsg.textContent = '> ' + text;
                 chatEl.appendChild(userMsg);
-                chatEl.scrollTop = chatEl.scrollHeight;
+                _autoScrollPane(chatEl);
             }
             
             // Send to WebSocket
@@ -2173,7 +2173,7 @@ window.sendToInstance = function(instanceNum, text) {
         userMsg.style.marginBottom = '5px';
         userMsg.textContent = '> ' + text;
         chatEl.appendChild(userMsg);
-        chatEl.scrollTop = chatEl.scrollHeight;
+        _autoScrollPane(chatEl);
     }
     
     // Send to WebSocket with correct format
@@ -2191,6 +2191,9 @@ window.sendToInstance = function(instanceNum, text) {
 
 // Handle /stop for split instances
 window.stopInstance = function(instanceNum) {
+    // Immediately hide loading indicator (don't wait for server ACK)
+    if (window.hideInstanceLoading) window.hideInstanceLoading(instanceNum);
+    
     const paneWs = window.paneConnections[instanceNum];
     if (!paneWs || paneWs.readyState !== WebSocket.OPEN) return;
     
@@ -2344,7 +2347,7 @@ window.removeInstanceAttachment = function(instanceNum, index) {
             }
             userMsg.textContent = msgText;
             chatEl.appendChild(userMsg);
-            chatEl.scrollTop = chatEl.scrollHeight;
+            _autoScrollPane(chatEl);
         }
         
         var payload = { content: (text || "").trim() };
@@ -2457,7 +2460,7 @@ window.showInstanceLoading = function(paneNum) {
     loader.style.cssText = "color:var(--green);margin:8px 0;padding:8px;";
     loader.innerHTML = "<span class='loader-dots'>Processing<span>.</span><span>.</span><span>.</span></span><span class='loader-timer' style='color:var(--dim);font-size:0.85em;margin-left:8px;'>0s</span>";
     chatEl.appendChild(loader);
-    chatEl.scrollTop = chatEl.scrollHeight;
+    _autoScrollPane(chatEl);
     
     // Animate dots
     var dots = loader.querySelectorAll(".loader-dots span");
@@ -2489,12 +2492,26 @@ window.hideInstanceLoading = function(paneNum) {
     }
 };
 
-// Auto-scroll chat to bottom
+// Auto-scroll chat to bottom (only if user is near bottom — don't interrupt reading/selection)
+function _shouldAutoScroll(el) {
+    if (!el) return false;
+    // If user has selected text, never auto-scroll (they're copying)
+    var sel = window.getSelection();
+    if (sel && sel.toString().length > 0 && el.contains(sel.anchorNode)) return false;
+    // Only auto-scroll if within 150px of bottom
+    var threshold = 150;
+    return (el.scrollHeight - el.scrollTop - el.clientHeight) < threshold;
+}
+
+function _autoScrollPane(chatEl) {
+    if (_shouldAutoScroll(chatEl)) {
+        _autoScrollPane(chatEl);
+    }
+}
+
 function scrollPaneChatToBottom(paneNum) {
     var chatEl = document.getElementById('split-chat-' + paneNum);
-    if (chatEl) {
-        chatEl.scrollTop = chatEl.scrollHeight;
-    }
+    _autoScrollPane(chatEl);
 }
 
 
@@ -2568,7 +2585,7 @@ window.renderContactCard = function(paneNum, contact) {
 
     card.appendChild(info);
     chatEl.appendChild(card);
-    chatEl.scrollTop = chatEl.scrollHeight;
+    _autoScrollPane(chatEl);
 };
 
 /**
@@ -2619,7 +2636,7 @@ window.renderSitePreview = function(paneNum, site) {
 
     preview.appendChild(content);
     chatEl.appendChild(preview);
-    chatEl.scrollTop = chatEl.scrollHeight;
+    _autoScrollPane(chatEl);
 };
 
 /**
