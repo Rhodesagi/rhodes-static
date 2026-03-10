@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Great Duel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #gameContainer {
+            display: flex;
+            gap: 4px;
+            background: #111;
+            padding: 4px;
+            border: 2px solid #444;
+        }
+        canvas {
+            image-rendering: pixelated;
+        }
+        #controls {
+            margin-top: 10px;
+            font-size: 11px;
+            color: #888;
+            text-align: center;
+        }
+        #title {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #c9a961;
+            text-shadow: 2px 2px 4px #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="title">A GREAT DUEL</div>
+    <div id="gameContainer">
+        <canvas id="p1Canvas" width="400" height="300"></canvas>
+        <canvas id="p2Canvas" width="400" height="300"></canvas>
+    </div>
+    <div id="controls">
+        <div><strong>PLAYER 1 (Blue):</strong> WASD = Move | Q/E = Turn Musket | X = Aim | F = Fire | R = Reload</div>
+        <div><strong>PLAYER 2 (Red):</strong> ARROWS = Move | ,/. = Turn Musket | P = Aim | L = Fire | O = Reload</div>
+        <div>Press SPACE to restart after a kill</div>
+    </div>
+
+<script>
+// ============================================
+// A GREAT DUEL - Pseudo-3D Musket FPS
+// Raycasting Engine with Authentic Iron Sights
+// ============================================
+
+const MAP_SIZE = 16;
+const FOV = Math.PI / 3;
+const BLOCK_SIZE = 64;
+
+// 0 = empty, 1 = wall, 2 = cover/barrel
+const MAP = [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,2,0,0,0,0,0,0,0,0,0,0,2,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,1,1,0,0,0,0,1,1,0,0,0,1],
+    [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
+    [1,0,0,0,1,1,0,0,0,0,1,1,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,2,0,0,0,0,0,0,0,0,0,0,2,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+];
+
+// Weapon states
+const STATE_READY = 0;
+const STATE_AIMING = 1;
+const STATE_FIRING = 2;
+const STATE_RELOADING = 3;
+
+// Reload stages (flintlock musket)
+const RELOAD_STAGES = [
+    { name: "biting_cartridge", duration: 800 },
+    { name: "priming_pan", duration: 1000 },
+    { name: "closing_frizzen", duration: 400 },
+    { name: "pouring_powder", duration: 1000 },
+    { name: "patch_and_ball", duration: 1200 },
+    { name: "ramming", duration: 1500 },
+    { name: "returning_ramrod", duration: 800 },
+    { name: "cocking", duration: 600 }
+];
+
+class Player {
+    constructor(x, y, angle, color) {
+        this.x = x;
+        this.y = y;
+        this.angle = angle;
+        this.color = color;
+        this.dead = false;
+        
+        // Musket state
+        this.musketAngle = 0;
+        this.state = STATE_READY;
+        this.loaded = true;
+        this.reloadStage = 0;
+        this.reloadTimer = 0;
+        this.lastFireTime = 0;
+        
+        // Animation
+        this.musketRecoil = 0;
+        this.musketSway = 0;
+        this.aimProgress = 0;
+        
+        // Visuals
+        this.flashTime = 0;
+    }
+}
+
+// Create players at opposite ends
+const p1 = new Player(96, 96, Math.PI / 4, '#4169E1');
+const p2 = new Player(896, 896, Math.PI * 1.25, '#DC143C');
+
+// Input handling
+const keys = {};
+document.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
+document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+function updatePlayer(player, dt, isP1) {
+    if (player.dead) return;
+    
+    const moveSpeed = 60 * dt;
+    
+    if (isP1) {
+        // P1: WASD move
+        let moveX = 0, moveY = 0;
+        if (keys['w']) { moveX += Math.cos(player.angle) * moveSpeed; moveY += Math.sin(player.angle) * moveSpeed; }
+        if (keys['s']) { moveX -= Math.cos(player.angle) * moveSpeed; moveY -= Math.sin(player.angle) * moveSpeed; }
+        if (keys['a']) { moveX += Math.cos(player.angle - Math.PI/2) * moveSpeed; moveY += Math.sin(player.angle - Math.PI/2) * moveSpeed; }
+        if (keys['d']) { moveX += Math.cos(player.angle + Math.PI/2) * moveSpeed; moveY += Math.sin(player.angle + Math.PI/2) * moveSpeed; }
+        
+        // Q/E turn musket
+        if (keys['q']) player.musketAngle = Math.max(-30, player.musketAngle - 60 * dt);
+        if (keys['e']) player.musketAngle = Math.min(30, player.musketAngle + 60 * dt);
+        
+        // X aim
+        if (keys['x']) {
+            if (player.state !== STATE_RELOADING) player.state = STATE_AIMING;
+        } else if (player.state === STATE_AIMING) {
+            player.state = STATE_READY;
+        }
+        
+        // R reload
+        if (keys['r'] && player.loaded && player.state !== STATE_RELOADING) {
+            player.state = STATE_RELOADING;
+            player.reloadStage = 0;
+            player.reloadTimer = RELOAD_STAGES[0].duration;
+            player.loaded = false;
+        }
+        
+        // F fire
+        if (keys['f'] && player.loaded && player.state !== STATE_RELOADING) {
+            fireMusket(player, isP1 ? p2 : p1);
+        }
+        
+        // Collision check
+        const newX = player.x + moveX;
+        const newY = player.y + moveY;
+        const mapX = Math.floor(newX / BLOCK_SIZE);
+        const mapY = Math.floor(newY / BLOCK_SIZE);
+        
+        if (mapX >= 0 && mapX < MAP_SIZE && mapY >= 0 && mapY < MAP_SIZE && MAP[mapY][mapX] === 0) {
+            player.x = newX;
+            player.y = newY;
+        }
+    } else {
+        // P2: Arrow keys move
+        let moveX = 0, moveY = 0;
+        if (keys['arrowup']) { moveX += Math.cos(player.angle) * moveSpeed; moveY += Math.sin(player.angle) * moveSpeed; }
+        if (keys['arrowdown']) { moveX -= Math.cos(player.angle) * moveSpeed; moveY -= Math.sin(player.angle) * moveSpeed; }
+        if (keys['arrowleft']) { moveX += Math.cos(player.angle - Math.PI/2) * moveSpeed; moveY += Math.sin(player.angle - Math.PI/2) * moveSpeed; }
+        if (keys['arrowright']) { moveX += Math.cos(player.angle + Math.PI/2) * moveSpeed; moveY += Math.sin(player.angle + Math.PI/2) * moveSpeed; }
+        
+        // ,/. turn musket
+        if (keys[',']) player.musketAngle = Math.max(-30, player.musketAngle - 60 * dt);
+        if (keys['.']) player.musketAngle = Math.min(30, player.musketAngle + 60 * dt);
+        
+        // P aim
+        if (keys['p']) {
+            if (player.state !== STATE_RELOADING) player.state = STATE_AIMING;
+        } else if (player.state === STATE_AIMING) {
+            player.state = STATE_READY;
+        }
+        
+        // O reload
+        if (keys['o'] && player.loaded && player.state !== STATE_RELOADING) {
+            player.state = STATE_RELOADING;
+            player.reloadStage = 0;
+            player.reloadTimer = RELOAD_STAGES[0].duration;
+            player.loaded = false;
+        }
+        
+        // L fire
+        if (keys['l'] && player.loaded && player.state !== STATE_RELOADING) {
+            fireMusket(player, isP1 ? p2 : p1);
+        }
+        
+        // Collision check
+        const newX = player.x + moveX;
+        const newY = player.y + moveY;
+        const mapX = Math.floor(newX / BLOCK_SIZE);
+        const mapY = Math.floor(newY / BLOCK_SIZE);
+        
+        if (mapX >= 0 && mapX < MAP_SIZE && mapY >= 0 && mapY < MAP_SIZE && MAP[mapY][mapX] === 0) {
+            player.x = newX;
+            player.y = newY;
+        }
+    }
+    
+    // Update reload
+    if (player.state === STATE_RELOADING) {
+        player.reloadTimer -= dt * 1000;
+        if (player.reloadTimer <= 0) {
+            player.reloadStage++;
+            if (player.reloadStage >= RELOAD_STAGES.length) {
+                player.state = STATE_READY;
+                player.loaded = true;
+            } else {
+                player.reloadTimer = RELOAD_STAGES[player.reloadStage].duration;
+            }
+        }
+    }
+    
+    // Update animations
+    player.musketRecoil *= 0.9;
+    player.musketSway += dt * 2;
+    if (player.state === STATE_AIMING) {
+        player.aimProgress = Math.min(1, player.aimProgress + dt * 5);
+    } else {
+        player.aimProgress = Math.max(0, player.aimProgress - dt * 5);
+    }
+    if (player.flashTime > 0) player.flashTime -= dt;
+}
+
+function fireMusket(player, opponent) {
+    if (!player.loaded) return;
+    
+    player.loaded = false;
+    player.musketRecoil = 15;
+    player.flashTime = 0.1;
+    player.lastFireTime = Date.now();
+    
+    // Calculate actual firing angle (view + musket offset)
+    const fireAngle = player.angle + (player.musketAngle * Math.PI / 180);
+    
+    // Raycast to check hit
+    const hit = castRayForHit(player.x, player.y, fireAngle, opponent);
+    
+    if (hit.hitPlayer) {
+        opponent.dead = true;
+    }
+}
+
+function castRayForHit(x, y, angle, target) {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    
+    let dist = 0;
+    const step = 2;
+    
+    while (dist < 1000) {
+        const rx = x + cos * dist;
+        const ry = y + sin * dist;
+        
+        // Check wall hit
+        const mapX = Math.floor(rx / BLOCK_SIZE);
+        const mapY = Math.floor(ry / BLOCK_SIZE);
+        
+        if (mapX < 0 || mapX >= MAP_SIZE || mapY < 0 || mapY >= MAP_SIZE || MAP[mapY][mapX] !== 0) {
+            return { hitPlayer: false };
+        }
+        
+        // Check player hit
+        const dx = rx - target.x;
+        const dy = ry - target.y;
+        
+        if (Math.sqrt(dx*dx + dy*dy) < 20) {
+            return { hitPlayer: true };
+        }
+        
+        dist += step;
+    }
+    
+    return { hitPlayer: false };
+}
+
+function renderPlayerView(ctx, player, opponent) {
+    const w = ctx.canvas.width;
+    const h = ctx.canvas.height;
+    
+    // Clear
+    ctx.fillStyle = '#222';
+    ctx.fillRect(0, 0, w, h);
+    
+    // Sky gradient
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, h/2);
+    skyGrad.addColorStop(0, '#1a1a2e');
+    skyGrad.addColorStop(1, '#16213e');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, w, h/2);
+    
+    // Floor
+    const floorGrad = ctx.createLinearGradient(0, h/2, 0, h);
+    floorGrad.addColorStop(0, '#2d3436');
+    floorGrad.addColorStop(1, '#1a1a1a');
+    ctx.fillStyle = floorGrad;
+    ctx.fillRect(0, h/2, w, h/2);
+    
+    if (player.dead) {
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 30px Courier';
+        ctx.textAlign = 'center';
+        ctx.fillText('KILLED IN ACTION', w/2, h/2);
+        return;
+    }
+    
+    // Raycast rendering
+    const numRays = w;
+    const fov = FOV;
+    
+    for (let i = 0; i < numRays; i++) {
+        const rayAngle = player.angle - fov/2 + (i / numRays) * fov;
+        const hit = castRay(player.x, player.y, rayAngle);
+        
+        if (hit.wall) {
+            const dist = hit.dist * Math.cos(rayAngle - player.angle);
+            const wallHeight = (BLOCK_SIZE / dist) * 300;
+            const brightness = Math.max(0.1, 1 - dist / 600);
+            
+            let color;
+            if (hit.type === 1) {
+                color = `rgb(${60*brightness}, ${60*brightness}, ${60*brightness})`;
+            } else {
+                color = `rgb(${100*brightness}, ${70*brightness}, ${40*brightness})`;
+            }
+            
+            ctx.fillStyle = color;
+            ctx.fillRect(i, h/2 - wallHeight/2, 1, wallHeight);
+        }
+    }
+    
+    // Draw opponent if visible
+    const oppDX = opponent.x - player.x;
+    const oppDY = opponent.y - player.y;
+    const oppDist = Math.sqrt(oppDX*oppDX + oppDY*oppDY);
+    const oppAngle = Math.atan2(oppDY, oppDX);
+    const angleDiff = normalizeAngle(oppAngle - player.angle);
+    
+    if (Math.abs(angleDiff) < fov/2 && oppDist < 1000) {
+        // Check if wall in way
+        const wallHit = castRay(player.x, player.y, oppAngle);
+        if (wallHit.dist > oppDist) {
+            const screenX = w/2 + (angleDiff / (fov/2)) * (w/2);
+            const size = (BLOCK_SIZE / oppDist) * 400;
+            const y = h/2 + size/4;
+            
+            ctx.fillStyle = opponent.color;
+            ctx.fillRect(screenX - size/4, y - size, size/2, size);
+            
+            // Musket
+            ctx.fillStyle = '#444';
+            ctx.fillRect(screenX - size/8, y - size/2, size/4, size/2);
+        }
+    }
+    
+    // Muzzle flash
+    if (player.flashTime > 0) {
+        const flashSize = 100 + Math.random() * 50;
+        const flash = ctx.createRadialGradient(w/2, h/2 + 50, 0, w/2, h/2 + 50, flashSize);
+        flash.addColorStop(0, 'rgba(255, 255, 200, 0.9)');
+        flash.addColorStop(0.3, 'rgba(255, 200, 100, 0.5)');
+        flash.addColorStop(1, 'rgba(255, 100, 50, 0)');
+        ctx.fillStyle = flash;
+        ctx.fillRect(0, 0, w, h);
+    }
+    
+    // Draw musket view
+    drawMusket(ctx, player, w, h);
+}
+
+function castRay(x, y, angle) {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    
+    let dist = 0;
+    while (dist < 1000) {
+        const rx = x + cos * dist;
+        const ry = y + sin * dist;
+        const mx = Math.floor(rx / BLOCK_SIZE);
+        const my = Math.floor(ry / BLOCK_SIZE);
+        
+        if (mx < 0 || mx >= MAP_SIZE || my < 0 || my >= MAP_SIZE) {
+            return { wall: true, dist: dist, type: 1 };
+        }
+        
+        if (MAP[my][mx] !== 0) {
+            return { wall: true, dist: dist, type: MAP[my][mx] };
+        }
+        
+        dist += 1;
+    }
+    
+    return { wall: false, dist: dist };
+}
+
+function normalizeAngle(a) {
+    while (a > Math.PI) a -= Math.PI * 2;
+    while (a < -Math.PI) a += Math.PI * 2;
+    return a;
+}
+
+function drawMusket(ctx, player, w, h) {
+    const sway = Math.sin(player.musketSway) * 3;
+    const recoil = player.musketRecoil;
+    const aim = player.aimProgress;
+    
+    ctx.save();
+    ctx.translate(w/2, h);
+    
+    if (player.state === STATE_RELOADING) {
+        ctx.translate(0, 100 + sway);
+        drawReloadAnim(ctx, player, w);
+    } else if (aim > 0.5) {
+        ctx.translate(0, -50 + recoil - sway * 0.3);
+        drawIronSights(ctx, w, h);
+    } else {
+        ctx.translate(0, -20 + recoil + sway);
+        drawMusketModel(ctx, false);
+    }
+    
+    ctx.restore();
+    
+    // Reload progress bar
+    if (player.state === STATE_RELOADING && player.reloadStage < RELOAD_STAGES.length) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(w/2 - 100, h - 40, 200, 25);
+        
+        const stage = RELOAD_STAGES[player.reloadStage];
+        const progress = 1 - (player.reloadTimer / stage.duration);
+        
+        ctx.fillStyle = '#c9a961';
+        ctx.fillRect(w/2 - 95, h - 35, 190 * progress, 15);
+        
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px Courier';
+        ctx.textAlign = 'center';
+        ctx.fillText(formatStageName(stage.name), w/2, h - 45);
+    }
+    
+    // Show if unloaded
+    if (!player.loaded && player.state !== STATE_RELOADING) {
+        ctx.fillStyle = 'rgba(100, 0, 0, 0.8)';
+        ctx.font = 'bold 16px Courier';
+        ctx.textAlign = 'center';
+        ctx.fillText('EMPTY', w/2, h - 60);
+    }
+}
+
+function drawIronSights(ctx, w, h) {
+    // Rear sight (notch)
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(-40, -80, 80, 60);
+    ctx.fillStyle = '#333';
+    ctx.fillRect(-35, -75, 70, 50);
+    
+    // The notch
+    ctx.fillStyle = '#87CEEB';
+    ctx.fillRect(-8, -65, 16, 15);
+    
+    // Front sight post (blade)
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(-4, -40, 8, 40);
+    ctx.fillStyle = '#c9a961';
+    ctx.fillRect(-2, -35, 4, 30);
+    
+    // Stock wood
+    ctx.fillStyle = '#654321';
+    ctx.fillRect(-60, 0, 120, 100);
+    ctx.fillStyle = '#4a3018';
+    ctx.fillRect(-55, 10, 110, 80);
+    
+    // Barrel sides
+    ctx.fillStyle = '#2a2a2a';
+    ctx.fillRect(-50, -120, 30, 100);
+    ctx.fillRect(20, -120, 30, 100);
+}
+
+function drawMusketModel(ctx, aiming) {
+    const scale = aiming ? 1.5 : 1;
+    
+    // Stock
+    ctx.fillStyle = '#654321';
+    ctx.beginPath();
+    ctx.moveTo(-30 * scale, 0);
+    ctx.lineTo(-25 * scale, -80 * scale);
+    ctx.lineTo(25 * scale, -80 * scale);
+    ctx.lineTo(30 * scale, 0);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Barrel
+    ctx.fillStyle = '#444';
+    ctx.fillRect(-12 * scale, -180 * scale, 24 * scale, 120 * scale);
+    
+    // Bands
+    ctx.fillStyle = '#c9a961';
+    ctx.fillRect(-14 * scale, -160 * scale, 28 * scale, 6 * scale);
+    ctx.fillRect(-14 * scale, -120 * scale, 28 * scale, 6 * scale);
+    ctx.fillRect(-14 * scale, -80 * scale, 28 * scale, 6 * scale);
+    
+    // Flintlock mechanism
+    ctx.fillStyle = '#555';
+    ctx.fillRect(-20 * scale, -100 * scale, 15 * scale, 25 * scale);
+    ctx.fillStyle = '#c9a961';
+    ctx.fillRect(-18 * scale, -95 * scale, 11 * scale, 15 * scale);
+    
+    // Ramrod
+    ctx.fillStyle = '#333';
+    ctx.fillRect(15 * scale, -170 * scale, 4 * scale, 110 * scale);
+}
+
+function drawReloadAnim(ctx, player, w) {
+    const stage = RELOAD_STAGES[player.reloadStage];
+    if (!stage) return;
+    
+    drawMusketModel(ctx, false);
+    
+    const handY = 50;
+    ctx.fillStyle = '#d4a574';
+    
+    switch(stage.name) {
+        case 'biting_cartridge':
+            ctx.beginPath();
+            ctx.arc(-40, handY - 30, 15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#f4d03f';
+            ctx.fillRect(-50, handY - 40, 20, 15);
+            break;
+        case 'priming_pan':
+            ctx.beginPath();
+            ctx.arc(-30, handY - 60, 12, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+        case 'pouring_powder':
+            ctx.fillStyle = '#f4d03f';
+            ctx.fillRect(-15, handY - 120, 30, 40);
+            break;
+        case 'patch_and_ball':
+            ctx.fillStyle = '#888';
+            ctx.beginPath();
+            ctx.arc(0, handY - 110, 10, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+        case 'ramming':
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(-2, handY - 150, 4, 80);
+            break;
+        case 'returning_ramrod':
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(15, handY - 80, 4, 60);
+            break;
+        case 'cocking':
+            ctx.fillStyle = '#d4a574';
+            ctx.beginPath();
+            ctx.arc(-35, handY - 90, 12, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+    }
+}
+
+function formatStageName(name) {
+    return name.replace(/_/g, ' ').toUpperCase();
+}
+
+// Main loop
+const p1Canvas = document.getElementById('p1Canvas');
+const p2Canvas = document.getElementById('p2Canvas');
+const p1Ctx = p1Canvas.getContext('2d');
+const p2Ctx = p2Canvas.getContext('2d');
+
+let lastTime = performance.now();
+
+function loop() {
+    const now = performance.now();
+    const dt = Math.min((now - lastTime) / 1000, 0.1);
+    lastTime = now;
+    
+    updatePlayer(p1, dt, true);
+    updatePlayer(p2, dt, false);
+    
+    renderPlayerView(p1Ctx, p1, p2);
+    renderPlayerView(p2Ctx, p2, p1);
+    
+    // Check for restart
+    if ((p1.dead || p2.dead) && keys[' ']) {
+        p1.dead = false;
+        p2.dead = false;
+        p1.x = 96; p1.y = 96; p1.angle = Math.PI / 4;
+        p2.x = 896; p2.y = 896; p2.angle = Math.PI * 1.25;
+        p1.loaded = true; p2.loaded = true;
+        p1.state = STATE_READY; p2.state = STATE_READY;
+        p1.musketAngle = 0; p2.musketAngle = 0;
+    }
+    
+    requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>
