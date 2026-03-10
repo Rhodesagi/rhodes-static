@@ -622,6 +622,7 @@ function showDownloads() {
                         }
 
                         wsReadyForMessages = true;
+                        activeReqId = null; // Reset stale req_id on reconnect so post-restart responses are not dropped
                         flushOutboundQueue();
                         rhodesStorage.setItem('rhodes_server', SERVER);
                         
