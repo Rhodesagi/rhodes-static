@@ -1,0 +1,348 @@
+// Player controller with FPS movement and split-screen camera
+class Player {
+    constructor(scene, x, z, isPlayer2 = false) {
+        this.scene = scene;
+        this.isPlayer2 = isPlayer2;
+        
+        // Player state
+        this.health = 100;
+        this.isDead = false;
+        this.respawnTime = 0;
+        
+        // Movement
+        this.position = new THREE.Vector3(x, 1.7, z);
+        this.velocity = new THREE.Vector3();
+        this.yaw = isPlayer2 ? Math.PI : 0; // Face each other
+        this.pitch = 0;
+        
+        // Constants
+        this.moveSpeed = 3.5;
+        this.sprintSpeed = 5.5;
+        this.friction = 8.0;
+        this.mouseSensitivity = 0.002;
+        
+        // Camera setup
+        this.camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        this.camera.position.copy(this.position);
+        this.camera.rotation.order = 'YXZ';
+        
+        // Create musket
+        this.musket = new Musket(scene, this.camera, isPlayer2);
+        
+        // Projectiles
+        this.projectiles = [];
+        
+        // Height for collision
+        this.height = 1.7;
+        this.radius = 0.3;
+        
+        // Create visible player body for other player
+        this.createPlayerModel();
+        
+        // Viewport rect (set by game)
+        this.viewportRect = null;
+    }
+    
+    createPlayerModel() {
+        // Simple capsule body for visibility to other player
+        const group = new THREE.Group();
+        
+        // Body
+        const bodyGeo = new THREE.CylinderGeometry(0.25, 0.25, 1.0, 8);
+        const bodyMat = new THREE.MeshLambertMaterial({ 
+            color: this.isPlayer2 ? 0x4444aa : 0xaa4444 
+        });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 0.5;
+        group.add(body);
+        
+        // Head
+        const headGeo = new THREE.SphereGeometry(0.2, 8, 8);
+        const head = new THREE.Mesh(headGeo, bodyMat);
+        head.position.y = 1.1;
+        group.add(head);
+        
+        // Simple musket on back/side
+        const musketGeo = new THREE.BoxGeometry(0.05, 0.05, 0.8);
+        const musketMat = new THREE.MeshLambertMaterial({ color: 0x4a3728 });
+        const musket = new THREE.Mesh(musketGeo, musketMat);
+        musket.position.set(0.3, 0.6, 0);
+        musket.rotation.z = 0.3;
+        group.add(musket);
+        
+        this.playerModel = group;
+        this.scene.add(group);
+        
+        // Don't render own body in own camera
+        this.playerModel.traverse((child) => {
+            if (child.isMesh) {
+                child.layers.disable(this.isPlayer2 ? 2 : 1);
+            }
+        });
+    }
+    
+    update(delta, input, worldColliders, otherPlayer) {
+        if (this.isDead) {
+            this.respawnTime -= delta;
+            if (this.respawnTime <= 0) {
+                this.respawn();
+            }
+            return;
+        }
+        
+        // Update rotation from input
+        if (this.isPlayer2) {
+            // P2 uses key-based aiming
+            this.yaw = -input.aimX * (Math.PI / 180);
+            this.pitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, -input.aimY * (Math.PI / 180)));
+        } else {
+            // P1 uses mouse
+            this.yaw -= input.mouseDX * this.mouseSensitivity;
+            this.pitch -= input.mouseDY * this.mouseSensitivity;
+        }
+        
+        // Apply rotation to camera
+        this.camera.rotation.y = this.yaw;
+        this.camera.rotation.x = this.pitch;
+        
+        // Calculate movement direction
+        const speed = input.sprint ? this.sprintSpeed : this.moveSpeed;
+        const moveDir = new THREE.Vector3();
+        
+        if (input.forward) moveDir.z -= 1;
+        if (input.backward) moveDir.z += 1;
+        if (input.left) moveDir.x -= 1;
+        if (input.right) moveDir.x += 1;
+        
+        if (moveDir.length() > 0) {
+            moveDir.normalize();
+            moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw);
+            
+            // Can't sprint while aiming
+            const finalSpeed = (input.sprint && !input.aim) ? this.sprintSpeed : this.moveSpeed;
+            
+            this.velocity.x += moveDir.x * finalSpeed * delta * 5;
+            this.velocity.z += moveDir.z * finalSpeed * delta * 5;
+        }
+        
+        // Apply friction
+        this.velocity.x -= this.velocity.x * this.friction * delta;
+        this.velocity.z -= this.velocity.z * this.friction * delta;
+        
+        // Apply velocity with collision
+        this.moveWithCollision(delta, worldColliders);
+        
+        // Update camera position
+        this.camera.position.copy(this.position);
+        
+        // Update visible model
+        this.playerModel.position.copy(this.position);
+        this.playerModel.position.y = 0;
+        this.playerModel.rotation.y = this.yaw;
+        
+        // Update musket
+        this.musket.update(delta, input);
+        
+        // Handle firing
+        if (input.fire && !input.fireHeld) {
+            const projectile = this.musket.fire();
+            if (projectile) {
+                this.spawnProjectile(projectile);
+            }
+        }
+        input.fireHeld = input.fire;
+        
+        // Update projectiles
+        this.updateProjectiles(delta, otherPlayer);
+    }
+    
+    moveWithCollision(delta, colliders) {
+        // Try X movement
+        const newPosX = this.position.clone();
+        newPosX.x += this.velocity.x * delta;
+        if (!this.checkCollision(newPosX, colliders)) {
+            this.position.x = newPosX.x;
+        } else {
+            this.velocity.x = 0;
+        }
+        
+        // Try Z movement
+        const newPosZ = this.position.clone();
+        newPosZ.z += this.velocity.z * delta;
+        if (!this.checkCollision(newPosZ, colliders)) {
+            this.position.z = newPosZ.z;
+        } else {
+            this.velocity.z = 0;
+        }
+    }
+    
+    checkCollision(pos, colliders) {
+        for (const collider of colliders) {
+            if (collider.type === 'box') {
+                const closest = new THREE.Vector3(
+                    Math.max(collider.min.x, Math.min(pos.x, collider.max.x)),
+                    Math.max(collider.min.y, Math.min(pos.y, collider.max.y)),
+                    Math.max(collider.min.z, Math.min(pos.z, collider.max.z))
+                );
+                const dist = pos.distanceTo(closest);
+                if (dist < this.radius) return true;
+            } else if (collider.type === 'cylinder') {
+                const dx = pos.x - collider.x;
+                const dz = pos.z - collider.z;
+                const distSq = dx * dx + dz * dz;
+                if (distSq < (this.radius + collider.radius) ** 2 && 
+                    pos.y > collider.y && pos.y < collider.y + collider.height) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    spawnProjectile(projectileData) {
+        // Create visual projectile
+        const geo = new THREE.SphereGeometry(0.015, 6, 6);
+        const mat = new THREE.MeshBasicMaterial({ color: 0x222222 });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.copy(projectileData.origin);
+        this.scene.add(mesh);
+        
+        // Smoke trail
+        const trailGeo = new THREE.BufferGeometry();
+        const trailPositions = new Float32Array(30 * 3);
+        trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+        const trailMat = new THREE.LineBasicMaterial({ 
+            color: 0x888888, 
+            transparent: true, 
+            opacity: 0.5 
+        });
+        const trail = new THREE.Line(trailGeo, trailMat);
+        trail.frustumCulled = false;
+        this.scene.add(trail);
+        
+        this.projectiles.push({
+            position: projectileData.origin.clone(),
+            velocity: projectileData.direction.clone().multiplyScalar(projectileData.velocity),
+            damage: projectileData.damage,
+            mesh: mesh,
+            trail: trail,
+            trailPositions: [],
+            life: 3.0 // Seconds before removal
+        });
+    }
+    
+    updateProjectiles(delta, otherPlayer) {
+        const gravity = new THREE.Vector3(0, -9.8, 0);
+        
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+            const proj = this.projectiles[i];
+            
+            // Apply gravity
+            proj.velocity.add(gravity.clone().multiplyScalar(delta));
+            
+            // Move
+            const moveStep = proj.velocity.clone().multiplyScalar(delta);
+            proj.position.add(moveStep);
+            proj.mesh.position.copy(proj.position);
+            
+            // Trail
+            proj.trailPositions.push(proj.position.clone());
+            if (proj.trailPositions.length > 30) proj.trailPositions.shift();
+            
+            const positions = proj.trail.geometry.attributes.position.array;
+            for (let j = 0; j < proj.trailPositions.length; j++) {
+                positions[j * 3] = proj.trailPositions[j].x;
+                positions[j * 3 + 1] = proj.trailPositions[j].y;
+                positions[j * 3 + 2] = proj.trailPositions[j].z;
+            }
+            proj.trail.geometry.attributes.position.needsUpdate = true;
+            
+            // Check collision with other player
+            if (otherPlayer && !otherPlayer.isDead) {
+                const dx = proj.position.x - otherPlayer.position.x;
+                const dy = proj.position.y - otherPlayer.position.y;
+                const dz = proj.position.z - otherPlayer.position.z;
+                const distSq = dx * dx + dy * dy + dz * dz;
+                
+                if (distSq < 0.25) { // Hit radius
+                    otherPlayer.takeDamage(proj.damage, this);
+                    this.removeProjectile(i);
+                    continue;
+                }
+            }
+            
+            // Ground collision
+            if (proj.position.y < 0) {
+                this.removeProjectile(i);
+                continue;
+            }
+            
+            // Life timeout
+            proj.life -= delta;
+            if (proj.life <= 0) {
+                this.removeProjectile(i);
+            }
+        }
+    }
+    
+    removeProjectile(index) {
+        const proj = this.projectiles[index];
+        this.scene.remove(proj.mesh);
+        this.scene.remove(proj.trail);
+        this.projectiles.splice(index, 1);
+    }
+    
+    takeDamage(damage, attacker) {
+        this.health -= damage;
+        if (this.health <= 0) {
+            this.die(attacker);
+        }
+    }
+    
+    die(killer) {
+        this.isDead = true;
+        this.respawnTime = 3.0;
+        this.playerModel.visible = false;
+        
+        // Death effect
+        const deathGeo = new THREE.SphereGeometry(0.5, 8, 8);
+        const deathMat = new THREE.MeshBasicMaterial({ 
+            color: 0xff0000, 
+            transparent: true, 
+            opacity: 0.5 
+        });
+        const deathMesh = new THREE.Mesh(deathGeo, deathMat);
+        deathMesh.position.copy(this.position);
+        this.scene.add(deathMesh);
+        
+        setTimeout(() => {
+            this.scene.remove(deathMesh);
+        }, 2000);
+    }
+    
+    respawn() {
+        this.isDead = false;
+        this.health = 100;
+        this.playerModel.visible = true;
+        this.musket.loaded = true;
+        this.musket.state = this.musket.RELOAD_STATES.READY;
+        
+        // Respawn at opposite side
+        if (this.isPlayer2) {
+            this.position.set(0, 1.7, 15);
+            this.yaw = Math.PI;
+        } else {
+            this.position.set(0, 1.7, -15);
+            this.yaw = 0;
+        }
+        this.velocity.set(0, 0, 0);
+    }
+    
+    setViewport(left, bottom, width, height) {
+        this.camera.viewport = new THREE.Vector4(left, bottom, width, height);
+    }
+    
+    getHealth() {
+        return this.health;
+    }
+}

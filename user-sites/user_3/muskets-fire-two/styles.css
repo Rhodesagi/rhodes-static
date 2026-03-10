@@ -1,0 +1,131 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #0a0a0a;
+    color: #c4a35a;
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+}
+
+#container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+}
+
+.viewport {
+    flex: 1;
+    position: relative;
+    border: 2px solid #3a3020;
+    background: #000;
+    overflow: hidden;
+}
+
+#p1-viewport {
+    border-right: 1px solid #5a4a30;
+}
+
+#p2-viewport {
+    border-left: 1px solid #5a4a30;
+}
+
+.viewport canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+}
+
+.player-label {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 12px;
+    color: #8a7a5a;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.activation-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px;
+    color: #c4a35a;
+    border: 1px solid #c4a35a;
+    padding: 15px 30px;
+    background: rgba(0,0,0,0.8);
+    cursor: pointer;
+    z-index: 20;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    transition: all 0.2s;
+}
+
+.activation-overlay:hover {
+    background: rgba(196, 163, 90, 0.2);
+}
+
+.activation-overlay.hidden {
+    display: none;
+}
+
+#instructions {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 10, 10, 0.95);
+    border: 1px solid #3a3020;
+    padding: 20px;
+    max-width: 600px;
+    font-size: 12px;
+    z-index: 100;
+}
+
+#instructions h2 {
+    color: #c4a35a;
+    margin-bottom: 10px;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+
+#instructions ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+#instructions li {
+    margin: 5px 0;
+    color: #8a7a5a;
+}
+
+#instructions p {
+    color: #6a5a4a;
+    margin-top: 10px;
+}
+
+.reloading-indicator {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: #c4a35a;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+
+.reloading-indicator.active {
+    opacity: 1;
+}

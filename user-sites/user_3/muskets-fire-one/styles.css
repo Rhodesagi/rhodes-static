@@ -1,0 +1,114 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #000;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+}
+
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+#gameCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+#instructions {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.85);
+    border: 2px solid #444;
+    padding: 30px;
+    color: #ccc;
+    text-align: center;
+    z-index: 100;
+}
+
+.player-instr {
+    display: inline-block;
+    vertical-align: top;
+    margin: 0 30px;
+    text-align: left;
+}
+
+.player-instr h3 {
+    color: #fff;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #555;
+    padding-bottom: 5px;
+}
+
+.player-instr p {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+#start-hint {
+    margin-top: 20px;
+    color: #0f0;
+    font-size: 18px;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.hidden {
+    display: none !important;
+}
+
+#winner-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    z-index: 200;
+}
+
+#winner-overlay h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+#winner-overlay button {
+    padding: 15px 30px;
+    font-size: 18px;
+    background: #333;
+    color: #fff;
+    border: 2px solid #666;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+#winner-overlay button:hover {
+    background: #444;
+    border-color: #888;
+}
+
+/* Prevent scrolling during gameplay */
+html, body {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}

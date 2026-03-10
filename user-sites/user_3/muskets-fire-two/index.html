@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUSKETS FIRE — Two</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="container">
+        <div id="p1-viewport" class="viewport">
+            <div class="player-label">PLAYER 1 — WASD + MOUSE</div>
+            <div class="activation-overlay">CLICK TO ACTIVATE</div>
+        </div>
+        <div id="p2-viewport" class="viewport">
+            <div class="player-label">PLAYER 2 — GAMEPAD REQUIRED</div>
+            <div class="activation-overlay">CONNECT GAMEPAD + CLICK</div>
+        </div>
+    </div>
+    
+    <div id="instructions">
+        <h2>MUSKETS FIRE — Two Player Combat</h2>
+        <p><strong>No crosshairs. Iron sights only.</strong></p>
+        <ul>
+            <li>Align rear notch with front post and target</li>
+            <li>Lead moving targets, account for bullet drop</li>
+            <li>Press R (P1) or B button (P2) to reload</li>
+            <li>Press T (P1) or X button (P2) to inspect lock</li>
+        </ul>
+        <p><strong>P1:</strong> WASD move, Mouse aim (pointer lock), Click fire<br>
+        <strong>P2:</strong> Left Stick move, Right Stick aim, RT/A fire (Gamepad required)</p>
+        <p>First to 5 kills wins.</p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="audio.js"></script>
+    <script src="ballistics.js"></script>
+    <script src="animations.js"></script>
+    <script src="musket.js"></script>
+    <script src="world.js"></script>
+    <script src="player.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+--- a/player.js
++++ b/player.js
+@@ -20,6 +20,9 @@ class Player {
+         this.yaw = isPlayer2 ? Math.PI : 0; // Face each other
+         this.pitch = 0;
+         
++        // Layer for visibility
++        this.viewLayer = isPlayer2 ? 2 : 1;
++        
+         // Constants
+         this.moveSpeed = 3.5;
+         this.sprintSpeed = 5.5;
