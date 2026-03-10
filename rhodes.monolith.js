@@ -7,7 +7,7 @@ function _shouldAutoScrollChat(el) {
     return (el.scrollHeight - el.scrollTop - el.clientHeight) < 150;
 }
 function _autoScrollChat(el) {
-    if (_shouldAutoScrollChat(el)) _autoScrollChat(el);
+    if (_shouldAutoScrollChat(el)) el.scrollTop = el.scrollHeight;
 }
 
 // =============================================================================
