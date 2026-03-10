@@ -1631,7 +1631,7 @@ function showDownloads() {
                     }
 
                     // Timer logic
-                    const timerKey = toolName + '|' + round + '|' + preview.slice(0,50);
+                    const timerKey = toolName + '|' + round;
                     let durationLabel = '';
                     if (status === 'starting' || status === 'running') {
                         if (!window._toolTimers.has(timerKey)) {
