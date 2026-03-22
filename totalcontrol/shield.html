@@ -10,8 +10,8 @@
     --bg: #0d0d08;
     --panel: #1a1a12;
     --metal: #2a2a1c;
-    --amber: #ffcc00;
-    --amber-dim: #cc9900;
+    --amber: #00ffcc;
+    --amber-dim: #009988;
     --green: #44ff44;
     --green-dim: #22aa22;
     --unless: #66ffaa;
@@ -55,14 +55,14 @@ button:active { filter: brightness(0.9); }
     padding-bottom: calc(env(safe-area-inset-bottom, 12px) + 80px);
 }
 .header {
-    border: 1px solid var(--amber-dim);
+    border: 1px solid var(--cyan-dim);
     background: var(--metal);
     text-align: center;
     padding: 16px 12px;
     margin-bottom: 6px;
 }
 .header h1 {
-    color: var(--amber);
+    color: var(--cyan);
     font-family: 'Orbitron', monospace;
     font-size: 18px;
     font-weight: 700;
@@ -130,9 +130,9 @@ button:active { filter: brightness(0.9); }
     font-weight: bold;
     margin-bottom: 4px;
 }
-.mode-until { border: 2px solid var(--amber); color: var(--amber); background: rgba(0,255,204,0.1); }
-.mode-during { border: 2px solid var(--red); color: var(--red); background: rgba(255,0,204,0.1); }
-.mode-allowDuring { border: 2px solid var(--green); color: var(--green); background: rgba(0,255,102,0.1); }
+.mode-until { border: 2px solid var(--cyan); color: var(--cyan); background: rgba(0,255,204,0.08); }
+.mode-during { border: 2px solid var(--red); color: var(--red); background: rgba(255,0,204,0.08); }
+.mode-allowDuring { border: 2px solid var(--green); color: var(--green); background: rgba(0,255,102,0.08); }
 
 .rule-items {
     font-size: 15px;
@@ -144,7 +144,7 @@ button:active { filter: brightness(0.9); }
 .rule-conditions {
     font-size: 13px;
     font-weight: bold;
-    color: var(--amber);
+    color: var(--cyan);
     margin-bottom: 3px;
 }
 .rule-exceptions {
@@ -184,22 +184,22 @@ button:active { filter: brightness(0.9); }
 .empty-example {
     text-align: left;
     background: var(--metal);
-    border: 2px solid var(--amber-dim);
+    border: 2px solid var(--cyan-dim);
     padding: 12px 16px;
     margin-top: 12px;
     line-height: 1.7;
     font-size: 13px;
 }
-.empty-example .ex-label { color: var(--amber); font-size: 11px; letter-spacing: 2px; margin-bottom: 8px; }
+.empty-example .ex-label { color: var(--cyan); font-size: 11px; letter-spacing: 2px; margin-bottom: 8px; }
 .empty-example .ex-sentence { color: var(--text); font-size: 14px; }
-.empty-example .ex-sentence b { color: var(--amber); }
+.empty-example .ex-sentence b { color: var(--cyan); }
 .empty-example .ex-red { color: var(--red); }
 .empty-example .ex-green { color: var(--green); }
 
 /* Add button */
 .add-btn {
     width: 100%;
-    background: var(--amber);
+    background: var(--cyan);
     color: var(--bg);
     border: none;
     padding: 14px;
@@ -233,7 +233,7 @@ button:active { filter: brightness(0.9); }
 
 .modal {
     background: var(--panel);
-    border: 2px solid var(--amber-dim);
+    border: 2px solid var(--cyan-dim);
     width: 100%;
     max-width: 500px;
     margin: 0 auto;
@@ -257,7 +257,7 @@ button:active { filter: brightness(0.9); }
 .example-sentence .ex-items { color: var(--text); font-weight: bold; }
 .example-sentence .ex-val { color: var(--green); font-weight: bold; }
 .example-sentence .ex-unless { color: var(--unless); font-size: 14px; font-weight: bold; }
-.example-sentence .ex-until { color: var(--amber); font-weight: bold; }
+.example-sentence .ex-until { color: var(--cyan); font-weight: bold; }
 
 /* Presets */
 .presets-row {
@@ -275,7 +275,7 @@ button:active { filter: brightness(0.9); }
     font-size: 12px;
     cursor: pointer;
 }
-.preset-btn.selected { border-color: var(--amber); color: var(--amber); background: rgba(255,204,0,0.1); }
+.preset-btn.selected { border-color: var(--cyan); color: var(--cyan); background: rgba(255,204,0,0.1); }
 
 /* Sentence rows */
 .items-row-box {
@@ -298,8 +298,8 @@ button:active { filter: brightness(0.9); }
     border-right: 2px solid var(--red);
 }
 .items-row-box.mode-allow .sentence-label { border-right-color: var(--green); }
-.sentence-label.block { color: var(--red); background: rgba(255,0,204,0.1); }
-.sentence-label.allow { color: var(--green); background: rgba(0,255,102,0.1); }
+.sentence-label.block { color: var(--red); background: rgba(255,0,204,0.08); }
+.sentence-label.allow { color: var(--green); background: rgba(0,255,102,0.08); }
 
 .items-input {
     display: flex;
@@ -316,7 +316,7 @@ button:active { filter: brightness(0.9); }
     align-items: center;
     gap: 3px;
     background: var(--bg);
-    border: 1px solid var(--amber-dim);
+    border: 1px solid var(--cyan-dim);
     color: var(--text);
     font-family: inherit;
     font-size: 12px;
@@ -351,7 +351,7 @@ button:active { filter: brightness(0.9); }
 .cond-row-box {
     display: flex;
     align-items: stretch;
-    border: 2px solid var(--amber);
+    border: 2px solid var(--cyan);
     margin-bottom: 6px;
     margin-top: 4px;
 }
@@ -363,9 +363,9 @@ button:active { filter: brightness(0.9); }
     min-width: 70px;
     font-size: 13px;
     font-weight: bold;
-    color: var(--amber);
-    background: rgba(0,255,204,0.1);
-    border-right: 2px solid var(--amber);
+    color: var(--cyan);
+    background: rgba(0,255,204,0.08);
+    border-right: 2px solid var(--cyan);
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
@@ -383,8 +383,8 @@ button:active { filter: brightness(0.9); }
 .cond-type-select {
     background: rgba(0,255,204,0.15);
     border: none;
-    border-right: 1px solid var(--amber-dim);
-    color: var(--amber);
+    border-right: 1px solid var(--cyan-dim);
+    color: var(--cyan);
     font-family: inherit;
     font-size: 13px;
     font-weight: bold;
@@ -459,10 +459,10 @@ button:active { filter: brightness(0.9); }
     border: 2px solid transparent;
     text-align: center;
 }
-.mode-tab[data-mode="until"] { color: var(--amber-dim); }
+.mode-tab[data-mode="until"] { color: var(--cyan-dim); }
 .mode-tab[data-mode="during"] { color: var(--red-dim); }
 .mode-tab[data-mode="allowDuring"] { color: var(--green-dim); }
-.mode-tab.active[data-mode="until"] { background: var(--amber); color: var(--bg); border-color: var(--amber); }
+.mode-tab.active[data-mode="until"] { background: var(--cyan); color: var(--bg); border-color: var(--cyan); }
 .mode-tab.active[data-mode="during"] { background: var(--red); color: var(--bg); border-color: var(--red); }
 .mode-tab.active[data-mode="allowDuring"] { background: var(--green); color: var(--bg); border-color: var(--green); }
 
@@ -568,7 +568,7 @@ button:active { filter: brightness(0.9); }
     min-height: 44px;
 }
 .btn-create {
-    background: var(--amber);
+    background: var(--cyan);
     border: none;
     color: var(--bg);
     padding: 12px 20px;
@@ -592,13 +592,13 @@ button:active { filter: brightness(0.9); }
 .confirm-overlay.active { display: flex; }
 .confirm-box {
     background: var(--panel);
-    border: 2px solid var(--amber);
+    border: 2px solid var(--cyan);
     padding: 24px;
     max-width: 360px;
     width: 90%;
     text-align: center;
 }
-.confirm-box h3 { color: var(--amber); margin-bottom: 12px; font-size: 16px; }
+.confirm-box h3 { color: var(--cyan); margin-bottom: 12px; font-size: 16px; }
 .confirm-box p { color: var(--text); margin-bottom: 16px; font-size: 13px; }
 .confirm-actions { display: flex; justify-content: center; gap: 12px; }
 .confirm-actions .btn-cancel, .confirm-actions .btn-delete {
@@ -614,8 +614,8 @@ button:active { filter: brightness(0.9); }
 #delete-pw-row input {
     width: 100%;
     background: var(--metal);
-    border: 2px solid var(--amber);
-    color: var(--amber);
+    border: 2px solid var(--cyan);
+    color: var(--cyan);
     font-family: inherit;
     font-size: 14px;
     padding: 10px;
@@ -742,7 +742,7 @@ button:active { filter: brightness(0.9); }
     <h3>DELETE RULE?</h3>
     <p id="confirm-text"></p>
     <div id="delete-pw-row" style="display:none;margin-bottom:16px;">
-        <div style="color:var(--amber);font-size:11px;margin-bottom:6px;letter-spacing:1px;">&#128274; PASSWORD REQUIRED</div>
+        <div style="color:var(--cyan);font-size:11px;margin-bottom:6px;letter-spacing:1px;">&#128274; PASSWORD REQUIRED</div>
         <input type="password" id="delete-password" placeholder="Enter deletion password">
         <div id="delete-pw-error" style="display:none;">Wrong password</div>
     </div>
@@ -964,7 +964,7 @@ function renderRules(rules, statuses, blockedCount) {
                 var usedMin = Math.floor(u.used_seconds / 60);
                 var budgetMin = Math.floor(u.budget_seconds / 60);
                 var pct = u.percent || 0;
-                var barColor = pct >= 100 ? 'var(--red)' : pct >= 75 ? 'var(--amber)' : 'var(--green)';
+                var barColor = pct >= 100 ? 'var(--red)' : pct >= 75 ? 'var(--cyan)' : 'var(--green)';
                 usageHtml = '<div class="usage-bar-wrap"><div class="usage-bar-label">' + usedMin + 'm / ' + budgetMin + 'm</div>' +
                     '<div class="usage-bar-track"><div class="usage-bar-fill" style="width:' + Math.min(100, pct) + '%;background:' + barColor + '"></div></div></div>';
             } else if (u.type === 'sessionLimit') {
@@ -975,13 +975,13 @@ function renderRules(rules, statuses, blockedCount) {
                     var sessMin = Math.floor(u.accumulated_seconds / 60);
                     var limitMin = Math.floor(u.session_limit_seconds / 60);
                     var sPct = u.percent || 0;
-                    var sColor = sPct >= 100 ? 'var(--red)' : sPct >= 75 ? 'var(--amber)' : 'var(--green)';
+                    var sColor = sPct >= 100 ? 'var(--red)' : sPct >= 75 ? 'var(--cyan)' : 'var(--green)';
                     usageHtml = '<div class="usage-bar-wrap"><div class="usage-bar-label">SESSION: ' + sessMin + 'm / ' + limitMin + 'm</div>' +
                         '<div class="usage-bar-track"><div class="usage-bar-fill" style="width:' + Math.min(100, sPct) + '%;background:' + sColor + '"></div></div></div>';
                 }
             } else if (u.type === 'visitCount') {
                 var vPct = u.max_visits > 0 ? Math.min(100, (u.visit_count / u.max_visits) * 100) : 100;
-                var vColor = u.exceeded ? 'var(--red)' : vPct >= 75 ? 'var(--amber)' : 'var(--green)';
+                var vColor = u.exceeded ? 'var(--red)' : vPct >= 75 ? 'var(--cyan)' : 'var(--green)';
                 usageHtml = '<div class="usage-bar-wrap"><div class="usage-bar-label">' + u.visit_count + ' / ' + u.max_visits + ' visits</div>' +
                     '<div class="usage-bar-track"><div class="usage-bar-fill" style="width:' + Math.min(100, vPct) + '%;background:' + vColor + '"></div></div></div>';
             }

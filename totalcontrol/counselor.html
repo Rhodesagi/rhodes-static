@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>TOTAL CONTROL — COUNSELOR</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050505;--panel:#0a0a0a;--metal:#111111;--cyan:#00ffcc;--cyan-dim:#009988;--green:#00ff66;--red:#ff3b30;--text:#e0e0e0;--text-dim:#505050}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono','Courier New',monospace;display:flex;flex-direction:column}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.1) 0px,rgba(0,0,0,0.1) 1px,transparent 1px,transparent 2px);pointer-events:none;z-index:9998}
+body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:linear-gradient(rgba(0,255,204,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,204,0.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:9999}
+button{-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:transparent;font-family:inherit;cursor:pointer}
+
+/* Status bar */
+.status-bar{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:var(--metal);font-size:11px;flex-shrink:0;position:relative;z-index:1}
+.status-bar .status{font-weight:bold;letter-spacing:1px}
+.status-bar .user{color:var(--cyan);opacity:0.6}
+.status-bar button{background:none;border:none;font-size:11px;padding:2px 6px}
+.status-bar .clear{color:var(--text-dim)}
+.status-bar .logout{color:var(--red);opacity:0.7}
+
+/* Messages */
+.messages{flex:1;overflow-y:auto;padding:8px 12px;-webkit-overflow-scrolling:touch;position:relative;z-index:1}
+.msg{padding:8px 10px;margin-bottom:6px;font-size:13px;line-height:1.5;max-width:85%;border-radius:4px;word-wrap:break-word}
+.msg.user{margin-left:auto;background:rgba(0,255,204,0.08);border:1px solid rgba(0,255,204,0.3);color:var(--cyan)}
+.msg.assistant{margin-right:auto;background:rgba(0,255,102,0.04);border:1px solid rgba(0,255,102,0.2);color:var(--text)}
+.msg.system{margin:0 auto;text-align:center;color:var(--text-dim);font-size:11px;border:none;background:none}
+.msg .tool-result{color:var(--green);font-size:12px;margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,255,102,0.2)}
+.thinking{color:var(--green);font-size:12px;padding:8px 12px;opacity:0.7}
+
+/* Command cards */
+.cmd-card{background:var(--metal);border:2px solid var(--cyan-dim);padding:12px;margin:8px 0;font-size:12px}
+.cmd-card .label{color:var(--cyan);font-weight:bold;margin-bottom:8px}
+.cmd-card .actions{display:flex;gap:8px;margin-top:8px}
+.cmd-card .actions button{flex:1;padding:8px;font-size:12px;font-weight:bold;border:none}
+.cmd-card .actions .apply{background:var(--green);color:var(--bg)}
+.cmd-card .actions .reject{background:none;border:2px solid var(--red);color:var(--red)}
+
+/* Input area */
+.input-area{display:flex;gap:6px;padding:8px 10px;background:var(--metal);flex-shrink:0;position:relative;z-index:1;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+.input-area input{flex:1;background:var(--bg);border:1px solid var(--cyan-dim);color:var(--cyan);font-family:inherit;font-size:14px;padding:8px 10px;outline:none}
+.input-area input::placeholder{color:var(--text-dim)}
+.mic-btn{background:none;border:1px solid var(--cyan-dim);color:var(--cyan);padding:8px 10px;font-size:16px}
+.mic-btn.recording{border-color:var(--red);color:var(--red);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.send-btn{background:var(--green);color:var(--bg);border:none;padding:8px 14px;font-size:12px;font-weight:bold;letter-spacing:1px}
+.send-btn:disabled{opacity:0.3}
+
+/* Speaker button on messages */
+.speak-btn{background:none;border:none;color:var(--green);opacity:0.4;font-size:11px;padding:2px 4px;float:right}
+</style>
+</head>
+<body>
+
+<div class="status-bar">
+  <span class="status" id="status" style="color:var(--green)">READY</span>
+  <span class="user" id="username"></span>
+  <button class="clear" onclick="clearHistory()">CLEAR</button>
+</div>
+
+<div class="messages" id="messages"></div>
+
+<div class="input-area">
+  <input type="text" id="input" placeholder="Type a message..." autocomplete="off">
+  <button class="mic-btn" id="mic-btn" onclick="toggleMic()">&#127908;</button>
+  <button class="send-btn" id="send-btn" onclick="sendMessage()">SEND</button>
+</div>
+
+<script>
+const TOKEN = window.__TC_TOKEN__ || '';
+const API_KEY = window.__TC_API_KEY__ || '';
+const USERNAME = window.__TC_USERNAME__ || '';
+const API = 'https://rhodesagi.com';
+
+document.getElementById('username').textContent = USERNAME;
+document.getElementById('input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') sendMessage();
+});
+
+let messages = [];
+let isStreaming = false;
+let pendingCards = [];
+
+// ── Tools ──
+const TC_TOOLS = [
+  // ── Rule Management ──
+  {type:"function",function:{name:"set_rule",description:"Create a new blocking rule",parameters:{type:"object",properties:{items:{type:"array",items:{type:"string"},description:"Sites or presets to block (e.g. 'Twitter', 'Social Media')"},mode:{type:"string",enum:["until","during","allowDuring"],description:"until=blocked until condition met, during=blocked while condition active, allowDuring=only allowed during condition"},conditions:{type:"array",items:{type:"object"},description:"Condition objects [{type:'time',time_target:'17:00'}, {type:'schedule',schedule:{days:[1,2,3,4,5]}}, {type:'timeRange',time_range:{start:'09:00',end:'17:00'}}, {type:'tomorrow'}, {type:'password'}]"},exceptions:{type:"array",items:{type:"string"},description:"Exception sites allowed even when blocked"},password:{type:"string",description:"Password required to delete this rule"}},required:["items","mode"]}}},
+  {type:"function",function:{name:"update_rule",description:"Modify an existing rule - add/remove items, change conditions, add exceptions",parameters:{type:"object",properties:{rule_id:{type:"string",description:"ID of rule to update"},items:{type:"array",items:{type:"string"},description:"New items list (replaces existing)"},mode:{type:"string",enum:["until","during","allowDuring"]},conditions:{type:"array",items:{type:"object"}},exceptions:{type:"array",items:{type:"string"}},enabled:{type:"boolean",description:"Enable or disable the rule"}},required:["rule_id"]}}},
+  {type:"function",function:{name:"remove_rule",description:"Delete a blocking rule",parameters:{type:"object",properties:{rule_id:{type:"string",description:"ID of rule to delete"},password:{type:"string",description:"Deletion password if rule is protected"}},required:["rule_id"]}}},
+  {type:"function",function:{name:"list_rules",description:"Get all current blocking rules with their status",parameters:{type:"object",properties:{}}}},
+  {type:"function",function:{name:"suggest_rules",description:"Suggest multiple blocking rules at once (for onboarding). Shows as an APPLY/REJECT card.",parameters:{type:"object",properties:{suggestions:{type:"array",items:{type:"object"},description:"Array of {items, mode, conditions, exceptions, label}"}},required:["suggestions"]}}},
+  {type:"function",function:{name:"grant_temporary_access",description:"Temporarily allow a blocked site for N minutes (max 60)",parameters:{type:"object",properties:{host:{type:"string",description:"Domain to temporarily allow"},duration_minutes:{type:"integer",description:"Minutes to allow (1-60)"}},required:["host","duration_minutes"]}}},
+  {type:"function",function:{name:"mark_condition_met",description:"Mark a condition as satisfied (e.g. mark 'until' task as done, confirm workout completed)",parameters:{type:"object",properties:{rule_id:{type:"string",description:"Rule ID containing the condition"},condition_type:{type:"string",description:"Type of condition to mark met"}},required:["rule_id"]}}},
+  {type:"function",function:{name:"get_blocked_status",description:"Check what sites are currently blocked and why",parameters:{type:"object",properties:{}}}},
+
+  // ── Fitness ──
+  {type:"function",function:{name:"log_workout",description:"Log a workout (manual, or confirm HealthKit workout)",parameters:{type:"object",properties:{workout_type:{type:"string",enum:["gym","running","cycling","swimming","walking","yoga","strength","hiking","other"],description:"Type of workout"},duration_minutes:{type:"integer",description:"Duration in minutes"},source:{type:"string",enum:["manual","healthkit","geofence"],description:"How the workout was detected"}},required:["workout_type","duration_minutes"]}}},
+  {type:"function",function:{name:"get_workout_status",description:"Check if user worked out today, total minutes, and workout details",parameters:{type:"object",properties:{}}}},
+  {type:"function",function:{name:"get_workout_history",description:"Get workout history for the past N days",parameters:{type:"object",properties:{days:{type:"integer",description:"Number of days to look back (default 7)"}},required:[]}}},
+  {type:"function",function:{name:"create_geofence",description:"Add a gym/workout location for automatic workout detection via geofencing",parameters:{type:"object",properties:{name:{type:"string",description:"Name of the location (e.g. 'My Gym')"},latitude:{type:"number"},longitude:{type:"number"},radius_meters:{type:"number",description:"Geofence radius (default 100m)"},min_dwell_minutes:{type:"integer",description:"Minutes user must stay to count as workout (default 30)"}},required:["name","latitude","longitude"]}}},
+
+  // ── DNS & System ──
+  {type:"function",function:{name:"get_dns_status",description:"Check if DNS filtering is active on this device",parameters:{type:"object",properties:{}}}},
+  {type:"function",function:{name:"get_heartbeat_status",description:"Check app monitoring status - when was last heartbeat, is the app running",parameters:{type:"object",properties:{}}}},
+  {type:"function",function:{name:"set_accountability_partner",description:"Set an email to receive alerts when the app is uninstalled or DNS is disabled",parameters:{type:"object",properties:{email:{type:"string",description:"Email to send alerts to"},notify_on:{type:"array",items:{type:"string",enum:["app_uninstall","dns_disabled","rule_deleted"]},description:"Events to notify on"}},required:["email"]}}}
+];
+
+// ── Load/Save ──
+function loadHistory() {
+  try {
+    var saved = localStorage.getItem('tc_counselor_messages');
+    if (saved) messages = JSON.parse(saved);
+  } catch(e) {}
+  renderMessages();
+}
+
+function saveHistory() {
+  try {
+    localStorage.setItem('tc_counselor_messages', JSON.stringify(messages.slice(-100)));
+  } catch(e) {}
+}
+
+function clearHistory() {
+  messages = [];
+  pendingCards = [];
+  saveHistory();
+  renderMessages();
+}
+
+// ── Render ──
+function renderMessages() {
+  var el = document.getElementById('messages');
+  var html = '';
+  for (var i = 0; i < messages.length; i++) {
+    var m = messages[i];
+    if (m.role === 'system') continue;
+    var cls = m.role === 'user' ? 'user' : 'assistant';
+    var content = m.content || '';
+    // Strip think tags
+    content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    if (!content && m.role === 'assistant') continue;
+    // Escape HTML
+    content = content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    // Newlines
+    content = content.replace(/\n/g, '<br>');
+
+    var speakBtn = m.role === 'assistant' ? '<button class="speak-btn" onclick="speak('+i+')">&#128266;</button>' : '';
+    html += '<div class="msg ' + cls + '">' + speakBtn + content + '</div>';
+  }
+
+  // Pending command cards
+  for (var j = 0; j < pendingCards.length; j++) {
+    var card = pendingCards[j];
+    if (card.done) continue;
+    html += '<div class="cmd-card" id="card-' + j + '">' +
+      '<div class="label">' + esc(card.label) + '</div>' +
+      '<div class="actions">' +
+      '<button class="apply" onclick="applyCard(' + j + ')">APPLY</button>' +
+      '<button class="reject" onclick="rejectCard(' + j + ')">REJECT</button>' +
+      '</div></div>';
+  }
+
+  if (isStreaming) {
+    html += '<div class="thinking">Thinking...</div>';
+  }
+  el.innerHTML = html;
+  el.scrollTop = el.scrollHeight;
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Send ──
+async function sendMessage() {
+  var input = document.getElementById('input');
+  var text = input.value.trim();
+  if (!text || isStreaming) return;
+  input.value = '';
+  messages.push({ role: 'user', content: text });
+  saveHistory();
+  renderMessages();
+  await callAPI();
+}
+
+async function callAPI() {
+  isStreaming = true;
+  document.getElementById('status').textContent = 'THINKING...';
+  renderMessages();
+
+  // Build API messages with time injection
+  var now = new Date();
+  var timeStr = now.toLocaleString('en-US', { weekday:'long', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+  var apiMsgs = [{ role: 'system', content: 'Current time: ' + timeStr }];
+  for (var i = 0; i < messages.length; i++) {
+    apiMsgs.push({ role: messages[i].role, content: messages[i].content });
+  }
+
+  try {
+    var res = await fetch(API + '/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + API_KEY },
+      body: JSON.stringify({
+        model: 'tc-counselor',
+        messages: apiMsgs,
+        tools: TC_TOOLS,
+        tool_choice: 'auto',
+        stream: false,
+        max_tokens: 2048
+      })
+    });
+
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    var choice = (data.choices || [])[0] || {};
+    var msg = choice.message || {};
+
+    // Handle tool calls
+    if (msg.tool_calls && msg.tool_calls.length > 0) {
+      var results = [];
+      for (var t = 0; t < msg.tool_calls.length; t++) {
+        var tc = msg.tool_calls[t];
+        var fn = tc.function || {};
+        var name = fn.name || '';
+        var args = {};
+        try { args = JSON.parse(fn.arguments || '{}'); } catch(e) {}
+        var result = await executeToolCall(name, args);
+        results.push(name + ': ' + result);
+      }
+      var content = (msg.content || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      var toolSummary = results.join('\n');
+      var display = content ? content + '\n\n' + toolSummary : toolSummary;
+      messages.push({ role: 'assistant', content: display });
+    } else {
+      var content = (msg.content || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      messages.push({ role: 'assistant', content: content || 'No response.' });
+    }
+  } catch(e) {
+    messages.push({ role: 'assistant', content: 'COUNSELOR OFFLINE: ' + e.message });
+    document.getElementById('status').textContent = 'OFFLINE';
+    document.getElementById('status').style.color = 'var(--red)';
+  }
+
+  isStreaming = false;
+  document.getElementById('status').textContent = 'READY';
+  document.getElementById('status').style.color = 'var(--green)';
+  saveHistory();
+  renderMessages();
+}
+
+// ── Tool execution ──
+async function executeToolCall(name, args) {
+  var headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN };
+
+  switch(name) {
+    case 'set_rule': {
+      var rule = {
+        id: Date.now().toString(),
+        items: args.items || [],
+        mode: args.mode || 'until',
+        conditions: args.conditions || [],
+        exceptions: args.exceptions || [],
+        password: args.password || '',
+        enabled: true,
+        created_at: new Date().toISOString()
+      };
+      try {
+        await fetch(API + '/api/tc/rules/add', { method:'POST', headers:headers, body:JSON.stringify(rule) });
+        return '✓ Rule created: ' + (args.items||[]).join(', ') + ' → ' + args.mode;
+      } catch(e) { return 'Failed to create rule'; }
+    }
+
+    case 'remove_rule': {
+      try {
+        await fetch(API + '/api/tc/rules/' + args.rule_id, { method:'DELETE', headers:headers, body:JSON.stringify({}) });
+        return '✓ Rule removed';
+      } catch(e) { return 'Failed to remove rule'; }
+    }
+
+    case 'list_rules': {
+      try {
+        var res = await fetch(API + '/api/tc/rules', { headers:headers });
+        var data = await res.json();
+        var rules = data.rules || [];
+        if (!rules.length) return 'No rules set.';
+        return rules.map(function(r) {
+          return (r.items||[]).join(', ') + ' → ' + r.mode;
+        }).join('\n');
+      } catch(e) { return 'Failed to load rules'; }
+    }
+
+    case 'grant_temporary_access': {
+      // Store locally — webview can't modify the browser's temp allows directly
+      var host = (args.host || '').toLowerCase();
+      var mins = Math.min(args.duration_minutes || 15, 60);
+      localStorage.setItem('tc_temp_' + host, Date.now() + mins * 60000);
+      return '✓ ' + host + ' allowed for ' + mins + ' minutes';
+    }
+
+    case 'suggest_rules': {
+      var suggestions = args.suggestions || [];
+      pendingCards.push({
+        label: suggestions.length + ' suggested rules',
+        suggestions: suggestions,
+        done: false
+      });
+      return suggestions.map(function(s) {
+        return '• ' + (s.label || (s.items||[]).join(', ') + ' → ' + s.mode);
+      }).join('\n');
+    }
+
+    default:
+      return 'Unknown tool: ' + name;
+  }
+}
+
+// ── Command cards ──
+async function applyCard(idx) {
+  var card = pendingCards[idx];
+  if (!card || card.done) return;
+  var headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN };
+  var suggestions = card.suggestions || [];
+  for (var i = 0; i < suggestions.length; i++) {
+    var s = suggestions[i];
+    var rule = {
+      id: Date.now().toString() + '_' + i,
+      items: s.items || [],
+      mode: s.mode || 'until',
+      conditions: s.conditions || [],
+      exceptions: s.exceptions || [],
+      password: s.password || '',
+      enabled: true,
+      created_at: new Date().toISOString()
+    };
+    try {
+      await fetch(API + '/api/tc/rules/add', { method:'POST', headers:headers, body:JSON.stringify(rule) });
+    } catch(e) {}
+  }
+  card.done = true;
+  messages.push({ role: 'assistant', content: '✓ Applied ' + suggestions.length + ' rules.' });
+  saveHistory();
+  renderMessages();
+}
+
+function rejectCard(idx) {
+  pendingCards[idx].done = true;
+  messages.push({ role: 'assistant', content: 'Rules rejected.' });
+  saveHistory();
+  renderMessages();
+}
+
+// ── Voice ──
+var recognition = null;
+var isRecording = false;
+
+function toggleMic() {
+  if (isRecording) {
+    stopMic();
+  } else {
+    startMic();
+  }
+}
+
+function startMic() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    // Fallback: use native bridge
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tcCounselor) {
+      window.webkit.messageHandlers.tcCounselor.postMessage({ action: 'startListening' });
+    }
+    return;
+  }
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+
+  recognition.onresult = function(e) {
+    var transcript = '';
+    for (var i = 0; i < e.results.length; i++) {
+      transcript += e.results[i][0].transcript;
+    }
+    document.getElementById('input').value = transcript;
+  };
+
+  recognition.onerror = function(e) { stopMic(); };
+  recognition.onend = function() { stopMic(); };
+
+  recognition.start();
+  isRecording = true;
+  document.getElementById('mic-btn').classList.add('recording');
+}
+
+function stopMic() {
+  if (recognition) { recognition.stop(); recognition = null; }
+  isRecording = false;
+  document.getElementById('mic-btn').classList.remove('recording');
+  // Auto-send if there's text
+  var input = document.getElementById('input');
+  if (input.value.trim()) {
+    sendMessage();
+  }
+}
+
+// ── TTS ──
+function speak(msgIdx) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  var text = (messages[msgIdx] || {}).content || '';
+  text = text.replace(/<think>[\s\S]*?<\/think>/g, '').replace(/[✓•]/g, '').trim();
+  if (!text) return;
+  var u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = 1.1;
+  window.speechSynthesis.speak(u);
+}
+
+// Receive voice transcript from native bridge
+window.setVoiceTranscript = function(text) {
+  document.getElementById('input').value = text;
+};
+
+// ── Onboarding ──
+function checkOnboarding() {
+  if (messages.length === 0) {
+    messages.push({ role: 'user', content: '[ONBOARDING_START] I just installed TotalControl. Help me set up my blocking rules.' });
+    saveHistory();
+    callAPI();
+  }
+}
+
+// ── Init ──
+loadHistory();
+if (messages.length === 0) {
+  setTimeout(checkOnboarding, 500);
+}
+</script>
+</body>
+</html>

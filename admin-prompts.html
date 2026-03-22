@@ -497,6 +497,7 @@ body .tab:hover {
       <div class="builder-container">
         <div class="builder-grid">
           <div class="model-list">
+            <input type="text" id="modelSearchBox" placeholder="Search models..." oninput="filterModelList(this.value)" style="width:calc(100% - 20px);margin:6px 10px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);color:var(--fg);border-radius:4px;font-size:12px;font-family:var(--mono)">
             <div class="model-list-header">
               <span>Models</span>
               <button class="primary" onclick="newModel()" style="padding:4px 10px;font-size:11px">+ New</button>
@@ -3111,31 +3112,89 @@ document.addEventListener('dragstart', function(e) {
   var el = e.target.closest('.model-item[data-model-alias]');
   if (!el) return;
   CURRENT_DRAG_MODEL_ALIAS = String(el.dataset.modelAlias || '').trim().toLowerCase();
+  el.style.opacity = '0.4';
   if (e.dataTransfer) {
     e.dataTransfer.effectAllowed = 'move';
     try { e.dataTransfer.setData('text/plain', CURRENT_DRAG_MODEL_ALIAS); } catch(_e) {}
   }
 });
 
+document.addEventListener('dragend', function(e) {
+  // Reset opacity on all items
+  var items = document.querySelectorAll('.model-item');
+  for (var i = 0; i < items.length; i++) {
+    items[i].style.opacity = '';
+    items[i].style.borderTop = '';
+    items[i].style.borderBottom = '';
+  }
+  var dz = document.getElementById('topModelsDropzone');
+  if (dz) dz.style.outline = '';
+  CURRENT_DRAG_MODEL_ALIAS = '';
+});
+
 document.addEventListener('dragover', function(e) {
   var zone = e.target.closest('[data-action="pinTopDrop"], .drag-top[data-model-alias]');
   if (!zone) return;
   e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+  // Visual feedback: highlight drop target
+  if (zone.matches('.drag-top[data-model-alias]')) {
+    // Clear previous highlights
+    var tops = document.querySelectorAll('.drag-top');
+    for (var i = 0; i < tops.length; i++) { tops[i].style.borderTop = ''; }
+    zone.style.borderTop = '2px solid #4ade80';
+  } else {
+    zone.style.outline = '2px solid #4ade80';
+  }
+});
+
+document.addEventListener('dragleave', function(e) {
+  var zone = e.target.closest('[data-action="pinTopDrop"], .drag-top[data-model-alias]');
+  if (!zone) return;
+  zone.style.borderTop = '';
+  zone.style.outline = '';
 });
 
 document.addEventListener('drop', function(e) {
   var zone = e.target.closest('.drag-top[data-model-alias], [data-action="pinTopDrop"]');
   if (!zone) return;
   e.preventDefault();
+  // Clear visual feedback
+  var tops = document.querySelectorAll('.drag-top');
+  for (var i = 0; i < tops.length; i++) { tops[i].style.borderTop = ''; }
+  var dz = document.getElementById('topModelsDropzone');
+  if (dz) dz.style.outline = '';
   var alias = getDraggedModelAlias(e);
   if (!alias) return;
   if (zone.matches('.drag-top[data-model-alias]')) {
-    pinModelToTop(alias, zone.dataset.modelAlias || '');
+    var targetAlias = zone.dataset.modelAlias || '';
+    if (alias !== targetAlias) {
+      pinModelToTop(alias, targetAlias);
+    }
   } else {
     pinModelToTop(alias, '');
   }
   CURRENT_DRAG_MODEL_ALIAS = '';
 });
+
+function filterModelList(query) {
+  query = (query || '').trim().toLowerCase();
+  var items = document.querySelectorAll('#modelListItems .model-item');
+  for (var i = 0; i < items.length; i++) {
+    var alias = (items[i].dataset.modelAlias || '').toLowerCase();
+    var text = (items[i].textContent || '').toLowerCase();
+    items[i].style.display = (!query || alias.indexOf(query) >= 0 || text.indexOf(query) >= 0) ? '' : 'none';
+  }
+  // Also show/hide section headers
+  var sections = document.querySelectorAll('#modelListItems .top-models-zone, #modelListItems [data-action="toggleBaseModels"]');
+  for (var j = 0; j < sections.length; j++) {
+    sections[j].style.display = query ? 'none' : '';
+  }
+  var dropzone = document.getElementById('topModelsDropzone');
+  if (dropzone) dropzone.style.display = query ? 'none' : '';
+  var help = document.querySelector('.top-models-help');
+  if (help) help.style.display = query ? 'none' : '';
+}
 
 function newModel() {
   BUILDER_STATE = { isNew: true, originalAlias: null };
