@@ -1604,7 +1604,9 @@ const MANUAL_ONLY_TOOLS = new Set(["think", "think_get", "think_search", "think_
 
 function getDefaultActiveTools() {
   return Array.isArray(TOOL_CATALOG.tools)
-    ? TOOL_CATALOG.tools.filter(function(name) { return !MANUAL_ONLY_TOOLS.has(name); })
+    ? TOOL_CATALOG.tools.filter(function(name) {
+        return !MANUAL_ONLY_TOOLS.has(name) && !(TOOL_CATALOG.disabled_by_default && TOOL_CATALOG.disabled_by_default.has(name));
+      })
     : [];
 }
 
@@ -1748,6 +1750,7 @@ async function loadModelToolCatalog() {
     TOOL_CATALOG = {
       tools: Array.isArray(data.tools) ? data.tools.slice() : [],
       categories: data.categories || {},
+      disabled_by_default: new Set(Array.isArray(data.disabled_by_default) ? data.disabled_by_default : []),
     };
     if (CURRENT_ACTIVE_TOOLS === null) {
       CURRENT_ACTIVE_TOOLS = getDefaultActiveTools();
