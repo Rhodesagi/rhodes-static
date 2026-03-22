@@ -3,590 +3,1412 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>TOTAL CONTROL</title>
+<title>TOTAL CONTROL — SHIELD</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 <style>
-:root { --bg:#0d0d08; --panel:#1a1a12; --metal:#2a2a1c; --amber:#ffcc00; --amber-dim:#cc9900; --green:#44ff44; --green-dim:#22aa22; --unless:#66ffaa; --red:#ff5555; --red-dim:#cc3333; --text:#f0e8d0; --text-dim:#b0a080; --border:#1f1b12; }
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono','Courier New',monospace;min-height:100vh;padding-bottom:env(safe-area-inset-bottom)}
-body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);pointer-events:none;z-index:9999}
-button{-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:transparent;font-family:inherit}
-button:focus{outline:none}
-button:active{filter:brightness(0.92)}
+:root {
+    --bg: #0d0d08;
+    --panel: #1a1a12;
+    --metal: #2a2a1c;
+    --amber: #ffcc00;
+    --amber-dim: #cc9900;
+    --green: #44ff44;
+    --green-dim: #22aa22;
+    --unless: #66ffaa;
+    --unless-dim: #44cc88;
+    --red: #ff5555;
+    --red-dim: #cc3333;
+    --text: #f0e8d0;
+    --text-dim: #b0a080;
+    --border: #1f1b12;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    min-height: 100vh;
+    -webkit-text-size-adjust: 100%;
+}
+body::after {
+    content: '';
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px);
+    pointer-events: none;
+    z-index: 9999;
+}
+button {
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-tap-highlight-color: transparent;
+}
+button:focus { outline: none; }
+button:active { filter: brightness(0.9); }
 
-.container{width:100%;max-width:500px;margin:0 auto;padding:12px}
-.header{border:1px solid var(--amber-dim);background:var(--metal);text-align:center;padding:16px;margin-bottom:6px}
-.header h1{color:var(--amber);font-family:'Orbitron',monospace;font-size:18px;font-weight:700;letter-spacing:3px}
-.subtitle{text-align:center;color:var(--text-dim);font-size:12px;margin-bottom:12px;letter-spacing:2px}
-.status-bar{display:flex;justify-content:space-between;padding:6px 10px;background:var(--panel);border:1px solid var(--metal);margin-bottom:10px;font-size:11px;color:var(--text-dim)}
-.status-bar .active{color:var(--green)} .status-bar .inactive{color:var(--red)}
+/* Layout */
+.container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 12px;
+    padding-top: env(safe-area-inset-top, 12px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 12px) + 80px);
+}
+.header {
+    border: 1px solid var(--amber-dim);
+    background: var(--metal);
+    text-align: center;
+    padding: 16px 12px;
+    margin-bottom: 6px;
+}
+.header h1 {
+    color: var(--amber);
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-shadow: 0 0 20px rgba(0,255,204,0.4);
+}
+.subtitle {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-bottom: 12px;
+    letter-spacing: 2px;
+}
 
-/* Rules */
-.rules-list{margin-bottom:12px}
-.rule-card{background:var(--metal);border:2px solid var(--red-dim);margin-bottom:8px;padding:12px;display:flex;gap:10px;align-items:flex-start}
-.rule-card.allowed{border-color:var(--green-dim)}
-.rule-status{min-width:60px;text-align:center;padding-top:2px}
-.rule-status .icon{font-size:24px;display:block;margin-bottom:2px}
-.rule-status .label{font-size:10px;font-weight:bold}
-.rule-status.blocked .icon,.rule-status.blocked .label{color:var(--red)}
-.rule-status.allowed-status .icon,.rule-status.allowed-status .label{color:var(--green)}
-.rule-info{flex:1;min-width:0}
-.mode-badge{display:inline-block;padding:2px 6px;font-size:10px;font-weight:bold;margin-bottom:4px}
-.mode-until{border:2px solid var(--amber);color:var(--amber);background:rgba(0,255,204,0.1)}
-.mode-during{border:2px solid var(--red);color:var(--red);background:rgba(255,0,204,0.1)}
-.mode-allowDuring{border:2px solid var(--green);color:var(--green);background:rgba(0,255,102,0.1)}
-.rule-items{font-size:15px;font-weight:bold;color:var(--text);margin-bottom:3px}
-.rule-conditions{font-size:14px;font-weight:bold;color:var(--amber);margin-bottom:3px}
-.rule-exceptions{font-size:12px;color:var(--unless);margin-bottom:3px}
-.rule-detail{font-size:11px;color:var(--text-dim)}
-.rule-delete{background:none;border:1px solid var(--red-dim);color:var(--red);cursor:pointer;padding:6px 8px;font-size:14px;flex-shrink:0}
+/* Status bar */
+.status-bar {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: var(--panel);
+    border: 1px solid var(--metal);
+    margin-bottom: 10px;
+    font-size: 11px;
+    color: var(--text-dim);
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.status-bar .active { color: var(--green); }
+.status-bar .inactive { color: var(--red); }
 
-/* Empty */
-.empty{text-align:center;padding:40px 16px;color:var(--text-dim)}
-.empty .shield-icon{font-size:48px;margin-bottom:12px;opacity:0.5}
-.empty p{font-size:14px;margin-bottom:6px}
-.empty-example{text-align:left;background:var(--metal);border:2px solid var(--amber-dim);padding:12px 16px;margin-top:12px;line-height:1.7;font-size:13px}
-.empty-example .ex-label{color:var(--amber);font-size:11px;letter-spacing:2px;margin-bottom:8px;display:block}
-.empty-example .ex-sentence{color:var(--text);font-size:14px}
-.empty-example .ex-red{color:var(--red)} .empty-example .ex-green{color:var(--green)} .empty-example b{color:var(--text)}
+/* Rules list */
+.rules-list { margin-bottom: 12px; }
+
+.rule-card {
+    background: var(--metal);
+    border: 2px solid var(--red-dim);
+    margin-bottom: 8px;
+    padding: 12px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    transition: border-color 0.3s;
+}
+.rule-card.allowed { border-color: var(--green-dim); }
+
+.rule-status {
+    min-width: 60px;
+    text-align: center;
+    padding-top: 2px;
+    flex-shrink: 0;
+}
+.rule-status .icon { font-size: 24px; display: block; margin-bottom: 2px; }
+.rule-status .label { font-size: 10px; font-weight: bold; }
+.rule-status.blocked .icon { color: var(--red); }
+.rule-status.blocked .label { color: var(--red); }
+.rule-status.allowed-status .icon { color: var(--green); }
+.rule-status.allowed-status .label { color: var(--green); }
+
+.rule-info { flex: 1; min-width: 0; }
+
+.mode-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+.mode-until { border: 2px solid var(--amber); color: var(--amber); background: rgba(0,255,204,0.1); }
+.mode-during { border: 2px solid var(--red); color: var(--red); background: rgba(255,0,204,0.1); }
+.mode-allowDuring { border: 2px solid var(--green); color: var(--green); background: rgba(0,255,102,0.1); }
+
+.rule-items {
+    font-size: 15px;
+    font-weight: bold;
+    color: var(--text);
+    margin-bottom: 3px;
+    word-break: break-word;
+}
+.rule-conditions {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--amber);
+    margin-bottom: 3px;
+}
+.rule-exceptions {
+    font-size: 11px;
+    color: var(--unless);
+    margin-bottom: 3px;
+}
+.rule-detail {
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+.rule-delete {
+    background: none;
+    border: 1px solid var(--red-dim);
+    color: var(--red);
+    cursor: pointer;
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 16px;
+    flex-shrink: 0;
+    min-width: 40px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Empty state */
+.empty {
+    text-align: center;
+    padding: 40px 16px;
+    color: var(--text-dim);
+}
+.empty .shield { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+.empty p { font-size: 14px; margin-bottom: 8px; }
+.empty-example {
+    text-align: left;
+    background: var(--metal);
+    border: 2px solid var(--amber-dim);
+    padding: 12px 16px;
+    margin-top: 12px;
+    line-height: 1.7;
+    font-size: 13px;
+}
+.empty-example .ex-label { color: var(--amber); font-size: 11px; letter-spacing: 2px; margin-bottom: 8px; }
+.empty-example .ex-sentence { color: var(--text); font-size: 14px; }
+.empty-example .ex-sentence b { color: var(--amber); }
+.empty-example .ex-red { color: var(--red); }
+.empty-example .ex-green { color: var(--green); }
 
 /* Add button */
-.add-btn{width:100%;background:var(--amber);color:var(--bg);border:none;padding:14px;font-size:15px;font-weight:bold;cursor:pointer;letter-spacing:1px}
+.add-btn {
+    width: 100%;
+    background: var(--amber);
+    color: var(--bg);
+    border: none;
+    padding: 14px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    letter-spacing: 1px;
+}
 
-/* Modal */
-.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:1000;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px}
-.modal-overlay.active{display:flex;flex-direction:column;align-items:center}
-.modal{background:var(--panel);border:2px solid var(--amber-dim);width:100%;max-width:500px;padding:16px;margin-top:20px;margin-bottom:40px}
+/* Protection label */
+.protection {
+    text-align: center;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
 
-/* Example */
-.example-sentence{text-align:left;padding:4px 12px 10px;margin-bottom:12px;font-size:16px;color:var(--text-dim);letter-spacing:1px;border-bottom:1px solid var(--metal);line-height:1.6}
-.example-sentence .ex-label{display:block;font-size:10px;letter-spacing:2px;margin-bottom:3px;opacity:0.6}
-.example-sentence .ex-kw{color:var(--red);font-weight:bold}
-.example-sentence .ex-items{color:var(--text);font-weight:bold}
-.example-sentence .ex-val{color:var(--green);font-weight:bold}
-.example-sentence .ex-unless{color:var(--unless);font-size:14px;font-weight:bold}
-.example-sentence .ex-until{color:var(--amber);font-weight:bold}
+/* ===== MODAL ===== */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 1000;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.modal-overlay.active { display: block; }
+
+.modal {
+    background: var(--panel);
+    border: 2px solid var(--amber-dim);
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 16px;
+    min-height: 100vh;
+}
+
+/* Example sentence */
+.example-sentence {
+    text-align: left;
+    padding: 6px 12px 10px 16px;
+    margin-bottom: 12px;
+    font-size: 16px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--metal);
+    line-height: 1.5;
+}
+.example-sentence .ex-label { display: block; font-size: 10px; letter-spacing: 2px; margin-bottom: 4px; color: var(--text-dim); opacity: 0.6; }
+.example-sentence .ex-kw { color: var(--red); font-weight: bold; }
+.example-sentence .ex-items { color: var(--text); font-weight: bold; }
+.example-sentence .ex-val { color: var(--green); font-weight: bold; }
+.example-sentence .ex-unless { color: var(--unless); font-size: 14px; font-weight: bold; }
+.example-sentence .ex-until { color: var(--amber); font-weight: bold; }
 
 /* Presets */
-.presets-row{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px;-webkit-overflow-scrolling:touch}
-.preset-btn{background:none;border:1px solid var(--text-dim);color:var(--text-dim);padding:6px 10px;font-size:12px;font-weight:bold;cursor:pointer;white-space:nowrap;flex-shrink:0}
-.preset-btn.active{border-color:var(--amber);color:var(--amber);background:rgba(0,255,204,0.1)}
+.presets-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+.preset-btn {
+    background: none;
+    border: 1px solid var(--text-dim);
+    color: var(--text);
+    padding: 6px 12px;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.preset-btn.selected { border-color: var(--amber); color: var(--amber); background: rgba(255,204,0,0.1); }
 
 /* Sentence rows */
-.items-row-box{display:flex;align-items:stretch;border:2px solid var(--red);margin-bottom:8px}
-.items-row-box.mode-allow{border-color:var(--green)}
-.sentence-label{display:flex;align-items:center;justify-content:center;padding:0 10px;min-width:70px;font-size:15px;font-weight:bold;white-space:nowrap;flex-shrink:0}
-.sentence-label.block{color:var(--red);background:rgba(255,0,204,0.1);border-right:2px solid var(--red)}
-.sentence-label.allow{color:var(--green);background:rgba(0,255,102,0.1);border-right:2px solid var(--green)}
-.items-input{display:flex;align-items:center;flex-wrap:wrap;gap:5px;background:var(--metal);padding:6px 8px;flex:1;min-width:0}
-.item-chip{display:inline-flex;align-items:center;gap:3px;background:var(--bg);border:1px solid var(--amber-dim);color:var(--text);font-size:12px;font-weight:bold;padding:3px 6px;letter-spacing:1px;white-space:nowrap;text-transform:uppercase}
-.item-chip .chip-x{cursor:pointer;color:var(--text-dim);font-size:12px;margin-left:2px}
-.items-input input{flex:1;background:none;border:none;color:var(--text);font-family:inherit;font-size:13px;font-weight:bold;outline:none;padding:4px 2px;min-width:60px}
-.items-input input::placeholder{color:var(--text-dim);opacity:0.7}
+.items-row-box {
+    display: flex;
+    align-items: stretch;
+    border: 2px solid var(--red);
+    margin-bottom: 6px;
+}
+.items-row-box.mode-allow { border-color: var(--green); }
+.items-row-box .sentence-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 10px;
+    min-width: 70px;
+    font-size: 15px;
+    font-weight: bold;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border-right: 2px solid var(--red);
+}
+.items-row-box.mode-allow .sentence-label { border-right-color: var(--green); }
+.sentence-label.block { color: var(--red); background: rgba(255,0,204,0.1); }
+.sentence-label.allow { color: var(--green); background: rgba(0,255,102,0.1); }
+
+.items-input {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    background: var(--metal);
+    padding: 6px 8px;
+    flex: 1;
+    min-width: 0;
+}
+.item-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: var(--bg);
+    border: 1px solid var(--amber-dim);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 4px 6px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    text-transform: uppercase;
+}
+.item-chip .chip-x {
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-left: 2px;
+    padding: 0 2px;
+}
+.items-input input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: bold;
+    outline: none;
+    padding: 6px 2px;
+    min-width: 80px;
+}
+.items-input input::placeholder { color: var(--text-dim); opacity: 0.7; }
 
 /* Condition row */
-.cond-row{display:flex;align-items:stretch;border:2px solid var(--amber);margin-bottom:8px}
-.cond-row .sentence-label{color:var(--amber);background:rgba(0,255,204,0.1);border-right:2px solid var(--amber);cursor:pointer;font-size:13px;min-width:60px}
-.cond-body{display:flex;align-items:center;flex-wrap:wrap;gap:6px;background:var(--metal);padding:6px 8px;flex:1}
-.cond-type-select{background:var(--bg);border:1px solid var(--amber-dim);color:var(--amber);font-family:inherit;font-size:12px;padding:4px 6px;cursor:pointer}
-.cond-type-select option{background:var(--bg);color:var(--text)}
-.cond-value input,.cond-value select{background:var(--bg);border:1px solid var(--text-dim);color:var(--text);font-family:inherit;font-size:13px;padding:4px 8px;width:80px}
-.cond-value select{width:auto}
+.cond-row-box {
+    display: flex;
+    align-items: stretch;
+    border: 2px solid var(--amber);
+    margin-bottom: 6px;
+    margin-top: 4px;
+}
+.cond-row-box .cond-keyword {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    min-width: 70px;
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--amber);
+    background: rgba(0,255,204,0.1);
+    border-right: 2px solid var(--amber);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.cond-inline-body {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    background: var(--metal);
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+}
+.cond-type-select {
+    background: rgba(0,255,204,0.15);
+    border: none;
+    border-right: 1px solid var(--amber-dim);
+    color: var(--amber);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: bold;
+    padding: 10px 8px;
+    outline: none;
+    cursor: pointer;
+    min-width: 90px;
+}
+.cond-type-select option { background: var(--panel); color: var(--text); }
+.cond-inline-value {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    gap: 4px;
+    min-height: 44px;
+    flex-wrap: wrap;
+}
+.cond-inline-value span { color: var(--text-dim); font-size: 14px; white-space: nowrap; }
+.cond-inline-value input {
+    width: 70px;
+    background: none;
+    border: none;
+    color: var(--green);
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: bold;
+    outline: none;
+    padding: 2px;
+}
+.cond-inline-value input[type="time"] {
+    background: none;
+    border: none;
+    border-bottom: 2px solid var(--green);
+    color: var(--green);
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 2px 4px;
+    outline: none;
+    width: 100px;
+}
+.cond-inline-value input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7) sepia(1) saturate(5) hue-rotate(80deg);
+}
+.cond-inline-value select {
+    background: none;
+    border: none;
+    color: var(--green);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    outline: none;
+    cursor: pointer;
+}
+.cond-inline-value select option { background: var(--panel); color: var(--text); }
 
 /* Mode tabs */
-.mode-tabs{display:flex;gap:4px;margin-bottom:12px}
-.mode-tab{flex:1;padding:8px;font-size:12px;font-weight:bold;cursor:pointer;background:none;border:2px solid transparent;text-align:center}
-.mode-tab[data-mode="until"]{color:var(--amber-dim)} .mode-tab[data-mode="during"]{color:var(--red-dim)} .mode-tab[data-mode="allowDuring"]{color:var(--green-dim)}
-.mode-tab.active[data-mode="until"]{background:var(--amber);color:var(--bg);border-color:var(--amber)}
-.mode-tab.active[data-mode="during"]{background:var(--red);color:var(--bg);border-color:var(--red)}
-.mode-tab.active[data-mode="allowDuring"]{background:var(--green);color:var(--bg);border-color:var(--green)}
+.mode-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+.mode-tab {
+    flex: 1;
+    padding: 10px 4px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    background: none;
+    border: 2px solid transparent;
+    text-align: center;
+}
+.mode-tab[data-mode="until"] { color: var(--amber-dim); }
+.mode-tab[data-mode="during"] { color: var(--red-dim); }
+.mode-tab[data-mode="allowDuring"] { color: var(--green-dim); }
+.mode-tab.active[data-mode="until"] { background: var(--amber); color: var(--bg); border-color: var(--amber); }
+.mode-tab.active[data-mode="during"] { background: var(--red); color: var(--bg); border-color: var(--red); }
+.mode-tab.active[data-mode="allowDuring"] { background: var(--green); color: var(--bg); border-color: var(--green); }
+
+/* Existing conditions list */
+.cond-list { margin-bottom: 8px; }
+.cond-item {
+    display: flex;
+    align-items: center;
+    background: var(--metal);
+    border: 2px solid var(--green);
+    padding: 8px 10px;
+    margin-bottom: 4px;
+    gap: 6px;
+}
+.cond-item span { flex: 1; color: var(--green); font-size: 13px; font-weight: bold; }
+.cond-item .cond-kw { color: var(--text); margin-right: 4px; flex: none; }
+.cond-remove {
+    background: none;
+    border: none;
+    color: var(--red);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    min-width: 36px;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.add-cond-btn {
+    width: 100%;
+    background: none;
+    border: 2px solid var(--green);
+    color: var(--green);
+    padding: 10px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 12px;
+}
 
 /* Unless row */
-.unless-row{display:flex;align-items:stretch;border:2px solid var(--unless);margin-bottom:8px}
-.unless-row .sentence-label{color:var(--unless);background:rgba(102,255,170,0.1);border-right:2px solid var(--unless);font-size:13px;min-width:65px}
+.unless-row-box {
+    display: flex;
+    align-items: stretch;
+    border: 2px solid var(--unless);
+    margin-bottom: 10px;
+}
+.unless-row-box .sentence-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    min-width: 70px;
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--unless);
+    background: rgba(102,255,170,0.1);
+    border-right: 2px solid var(--unless);
+    flex-shrink: 0;
+}
 
-/* Password */
-.pw-row{margin-bottom:12px}
-.pw-label{color:var(--text-dim);font-size:11px;letter-spacing:1px;margin-bottom:4px}
-.pw-input{width:100%;background:var(--metal);border:2px solid var(--border);color:var(--text);font-family:inherit;font-size:13px;padding:8px}
+/* Password input */
+.pw-section {
+    margin-bottom: 16px;
+}
+.pw-label {
+    color: var(--unless);
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+.pw-input {
+    width: 100%;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--unless);
+    color: var(--unless);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 8px 0;
+    outline: none;
+}
+.pw-input::placeholder { color: var(--text-dim); }
 
-/* Actions */
-.modal-actions{display:flex;gap:8px;margin-top:16px}
-.btn-cancel{flex:1;background:none;border:2px solid var(--text-dim);color:var(--text-dim);padding:12px;font-size:13px;font-weight:bold;cursor:pointer}
-.btn-create{flex:1;background:var(--amber);color:var(--bg);border:none;padding:12px;font-size:13px;font-weight:bold;cursor:pointer}
+/* Modal actions */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+.btn-cancel {
+    background: none;
+    border: 1px solid var(--text-dim);
+    color: var(--text-dim);
+    padding: 12px 16px;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    min-height: 44px;
+}
+.btn-create {
+    background: var(--amber);
+    border: none;
+    color: var(--bg);
+    padding: 12px 20px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    min-height: 44px;
+}
 
-/* Confirm delete */
-.confirm-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:2000;justify-content:center;align-items:center;padding:20px}
-.confirm-overlay.active{display:flex}
-.confirm-box{background:var(--panel);border:2px solid var(--red);padding:20px;max-width:400px;width:100%}
-.confirm-box h3{color:var(--red);font-size:16px;margin-bottom:12px;letter-spacing:2px}
-.confirm-box p{color:var(--text);font-size:13px;margin-bottom:16px}
-.delete-pw-row{display:none;margin-bottom:12px}
-.delete-pw-row input{width:100%;background:var(--metal);border:2px solid var(--amber);color:var(--amber);font-family:inherit;font-size:13px;padding:8px}
-.delete-pw-error{color:var(--red);font-size:11px;margin-top:4px;display:none}
+/* Confirm dialog */
+.confirm-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+.confirm-overlay.active { display: flex; }
+.confirm-box {
+    background: var(--panel);
+    border: 2px solid var(--amber);
+    padding: 24px;
+    max-width: 360px;
+    width: 90%;
+    text-align: center;
+}
+.confirm-box h3 { color: var(--amber); margin-bottom: 12px; font-size: 16px; }
+.confirm-box p { color: var(--text); margin-bottom: 16px; font-size: 13px; }
+.confirm-actions { display: flex; justify-content: center; gap: 12px; }
+.confirm-actions .btn-cancel, .confirm-actions .btn-delete {
+    min-height: 44px;
+    padding: 12px 20px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.btn-delete { background: var(--red); border: none; color: var(--bg); }
 
-/* Schedule days */
-.days-row{display:flex;gap:4px;flex-wrap:wrap}
-.day-btn{padding:6px 8px;font-size:11px;font-weight:bold;cursor:pointer;background:none;border:1px solid var(--text-dim);color:var(--text-dim)}
-.day-btn.active{border-color:var(--amber);color:var(--amber);background:rgba(0,255,204,0.1)}
+#delete-pw-row input {
+    width: 100%;
+    background: var(--metal);
+    border: 2px solid var(--amber);
+    color: var(--amber);
+    font-family: inherit;
+    font-size: 14px;
+    padding: 10px;
+    outline: none;
+}
+#delete-pw-error {
+    color: var(--red);
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+/* Loading spinner */
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-dim);
+    font-size: 14px;
+}
+
+/* Usage bars */
+.usage-bar-wrap {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--border);
+}
+.usage-bar-label { font-size: 10px; color: var(--text-dim); margin-bottom: 2px; }
+.usage-bar-track { width: 100%; height: 4px; background: var(--bg); border-radius: 2px; overflow: hidden; margin-bottom: 3px; }
+.usage-bar-fill { height: 100%; border-radius: 2px; }
 </style>
 </head>
 <body>
+
 <div class="container">
-  <div class="header"><h1>TOTAL CONTROL</h1></div>
-  <div class="subtitle">UNTIL &bull; DURING &bull; ALLOW</div>
-  <div class="status-bar">
-    <span>SYS: iOS</span>
-    <span id="block-count">0 RULES</span>
-    <span id="protection-status" class="inactive">STANDBY</span>
-  </div>
-  <div class="rules-list" id="rules-list"><div class="empty"><div class="shield-icon">&#9711;</div><p>Loading...</p></div></div>
-  <button class="add-btn" onclick="openModal()">+ ADD RULE</button>
+    <div class="header">
+        <h1>TOTAL CONTROL</h1>
+    </div>
+    <div class="subtitle">UNTIL &bull; DURING &bull; ALLOW</div>
+
+    <div class="status-bar">
+        <span>SYS: iOS</span>
+        <span id="block-count">0 RULES</span>
+        <span id="protection-status" class="inactive">STANDBY</span>
+    </div>
+
+    <div class="rules-list" id="rules-list">
+        <div class="loading">Loading rules...</div>
+    </div>
+
+    <button class="add-btn" onclick="openModal()">+ ADD RULE</button>
+
+    <div class="protection" id="protection-label"></div>
 </div>
 
 <!-- Add Rule Modal -->
 <div class="modal-overlay" id="modal">
 <div class="modal">
-  <div class="example-sentence" id="example-sentence">
-    <span class="ex-label">EXAMPLE</span><span class="ex-kw">BLOCK</span> <span class="ex-items">NETFLIX, TWITTER</span><br><span class="ex-until">UNTIL</span> <span class="ex-val">5:00 PM</span>
-  </div>
-  <div class="mode-tabs">
-    <button class="mode-tab active" data-mode="until" onclick="setMode('until')">UNTIL</button>
-    <button class="mode-tab" data-mode="during" onclick="setMode('during')">DURING</button>
-    <button class="mode-tab" data-mode="allowDuring" onclick="setMode('allowDuring')">ALLOW</button>
-  </div>
-  <div class="presets-row" id="presets"></div>
-  <div class="items-row-box" id="items-box">
-    <div id="sentence-label" class="sentence-label block">BLOCK</div>
-    <div class="items-input" id="items-chips">
-      <input type="text" id="items-input" placeholder="type & press Enter...">
+    <div class="example-sentence" id="example-sentence">
+        <span class="ex-label">EXAMPLE</span>
+        <span class="ex-kw">BLOCK</span> <span class="ex-items">NETFLIX, TWITTER</span><br>
+        <span class="ex-until">UNTIL</span> <span class="ex-val">5:00 PM</span><br>
+        <span class="ex-unless">UNLESS I'M WATCHING A DOCUMENTARY</span>
     </div>
-  </div>
-  <div class="cond-row">
-    <div class="sentence-label" id="cond-keyword" onclick="cycleMode()">UNTIL</div>
-    <div class="cond-body">
-      <select id="cond-type-select" class="cond-type-select" onchange="onCondTypeChange()"></select>
-      <div class="cond-value" id="cond-value"></div>
+
+    <!-- Mode tabs -->
+    <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="until" onclick="setMode('until')">UNTIL</button>
+        <button class="mode-tab" data-mode="during" onclick="setMode('during')">DURING</button>
+        <button class="mode-tab" data-mode="allowDuring" onclick="setMode('allowDuring')">ALLOW</button>
     </div>
-  </div>
-  <div class="unless-row">
-    <div class="sentence-label">UNLESS</div>
-    <div class="items-input">
-      <input type="text" id="exceptions-input" placeholder="WhatsApp, music.youtube.com...">
+
+    <!-- Preset categories -->
+    <div class="presets-row" id="presets"></div>
+
+    <!-- Sentence line 1: BLOCK [items] -->
+    <div class="items-row-box" id="items-row-box">
+        <div id="sentence-label" class="sentence-label block">BLOCK</div>
+        <div class="items-input" id="items-chips">
+            <input type="text" id="items-input" placeholder="type & press Enter...">
+        </div>
     </div>
-  </div>
-  <div class="pw-row">
-    <div class="pw-label">DELETION PASSWORD (optional):</div>
-    <input type="password" class="pw-input" id="rule-password" placeholder="Leave empty for no protection">
-  </div>
-  <div class="modal-actions">
-    <button class="btn-cancel" onclick="closeModal()">CANCEL</button>
-    <button class="btn-create" onclick="createRule()">CREATE</button>
-  </div>
+
+    <!-- Sentence line 2: UNTIL [condition] -->
+    <div class="cond-row-box">
+        <div class="cond-keyword" id="cond-keyword" onclick="cycleMode()">UNTIL</div>
+        <div class="cond-inline-body">
+            <select id="cond-type-select" class="cond-type-select" onchange="onCondTypeChange()">
+                <option value="time">Time</option>
+                <option value="tomorrow">Tomorrow</option>
+                <option value="password">Password</option>
+            </select>
+            <div id="cond-inline-value" class="cond-inline-value"></div>
+        </div>
+    </div>
+
+    <!-- Existing conditions -->
+    <div class="cond-list" id="cond-list"></div>
+    <button class="add-cond-btn" id="add-another-btn" onclick="addCondition()" style="display:none">+ AND (add condition)</button>
+
+    <!-- Exceptions -->
+    <div class="unless-row-box">
+        <div class="sentence-label">UNLESS</div>
+        <div class="items-input">
+            <input type="text" id="exceptions-input" placeholder="exceptions...">
+        </div>
+    </div>
+
+    <!-- Deletion password -->
+    <div class="pw-section">
+        <div class="pw-label">DELETION PASSWORD (optional):</div>
+        <input type="password" class="pw-input" id="rule-password-input" placeholder="Leave empty for no protection">
+    </div>
+
+    <!-- Actions -->
+    <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">CANCEL</button>
+        <button class="btn-create" onclick="createRule()">CREATE</button>
+    </div>
 </div>
 </div>
 
 <!-- Confirm delete -->
 <div class="confirm-overlay" id="confirm-dialog">
 <div class="confirm-box">
-  <h3>DELETE RULE?</h3>
-  <p id="confirm-text"></p>
-  <div class="delete-pw-row" id="delete-pw-row">
-    <div style="color:var(--amber);font-size:11px;margin-bottom:4px;letter-spacing:1px">&#128274; PASSWORD REQUIRED</div>
-    <input type="password" id="delete-password" placeholder="Enter deletion password">
-    <div class="delete-pw-error" id="delete-pw-error">Wrong password</div>
-  </div>
-  <div class="modal-actions">
-    <button class="btn-cancel" onclick="closeConfirm()">CANCEL</button>
-    <button class="btn-create" style="background:var(--red)" onclick="confirmDelete()">DELETE</button>
-  </div>
+    <h3>DELETE RULE?</h3>
+    <p id="confirm-text"></p>
+    <div id="delete-pw-row" style="display:none;margin-bottom:16px;">
+        <div style="color:var(--amber);font-size:11px;margin-bottom:6px;letter-spacing:1px;">&#128274; PASSWORD REQUIRED</div>
+        <input type="password" id="delete-password" placeholder="Enter deletion password">
+        <div id="delete-pw-error" style="display:none;">Wrong password</div>
+    </div>
+    <div class="confirm-actions">
+        <button class="btn-cancel" onclick="closeConfirm()">CANCEL</button>
+        <button class="btn-delete" onclick="confirmDelete()">DELETE</button>
+    </div>
 </div>
 </div>
 
 <script>
-const TOKEN = window.__TC_TOKEN__ || '';
-const API = 'https://rhodesagi.com';
-const PRESETS = {
-  "Social Media": ["Facebook","Instagram","Twitter","X","TikTok","Snapchat","LinkedIn","Pinterest","Reddit"],
-  "Streaming": ["Netflix","YouTube","Hulu","Disney+","HBO Max","Amazon Prime","Twitch","Spotify","Apple TV"],
-  "Messaging": ["WhatsApp","Telegram","Discord","Slack","Messenger","Signal"],
-  "Gaming": ["Steam","Epic Games","Roblox"],
-  "News": ["CNN","BBC","Fox News","NYTimes"],
-  "Dating": ["Tinder","Bumble","Hinge"]
+/* ===== Config ===== */
+var token = window.__TC_TOKEN__ || '';
+var API_BASE = 'https://rhodesagi.com';
+
+var PRESETS = {
+    "Social Media": ["Facebook","Instagram","Twitter","X","TikTok","Snapchat","LinkedIn","Pinterest","Reddit"],
+    "Streaming": ["Netflix","YouTube","Hulu","Disney+","HBO Max","Amazon Prime","Twitch","Spotify","Apple TV"],
+    "Messaging": ["WhatsApp","Telegram","Discord","Slack","Messenger","Signal"],
+    "Gaming": ["Steam","Epic Games","Roblox"],
+    "News": ["CNN","BBC","Fox News","NYTimes"],
+    "Dating": ["Tinder","Bumble","Hinge"]
 };
 
-const COND_TYPES = {
-  until: [{v:'time',n:'Time'},{v:'tomorrow',n:'Tomorrow'},{v:'password',n:'Password'}],
-  during: [{v:'timeRange',n:'Hours'},{v:'schedule',n:'Days'}],
-  allowDuring: [{v:'timeRange',n:'Hours'},{v:'schedule',n:'Days'}]
+var PRESET_EXAMPLES = {
+    'Social Media': ['Twitter','Instagram','TikTok'],
+    'Streaming': ['YouTube','Netflix','Twitch'],
+    'Messaging': ['WhatsApp','Discord','Telegram'],
+    'Gaming': ['Steam','Roblox','Epic Games'],
+    'News': ['NYTimes','CNN','BBC'],
+    'Dating': ['Tinder','Bumble','Hinge']
 };
 
-let currentMode = 'until';
-let itemChips = [];
-let deleteTarget = null;
-let allRules = [];
-let selectedDays = [1,2,3,4,5];
+var COND_TYPES_BY_MODE = {
+    until: ['time','tomorrow','password'],
+    during: ['timeRange','schedule','timeBudget','sessionLimit','visitCount'],
+    allowDuring: ['timeRange','schedule','timeBudget','sessionLimit','visitCount']
+};
 
-async function apiFetch(path, method, body) {
-  const opts = { method: method||'GET', headers: {'Content-Type':'application/json','Authorization':'Bearer '+TOKEN} };
-  if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(API + path, opts);
-  return res.json();
+var COND_NAMES = {
+    time: 'Time', timeRange: 'Hours', tomorrow: 'Tomorrow',
+    password: 'Password', schedule: 'Days',
+    timeBudget: 'Time budget', sessionLimit: 'Session limit', visitCount: 'Visit count'
+};
+
+/* ===== State ===== */
+var currentMode = 'until';
+var currentCondType = 'time';
+var conditions = [];
+var deleteTarget = null;
+var deletePasswordRequired = false;
+var itemChips = [];
+
+/* ===== API ===== */
+function apiHeaders() {
+    return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
 }
 
-// ── Load & Render ──
-async function loadRules() {
-  try {
-    const data = await apiFetch('/api/tc/rules');
-    allRules = data.rules || [];
-    renderRules();
-  } catch(e) {
-    document.getElementById('rules-list').innerHTML = '<div class="empty"><p style="color:var(--red)">Failed to load rules</p></div>';
-  }
+async function apiGet(path) {
+    var res = await fetch(API_BASE + path, { headers: apiHeaders() });
+    return await res.json();
 }
 
-function renderRules() {
-  const list = document.getElementById('rules-list');
-  const bc = document.getElementById('block-count');
-  const ps = document.getElementById('protection-status');
-
-  if (!allRules.length) {
-    list.innerHTML = '<div class="empty"><div class="shield-icon">&#9711;</div><p>No rules yet</p>' +
-      '<div class="empty-example"><div class="ex-label">HOW IT WORKS</div>' +
-      '<p class="ex-sentence"><span class="ex-red">Block</span> <b>Twitter, Reddit</b> <span class="ex-red">until</span> <span class="ex-green">5:00 PM</span></p>' +
-      '<p class="ex-sentence" style="margin-top:6px"><span class="ex-red">Block</span> <b>Netflix</b> <span class="ex-red">during</span> <span class="ex-green">weekdays</span></p>' +
-      '</div><p style="font-size:13px;margin-top:12px">Tap + ADD RULE to create one</p></div>';
-    bc.textContent = '0 RULES';
-    ps.textContent = 'STANDBY'; ps.className = 'inactive';
-    return;
-  }
-
-  bc.textContent = allRules.length + ' RULE' + (allRules.length>1?'S':'');
-  let anyBlocked = false;
-
-  list.innerHTML = allRules.map(function(rule) {
-    const blocked = evaluateRule(rule);
-    if (blocked) anyBlocked = true;
-    const cls = blocked ? '' : ' allowed';
-    const stCls = blocked ? 'blocked' : 'allowed-status';
-    const icon = blocked ? '&#128274;' : '&#128275;';
-    const label = blocked ? 'BLOCKED' : 'ALLOWED';
-    const modeClass = 'mode-' + rule.mode;
-    const modeLabel = rule.mode === 'until' ? 'UNTIL' : rule.mode === 'during' ? 'BLOCK DURING' : 'ONLY DURING';
-    const items = (rule.items||[]).slice(0,3).join(', ') + (rule.items.length>3 ? ' +' + (rule.items.length-3) : '');
-    const condDesc = (rule.conditions||[]).map(descCond).join(' + ');
-    const exceptions = (rule.exceptions||[]).length ? 'UNLESS ' + rule.exceptions.join(', ') : '';
-    const hasPw = rule.password && rule.password.length > 0;
-
-    return '<div class="rule-card'+cls+'">' +
-      '<div class="rule-status '+stCls+'"><span class="icon">'+icon+'</span><span class="label">'+label+'</span></div>' +
-      '<div class="rule-info">' +
-        '<span class="mode-badge '+modeClass+'">'+modeLabel+'</span>' +
-        '<div class="rule-items">'+esc(items)+(hasPw?' &#128274;':'')+'</div>' +
-        '<div class="rule-conditions">'+esc(condDesc)+'</div>' +
-        (exceptions?'<div class="rule-exceptions">'+esc(exceptions)+'</div>':'') +
-      '</div>' +
-      '<button class="rule-delete" onclick="startDelete(\''+rule.id+'\',\''+esc(items)+'\','+(hasPw?'true':'false')+')">&times;</button>' +
-    '</div>';
-  }).join('');
-
-  ps.textContent = anyBlocked ? 'ENFORCING' : 'STANDBY';
-  ps.className = anyBlocked ? 'active' : 'inactive';
-}
-
-function evaluateRule(rule) {
-  // Simple client-side eval for display
-  const now = new Date();
-  const conds = rule.conditions || [];
-  if (!conds.length) return true;
-  if (rule.mode === 'until') {
-    return !conds.every(function(c) {
-      if (c.type === 'time') {
-        const parts = (c.time_target||'17:00').split(':');
-        return now.getHours() > parseInt(parts[0]) || (now.getHours() === parseInt(parts[0]) && now.getMinutes() >= parseInt(parts[1]||0));
-      }
-      if (c.type === 'tomorrow') return false;
-      if (c.type === 'password') return false;
-      return false;
+async function apiPost(path, body) {
+    var res = await fetch(API_BASE + path, {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify(body)
     });
-  }
-  if (rule.mode === 'during') {
-    return conds.some(function(c) {
-      if (c.type === 'timeRange') {
-        const s = (c.time_range?.start||'09:00').split(':'), e = (c.time_range?.end||'17:00').split(':');
-        const mins = now.getHours()*60+now.getMinutes();
-        return mins >= parseInt(s[0])*60+parseInt(s[1]||0) && mins < parseInt(e[0])*60+parseInt(e[1]||0);
-      }
-      if (c.type === 'schedule') {
-        const day = now.getDay() === 0 ? 7 : now.getDay();
-        return (c.schedule?.days||[]).includes(day);
-      }
-      return true;
-    });
-  }
-  if (rule.mode === 'allowDuring') {
-    return !conds.some(function(c) {
-      if (c.type === 'timeRange') {
-        const s = (c.time_range?.start||'09:00').split(':'), e = (c.time_range?.end||'17:00').split(':');
-        const mins = now.getHours()*60+now.getMinutes();
-        return mins >= parseInt(s[0])*60+parseInt(s[1]||0) && mins < parseInt(e[0])*60+parseInt(e[1]||0);
-      }
-      if (c.type === 'schedule') {
-        const day = now.getDay() === 0 ? 7 : now.getDay();
-        return (c.schedule?.days||[]).includes(day);
-      }
-      return false;
-    });
-  }
-  return true;
+    return await res.json();
 }
 
-function descCond(c) {
-  switch(c.type) {
-    case 'time': return c.time_target || '17:00';
-    case 'timeRange': return (c.time_range?.start||'09:00')+' - '+(c.time_range?.end||'17:00');
-    case 'tomorrow': return 'tomorrow';
-    case 'password': return 'password';
-    case 'schedule': {
-      const d = c.schedule?.days||[];
-      if (JSON.stringify(d)==='[1,2,3,4,5]') return 'weekdays';
-      if (JSON.stringify(d)==='[6,7]') return 'weekends';
-      const n = ['','Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-      return d.map(function(x){return n[x]}).join(', ');
+async function apiDelete(path, body) {
+    var opts = { method: 'DELETE', headers: apiHeaders() };
+    if (body) opts.body = JSON.stringify(body);
+    return await fetch(API_BASE + path, opts);
+}
+
+/* ===== Helpers ===== */
+function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function getPresetChipLabel(name) {
+    var examples = PRESET_EXAMPLES[name];
+    var top = (examples && examples.length) ? examples[0] : (PRESETS[name] || [])[0];
+    if (!top) return name;
+    return name + ' (' + top + '...)';
+}
+
+function expandPresetChipValue(item) {
+    var raw = String(item || '').trim();
+    if (!raw) return [];
+    var upper = raw.toUpperCase();
+    for (var presetName in PRESETS) {
+        if (!Object.prototype.hasOwnProperty.call(PRESETS, presetName)) continue;
+        var presetUpper = presetName.toUpperCase();
+        if (upper === presetUpper || upper.indexOf(presetUpper + ' (') === 0) {
+            return (PRESETS[presetName] || []).slice();
+        }
     }
-    default: return c.type;
-  }
+    return [raw];
 }
 
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-// ── Modal ──
-function openModal() {
-  currentMode = 'until';
-  itemChips = [];
-  selectedDays = [1,2,3,4,5];
-  document.getElementById('items-input').value = '';
-  document.getElementById('exceptions-input').value = '';
-  document.getElementById('rule-password').value = '';
-  document.getElementById('modal').classList.add('active');
-  renderPresets();
-  renderChips();
-  renderModal();
-}
-
-function closeModal() { document.getElementById('modal').classList.remove('active'); }
-
-function setMode(mode) {
-  currentMode = mode;
-  renderModal();
-}
-
-function cycleMode() {
-  const modes = ['until','during','allowDuring'];
-  currentMode = modes[(modes.indexOf(currentMode)+1)%3];
-  renderModal();
-}
-
-function renderModal() {
-  // Mode tabs
-  document.querySelectorAll('.mode-tab').forEach(function(t){t.classList.toggle('active',t.dataset.mode===currentMode)});
-
-  // Sentence label
-  const sl = document.getElementById('sentence-label');
-  const box = document.getElementById('items-box');
-  if (currentMode === 'allowDuring') {
-    sl.textContent = 'ALLOW'; sl.className = 'sentence-label allow';
-    box.className = 'items-row-box'; box.style.borderColor = 'var(--green)';
-  } else {
-    sl.textContent = 'BLOCK'; sl.className = 'sentence-label block';
-    box.className = 'items-row-box'; box.style.borderColor = 'var(--red)';
-  }
-
-  // Condition keyword
-  const kw = document.getElementById('cond-keyword');
-  kw.textContent = currentMode==='until'?'UNTIL':currentMode==='during'?'DURING':'ONLY DURING';
-
-  // Condition type dropdown
-  const sel = document.getElementById('cond-type-select');
-  const types = COND_TYPES[currentMode];
-  sel.innerHTML = types.map(function(t){return '<option value="'+t.v+'">'+t.n+'</option>'}).join('');
-  renderCondValue();
-
-  // Example
-  const ex = document.getElementById('example-sentence');
-  if (currentMode==='until') ex.innerHTML='<span class="ex-label">EXAMPLE</span><span class="ex-kw">BLOCK</span> <span class="ex-items">NETFLIX, TWITTER</span><br><span class="ex-until">UNTIL</span> <span class="ex-val">5:00 PM</span>';
-  else if (currentMode==='during') ex.innerHTML='<span class="ex-label">EXAMPLE</span><span class="ex-kw">BLOCK</span> <span class="ex-items">INSTAGRAM, TIKTOK</span><br><span class="ex-until">DURING</span> <span class="ex-val">9 AM - 5 PM weekdays</span>';
-  else ex.innerHTML='<span class="ex-label">EXAMPLE</span><span class="ex-kw">ALLOW</span> <span class="ex-items">SPOTIFY</span><br><span class="ex-until">ONLY DURING</span> <span class="ex-val">weekends</span>';
-}
-
-function onCondTypeChange() { renderCondValue(); }
-
-function renderCondValue() {
-  const type = document.getElementById('cond-type-select').value;
-  const el = document.getElementById('cond-value');
-  if (type === 'time') {
-    el.innerHTML = '<input type="time" id="cond-time" value="17:00">';
-  } else if (type === 'tomorrow') {
-    el.innerHTML = '<span style="color:var(--green);font-size:13px;font-weight:bold">Until tomorrow</span>';
-  } else if (type === 'password') {
-    el.innerHTML = '<span style="color:var(--green);font-size:13px;font-weight:bold">Password to unlock</span>';
-  } else if (type === 'timeRange') {
-    el.innerHTML = '<input type="time" id="cond-start" value="09:00" style="width:70px"> <span style="color:var(--amber)">-</span> <input type="time" id="cond-end" value="17:00" style="width:70px">';
-  } else if (type === 'schedule') {
-    const names = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-    const nums = [1,2,3,4,5,6,7];
-    el.innerHTML = '<div class="days-row">' + nums.map(function(d,i){
-      return '<button class="day-btn'+(selectedDays.includes(d)?' active':'')+'" onclick="toggleDay('+d+',this)">'+names[i]+'</button>';
-    }).join('') + '</div>';
-  } else {
-    el.innerHTML = '';
-  }
-}
-
-function toggleDay(d, btn) {
-  const idx = selectedDays.indexOf(d);
-  if (idx >= 0) selectedDays.splice(idx, 1);
-  else selectedDays.push(d);
-  selectedDays.sort();
-  btn.classList.toggle('active');
-}
-
-// ── Presets ──
-function renderPresets() {
-  const pp = document.getElementById('presets');
-  pp.innerHTML = Object.keys(PRESETS).map(function(name){
-    return '<button class="preset-btn" onclick="togglePreset(this,\''+name+'\')">'+name+'</button>';
-  }).join('');
-}
-
-function togglePreset(btn, name) {
-  const items = PRESETS[name] || [];
-  const isActive = btn.classList.contains('active');
-  if (isActive) {
-    btn.classList.remove('active');
-    items.forEach(function(item) {
-      const idx = itemChips.findIndex(function(c){return c.toLowerCase()===item.toLowerCase()});
-      if (idx >= 0) itemChips.splice(idx, 1);
+function expandPresetItems(rawItems) {
+    var expanded = [];
+    rawItems.forEach(function(item) {
+        expandPresetChipValue(item).forEach(function(expandedItem) {
+            var exists = expanded.some(function(existing) {
+                return existing.toLowerCase() === expandedItem.toLowerCase();
+            });
+            if (!exists) expanded.push(expandedItem);
+        });
     });
-  } else {
-    btn.classList.add('active');
-    items.forEach(function(item) {
-      if (!itemChips.some(function(c){return c.toLowerCase()===item.toLowerCase()})) itemChips.push(item);
-    });
-  }
-  renderChips();
+    return expanded;
 }
 
-// ── Chips ──
+function describeCondition(c) {
+    switch (c.type) {
+        case 'time': return c.time_target || '17:00';
+        case 'timeRange': return (c.time_range ? c.time_range.start : '09:00') + ' - ' + (c.time_range ? c.time_range.end : '17:00');
+        case 'tomorrow': return 'tomorrow';
+        case 'password': return 'password';
+        case 'schedule': {
+            var days = c.schedule ? c.schedule.days : [];
+            if (JSON.stringify(days) === '[1,2,3,4,5]') return 'weekdays';
+            if (JSON.stringify(days) === '[6,7]') return 'weekends';
+            var names = ['','Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+            return days.map(function(d) { return names[d]; }).join(', ');
+        }
+        case 'timeBudget': {
+            var w = c.window || 'day';
+            var label = w === 'rolling' ? c.rolling_hours + 'h rolling' : w;
+            return (c.budget_minutes || 15) + 'm/' + label;
+        }
+        case 'sessionLimit': return (c.session_minutes || 10) + 'm session, ' + (c.cooldown_minutes || 30) + 'm cooldown';
+        case 'visitCount': {
+            var w2 = c.window || 'day';
+            return (c.max_visits || 3) + ' visits/' + w2;
+        }
+        case 'steps': return (c.steps_target || 10000).toLocaleString() + ' steps';
+        case 'workout': return (c.workout_minutes || 30) + 'min workout';
+        case 'location': return 'at ' + (c.location ? c.location.name : 'location');
+        case 'pomodoro': return (c.work_minutes || 25) + 'm work / ' + (c.break_minutes || 5) + 'm break';
+        default: return c.type;
+    }
+}
+
+/* ===== Load & Render Rules ===== */
+async function loadRules() {
+    try {
+        var data = await apiGet('/api/tc/rules');
+        var rules = data.rules || [];
+        var statuses = data.statuses || rules.map(function() { return { blocked: true, status: '', password_protected: false }; });
+        var blockedCount = data.blocked_count || 0;
+        renderRules(rules, statuses, blockedCount);
+    } catch (e) {
+        document.getElementById('rules-list').innerHTML = '<div class="loading" style="color:var(--red)">Failed to load rules. Check connection.</div>';
+    }
+}
+
+function renderRules(rules, statuses, blockedCount) {
+    var list = document.getElementById('rules-list');
+    var prot = document.getElementById('protection-label');
+    var bc = document.getElementById('block-count');
+    var ps = document.getElementById('protection-status');
+
+    bc.textContent = rules.length + ' RULE' + (rules.length !== 1 ? 'S' : '');
+
+    if (rules.length === 0) {
+        list.innerHTML = '<div class="empty">' +
+            '<div class="shield">&#9711;</div>' +
+            '<p>No rules yet</p>' +
+            '<div class="empty-example">' +
+                '<div class="ex-label">HOW IT WORKS</div>' +
+                '<p class="ex-sentence"><span class="ex-red">Block</span> <b>Twitter, Reddit, YouTube</b> <span class="ex-red">until</span> <span class="ex-green">5:00 PM</span></p>' +
+                '<p class="ex-sentence" style="margin-top:6px"><span class="ex-red">Block</span> <b>Instagram</b> <span class="ex-red">during</span> <span class="ex-green">9 AM - 5 PM weekdays</span></p>' +
+                '<p style="color:var(--text-dim);font-size:11px;margin-top:10px;">Rules enforce blocking at the DNS level across all apps.</p>' +
+            '</div>' +
+            '<p style="font-size:13px;margin-top:14px">Tap + ADD RULE to create one</p>' +
+        '</div>';
+        prot.textContent = 'NO RULES SET';
+        prot.style.color = 'var(--text-dim)';
+        ps.textContent = 'STANDBY';
+        ps.className = 'inactive';
+        return;
+    }
+
+    var anyBlocked = false;
+    list.innerHTML = rules.map(function(rule, i) {
+        var st = statuses[i] || { blocked: true, status: '', password_protected: false };
+        var blocked = st.blocked;
+        if (blocked) anyBlocked = true;
+        var cls = blocked ? '' : ' allowed';
+        var stCls = blocked ? 'blocked' : 'allowed-status';
+        var icon = blocked ? '&#128274;' : '&#128275;';
+        var label = blocked ? 'BLOCKED' : 'ALLOWED';
+
+        var modeClass = 'mode-' + rule.mode;
+        var modeLabel = rule.mode === 'until' ? 'UNTIL' : rule.mode === 'during' ? 'BLOCK DURING' : 'ONLY DURING';
+
+        var items = rule.items.slice(0, 3).join(', ') + (rule.items.length > 3 ? ' +' + (rule.items.length - 3) : '');
+        var condDesc = (rule.conditions || []).map(function(c) { return describeCondition(c); }).join(' + ');
+
+        var exParts = [];
+        if ((rule.exceptions || []).length > 0) {
+            exParts.push('UNLESS ' + rule.exceptions.slice(0, 2).map(function(e) {
+                return e === 'music.youtube.com' ? 'YT Music' : e;
+            }).join(', ') + (rule.exceptions.length > 2 ? ' +' + (rule.exceptions.length - 2) : ''));
+        }
+        var exceptions = exParts.join(' | ');
+
+        var pwIcon = st.password_protected ? ' &#128274;' : '';
+
+        var usageHtml = '';
+        if (st.usage) {
+            var u = st.usage;
+            if (u.type === 'timeBudget') {
+                var usedMin = Math.floor(u.used_seconds / 60);
+                var budgetMin = Math.floor(u.budget_seconds / 60);
+                var pct = u.percent || 0;
+                var barColor = pct >= 100 ? 'var(--red)' : pct >= 75 ? 'var(--amber)' : 'var(--green)';
+                usageHtml = '<div class="usage-bar-wrap"><div class="usage-bar-label">' + usedMin + 'm / ' + budgetMin + 'm</div>' +
+                    '<div class="usage-bar-track"><div class="usage-bar-fill" style="width:' + Math.min(100, pct) + '%;background:' + barColor + '"></div></div></div>';
+            } else if (u.type === 'sessionLimit') {
+                if (u.in_cooldown) {
+                    var cdMin = Math.floor(u.cooldown_remaining_seconds / 60);
+                    usageHtml = '<div class="usage-bar-wrap"><div class="usage-bar-label" style="color:var(--red)">COOLDOWN ' + cdMin + 'm left</div></div>';
+                } else {
+                    var sessMin = Math.floor(u.accumulated_seconds / 60);
+                    var limitMin = Math.floor(u.session_limit_seconds / 60);
+                    var sPct = u.percent || 0;
+                    var sColor = sPct >= 100 ? 'var(--red)' : sPct >= 75 ? 'var(--amber)' : 'var(--green)';
+                    usageHtml = '<div class="usage-bar-wrap"><div class="usage-bar-label">SESSION: ' + sessMin + 'm / ' + limitMin + 'm</div>' +
+                        '<div class="usage-bar-track"><div class="usage-bar-fill" style="width:' + Math.min(100, sPct) + '%;background:' + sColor + '"></div></div></div>';
+                }
+            } else if (u.type === 'visitCount') {
+                var vPct = u.max_visits > 0 ? Math.min(100, (u.visit_count / u.max_visits) * 100) : 100;
+                var vColor = u.exceeded ? 'var(--red)' : vPct >= 75 ? 'var(--amber)' : 'var(--green)';
+                usageHtml = '<div class="usage-bar-wrap"><div class="usage-bar-label">' + u.visit_count + ' / ' + u.max_visits + ' visits</div>' +
+                    '<div class="usage-bar-track"><div class="usage-bar-fill" style="width:' + Math.min(100, vPct) + '%;background:' + vColor + '"></div></div></div>';
+            }
+        }
+
+        return '<div class="rule-card' + cls + '">' +
+            '<div class="rule-status ' + stCls + '">' +
+                '<span class="icon">' + icon + '</span>' +
+                '<span class="label">' + label + '</span>' +
+            '</div>' +
+            '<div class="rule-info">' +
+                '<span class="mode-badge ' + modeClass + '">' + modeLabel + '</span>' +
+                '<div class="rule-items">' + esc(items) + pwIcon + '</div>' +
+                '<div class="rule-conditions">' + esc(condDesc) + '</div>' +
+                (exceptions ? '<div class="rule-exceptions">' + esc(exceptions) + '</div>' : '') +
+                '<div class="rule-detail">' + esc(st.status) + '</div>' +
+                usageHtml +
+            '</div>' +
+            '<button class="rule-delete" data-id="' + rule.id + '" data-desc="' + esc(items) + '" data-pw="' + (st.password_protected ? '1' : '') + '">&times;</button>' +
+        '</div>';
+    }).join('');
+
+    prot.textContent = anyBlocked ? 'PROTECTION ACTIVE' : 'ALL RULES SATISFIED';
+    prot.style.color = anyBlocked ? 'var(--green)' : 'var(--text-dim)';
+    ps.textContent = anyBlocked ? 'ENFORCING' : 'STANDBY';
+    ps.className = anyBlocked ? 'active' : 'inactive';
+}
+
+/* ===== Chips ===== */
 function renderChips() {
-  const container = document.getElementById('items-chips');
-  const input = document.getElementById('items-input');
-  // Remove existing chips
-  container.querySelectorAll('.item-chip').forEach(function(c){c.remove()});
-  // Add chips before input
-  itemChips.forEach(function(item, i) {
-    const chip = document.createElement('span');
-    chip.className = 'item-chip';
-    chip.innerHTML = esc(item) + ' <span class="chip-x" onclick="removeChip('+i+')">&times;</span>';
-    container.insertBefore(chip, input);
-  });
+    var container = document.getElementById('items-chips');
+    var input = document.getElementById('items-input');
+    container.querySelectorAll('.item-chip').forEach(function(c) { c.remove(); });
+    itemChips.forEach(function(item, i) {
+        var chip = document.createElement('span');
+        chip.className = 'item-chip';
+        chip.innerHTML = esc(item) + ' <span class="chip-x" data-chip-idx="' + i + '">&times;</span>';
+        container.insertBefore(chip, input);
+    });
+}
+
+function addChip(text) {
+    var clean = text.trim().toUpperCase();
+    if (!clean) return;
+    var parts = clean.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+    parts.forEach(function(p) {
+        if (itemChips.indexOf(p) === -1) itemChips.push(p);
+    });
+    renderChips();
 }
 
 function removeChip(idx) {
-  itemChips.splice(idx, 1);
-  renderChips();
+    itemChips.splice(idx, 1);
+    renderChips();
 }
 
-// Items input handler
-document.getElementById('items-input').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' || e.key === ',') {
-    e.preventDefault();
-    const val = this.value.trim().replace(/,$/,'');
-    if (val && !itemChips.some(function(c){return c.toLowerCase()===val.toLowerCase()})) {
-      itemChips.push(val);
-      renderChips();
+function getItemsValue() {
+    var inputVal = document.getElementById('items-input').value.trim();
+    var all = itemChips.slice();
+    if (inputVal) {
+        inputVal.split(',').map(function(s) { return s.trim(); }).filter(Boolean).forEach(function(s) {
+            if (all.indexOf(s.toUpperCase()) === -1) all.push(s);
+        });
     }
-    this.value = '';
-  }
-});
-
-// ── Create Rule ──
-async function createRule() {
-  if (!itemChips.length) { alert('Add at least one item to block'); return; }
-  const condType = document.getElementById('cond-type-select').value;
-  let cond = { type: condType };
-  if (condType === 'time') {
-    cond.time_target = (document.getElementById('cond-time')||{}).value || '17:00';
-  } else if (condType === 'timeRange') {
-    cond.time_range = { start: (document.getElementById('cond-start')||{}).value||'09:00', end: (document.getElementById('cond-end')||{}).value||'17:00' };
-  } else if (condType === 'schedule') {
-    cond.schedule = { days: selectedDays.slice() };
-  } else if (condType === 'tomorrow') {
-    cond.created_at = new Date().toISOString();
-  }
-
-  const excInput = document.getElementById('exceptions-input').value.trim();
-  const exceptions = excInput ? excInput.split(',').map(function(e){return e.trim()}).filter(Boolean) : [];
-  const pw = document.getElementById('rule-password').value;
-
-  const rule = {
-    id: Date.now().toString(),
-    items: itemChips.slice(),
-    mode: currentMode,
-    conditions: [cond],
-    exceptions: exceptions,
-    password: pw || '',
-    enabled: true,
-    created_at: new Date().toISOString()
-  };
-
-  try {
-    await apiFetch('/api/tc/rules/add', 'POST', rule);
-    closeModal();
-    loadRules();
-  } catch(e) {
-    alert('Failed to save rule');
-  }
+    return all.join(', ');
 }
 
-// ── Delete ──
-function startDelete(id, desc, hasPw) {
-  deleteTarget = { id: id, hasPw: hasPw };
-  document.getElementById('confirm-text').textContent = 'Delete rule: ' + desc + '?';
-  document.getElementById('delete-pw-row').style.display = hasPw ? 'block' : 'none';
-  document.getElementById('delete-password').value = '';
-  document.getElementById('delete-pw-error').style.display = 'none';
-  document.getElementById('confirm-dialog').classList.add('active');
+function addPreset(name) {
+    addChip(getPresetChipLabel(name));
+}
+
+/* ===== Modal ===== */
+function openModal() {
+    currentMode = 'until';
+    currentCondType = 'time';
+    conditions = [];
+    itemChips = [];
+    document.getElementById('items-input').value = '';
+    document.getElementById('exceptions-input').value = '';
+    document.getElementById('rule-password-input').value = '';
+    document.getElementById('modal').classList.add('active');
+    renderChips();
+    renderModal();
+}
+
+function closeModal() {
+    document.getElementById('modal').classList.remove('active');
+}
+
+function setMode(mode) {
+    currentMode = mode;
+    var types = COND_TYPES_BY_MODE[mode];
+    currentCondType = types[0];
+    conditions = [];
+    renderModal();
+}
+
+var MODE_CYCLE = ['until', 'during', 'allowDuring'];
+function cycleMode() {
+    var idx = MODE_CYCLE.indexOf(currentMode);
+    var next = MODE_CYCLE[(idx + 1) % MODE_CYCLE.length];
+    setMode(next);
+}
+
+function renderModal() {
+    // Mode tabs
+    document.querySelectorAll('.mode-tab').forEach(function(t) {
+        t.classList.toggle('active', t.dataset.mode === currentMode);
+    });
+
+    // Example sentence
+    var exEl = document.getElementById('example-sentence');
+    var examples = {
+        until: [
+            ['BLOCK', 'NETFLIX, TWITTER', 'UNTIL', '5 PM', ''],
+            ['BLOCK', 'REDDIT, INSTAGRAM', 'UNTIL', 'tomorrow', 'UNLESS CHECKING DMs'],
+        ],
+        during: [
+            ['BLOCK', 'INSTAGRAM, TIKTOK', 'DURING', '9 AM \u2013 5 PM weekdays', ''],
+            ['BLOCK', 'SOCIAL MEDIA', 'DURING', 'Mon\u2013Fri 8 AM \u2013 3 PM', ''],
+        ],
+        allowDuring: [
+            ['ALLOW', 'SPOTIFY', 'ONLY DURING', 'lunch break', ''],
+            ['ALLOW', 'YOUTUBE', 'ONLY DURING', '6 PM \u2013 10 PM', ''],
+        ]
+    };
+    var pool = examples[currentMode] || examples.until;
+    if (typeof window._exIdx === 'undefined') window._exIdx = {};
+    if (typeof window._exIdx[currentMode] === 'undefined') window._exIdx[currentMode] = Math.floor(Math.random() * pool.length);
+    var ex = pool[window._exIdx[currentMode] % pool.length];
+    var verb = ex[0];
+    var html = '<span class="ex-label">EXAMPLE</span>';
+    html += '<span class="ex-kw">' + verb + '</span> <span class="ex-items">' + ex[1] + '</span>';
+    html += '<br><span class="ex-until">' + ex[2] + '</span> <span class="ex-val">' + ex[3] + '</span>';
+    if (ex[4]) html += '<br><span class="ex-unless">' + ex[4] + '</span>';
+    exEl.innerHTML = html;
+
+    // Sentence label
+    var sl = document.getElementById('sentence-label');
+    var box = document.getElementById('items-row-box');
+    if (currentMode === 'allowDuring') {
+        sl.textContent = 'ALLOW';
+        sl.className = 'sentence-label allow';
+        box.className = 'items-row-box mode-allow';
+    } else {
+        sl.textContent = 'BLOCK';
+        sl.className = 'sentence-label block';
+        box.className = 'items-row-box';
+    }
+
+    // Presets
+    var pp = document.getElementById('presets');
+    pp.innerHTML = Object.keys(PRESETS).map(function(name) {
+        return '<button class="preset-btn" data-preset="' + name + '">' + name + '</button>';
+    }).join('');
+
+    // Condition keyword
+    var keyword = currentMode === 'until' ? 'UNTIL' : currentMode === 'during' ? 'DURING' : 'ONLY DURING';
+    document.getElementById('cond-keyword').textContent = keyword;
+
+    // Condition type select
+    var sel = document.getElementById('cond-type-select');
+    var types = COND_TYPES_BY_MODE[currentMode];
+    sel.innerHTML = types.map(function(t) {
+        return '<option value="' + t + '"' + (t === currentCondType ? ' selected' : '') + '>' + COND_NAMES[t] + '</option>';
+    }).join('');
+
+    // Render inline value
+    renderInlineCondValue();
+
+    // Conditions list
+    var cl = document.getElementById('cond-list');
+    if (conditions.length > 0) {
+        cl.innerHTML = conditions.map(function(c, i) {
+            return '<div class="cond-item">' +
+                '<span class="cond-kw">' + keyword + '</span>' +
+                '<span>' + describeCondition(c) + '</span>' +
+                '<button class="cond-remove" data-index="' + i + '">&times;</button>' +
+            '</div>';
+        }).join('');
+        document.getElementById('add-another-btn').style.display = 'block';
+    } else {
+        cl.innerHTML = '';
+        document.getElementById('add-another-btn').style.display = 'none';
+    }
+}
+
+function onCondTypeChange() {
+    currentCondType = document.getElementById('cond-type-select').value;
+    renderInlineCondValue();
+}
+
+function renderInlineCondValue() {
+    var container = document.getElementById('cond-inline-value');
+    var t = currentCondType;
+
+    if (t === 'tomorrow') {
+        container.innerHTML = '<span style="color:var(--green);font-weight:bold;font-size:13px;">Blocked until midnight</span>';
+    } else if (t === 'password') {
+        container.innerHTML = '<span style="color:var(--green);font-weight:bold;font-size:13px;">Password to unlock</span>';
+    } else if (t === 'time') {
+        container.innerHTML = '<span>it\u2019s</span> <input type="time" id="cv-time" value="17:00">';
+    } else if (t === 'timeRange') {
+        container.innerHTML = '<input type="time" id="cv-start" value="09:00">' +
+            '<span style="margin:0 4px;">to</span>' +
+            '<input type="time" id="cv-end" value="17:00">';
+    } else if (t === 'schedule') {
+        container.innerHTML = '<span>on</span> <select id="cv1"><option value="weekdays">Weekdays</option><option value="weekends">Weekends</option></select>';
+    } else if (t === 'timeBudget') {
+        container.innerHTML = '<input type="number" id="cv1" value="15" style="width:50px" min="1"> <span>min/</span>' +
+            '<select id="cv2"><option value="day">Day</option><option value="hour">Hour</option><option value="week">Week</option></select>';
+    } else if (t === 'sessionLimit') {
+        container.innerHTML = '<input type="number" id="cv1" value="10" style="width:50px" min="1"> <span>min then</span> ' +
+            '<input type="number" id="cv2" value="30" style="width:50px" min="1"> <span>min off</span>';
+    } else if (t === 'visitCount') {
+        container.innerHTML = '<input type="number" id="cv1" value="3" style="width:45px" min="1"> <span>visits/</span>' +
+            '<select id="cv2"><option value="day">Day</option><option value="hour">Hour</option><option value="week">Week</option></select>';
+    }
+}
+
+function addCondition() {
+    var t = currentCondType;
+    var cond = { type: t };
+
+    if (t === 'time') {
+        var timeEl = document.getElementById('cv-time');
+        cond.time_target = timeEl ? timeEl.value : '17:00';
+    } else if (t === 'timeRange') {
+        cond.time_range = {
+            start: (document.getElementById('cv-start') || {}).value || '09:00',
+            end: (document.getElementById('cv-end') || {}).value || '17:00'
+        };
+    } else if (t === 'tomorrow') {
+        // nothing extra needed
+    } else if (t === 'password') {
+        // nothing extra needed
+    } else if (t === 'schedule') {
+        var val = (document.getElementById('cv1') || {}).value || 'weekdays';
+        cond.schedule = { days: val === 'weekends' ? [6, 7] : [1, 2, 3, 4, 5] };
+    } else if (t === 'timeBudget') {
+        cond.budget_minutes = parseInt((document.getElementById('cv1') || {}).value || '15');
+        cond.window = (document.getElementById('cv2') || {}).value || 'day';
+        cond.reset_time = '00:00';
+    } else if (t === 'sessionLimit') {
+        cond.session_minutes = parseInt((document.getElementById('cv1') || {}).value || '10');
+        cond.cooldown_minutes = parseInt((document.getElementById('cv2') || {}).value || '30');
+    } else if (t === 'visitCount') {
+        cond.max_visits = parseInt((document.getElementById('cv1') || {}).value || '3');
+        cond.window = (document.getElementById('cv2') || {}).value || 'day';
+    }
+
+    conditions.push(cond);
+    renderModal();
+}
+
+function removeCondition(i) {
+    conditions.splice(i, 1);
+    renderModal();
+}
+
+/* ===== Create Rule ===== */
+async function createRule() {
+    var itemsStr = getItemsValue();
+    var rawItems = itemsStr.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+
+    if (rawItems.length === 0) {
+        alert('Enter at least one app/site');
+        return;
+    }
+    var items = expandPresetItems(rawItems);
+
+    var exceptionsStr = document.getElementById('exceptions-input').value;
+    var exceptions = exceptionsStr.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+
+    // Auto-add music.youtube.com exception when blocking YouTube
+    var hasYT = items.some(function(i) { return i.toLowerCase().indexOf('youtube') !== -1; });
+    if (currentMode !== 'allowDuring' && hasYT) {
+        if (exceptions.indexOf('music.youtube.com') === -1) {
+            exceptions.push('music.youtube.com');
+        }
+    }
+
+    var rulePassword = (document.getElementById('rule-password-input').value || '').trim();
+
+    // Build the final condition set: if user hasn't added any via button, read the current inline
+    var finalConditions = conditions.slice();
+    if (finalConditions.length === 0) {
+        // Auto-add the current inline condition
+        var t = currentCondType;
+        var cond = { type: t };
+        if (t === 'time') {
+            var timeEl = document.getElementById('cv-time');
+            cond.time_target = timeEl ? timeEl.value : '17:00';
+        } else if (t === 'timeRange') {
+            cond.time_range = {
+                start: (document.getElementById('cv-start') || {}).value || '09:00',
+                end: (document.getElementById('cv-end') || {}).value || '17:00'
+            };
+        } else if (t === 'schedule') {
+            var val = (document.getElementById('cv1') || {}).value || 'weekdays';
+            cond.schedule = { days: val === 'weekends' ? [6, 7] : [1, 2, 3, 4, 5] };
+        } else if (t === 'timeBudget') {
+            cond.budget_minutes = parseInt((document.getElementById('cv1') || {}).value || '15');
+            cond.window = (document.getElementById('cv2') || {}).value || 'day';
+            cond.reset_time = '00:00';
+        } else if (t === 'sessionLimit') {
+            cond.session_minutes = parseInt((document.getElementById('cv1') || {}).value || '10');
+            cond.cooldown_minutes = parseInt((document.getElementById('cv2') || {}).value || '30');
+        } else if (t === 'visitCount') {
+            cond.max_visits = parseInt((document.getElementById('cv1') || {}).value || '3');
+            cond.window = (document.getElementById('cv2') || {}).value || 'day';
+        }
+        finalConditions.push(cond);
+    }
+
+    var rule = {
+        id: Date.now().toString(),
+        items: items,
+        mode: currentMode,
+        conditions: finalConditions,
+        exceptions: exceptions,
+        options: {},
+        enabled: true,
+        created_at: new Date().toISOString()
+    };
+    if (rulePassword) rule.password = rulePassword;
+
+    // Stamp created_at on tomorrow conditions
+    rule.conditions.forEach(function(c) {
+        if (c.type === 'tomorrow') c.created_at = rule.created_at;
+    });
+
+    try {
+        await apiPost('/api/tc/rules/add', rule);
+        closeModal();
+        loadRules();
+    } catch (e) {
+        alert('Failed to create rule. Check connection.');
+    }
+}
+
+/* ===== Delete ===== */
+function askDelete(id, desc, pw) {
+    deleteTarget = id;
+    deletePasswordRequired = false;
+    document.getElementById('confirm-text').textContent = desc;
+    document.getElementById('delete-pw-row').style.display = 'none';
+    document.getElementById('delete-password').value = '';
+    document.getElementById('delete-pw-error').style.display = 'none';
+    if (pw) {
+        deletePasswordRequired = true;
+        document.getElementById('delete-pw-row').style.display = 'block';
+    }
+    document.getElementById('confirm-dialog').classList.add('active');
 }
 
 function closeConfirm() {
-  document.getElementById('confirm-dialog').classList.remove('active');
-  deleteTarget = null;
+    document.getElementById('confirm-dialog').classList.remove('active');
+    deleteTarget = null;
+    deletePasswordRequired = false;
 }
 
 async function confirmDelete() {
-  if (!deleteTarget) return;
-  const body = {};
-  if (deleteTarget.hasPw) {
-    body.password = document.getElementById('delete-password').value;
-  }
-  try {
-    const res = await apiFetch('/api/tc/rules/' + deleteTarget.id, 'DELETE', body);
-    if (res.error) {
-      document.getElementById('delete-pw-error').textContent = res.error;
-      document.getElementById('delete-pw-error').style.display = 'block';
-      return;
+    if (!deleteTarget) return;
+    var pw = document.getElementById('delete-password').value || '';
+    var body = pw ? { password: pw } : null;
+    try {
+        var res = await apiDelete('/api/tc/rules/' + deleteTarget, body);
+        if (res.status === 403) {
+            var data = await res.json();
+            if (data.password_protected) {
+                deletePasswordRequired = true;
+                document.getElementById('delete-pw-row').style.display = 'block';
+                document.getElementById('delete-pw-error').style.display = pw ? 'block' : 'none';
+                return;
+            }
+        }
+        closeConfirm();
+        loadRules();
+    } catch (e) {
+        alert('Delete failed. Check connection.');
     }
-    closeConfirm();
-    loadRules();
-  } catch(e) {
-    alert('Failed to delete');
-  }
 }
 
-// ── Init ──
+/* ===== Event Delegation ===== */
+document.addEventListener('click', function(e) {
+    var btn;
+    // Chip removal
+    if ((btn = e.target.closest('.chip-x[data-chip-idx]'))) {
+        e.preventDefault();
+        removeChip(parseInt(btn.dataset.chipIdx));
+        return;
+    }
+    // Rule delete
+    if ((btn = e.target.closest('.rule-delete'))) {
+        e.preventDefault();
+        askDelete(btn.dataset.id, btn.dataset.desc, btn.dataset.pw);
+        return;
+    }
+    // Preset button
+    if ((btn = e.target.closest('.preset-btn[data-preset]'))) {
+        e.preventDefault();
+        addPreset(btn.dataset.preset);
+        return;
+    }
+    // Condition remove
+    if ((btn = e.target.closest('.cond-remove[data-index]'))) {
+        e.preventDefault();
+        removeCondition(parseInt(btn.dataset.index));
+        return;
+    }
+});
+
+/* ===== Input handlers ===== */
+document.getElementById('items-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        addChip(this.value);
+        this.value = '';
+    } else if (e.key === 'Backspace' && this.value === '' && itemChips.length > 0) {
+        removeChip(itemChips.length - 1);
+    }
+});
+
+/* ===== Init ===== */
 loadRules();
-setInterval(loadRules, 30000);
+setInterval(loadRules, 15000);
 </script>
 </body>
 </html>
