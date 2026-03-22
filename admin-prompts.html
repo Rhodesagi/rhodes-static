@@ -141,6 +141,33 @@ textarea {
 .model-item.inactive { opacity: 0.58; }
 .model-item .name { font-size: 12px; font-weight: 600; font-family: var(--mono); }
 .model-item .info { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.model-item[draggable="true"] { cursor: grab; }
+.model-item.drag-top { border-left: 3px solid var(--border); }
+.top-models-zone {
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.top-models-dropzone {
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  min-height: 44px;
+}
+.top-models-dropzone.empty {
+  font-size: 11px;
+  color: var(--muted);
+}
+.top-models-help {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.top-model-remove {
+  float: right;
+  font-size: 10px;
+  padding: 2px 6px;
+  margin-left: 8px;
+}
 .builder-form {
   background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
   padding: 20px; display: flex; flex-direction: column; gap: 16px;
@@ -1042,6 +1069,9 @@ let GLOBAL_SEARCH = { query: '', total: 0, count: 0, results: [] };
 let EDITOR_STATE = {};
 let SEED_MODAL_STATE = {};
 let BUILDER_STATE = { isNew: true, originalAlias: null };
+const MODEL_TOP_STORAGE_KEY = 'builderTopModels';
+let MODEL_TOP_ORDER = [];
+let CURRENT_DRAG_MODEL_ALIAS = '';
 // ---- Prompt Popover ----
 function openPromptPopover() {
   $('promptPopover').classList.add('open');
@@ -2843,6 +2873,33 @@ async function loadBaseModelInfo(baseAlias) {
 
 // ---- Model Builder ----
 function renderModelList() {
+  function escAttr(s) { return esc(String(s || '')).replace(/"/g, '&quot;'); }
+  function loadTopModels() {
+    try {
+      var raw = JSON.parse(localStorage.getItem(MODEL_TOP_STORAGE_KEY) || '[]');
+      MODEL_TOP_ORDER = Array.isArray(raw) ? raw.map(function(x){ return String(x || '').trim().toLowerCase(); }).filter(Boolean) : [];
+    } catch(e) {
+      MODEL_TOP_ORDER = [];
+    }
+  }
+  function saveTopModels() {
+    localStorage.setItem(MODEL_TOP_STORAGE_KEY, JSON.stringify(MODEL_TOP_ORDER));
+  }
+  function normalizeTopModels(validAliases) {
+    var valid = new Set((validAliases || []).map(function(x){ return String(x || '').trim().toLowerCase(); }).filter(Boolean));
+    var seen = new Set();
+    MODEL_TOP_ORDER = MODEL_TOP_ORDER.filter(function(alias) {
+      if (!valid.has(alias) || seen.has(alias)) return false;
+      seen.add(alias);
+      return true;
+    });
+    saveTopModels();
+  }
+  function buildModelCard(alias, titleHtml, infoHtml, active, inactive, onclickJs, extraHtml) {
+    return '<div class="model-item' + (active || '') + (inactive || '') + '" draggable="true" data-model-alias="' + escAttr(alias) + '" onclick="' + onclickJs + '">'
+      + (extraHtml || '') + titleHtml + infoHtml + '</div>';
+  }
+  loadTopModels();
   const runtimeBases = Array.from(new Set((BASE_MODELS || []).map(m => String(m || '').trim().toLowerCase()).filter(Boolean)));
   const cloneRows = (MODEL_CLONES || []).filter(c => c && c.alias && !runtimeBases.includes(String(c.alias).trim().toLowerCase()));
   const overridesByAlias = new Map();
@@ -2850,27 +2907,56 @@ function renderModelList() {
     if (!c || !c.alias) return;
     overridesByAlias.set(String(c.alias).trim().toLowerCase(), c);
   });
+  normalizeTopModels(runtimeBases.concat(cloneRows.map(function(c){ return String(c.alias || '').trim().toLowerCase(); })));
   if (!runtimeBases.length && !cloneRows.length) {
     $('modelListItems').innerHTML = '<div style="padding:12px;color:var(--muted)">No models. Click + New.</div>';
     return;
   }
-  var baseHtml = runtimeBases.map(function(baseAlias){
+  var entryByAlias = new Map();
+  runtimeBases.forEach(function(baseAlias){
     var override = overridesByAlias.get(baseAlias);
     var active = BUILDER_STATE.originalAlias === baseAlias ? ' active' : '';
     if (override) {
       var promptInfo = override.prompt_exists ? (override.prompt_chars||0)+' chars' : 'base prompt';
       var hasCongress = (override.congress_read_law_prefill_call !== null && override.congress_read_law_prefill_call !== undefined) || (override.congress_read_law_prefill_result !== null && override.congress_read_law_prefill_result !== undefined) || ((override.congress_read_law_intercepts||[]).length > 0);
-      return '<div class="model-item'+active+'" onclick="loadModelIntoBuilder(\''+esc(baseAlias)+'\')">'
-        + '<div class="name">'+(baseAlias===DEFAULT_MODEL?'<span style="color:gold;margin-right:4px" title="Default model">★</span>':'')+esc(baseAlias)+'</div>'
-        + '<div class="info">base override &middot; '+promptInfo+(hasCongress ? ' &middot; <span style="color:var(--ok)">congress:cfg</span>' : '')+'</div>'
-        + '</div>';
+      entryByAlias.set(baseAlias, {
+        alias: baseAlias,
+        section: 'base',
+        titleHtml: '<div class="name">'+(baseAlias===DEFAULT_MODEL?'<span style="color:gold;margin-right:4px" title="Default model">★</span>':'')+esc(baseAlias)+'</div>',
+        infoHtml: '<div class="info">base override &middot; '+promptInfo+(hasCongress ? ' &middot; <span style="color:var(--ok)">congress:cfg</span>' : '')+'</div>',
+        onclickJs: 'loadModelIntoBuilder(\''+esc(baseAlias)+'\')',
+        inactiveClass: '',
+        html: buildModelCard(
+          baseAlias,
+          '<div class="name">'+(baseAlias===DEFAULT_MODEL?'<span style="color:gold;margin-right:4px" title="Default model">★</span>':'')+esc(baseAlias)+'</div>',
+          '<div class="info">base override &middot; '+promptInfo+(hasCongress ? ' &middot; <span style="color:var(--ok)">congress:cfg</span>' : '')+'</div>',
+          active,
+          '',
+          'loadModelIntoBuilder(\''+esc(baseAlias)+'\')',
+          ''
+        )
+      });
+      return;
     }
-    return '<div class="model-item'+active+'" onclick="loadBaseModelInfo(\''+esc(baseAlias)+'\')"">'
-      + '<div class="name">'+(baseAlias===DEFAULT_MODEL?'<span style="color:gold;margin-right:4px" title="Default model">★</span>':'')+esc(baseAlias)+'</div>'
-      + '<div class="info">base model &middot; click to create override</div>'
-      + '</div>';
-  }).join('');
-  var cloneHtml = cloneRows.map(function(c){
+    entryByAlias.set(baseAlias, {
+      alias: baseAlias,
+      section: 'base',
+      titleHtml: '<div class="name">'+(baseAlias===DEFAULT_MODEL?'<span style="color:gold;margin-right:4px" title="Default model">★</span>':'')+esc(baseAlias)+'</div>',
+      infoHtml: '<div class="info">base model &middot; click to create override</div>',
+      onclickJs: 'loadBaseModelInfo(\''+esc(baseAlias)+'\')',
+      inactiveClass: '',
+      html: buildModelCard(
+        baseAlias,
+        '<div class="name">'+(baseAlias===DEFAULT_MODEL?'<span style="color:gold;margin-right:4px" title="Default model">★</span>':'')+esc(baseAlias)+'</div>',
+        '<div class="info">base model &middot; click to create override</div>',
+        active,
+        '',
+        'loadBaseModelInfo(\''+esc(baseAlias)+'\')',
+        ''
+      )
+    });
+  });
+  cloneRows.forEach(function(c){
     const active = BUILDER_STATE.originalAlias === c.alias ? ' active' : '';
     const base = c.base_model_input || c.base_model || '';
     const promptInfo = c.prompt_exists ? (c.prompt_chars||0)+' chars' : 'no prompt';
@@ -2880,12 +2966,51 @@ function renderModelList() {
     const hasFinalThink = !!(c.manual_final_think && String(c.manual_final_think).trim());
     const hasCongress = (c.congress_read_law_prefill_call !== null && c.congress_read_law_prefill_call !== undefined) || (c.congress_read_law_prefill_result !== null && c.congress_read_law_prefill_result !== undefined) || ((c.congress_read_law_intercepts||[]).length > 0);
     var inactive = c.enabled === false ? ' inactive' : '';
-    return '<div class="model-item'+active+inactive+'" onclick="loadModelIntoBuilder(\''+esc(c.alias||'')+'\')">'
-      + '<div class="name">'+((c.alias||'')===DEFAULT_MODEL?'<span style="color:gold;margin-right:4px" title="Default model">★</span>':'')+esc(c.alias||'')+(c.enabled===false?' <span style="color:var(--warn);font-size:11px">off</span>':'')+'</div>'
-      + '<div class="info">'+esc(base)+' &middot; '+esc(c.slash_command||'')+' &middot; '+promptInfo+(c.enabled===false ? ' &middot; <span style="color:var(--warn)">inactive</span>' : '')+(hasCustomInj ? ' &middot; <span style="color:var(--warn)">inj:custom</span>' : '')+(hasManualThink ? ' &middot; <span style="color:var(--ok)">think:manual'+(hasManualThinkGate?'[gated]':'')+'</span>' : '')+(hasFinalThink ? ' &middot; <span style="color:var(--ok)">think:final</span>' : '')+(hasCongress ? ' &middot; <span style="color:var(--ok)">congress:cfg</span>' : '')+'</div>'
-      + '</div>';
+    entryByAlias.set(String(c.alias || '').trim().toLowerCase(), {
+      alias: String(c.alias || '').trim().toLowerCase(),
+      section: 'clone',
+      titleHtml: '<div class="name">'+((c.alias||'')===DEFAULT_MODEL?'<span style="color:gold;margin-right:4px" title="Default model">★</span>':'')+esc(c.alias||'')+(c.enabled===false?' <span style="color:var(--warn);font-size:11px">off</span>':'')+'</div>',
+      infoHtml: '<div class="info">'+esc(base)+' &middot; '+esc(c.slash_command||'')+' &middot; '+promptInfo+(c.enabled===false ? ' &middot; <span style="color:var(--warn)">inactive</span>' : '')+(hasCustomInj ? ' &middot; <span style="color:var(--warn)">inj:custom</span>' : '')+(hasManualThink ? ' &middot; <span style="color:var(--ok)">think:manual'+(hasManualThinkGate?'[gated]':'')+'</span>' : '')+(hasFinalThink ? ' &middot; <span style="color:var(--ok)">think:final</span>' : '')+(hasCongress ? ' &middot; <span style="color:var(--ok)">congress:cfg</span>' : '')+'</div>',
+      onclickJs: 'loadModelIntoBuilder(\''+esc(c.alias||'')+'\')',
+      inactiveClass: inactive,
+      html: buildModelCard(
+        c.alias || '',
+        '<div class="name">'+((c.alias||'')===DEFAULT_MODEL?'<span style="color:gold;margin-right:4px" title="Default model">★</span>':'')+esc(c.alias||'')+(c.enabled===false?' <span style="color:var(--warn);font-size:11px">off</span>':'')+'</div>',
+        '<div class="info">'+esc(base)+' &middot; '+esc(c.slash_command||'')+' &middot; '+promptInfo+(c.enabled===false ? ' &middot; <span style="color:var(--warn)">inactive</span>' : '')+(hasCustomInj ? ' &middot; <span style="color:var(--warn)">inj:custom</span>' : '')+(hasManualThink ? ' &middot; <span style="color:var(--ok)">think:manual'+(hasManualThinkGate?'[gated]':'')+'</span>' : '')+(hasFinalThink ? ' &middot; <span style="color:var(--ok)">think:final</span>' : '')+(hasCongress ? ' &middot; <span style="color:var(--ok)">congress:cfg</span>' : '')+'</div>',
+        active,
+        inactive,
+        'loadModelIntoBuilder(\''+esc(c.alias||'')+'\')',
+        ''
+      )
+    });
+  });
+  var topAliases = MODEL_TOP_ORDER.filter(function(alias){ return entryByAlias.has(alias); });
+  var topSet = new Set(topAliases);
+  var topHtml = topAliases.map(function(alias){
+    var entry = entryByAlias.get(alias);
+    return buildModelCard(
+      alias,
+      entry.titleHtml,
+      entry.infoHtml,
+      BUILDER_STATE.originalAlias === alias ? ' active' : '',
+      entry.inactiveClass,
+      entry.onclickJs,
+      '<button class="top-model-remove" data-action="removeTopModel" data-alias="' + escAttr(alias) + '">x</button>'
+    ).replace('class="model-item', 'class="model-item drag-top');
+  }).join('');
+  var baseHtml = runtimeBases.filter(function(alias){ return !topSet.has(alias); }).map(function(alias){
+    return entryByAlias.get(alias).html;
+  }).join('');
+  var cloneHtml = cloneRows.filter(function(c){
+    return !topSet.has(String(c.alias || '').trim().toLowerCase());
+  }).map(function(c){
+    return entryByAlias.get(String(c.alias || '').trim().toLowerCase()).html;
   }).join('');
   var html = '';
+  html += '<div class="top-models-zone"><div style="padding:0 0 6px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;">Top Models</div>'
+    + '<div id="topModelsDropzone" class="top-models-dropzone' + (topAliases.length ? '' : ' empty') + '" data-action="pinTopDrop">'
+    + (topAliases.length ? topHtml : 'Drag models here to keep them at the top.')
+    + '</div><div class="top-models-help">Drag any model into this block. Drag within the block to reorder.</div></div>';
   if (runtimeBases.length) {
     var baseCollapsed = localStorage.getItem('baseModelsCollapsed') !== 'false';
     html += '<div style="padding:8px 10px 4px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;user-select:none" data-action="toggleBaseModels">'
@@ -2896,6 +3021,43 @@ function renderModelList() {
     html += '<div style="padding:8px 10px 4px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;' + (runtimeBases.length ? 'border-top:1px solid var(--border);margin-top:4px' : '') + '">Clones</div>' + cloneHtml;
   }
   $('modelListItems').innerHTML = html;
+}
+
+function saveTopModelsPreference() {
+  localStorage.setItem(MODEL_TOP_STORAGE_KEY, JSON.stringify(MODEL_TOP_ORDER || []));
+}
+
+function pinModelToTop(alias, beforeAlias) {
+  alias = String(alias || '').trim().toLowerCase();
+  beforeAlias = String(beforeAlias || '').trim().toLowerCase();
+  if (!alias) return;
+  MODEL_TOP_ORDER = (MODEL_TOP_ORDER || []).filter(function(x){ return x !== alias; });
+  if (beforeAlias) {
+    var idx = MODEL_TOP_ORDER.indexOf(beforeAlias);
+    if (idx >= 0) MODEL_TOP_ORDER.splice(idx, 0, alias);
+    else MODEL_TOP_ORDER.unshift(alias);
+  } else {
+    MODEL_TOP_ORDER.unshift(alias);
+  }
+  saveTopModelsPreference();
+  renderModelList();
+}
+
+function removeTopModel(alias) {
+  alias = String(alias || '').trim().toLowerCase();
+  if (!alias) return;
+  MODEL_TOP_ORDER = (MODEL_TOP_ORDER || []).filter(function(x){ return x !== alias; });
+  saveTopModelsPreference();
+  renderModelList();
+}
+
+function getDraggedModelAlias(ev) {
+  var raw = '';
+  if (ev && ev.dataTransfer) {
+    try { raw = ev.dataTransfer.getData('text/plain') || ''; } catch(_e) {}
+  }
+  raw = raw || CURRENT_DRAG_MODEL_ALIAS || '';
+  return String(raw || '').trim().toLowerCase();
 }
 
 
@@ -2921,6 +3083,43 @@ function toggleBaseModels() {
 document.addEventListener('click', function(e) {
   var el = e.target.closest('[data-action="toggleBaseModels"]');
   if (el) { toggleBaseModels(); return; }
+  var removeBtn = e.target.closest('[data-action="removeTopModel"]');
+  if (removeBtn) {
+    e.preventDefault();
+    e.stopPropagation();
+    removeTopModel(removeBtn.dataset.alias || '');
+    return;
+  }
+});
+
+document.addEventListener('dragstart', function(e) {
+  var el = e.target.closest('.model-item[data-model-alias]');
+  if (!el) return;
+  CURRENT_DRAG_MODEL_ALIAS = String(el.dataset.modelAlias || '').trim().toLowerCase();
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', CURRENT_DRAG_MODEL_ALIAS); } catch(_e) {}
+  }
+});
+
+document.addEventListener('dragover', function(e) {
+  var zone = e.target.closest('[data-action="pinTopDrop"], .drag-top[data-model-alias]');
+  if (!zone) return;
+  e.preventDefault();
+});
+
+document.addEventListener('drop', function(e) {
+  var zone = e.target.closest('.drag-top[data-model-alias], [data-action="pinTopDrop"]');
+  if (!zone) return;
+  e.preventDefault();
+  var alias = getDraggedModelAlias(e);
+  if (!alias) return;
+  if (zone.matches('.drag-top[data-model-alias]')) {
+    pinModelToTop(alias, zone.dataset.modelAlias || '');
+  } else {
+    pinModelToTop(alias, '');
+  }
+  CURRENT_DRAG_MODEL_ALIAS = '';
 });
 
 function newModel() {
