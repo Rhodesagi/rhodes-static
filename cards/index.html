@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RhodesCards</title>
-    <link rel="stylesheet" href="cards.css?v=21">
+    <link rel="stylesheet" href="cards.css?v=23">
     <link rel="stylesheet" href="lib/katex.min.css">
 </head>
 <body>
@@ -19,6 +19,7 @@
             </div>
             <button class="btn btn-sm" onclick="RC.showView('stats')">Stats</button>
             <button class="btn btn-sm" onclick="RC.showView('import')">Import</button>
+            <button class="btn btn-sm" onclick="RC.Palace.showPalaceList()">Palace</button>
             <button class="btn btn-sm" onclick="RC.toggleTheme()" title="Toggle theme">&#9681;</button>
             <button class="btn btn-sm" onclick="RC.showShortcutsModal()" title="Keyboard shortcuts">&#9000;</button>
         </div>
@@ -424,7 +425,104 @@
     </div>
 </div>
 
-<!-- Card Info Modal -->
+
+    <!-- Memory Palace List -->
+    <div class="view" id="view-palaces">
+        <div class="deck-header">
+            <div>
+                <button class="back-btn" onclick="RC.showView('decks')">&larr; Back</button>
+                <h2>Memory Palaces</h2>
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="alert(2)">+ New Palace</button>
+                <button class="btn btn-sm" onclick="RC.PalaceIO.importPalace()">Import</button>
+            </div>
+        </div>
+        <div id="palace-list"></div>
+    </div>
+
+    <!-- Memory Palace 3D View -->
+    <div class="view" id="view-palace" style="padding:0;overflow:hidden">
+        <div id="palace-toolbar">
+            <button class="back-btn" onclick="RC.Palace.exit()">&larr; Exit</button>
+            <span id="palace-name"></span>
+            <div class="mode-buttons">
+                <button class="mode-btn active" data-mode="walk" onclick="RC.Palace.setMode('walk')">Walk</button>
+                <button class="mode-btn" data-mode="build" onclick="RC.Palace.setMode('build')">Build</button>
+            </div>
+            <div class="palace-actions">
+                <button class="btn btn-sm" onclick="RC.Palace.savePalace()">Save</button>
+                <button class="btn btn-sm" onclick="RC.PalaceIO.exportPalace()">Export</button>
+                <button class="btn btn-sm" onclick="RC.PalaceIO.duplicatePalace()">Duplicate</button>
+            </div>
+        </div>
+        <div id="palace-canvas" style="width:100%;height:calc(100vh - 50px)"></div>
+        <div id="palace-crosshair" style="display:none">+</div>
+        <div id="palace-instructions" style="display:flex">
+            <div>Click to enter &bull; WASD to move &bull; Space to jump &bull; Shift to sprint &bull; E to interact &bull; B to build</div>
+        </div>
+        <div id="builder-panel" style="display:none">
+            <h3>Build</h3>
+            <div class="builder-section">
+                <h4>Surfaces</h4>
+                <button onclick="RC.PalaceBuilder.startPlace('surface','floor')">Floor</button>
+                <button onclick="RC.PalaceBuilder.startPlace('surface','wall')">Wall</button>
+                <button onclick="RC.PalaceBuilder.startPlace('surface','ceiling')">Ceiling</button>
+                <button onclick="RC.PalaceBuilder.startPlace('surface','ramp')">Ramp</button>
+            </div>
+            <div class="builder-section">
+                <h4>Connectors</h4>
+                <button onclick="RC.PalaceBuilder.startPlace('connector','stairs')">Stairs</button>
+                <button onclick="RC.PalaceBuilder.startPlace('connector','elevator')">Elevator</button>
+                <button onclick="RC.PalaceBuilder.startPlace('connector','bridge')">Bridge</button>
+                <button onclick="RC.PalaceBuilder.startPlace('connector','ladder')">Ladder</button>
+                <button onclick="RC.PalaceBuilder.startPlace('connector','portal')">Portal</button>
+                <button onclick="RC.PalaceBuilder.startPlace('connector','road')">Road</button>
+            </div>
+            <div class="builder-section">
+                <h4>Loci (Card Anchors)</h4>
+                <button onclick="RC.PalaceBuilder.startPlace('locus','orb')">Orb</button>
+                <button onclick="RC.PalaceBuilder.startPlace('locus','frame')">Frame</button>
+                <button onclick="RC.PalaceBuilder.startPlace('locus','pedestal')">Pedestal</button>
+                <button onclick="RC.PalaceBuilder.startPlace('locus','door')">Door</button>
+                <button onclick="RC.PalaceBuilder.startPlace('locus','statue')">Statue</button>
+                <button onclick="RC.PalaceBuilder.startPlace('locus','glow')">Glow</button>
+            </div>
+            <div id="builder-props"></div>
+        </div>
+        <div id="palace-review-overlay" style="display:none"></div>
+    </div>
+
+    
+    <!-- Palace Create Modal -->
+    <div class="modal-overlay" id="palaceCreateModal" style="display:none" onclick="if(event.target===this)RC.Palace._cancelCreate()">
+        <div class="modal">
+            <h3>Create Memory Palace</h3>
+            <div style="margin:16px 0">
+                <label style="display:block;margin-bottom:8px;color:var(--text-dim)">Palace name</label>
+                <input type="text" id="palaceCreateInput" class="modal-input" placeholder="e.g. Medical Tower, Latin Villa..."
+                    onkeydown="if(event.key==='Enter')RC.Palace._confirmCreate()">
+            </div>
+            <div class="form-actions">
+                <button class="btn" onclick="RC.Palace._cancelCreate()">Cancel</button>
+                <button class="btn btn-primary" onclick="RC.Palace._confirmCreate()">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Palace Delete Modal -->
+    <div class="modal-overlay" id="palaceDeleteModal" style="display:none" onclick="if(event.target===this)RC.Palace._cancelDelete()">
+        <div class="modal">
+            <h3>Delete Palace</h3>
+            <p style="margin:16px 0;color:var(--text-dim)">Delete "<span id="palaceDeleteName"></span>"? This cannot be undone.</p>
+            <div class="form-actions">
+                <button class="btn" onclick="RC.Palace._cancelDelete()">Cancel</button>
+                <button class="btn btn-danger" onclick="RC.Palace._confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Info Modal -->
 <div class="modal-overlay" id="cardInfoModal" style="display:none" onclick="if(event.target===this)RC.closeCardInfo()">
     <div class="modal modal-wide">
         <div style="display:flex;justify-content:space-between;align-items:center">
@@ -435,6 +533,9 @@
     </div>
 </div>
 
+<!-- Three.js for Memory Palace -->
+<script src="lib/three.min.js?v=137"></script>
+<script src="lib/PointerLockControls.js?v=2"></script>
 <!-- Vendor libs -->
 <script src="lib/marked.min.js"></script>
 <script src="lib/purify.min.js"></script>
@@ -466,6 +567,24 @@
 <script src="js/editor-toolbar.js?v=10"></script>
 <script src="js/editreview.js?v=10"></script>
 <script src="js/cardinfo.js?v=10"></script>
+<!-- Palace debug -->
+<script>
+window._palaceErrors = [];
+window.addEventListener('error', function(e) {
+    if (e.filename && e.filename.indexOf('palace') !== -1) {
+        window._palaceErrors.push(e.filename + ':' + e.lineno + ' ' + e.message);
+        console.error('PALACE LOAD ERROR:', e.filename, e.lineno, e.message);
+    }
+});
+</script>
+<!-- Memory Palace modules -->
+<script src="js/palace.js?v=7"></script>
+<script src="js/palace-renderer.js?v=3" onerror="console.error('FAILED TO LOAD: palace-renderer.js')"></script>
+<script src="js/palace-walker.js?v=3" onerror="console.error('FAILED TO LOAD: palace-walker.js')"></script>
+<script src="js/palace-builder.js?v=3" onerror="console.error('FAILED TO LOAD: palace-builder.js')"></script>
+<script src="js/palace-traverse.js?v=3" onerror="console.error('FAILED TO LOAD: palace-traverse.js')"></script>
+<script src="js/palace-loci.js?v=3" onerror="console.error('FAILED TO LOAD: palace-loci.js')"></script>
+<script src="js/palace-io.js?v=3" onerror="console.error('FAILED TO LOAD: palace-io.js')"></script>
 <script src="js/app.js?v=10"></script>
 </body>
 </html>

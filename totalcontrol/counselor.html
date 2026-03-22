@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>TOTAL CONTROL — COUNSELOR</title>
+<title>TOTAL CONTROL — ADVISOR</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#050505;--panel:#0a0a0a;--metal:#111111;--cyan:#00ffcc;--cyan-dim:#009988;--green:#00ff66;--red:#ff3b30;--text:#e0e0e0;--text-dim:#505050}
@@ -24,16 +24,16 @@ button{-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:trans
 
 /* Messages */
 .messages{flex:1;overflow-y:auto;padding:8px 12px;-webkit-overflow-scrolling:touch;position:relative;z-index:1}
-.msg{padding:8px 10px;margin-bottom:6px;font-size:13px;line-height:1.5;max-width:85%;border-radius:4px;word-wrap:break-word}
+.msg{padding:10px 12px;margin-bottom:8px;font-size:16px;line-height:1.5;max-width:85%;border-radius:4px;word-wrap:break-word}
 .msg.user{margin-left:auto;background:rgba(0,255,204,0.08);border:1px solid rgba(0,255,204,0.3);color:var(--cyan)}
 .msg.assistant{margin-right:auto;background:rgba(0,255,102,0.04);border:1px solid rgba(0,255,102,0.2);color:var(--text)}
 .msg.system{margin:0 auto;text-align:center;color:var(--text-dim);font-size:11px;border:none;background:none}
 .msg .tool-result{color:var(--green);font-size:12px;margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,255,102,0.2)}
-.thinking{color:var(--green);font-size:12px;padding:8px 12px;opacity:0.7}
+.thinking{color:var(--green);font-size:14px;padding:8px 12px;opacity:0.7}
 
 /* Command cards */
 .cmd-card{background:var(--metal);border:2px solid var(--cyan-dim);padding:12px;margin:8px 0;font-size:12px}
-.cmd-card .label{color:var(--cyan);font-weight:bold;margin-bottom:8px}
+.cmd-card .label{color:var(--cyan);font-weight:bold;margin-bottom:8px;font-size:15px}
 .cmd-card .actions{display:flex;gap:8px;margin-top:8px}
 .cmd-card .actions button{flex:1;padding:8px;font-size:12px;font-weight:bold;border:none}
 .cmd-card .actions .apply{background:var(--green);color:var(--bg)}
@@ -41,7 +41,7 @@ button{-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:trans
 
 /* Input area */
 .input-area{display:flex;gap:6px;padding:8px 10px;background:var(--metal);flex-shrink:0;position:relative;z-index:1;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
-.input-area input{flex:1;background:var(--bg);border:1px solid var(--cyan-dim);color:var(--cyan);font-family:inherit;font-size:14px;padding:8px 10px;outline:none}
+.input-area input{flex:1;background:var(--bg);border:1px solid var(--cyan-dim);color:var(--cyan);font-family:inherit;font-size:16px;padding:8px 10px;outline:none}
 .input-area input::placeholder{color:var(--text-dim)}
 .mic-btn{background:none;border:1px solid var(--cyan-dim);color:var(--cyan);padding:8px 10px;font-size:16px}
 .mic-btn.recording{border-color:var(--red);color:var(--red);animation:pulse 1s infinite}
@@ -61,7 +61,9 @@ button{-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:trans
   <button class="clear" onclick="clearHistory()">CLEAR</button>
 </div>
 
-<div class="messages" id="messages"></div>
+<div class="messages" id="messages">
+  <div class="msg assistant" id="rhodes-greeting" style="margin-top:40px">Hi, I'm Rhodes — your Total Control Advisor.<br><br>I can help you block distracting apps and sites, set up schedules, and earn access through exercise.<br><br>Tell me what sites tend to distract you.</div>
+</div>
 
 <div class="input-area">
   <input type="text" id="input" placeholder="Type a message..." autocomplete="off">
@@ -166,7 +168,15 @@ function renderMessages() {
   if (isStreaming) {
     html += '<div class="thinking">Thinking...</div>';
   }
-  el.innerHTML = html;
+  // Keep static greeting if no user messages yet
+  var greetingEl = document.getElementById('rhodes-greeting');
+  if (messages.some(function(m) { return m.role === 'user'; })) {
+    // User has sent messages — hide static greeting, show chat
+    el.innerHTML = html;
+  } else if (html.trim()) {
+    el.innerHTML = html;
+  }
+  // else leave the static greeting visible
   el.scrollTop = el.scrollHeight;
 }
 
@@ -363,45 +373,54 @@ function toggleMic() {
 }
 
 function startMic() {
-  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-    // Fallback: use native bridge
-    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tcCounselor) {
-      window.webkit.messageHandlers.tcCounselor.postMessage({ action: 'startListening' });
-    }
-    return;
+  // Always use native bridge — Web Speech API doesn't work in WKWebView
+  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tcCounselor) {
+    window.webkit.messageHandlers.tcCounselor.postMessage({ action: 'startListening' });
+    isRecording = true;
+    document.getElementById('mic-btn').classList.add('recording');
   }
-  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  recognition = new SR();
-  recognition.continuous = true;
-  recognition.interimResults = true;
-  recognition.lang = 'en-US';
-
-  recognition.onresult = function(e) {
-    var transcript = '';
-    for (var i = 0; i < e.results.length; i++) {
-      transcript += e.results[i][0].transcript;
-    }
-    document.getElementById('input').value = transcript;
-  };
-
-  recognition.onerror = function(e) { stopMic(); };
-  recognition.onend = function() { stopMic(); };
-
-  recognition.start();
-  isRecording = true;
-  document.getElementById('mic-btn').classList.add('recording');
 }
 
+var micSilenceTimer = null;
+
 function stopMic() {
-  if (recognition) { recognition.stop(); recognition = null; }
+  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tcCounselor) {
+    window.webkit.messageHandlers.tcCounselor.postMessage({ action: 'stopListening' });
+  }
   isRecording = false;
   document.getElementById('mic-btn').classList.remove('recording');
-  // Auto-send if there's text
+  clearTimeout(micSilenceTimer);
+  setTimeout(function() {
+    var input = document.getElementById('input');
+    if (input.value.trim()) {
+      sendMessage();
+    }
+  }, 300);
+}
+
+// Called by native bridge with live transcript
+window.setVoiceTranscript = function(text) {
+  document.getElementById('input').value = text;
+  // Reset 2-second silence timer — auto-send if no new transcript for 2s
+  clearTimeout(micSilenceTimer);
+  if (text.trim()) {
+    micSilenceTimer = setTimeout(function() {
+      if (isRecording) {
+        stopMic();
+      }
+    }, 2000);
+  }
+};
+
+// Called by native bridge when voice recording stops
+window.onVoiceStopped = function() {
+  isRecording = false;
+  document.getElementById('mic-btn').classList.remove('recording');
   var input = document.getElementById('input');
   if (input.value.trim()) {
     sendMessage();
   }
-}
+};
 
 // ── TTS ──
 function speak(msgIdx) {
@@ -416,25 +435,21 @@ function speak(msgIdx) {
   window.speechSynthesis.speak(u);
 }
 
-// Receive voice transcript from native bridge
-window.setVoiceTranscript = function(text) {
-  document.getElementById('input').value = text;
-};
 
-// ── Onboarding ──
-function checkOnboarding() {
-  if (messages.length === 0) {
-    messages.push({ role: 'user', content: '[ONBOARDING_START] I just installed TotalControl. Help me set up my blocking rules.' });
-    saveHistory();
-    callAPI();
-  }
-}
 
 // ── Init ──
 loadHistory();
-if (messages.length === 0) {
-  setTimeout(checkOnboarding, 500);
+// Always ensure Rhodes greeting is the first message
+var greeting = "Hi, I'm Rhodes — your Total Control Advisor.
+
+I can help you block distracting apps and sites, set up schedules, and earn access through exercise.
+
+Tell me what sites tend to distract you.";
+if (messages.length === 0 || (messages[0].role !== 'assistant' || !messages[0].content.includes('Total Control Advisor'))) {
+  messages.unshift({ role: 'assistant', content: greeting });
+  saveHistory();
 }
+renderMessages();
 </script>
 </body>
 </html>

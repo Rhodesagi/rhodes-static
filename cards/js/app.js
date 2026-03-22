@@ -7,6 +7,7 @@ RC.showView = function(name) {
     if (name === 'decks') RC.loadDecks();
     if (name === 'stats') RC.loadStats();
     if (name === 'import') RC.loadImportLanguages();
+    if (name === 'palaces') RC.Palace.showPalaceList();
 };
 
 // ── Keyboard shortcuts (customizable) ──

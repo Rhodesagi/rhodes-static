@@ -124,7 +124,7 @@ textarea {
 }
 .model-list {
   background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-  overflow-y: auto; max-height: 75vh;
+  overflow-y: auto; max-height: calc(100vh - 60px);
 }
 .model-list-header {
   padding: 10px 14px; border-bottom: 1px solid var(--border);
@@ -3022,21 +3022,31 @@ function renderModelList() {
   }).map(function(c){
     return entryByAlias.get(String(c.alias || '').trim().toLowerCase()).html;
   }).join('');
-  var html = '';
-  html += '<div class="top-models-zone"><div style="padding:0 0 6px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;">Top Models</div>'
-    + '<div id="topModelsDropzone" class="top-models-dropzone' + (topAliases.length ? '' : ' empty') + '" data-action="pinTopDrop">'
-    + (topAliases.length ? topHtml : 'Drag models here to keep them at the top.')
-    + '</div><div class="top-models-help">Drag any model into this block. Drag within the block to reorder.</div></div>';
-  if (runtimeBases.length) {
-    var baseCollapsed = localStorage.getItem('baseModelsCollapsed') !== 'false';
-    html += '<div style="padding:8px 10px 4px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;user-select:none" data-action="toggleBaseModels">'
-      + '<span id="baseModelsArrow" style="display:inline-block;transition:transform .2s;transform:rotate(' + (baseCollapsed ? '0' : '90') + 'deg);margin-right:4px">\u25B6</span>Base Models (' + runtimeBases.length + ')</div>'
-      + '<div id="baseModelsList" style="' + (baseCollapsed ? 'display:none' : '') + '">' + baseHtml + '</div>';
-  }
-  if (cloneRows.length) {
-    html += '<div style="padding:8px 10px 4px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;' + (runtimeBases.length ? 'border-top:1px solid var(--border);margin-top:4px' : '') + '">Clones</div>' + cloneHtml;
-  }
+  // Build single flat ordered list — user controls order via drag-and-drop
+  var allAliases = [];
+  // Start with saved order (MODEL_TOP_ORDER), then add remaining
+  var seen = new Set();
+  MODEL_TOP_ORDER.forEach(function(a) {
+    if (entryByAlias.has(a)) { allAliases.push(a); seen.add(a); }
+  });
+  // Add remaining bases then clones
+  runtimeBases.forEach(function(a) { if (!seen.has(a)) { allAliases.push(a); seen.add(a); } });
+  cloneRows.forEach(function(cr) {
+    var a = String(cr.alias || '').trim().toLowerCase();
+    if (!seen.has(a) && entryByAlias.has(a)) { allAliases.push(a); seen.add(a); }
+  });
+  var html = allAliases.map(function(alias) {
+    var entry = entryByAlias.get(alias);
+    return buildModelCard(
+      alias, entry.titleHtml, entry.infoHtml,
+      BUILDER_STATE.originalAlias === alias ? ' active' : '',
+      entry.inactiveClass, entry.onclickJs, ''
+    );
+  }).join('');
   $('modelListItems').innerHTML = html;
+  // Make all items draggable
+  var items = document.querySelectorAll('#modelListItems .model-item');
+  for (var i = 0; i < items.length; i++) { items[i].setAttribute('draggable', 'true'); }
 }
 
 function saveTopModelsPreference() {
@@ -3120,61 +3130,56 @@ document.addEventListener('dragstart', function(e) {
 });
 
 document.addEventListener('dragend', function(e) {
-  // Reset opacity on all items
   var items = document.querySelectorAll('.model-item');
   for (var i = 0; i < items.length; i++) {
     items[i].style.opacity = '';
     items[i].style.borderTop = '';
-    items[i].style.borderBottom = '';
   }
-  var dz = document.getElementById('topModelsDropzone');
-  if (dz) dz.style.outline = '';
   CURRENT_DRAG_MODEL_ALIAS = '';
 });
 
 document.addEventListener('dragover', function(e) {
-  var zone = e.target.closest('[data-action="pinTopDrop"], .drag-top[data-model-alias]');
-  if (!zone) return;
+  var target = e.target.closest('.model-item[data-model-alias]');
+  if (!target) return;
   e.preventDefault();
   if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-  // Visual feedback: highlight drop target
-  if (zone.matches('.drag-top[data-model-alias]')) {
-    // Clear previous highlights
-    var tops = document.querySelectorAll('.drag-top');
-    for (var i = 0; i < tops.length; i++) { tops[i].style.borderTop = ''; }
-    zone.style.borderTop = '2px solid #4ade80';
-  } else {
-    zone.style.outline = '2px solid #4ade80';
-  }
+  // Clear previous highlights, set new one
+  var items = document.querySelectorAll('.model-item');
+  for (var i = 0; i < items.length; i++) { items[i].style.borderTop = ''; }
+  target.style.borderTop = '2px solid #4ade80';
 });
 
 document.addEventListener('dragleave', function(e) {
-  var zone = e.target.closest('[data-action="pinTopDrop"], .drag-top[data-model-alias]');
-  if (!zone) return;
-  zone.style.borderTop = '';
-  zone.style.outline = '';
+  var target = e.target.closest('.model-item[data-model-alias]');
+  if (target) target.style.borderTop = '';
 });
 
 document.addEventListener('drop', function(e) {
-  var zone = e.target.closest('.drag-top[data-model-alias], [data-action="pinTopDrop"]');
-  if (!zone) return;
+  var target = e.target.closest('.model-item[data-model-alias]');
+  if (!target) return;
   e.preventDefault();
-  // Clear visual feedback
-  var tops = document.querySelectorAll('.drag-top');
-  for (var i = 0; i < tops.length; i++) { tops[i].style.borderTop = ''; }
-  var dz = document.getElementById('topModelsDropzone');
-  if (dz) dz.style.outline = '';
+  var items = document.querySelectorAll('.model-item');
+  for (var i = 0; i < items.length; i++) { items[i].style.borderTop = ''; }
   var alias = getDraggedModelAlias(e);
-  if (!alias) return;
-  if (zone.matches('.drag-top[data-model-alias]')) {
-    var targetAlias = zone.dataset.modelAlias || '';
-    if (alias !== targetAlias) {
-      pinModelToTop(alias, targetAlias);
-    }
-  } else {
-    pinModelToTop(alias, '');
+  var targetAlias = (target.dataset.modelAlias || '').trim().toLowerCase();
+  if (!alias || alias === targetAlias) return;
+  // Reorder: move alias to position of targetAlias in MODEL_TOP_ORDER
+  // First, build full current order from DOM
+  var currentOrder = [];
+  for (var j = 0; j < items.length; j++) {
+    var a = (items[j].dataset.modelAlias || '').trim().toLowerCase();
+    if (a) currentOrder.push(a);
   }
-  CURRENT_DRAG_MODEL_ALIAS = '';
+  // Remove dragged item
+  currentOrder = currentOrder.filter(function(x) { return x !== alias; });
+  // Insert before target
+  var idx = currentOrder.indexOf(targetAlias);
+  if (idx >= 0) currentOrder.splice(idx, 0, alias);
+  else currentOrder.push(alias);
+  // Save as full order
+  MODEL_TOP_ORDER = currentOrder;
+  saveTopModelsPreference();
+  renderModelList();
 });
 
 function filterModelList(query) {

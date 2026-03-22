@@ -90,42 +90,43 @@ button:focus{outline:none}
       <p style="color:var(--text-dim)">Loading...</p>
     </div>
     <div class="card" id="today-workouts"></div>
-    <button class="btn btn-green" onclick="showLogForm()">+ LOG WORKOUT</button>
+    
 
-    <div id="log-form" style="display:none">
-      <div class="card">
-        <h2>LOG WORKOUT</h2>
-        <div class="form-row">
-          <label>TYPE</label>
-          <select id="log-type">
-            <option value="gym">Gym</option>
-            <option value="running">Running</option>
-            <option value="cycling">Cycling</option>
-            <option value="swimming">Swimming</option>
-            <option value="walking">Walking</option>
-            <option value="yoga">Yoga</option>
-            <option value="strength">Strength</option>
-            <option value="hiking">Hiking</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <label>DURATION (minutes)</label>
-          <input type="number" id="log-duration" value="30" min="5" max="300">
-        </div>
-        <button class="btn btn-amber" onclick="logWorkout()">LOG</button>
-        <button class="btn btn-outline" onclick="hideLogForm()">CANCEL</button>
-      </div>
-    </div>
+
   </div>
 
   <!-- RUN -->
   <div class="section" id="sec-run">
-    <div class="card" style="text-align:center;padding:30px">
+    <div id="run-idle" class="card" style="text-align:center;padding:30px">
       <div style="font-size:60px;margin-bottom:12px">&#127939;</div>
       <p style="font-size:16px;font-weight:bold;margin-bottom:8px">READY TO RUN</p>
-      <p style="color:var(--text-dim);font-size:12px;margin-bottom:20px">Track pace, distance, and route on a live map</p>
+      <p style="color:var(--text-dim);font-size:12px;margin-bottom:20px">Track pace, distance, and time</p>
       <button class="run-btn" onclick="startRun()">START</button>
+    </div>
+    <div id="run-active" style="display:none">
+      <div class="card" style="text-align:center">
+        <div style="color:var(--green);font-size:11px;letter-spacing:2px;margin-bottom:8px">RUNNING</div>
+        <div id="run-pace" style="font-size:48px;font-weight:bold;color:var(--cyan)">0:00</div>
+        <div style="color:var(--text-dim);font-size:11px">min/km</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <div class="card" style="flex:1;text-align:center">
+          <div style="color:var(--text-dim);font-size:10px;letter-spacing:1px">DISTANCE</div>
+          <div id="run-dist" style="font-size:24px;font-weight:bold;color:var(--text)">0.00</div>
+          <div style="color:var(--text-dim);font-size:10px">km</div>
+        </div>
+        <div class="card" style="flex:1;text-align:center">
+          <div style="color:var(--text-dim);font-size:10px;letter-spacing:1px">TIME</div>
+          <div id="run-time" style="font-size:24px;font-weight:bold;color:var(--text)">00:00</div>
+          <div style="color:var(--text-dim);font-size:10px">&nbsp;</div>
+        </div>
+        <div class="card" style="flex:1;text-align:center">
+          <div style="color:var(--text-dim);font-size:10px;letter-spacing:1px">CALORIES</div>
+          <div id="run-cal" style="font-size:24px;font-weight:bold;color:var(--text)">0</div>
+          <div style="color:var(--text-dim);font-size:10px">cal</div>
+        </div>
+      </div>
+      <button class="btn btn-red" onclick="stopRun()" style="margin-top:12px">STOP RUN</button>
     </div>
   </div>
 
@@ -247,10 +248,32 @@ async function logWorkout() {
 function startRun() {
   if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tcFitness) {
     window.webkit.messageHandlers.tcFitness.postMessage({ action: 'startRun' });
-  } else {
-    alert('Run tracking requires the native app');
+    document.getElementById('run-idle').style.display = 'none';
+    document.getElementById('run-active').style.display = 'block';
   }
 }
+
+function stopRun() {
+  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tcFitness) {
+    window.webkit.messageHandlers.tcFitness.postMessage({ action: 'stopRun' });
+  }
+  document.getElementById('run-idle').style.display = '';
+  document.getElementById('run-active').style.display = 'none';
+}
+
+window.onRunUpdate = function(d) {
+  var mins = Math.floor(d.elapsed / 60);
+  var secs = d.elapsed % 60;
+  document.getElementById('run-time').textContent = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+  document.getElementById('run-dist').textContent = (d.distance / 1000).toFixed(2);
+  document.getElementById('run-cal').textContent = Math.round(d.calories);
+  // Pace: min/km
+  if (d.pace > 0 && d.pace < 30) {
+    var pm = Math.floor(d.pace);
+    var ps = Math.round((d.pace - pm) * 60);
+    document.getElementById('run-pace').textContent = pm + ':' + (ps < 10 ? '0' : '') + ps;
+  }
+};
 
 // ── History ──
 async function loadHistory(days, tabEl) {

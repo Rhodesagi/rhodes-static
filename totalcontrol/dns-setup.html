@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>TOTAL CONTROL — DNS SETUP</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050505;--panel:#0a0a0a;--metal:#111111;--cyan:#00ffcc;--cyan-dim:#009988;--green:#00ff66;--red:#ff3b30;--text:#e0e0e0;--text-dim:#505050}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono','Courier New',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.1) 0px,rgba(0,0,0,0.1) 1px,transparent 1px,transparent 2px);pointer-events:none;z-index:9998}
+body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:linear-gradient(rgba(0,255,204,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,204,0.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:9999}
+button{-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:transparent;font-family:inherit;cursor:pointer}
+
+.container{max-width:440px;width:100%;position:relative;z-index:1}
+
+.icon{font-size:60px;text-align:center;margin-bottom:16px}
+h1{color:var(--cyan);font-family:'Orbitron',monospace;font-size:20px;letter-spacing:3px;text-align:center;margin-bottom:8px;text-shadow:0 0 20px rgba(0,255,204,0.4)}
+.subtitle{color:var(--text);font-size:13px;text-align:center;margin-bottom:24px;line-height:1.6}
+
+.features{margin-bottom:24px}
+.feature{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;color:var(--green)}
+.feature .check{font-size:16px}
+
+.btn{display:block;width:100%;padding:14px;font-family:inherit;font-size:15px;font-weight:bold;cursor:pointer;letter-spacing:1px;border:none;text-align:center;margin-bottom:10px}
+.btn-cyan{background:var(--cyan);color:var(--bg)}
+.btn-green{background:var(--green);color:var(--bg)}
+.btn-outline{background:none;border:2px solid var(--green);color:var(--green)}
+.btn-dim{background:none;border:none;color:var(--text-dim);font-size:12px;padding:10px}
+
+/* Steps view */
+.steps{display:none}
+.steps.active{display:block}
+.step{background:var(--metal);border:1px solid var(--cyan-dim);padding:14px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start}
+.step-num{background:var(--cyan);color:var(--bg);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;flex-shrink:0}
+.step-content{flex:1}
+.step-title{font-size:14px;font-weight:bold;color:var(--cyan);margin-bottom:4px}
+.step-desc{font-size:12px;color:var(--text);line-height:1.5}
+.step-img{width:100%;margin-top:8px;border:1px solid var(--cyan-dim);display:none}
+.step-video{width:100%;margin-top:8px;display:none}
+
+.arrow{text-align:center;color:var(--cyan);font-size:20px;margin-bottom:10px}
+
+/* Status */
+.status{text-align:center;font-size:12px;color:var(--red);margin-bottom:12px;min-height:16px}
+
+/* Intro view */
+.intro{display:block}
+.intro.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- INTRO VIEW -->
+  <div class="intro" id="intro-view">
+    <div class="icon">&#128737;</div>
+    <h1>ENABLE DNS FILTER</h1>
+    <div class="subtitle">TotalControl will filter DNS to block distracting sites across all apps and browsers.</div>
+
+    <div class="features">
+      <div class="feature"><span class="check">&#10003;</span> Blocks sites in Safari, Chrome, and all apps</div>
+      <div class="feature"><span class="check">&#10003;</span> Works on WiFi and cellular</div>
+      <div class="feature"><span class="check">&#10003;</span> You can disable it anytime in Settings</div>
+    </div>
+
+    <button class="btn btn-cyan" onclick="enableDNS()">ENABLE DNS FILTER</button>
+    <div class="status" id="status"></div>
+    <button class="btn btn-dim" onclick="skip()">SKIP FOR NOW</button>
+  </div>
+
+  <!-- STEPS VIEW (shown after DNS config saved) -->
+  <div class="steps" id="steps-view">
+    <div class="icon">&#9989;</div>
+    <h1>ALMOST DONE</h1>
+    <div class="subtitle">DNS config installed. Now activate it in Settings:</div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Open Settings</div>
+        <div class="step-desc">Tap the button below to go to Settings</div>
+        <!-- Add screenshots here later: -->
+        <!-- <img class="step-img" src="https://rhodesagi.com/totalcontrol/img/step1.png" style="display:block"> -->
+      </div>
+    </div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Tap General</div>
+        <div class="step-desc">Scroll down and tap <b style="color:var(--cyan)">General</b></div>
+      </div>
+    </div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">VPN & Device Management</div>
+        <div class="step-desc">Near the bottom, tap <b style="color:var(--cyan)">VPN & Device Management</b></div>
+      </div>
+    </div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">DNS</div>
+        <div class="step-desc">Tap <b style="color:var(--cyan)">DNS</b> and select <b style="color:var(--cyan)">TotalControl</b></div>
+      </div>
+    </div>
+
+    <!-- Video placeholder -->
+    <!-- <video class="step-video" src="https://rhodesagi.com/totalcontrol/vid/dns-setup.mp4" controls style="display:block"></video> -->
+
+    <button class="btn btn-cyan" onclick="openSettings()" style="margin-top:16px">OPEN SETTINGS</button>
+    <button class="btn btn-outline" onclick="done()">DONE — I ACTIVATED IT</button>
+    <button class="btn btn-dim" onclick="skip()">SKIP FOR NOW</button>
+  </div>
+</div>
+
+<script>
+var TOKEN = window.__TC_TOKEN__ || '';
+var API = 'https://rhodesagi.com';
+
+function headers() {
+  return {'Content-Type':'application/json','Authorization':'Bearer '+TOKEN};
+}
+
+async function enableDNS() {
+  var statusEl = document.getElementById('status');
+  statusEl.textContent = 'Configuring DNS...';
+
+  // Tell native app to configure NEDNSSettingsManager
+  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tcDNS) {
+    window.webkit.messageHandlers.tcDNS.postMessage({action:'enableDNS'});
+  } else {
+    statusEl.textContent = 'Native bridge not available';
+  }
+}
+
+// Called by native bridge after DNS config saved
+window.onDNSSaved = function(success, error) {
+  if (success) {
+    document.getElementById('intro-view').classList.add('hidden');
+    document.getElementById('steps-view').classList.add('active');
+  } else {
+    document.getElementById('status').textContent = error || 'DNS setup failed';
+  }
+};
+
+// Called by native bridge if DNS auto-enabled (no steps needed)
+window.onDNSEnabled = function() {
+  done();
+};
+
+function openSettings() {
+  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tcDNS) {
+    window.webkit.messageHandlers.tcDNS.postMessage({action:'openSettings'});
+  }
+}
+
+function done() {
+  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tcDNS) {
+    window.webkit.messageHandlers.tcDNS.postMessage({action:'done'});
+  }
+}
+
+function skip() {
+  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tcDNS) {
+    window.webkit.messageHandlers.tcDNS.postMessage({action:'skip'});
+  }
+}
+</script>
+</body>
+</html>

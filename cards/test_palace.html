@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html><head><title>Palace Test</title></head>
+<body style="background:#111;color:#eee;font-family:monospace;padding:20px">
+<h2>Palace Module Test</h2>
+<div id="results"></div>
+<script>
+var RC = window.RC || {};
+var results = document.getElementById('results');
+function log(msg) { results.innerHTML += '<div>' + msg + '</div>'; }
+</script>
+<script src="/cards/lib/three.min.js" onerror="log('FAIL: three.min.js')"></script>
+<script>log('THREE loaded: ' + (typeof THREE !== 'undefined'));</script>
+<script src="/cards/lib/PointerLockControls.js?v=1" onerror="log('FAIL: PointerLockControls.js')"></script>
+<script>log('PointerLockControls: ' + (typeof THREE !== 'undefined' && typeof THREE.PointerLockControls !== 'undefined'));</script>
+<script src="/cards/js/utils.js?v=10" onerror="log('FAIL: utils.js')"></script>
+<script src="/cards/js/api.js?v=10" onerror="log('FAIL: api.js')"></script>
+<script>log('RC exists: ' + (typeof RC !== 'undefined'));</script>
+<script src="/cards/js/palace.js?v=5" onerror="log('FAIL: palace.js')"></script>
+<script>log('RC.Palace: ' + (typeof RC.Palace !== 'undefined'));</script>
+<script>log('RC.Palace.promptCreate: ' + (typeof RC.Palace !== 'undefined' && typeof RC.Palace.promptCreate));</script>
+<script src="/cards/js/palace-renderer.js?v=3" onerror="log('FAIL: palace-renderer.js')"></script>
+<script>log('RC.PalaceRenderer: ' + (typeof RC.PalaceRenderer !== 'undefined'));</script>
+<script src="/cards/js/palace-walker.js?v=3" onerror="log('FAIL: palace-walker.js')"></script>
+<script>log('RC.PalaceWalker: ' + (typeof RC.PalaceWalker !== 'undefined'));</script>
+<script src="/cards/js/palace-builder.js?v=3" onerror="log('FAIL: palace-builder.js')"></script>
+<script>log('RC.PalaceBuilder: ' + (typeof RC.PalaceBuilder !== 'undefined'));</script>
+<script src="/cards/js/palace-traverse.js?v=3" onerror="log('FAIL: palace-traverse.js')"></script>
+<script>log('RC.PalaceTraverse: ' + (typeof RC.PalaceTraverse !== 'undefined'));</script>
+<script src="/cards/js/palace-loci.js?v=3" onerror="log('FAIL: palace-loci.js')"></script>
+<script>log('RC.PalaceLoci: ' + (typeof RC.PalaceLoci !== 'undefined'));</script>
+<script src="/cards/js/palace-io.js?v=3" onerror="log('FAIL: palace-io.js')"></script>
+<script>log('RC.PalaceIO: ' + (typeof RC.PalaceIO !== 'undefined'));</script>
+<script>log('--- ALL DONE ---');</script>
+</body></html>

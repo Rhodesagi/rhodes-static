@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Three.js Test</title></head>
+<body style="background:#111;color:#0f0;font:16px monospace;padding:20px">
+<h2>Three.js Load Test</h2>
+<pre id="log"></pre>
+<script>
+function log(msg) { document.getElementById('log').textContent += msg + '\n'; }
+log('Starting...');
+</script>
+<script src="lib/three.min.js?v=137"></script>
+<script>
+log('After three.min.js load');
+log('typeof THREE = ' + typeof THREE);
+if (typeof THREE !== 'undefined') {
+    log('THREE.REVISION = ' + THREE.REVISION);
+    log('THREE.Vector3 = ' + typeof THREE.Vector3);
+    log('THREE.Mesh = ' + typeof THREE.Mesh);
+    log('THREE.Scene = ' + typeof THREE.Scene);
+} else {
+    log('ERROR: THREE is undefined!');
+    log('window.THREE = ' + typeof window.THREE);
+    log('self.THREE = ' + typeof self.THREE);
+    log('globalThis.THREE = ' + typeof globalThis.THREE);
+}
+</script>
+<script src="lib/PointerLockControls.js?v=2"></script>
+<script>
+if (typeof THREE !== 'undefined') {
+    log('THREE.PointerLockControls = ' + typeof THREE.PointerLockControls);
+    try {
+        var v = new THREE.Vector3(1,2,3);
+        log('new Vector3(1,2,3) = ' + v.x + ',' + v.y + ',' + v.z);
+        log('SUCCESS - Three.js fully working');
+    } catch(e) {
+        log('Vector3 creation error: ' + e.message);
+    }
+} else {
+    log('Skipping PLC test - THREE undefined');
+}
+</script>
+</body></html>
