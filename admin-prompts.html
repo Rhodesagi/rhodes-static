@@ -602,6 +602,7 @@ body .tab:hover {
                     <option value="custom">User</option>
                     <option value="set_system_prompt">Set System Prompt</option>
                     <option value="fine_tune_yourself">Fine Tune Yourself</option>
+                    <option value="write_system_prompt">Write System Prompt (seed-only, no-op)</option>
                     <option value="congress_read_law">Law Search (congress_read_law)</option>
                     <option value="web_search">Web Search</option>
                     <option value="web_fetch">Web Fetch</option>
@@ -1829,6 +1830,11 @@ function applySeedToolPreset() {
     $('bSeedToolId').value = 'tc_fine_tune_yourself';
     $('bSeedToolArgs').value = JSON.stringify({prompt: ''}, null, 2);
     $('bSeedToolResult').value = defaultIdentityToolResponse('fine_tune_yourself');
+  } else if (preset === 'write_system_prompt') {
+    $('bSeedToolName').value = 'write_system_prompt';
+    $('bSeedToolId').value = 'tc_write_system_prompt';
+    $('bSeedToolArgs').value = JSON.stringify({prompt: ''}, null, 2);
+    $('bSeedToolResult').value = JSON.stringify({success: true, message: 'System prompt recorded. Seed artifact only.'}, null, 2);
   } else if (preset === 'congress_read_law') {
     $('bSeedToolName').value = 'congress_read_law';
     $('bSeedToolId').value = 'tc_congress_read_law';
@@ -1892,8 +1898,14 @@ function appendSeedToolCall() {
   try {
     argsParsed = JSON.parse(argsRaw);
   } catch (e) {
-    alert('Tool arguments must be valid JSON: ' + e.message);
-    return;
+    // For prompt-based tools, auto-wrap plain text into {"prompt": "..."}
+    var promptTools = ['set_system_prompt', 'fine_tune_yourself', 'write_system_prompt'];
+    if (promptTools.indexOf(toolName) >= 0 && argsRaw && !argsRaw.startsWith('{')) {
+      argsParsed = {prompt: argsRaw};
+    } else {
+      alert('Tool arguments must be valid JSON: ' + e.message);
+      return;
+    }
   }
 
   var resultRaw = ($('bSeedToolResult').value || '').trim();
