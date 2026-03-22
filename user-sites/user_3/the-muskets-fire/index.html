@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Muskets Fire</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        #gameTitle {
+            color: #8B4513;
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px #000;
+            letter-spacing: 3px;
+        }
+        #gameContainer {
+            display: flex;
+            gap: 4px;
+            border: 4px solid #3d2817;
+            box-shadow: 0 0 30px rgba(139, 69, 19, 0.5);
+        }
+        canvas {
+            display: block;
+        }
+        #controls {
+            color: #c4a574;
+            margin-top: 15px;
+            font-size: 13px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .playerControls {
+            display: inline-block;
+            margin: 0 20px;
+            padding: 10px;
+            background: rgba(61, 40, 23, 0.8);
+            border: 1px solid #5c3d2e;
+        }
+        #loading {
+            color: #c4a574;
+            font-size: 18px;
+            position: absolute;
+        }
+        .key {
+            background: #3d2817;
+            padding: 2px 6px;
+            border: 1px solid #5c3d2e;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameTitle">⚔ THE MUSKETS FIRE ⚔</div>
+    <div id="loading">Loading...</div>
+    <div id="gameContainer">
+        <canvas id="p1Canvas" width="480" height="360"></canvas>
+        <canvas id="p2Canvas" width="480" height="360"></canvas>
+    </div>
+    <div id="controls">
+        <div class="playerControls">
+            <strong style="color:#8B4513;">PLAYER 1 (Blue Coat)</strong><br>
+            <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> Move | 
+            <span class="key">Q</span> Aim Iron Sights | 
+            <span class="key">E</span> Fire | 
+            <span class="key">R</span> Reload
+        </div>
+        <div class="playerControls">
+            <strong style="color:#8B4513;">PLAYER 2 (Red Coat)</strong><br>
+            <span class="key">I</span><span class="key">J</span><span class="key">K</span><span class="key">L</span> Move | 
+            <span class="key">U</span> Aim Iron Sights | 
+            <span class="key">O</span> Fire | 
+            <span class="key">P</span> Reload
+        </div>
+    </div>
+
+<script>
+// ============================================
+// THE MUSKETS FIRE - 2 Player Musket FPS
+// Iron sight aiming only - No crosshairs
+// Full manual reloading simulation
+// ============================================
+
+const MAP_SIZE = 16;
+const CELL_SIZE = 64;
+const FOV = Math.PI / 3;
+const IRON_SIGHT_FOV = Math.PI / 8;
+
+// Simple map - 1 = wall, 0 = empty
+const map = [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,0,1,1,0,0,0,0,1,1,0,1,0,1],
+    [1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+    [1,0,0,0,0,1,1,0,0,1,1,0,0,0,0,1],
+    [1,0,1,1,0,0,0,0,0,0,0,0,1,1,0,1],
+    [1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1],
+    [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
+    [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
+    [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
+    [1,0,1,1,0,0,0,0,0,0,0,0,1,1,0,1],
+    [1,0,0,0,0,1,1,0,0,1,1,0,0,0,0,1],
+    [1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+    [1,0,1,0,1,1,0,0,0,0,1,1,0,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+];
+
+// Reload states
+const RELOAD_STAGES = {
+    IDLE: 0,
+    POUR_POWDER: 1,
+    INSERT_BALL: 2,
+    RAM_ROD: 3,
+    PRIME_PAN: 4,
+    COCK_HAMMER: 5,
+    READY: 6
+};
+
+const RELOAD_TIMES = {
+    [RELOAD_STAGES.POUR_POWDER]: 1500,
+    [RELOAD_STAGES.INSERT_BALL]: 1200,
+    [RELOAD_STAGES.RAM_ROD]: 2000,
+    [RELOAD_STAGES.PRIME_PAN]: 1000,
+    [RELOAD_STAGES.COCK_HAMMER]: 800
+};
+
+class Player {
+    constructor(x, y, angle, color, isP1) {
+        this.x = x;
+        this.y = y;
+        this.angle = angle;
+        this.color = color;
+        this.isP1 = isP1;
+        
+        this.health = 100;
+        this.loaded = true;
+        this.primed = true;
+        this.cocked = true;
+        
+        this.ironSights = false;
+        this.reloading = false;
+        this.reloadStage = RELOAD_STAGES.IDLE;
+        this.reloadProgress = 0;
+        this.reloadTimer = 0;
+        
+        this.swayPhase = 0;
+        this.breathing = 0;
+        
+        this.walking = false;
+        this.recoil = 0;
+    }
+
+    update(dt, keys) {
+        const moveSpeed = 60 * dt;
+        const rotSpeed = 2 * dt;
+        
+        this.walking = false;
+        
+        // Movement
+        if (keys.forward) {
+            this.walking = true;
+            const newX = this.x + Math.cos(this.angle) * moveSpeed;
+            const newY = this.y + Math.sin(this.angle) * moveSpeed;
+            if (!this.checkCollision(newX, this.y)) this.x = newX;
+            if (!this.checkCollision(this.x, newY)) this.y = newY;
+        }
+        if (keys.backward) {
+            this.walking = true;
+            const newX = this.x - Math.cos(this.angle) * moveSpeed;
+            const newY = this.y - Math.sin(this.angle) * moveSpeed;
+            if (!this.checkCollision(newX, this.y)) this.x = newX;
+            if (!this.checkCollision(this.x, newY)) this.y = newY;
+        }
+        
+        // Rotation
+        if (keys.left) this.angle -= rotSpeed;
+        if (keys.right) this.angle += rotSpeed;
+        
+        // Iron sights toggle
+        if (keys.aim) {
+            this.ironSights = true;
+        } else {
+            this.ironSights = false;
+        }
+        
+        // Fire
+        if (keys.fire && this.loaded && this.primed && this.cocked && !this.reloading) {
+            this.fire();
+        }
+        
+        // Reload
+        if (keys.reload && !this.loaded && !this.reloading) {
+            this.startReload();
+        }
+        
+        // Update reload
+        if (this.reloading) {
+            this.updateReload(dt);
+        }
+        
+        // Animation updates
+        this.swayPhase += dt * (this.ironSights ? 0.5 : 2);
+        this.breathing += dt * 2;
+        if (this.recoil > 0) this.recoil -= dt * 5;
+    }
+    
+    checkCollision(x, y) {
+        const mapX = Math.floor(x / CELL_SIZE);
+        const mapY = Math.floor(y / CELL_SIZE);
+        if (mapX < 0 || mapX >= MAP_SIZE || mapY < 0 || mapY >= MAP_SIZE) return true;
+        return map[mapY][mapX] === 1;
+    }
+    
+    fire() {
+        this.loaded = false;
+        this.primed = false;
+        this.cocked = false;
+        this.recoil = 1.0;
+        
+        // Raycast for hit
+        const maxDist = 2000;
+        const step = 2;
+        for (let d = 0; d < maxDist; d += step) {
+            const hitX = this.x + Math.cos(this.angle) * d;
+            const hitY = this.y + Math.sin(this.angle) * d;
+            
+            // Check wall hit
+            const mapX = Math.floor(hitX / CELL_SIZE);
+            const mapY = Math.floor(hitY / CELL_SIZE);
+            if (mapX >= 0 && mapX < MAP_SIZE && mapY >= 0 && mapY < MAP_SIZE) {
+                if (map[mapY][mapX] === 1) break;
+            }
+            
+            // Check player hit
+            const other = this.isP1 ? player2 : player1;
+            const dx = hitX - other.x;
+            const dy = hitY - other.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < 20) {
+                other.health -= 45; // Musket ball damage
+                break;
+            }
+        }
+    }
+    
+    startReload() {
+        this.reloading = true;
+        this.reloadStage = RELOAD_STAGES.POUR_POWDER;
+        this.reloadProgress = 0;
+        this.reloadTimer = 0;
+    }
+    
+    updateReload(dt) {
+        const stageTime = RELOAD_TIMES[this.reloadStage] / 1000;
+        this.reloadTimer += dt;
+        this.reloadProgress = this.reloadTimer / stageTime;
+        
+        if (this.reloadTimer >= stageTime) {
+            this.reloadTimer = 0;
+            this.reloadStage++;
+            this.reloadProgress = 0;
+            
+            if (this.reloadStage > RELOAD_STAGES.COCK_HAMMER) {
+                this.reloading = false;
+                this.reloadStage = RELOAD_STAGES.IDLE;
+                this.loaded = true;
+                this.primed = true;
+                this.cocked = true;
+            }
+        }
+    }
+}
+
+// Input handling
+const keys = {
+    p1: { forward: false, backward: false, left: false, right: false, aim: false, fire: false, reload: false },
+    p2: { forward: false, backward: false, left: false, right: false, aim: false, fire: false, reload: false }
+};
+
+document.addEventListener('keydown', (e) => {
+    switch(e.key.toLowerCase()) {
+        case 'w': keys.p1.forward = true; break;
+        case 's': keys.p1.backward = true; break;
+        case 'a': keys.p1.left = true; break;
+        case 'd': keys.p1.right = true; break;
+        case 'q': keys.p1.aim = true; break;
+        case 'e': keys.p1.fire = true; break;
+        case 'r': keys.p1.reload = true; break;
+        case 'i': keys.p2.forward = true; break;
+        case 'k': keys.p2.backward = true; break;
+        case 'j': keys.p2.left = true; break;
+        case 'l': keys.p2.right = true; break;
+        case 'u': keys.p2.aim = true; break;
+        case 'o': keys.p2.fire = true; break;
+        case 'p': keys.p2.reload = true; break;
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    switch(e.key.toLowerCase()) {
+        case 'w': keys.p1.forward = false; break;
+        case 's': keys.p1.backward = false; break;
+        case 'a': keys.p1.left = false; break;
+        case 'd': keys.p1.right = false; break;
+        case 'q': keys.p1.aim = false; break;
+        case 'e': keys.p1.fire = false; break;
+        case 'r': keys.p1.reload = false; break;
+        case 'i': keys.p2.forward = false; break;
+        case 'k': keys.p2.backward = false; break;
+        case 'j': keys.p2.left = false; break;
+        case 'l': keys.p2.right = false; break;
+        case 'u': keys.p2.aim = false; break;
+        case 'o': keys.p2.fire = false; break;
+        case 'p': keys.p2.reload = false; break;
+    }
+});
+
+// Players
+const player1 = new Player(100, 100, 0, '#4169E1', true);
+const player2 = new Player(900, 900, Math.PI, '#DC143C', false);
+
+// Raycasting engine
+function castRay(px, py, angle) {
+    const sin = Math.sin(angle);
+    const cos = Math.cos(angle);
+    
+    let dist = 0;
+    const maxDist = 1000;
+    const step = 1;
+    
+    while (dist < maxDist) {
+        const x = px + cos * dist;
+        const y = py + sin * dist;
+        
+        const mapX = Math.floor(x / CELL_SIZE);
+        const mapY = Math.floor(y / CELL_SIZE);
+        
+        if (mapX < 0 || mapX >= MAP_SIZE || mapY < 0 || mapY >= MAP_SIZE) return { dist: maxDist, hit: false };
+        if (map[mapY][mapX] === 1) {
+            // Calculate exact hit distance
+            const hitDist = Math.sqrt((x - px) ** 2 + (y - py) ** 2);
+            return { dist: hitDist, hit: true, x, y };
+        }
+        
+        dist += step;
+    }
+    
+    return { dist: maxDist, hit: false };
+}
+
+// Rendering
+function renderView(ctx, player, width, height) {
+    const fov = player.ironSights ? IRON_SIGHT_FOV : FOV;
+    const numRays = width / 2;
+    
+    // Sky and ground
+    const gradientSky = ctx.createLinearGradient(0, 0, 0, height/2);
+    gradientSky.addColorStop(0, '#1a1a2e');
+    gradientSky.addColorStop(1, '#4a5568');
+    ctx.fillStyle = gradientSky;
+    ctx.fillRect(0, 0, width, height/2);
+    
+    const gradientGround = ctx.createLinearGradient(0, height/2, 0, height);
+    gradientGround.addColorStop(0, '#2d3748');
+    gradientGround.addColorStop(1, '#1a202c');
+    ctx.fillStyle = gradientGround;
+    ctx.fillRect(0, height/2, width, height/2);
+    
+    // Raycast walls
+    const zBuffer = new Array(numRays).fill(0);
+    
+    for (let i = 0; i < numRays; i++) {
+        const rayAngle = player.angle - fov/2 + (i / numRays) * fov;
+        const result = castRay(player.x, player.y, rayAngle);
+        
+        // Correct for fish-eye
+        const perpDist = result.dist * Math.cos(rayAngle - player.angle);
+        zBuffer[i] = perpDist;
+        
+        const wallHeight = (height * 0.8) / (perpDist / 100 + 0.1);
+        const wallTop = (height - wallHeight) / 2;
+        
+        // Wall shading based on distance
+        const brightness = Math.max(0.1, 1 - perpDist / 600);
+        ctx.fillStyle = `rgb(${60 * brightness}, ${40 * brightness}, ${20 * brightness})`;
+        ctx.fillRect(i * 2, wallTop, 2, wallHeight);
+        
+        // Wall texture detail
+        if (result.hit) {
+            const texX = (result.x + result.y) % 20;
+            if (texX < 2) {
+                ctx.fillStyle = `rgba(0,0,0,${0.3 * brightness})`;
+                ctx.fillRect(i * 2, wallTop, 2, wallHeight);
+            }
+        }
+    }
+    
+    // Draw other player
+    const other = player.isP1 ? player2 : player1;
+    const dx = other.x - player.x;
+    const dy = other.y - player.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const angle = Math.atan2(dy, dx);
+    const angleDiff = angle - player.angle;
+    
+    // Normalize angle
+    let normalizedDiff = angleDiff;
+    while (normalizedDiff > Math.PI) normalizedDiff -= 2 * Math.PI;
+    while (normalizedDiff < -Math.PI) normalizedDiff += 2 * Math.PI;
+    
+    if (Math.abs(normalizedDiff) < fov/2 && dist < 800) {
+        const screenX = width/2 + (normalizedDiff / (fov/2)) * (width/2);
+        const spriteHeight = (64 * height) / dist;
+        const spriteTop = (height - spriteHeight) / 2;
+        
+        // Simple sprite
+        ctx.fillStyle = other.color;
+        ctx.fillRect(screenX - spriteHeight/4, spriteTop, spriteHeight/2, spriteHeight);
+        // Coat details
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fillRect(screenX - spriteHeight/8, spriteTop + spriteHeight/3, spriteHeight/4, spriteHeight/6);
+    }
+    
+    // Apply iron sight overlay if aiming
+    if (player.ironSights) {
+        renderIronSights(ctx, width, height, player);
+    } else {
+        renderMusketHeld(ctx, width, height, player);
+    }
+    
+    // Reload animation overlay
+    if (player.reloading) {
+        renderReloadAnimation(ctx, width, height, player);
+    }
+    
+    // Health indicator (minimal - corner only)
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(10, 10, 100, 20);
+    ctx.fillStyle = player.health > 50 ? '#2d5a27' : '#5a2727';
+    ctx.fillRect(12, 12, (96 * player.health) / 100, 16);
+    
+    // Status text
+    ctx.fillStyle = '#c4a574';
+    ctx.font = '12px monospace';
+    if (player.loaded && player.primed && player.cocked) {
+        ctx.fillText('READY', 15, 25);
+    } else if (!player.loaded) {
+        ctx.fillText('EMPTY', 15, 25);
+    }
+}
+
+function renderIronSights(ctx, width, height, player) {
+    const centerX = width / 2;
+    const centerY = height / 2;
+    
+    // Sway calculation - more sway when not aiming, less when aiming
+    const swayX = Math.sin(player.swayPhase) * (player.walking ? 3 : 1);
+    const swayY = Math.cos(player.breathing) * (player.walking ? 2 : 0.5) + player.recoil * 20;
+    
+    // Rear sight (notch)
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(centerX - 30 + swayX, centerY - 10 + swayY);
+    ctx.lineTo(centerX - 15 + swayX, centerY + swayY);
+    ctx.lineTo(centerX - 5 + swayX, centerY + swayY);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(centerX + 30 + swayX, centerY - 10 + swayY);
+    ctx.lineTo(centerX + 15 + swayX, centerY + swayY);
+    ctx.lineTo(centerX + 5 + swayX, centerY + swayY);
+    ctx.stroke();
+    
+    // Front sight post (should align with rear notch when centered)
+    const frontX = centerX + swayX * 0.3;
+    const frontY = centerY + 15 + swayY * 0.3;
+    
+    ctx.strokeStyle = '#0d0d0d';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(frontX, frontY - 12);
+    ctx.lineTo(frontX, frontY + 8);
+    ctx.stroke();
+    
+    // Front sight blade sides
+    ctx.beginPath();
+    ctx.moveTo(frontX - 4, frontY + 8);
+    ctx.lineTo(frontX - 2, frontY - 8);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(frontX + 4, frontY + 8);
+    ctx.lineTo(frontX + 2, frontY - 8);
+    ctx.stroke();
+    
+    // Vignette for focus
+    const gradient = ctx.createRadialGradient(centerX, centerY, 50, centerX, centerY, Math.max(width, height));
+    gradient.addColorStop(0, 'rgba(0,0,0,0)');
+    gradient.addColorStop(1, 'rgba(0,0,0,0.6)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
+}
+
+function renderMusketHeld(ctx, width, height, player) {
+    const centerX = width / 2;
+    const bottomY = height;
+    
+    const swayX = Math.sin(player.swayPhase) * 8;
+    const swayY = Math.cos(player.breathing) * 3;
+    
+    // Stock
+    ctx.fillStyle = '#4a3728';
+    ctx.beginPath();
+    ctx.moveTo(centerX - 40 + swayX, bottomY - 80 + swayY);
+    ctx.lineTo(centerX - 50 + swayX, bottomY - 40 + swayY);
+    ctx.lineTo(centerX - 30 + swayX, bottomY - 20 + swayY);
+    ctx.lineTo(centerX + 30 + swayX, bottomY - 25 + swayY);
+    ctx.lineTo(centerX + 40 + swayX, bottomY - 60 + swayY);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Barrel
+    ctx.fillStyle = '#2c2c2c';
+    ctx.fillRect(centerX - 8 + swayX, bottomY - 200 + swayY, 16, 120);
+    
+    // Barrel bands
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(centerX - 10 + swayX, bottomY - 180 + swayY, 20, 3);
+    ctx.fillRect(centerX - 10 + swayX, bottomY - 140 + swayY, 20, 3);
+    ctx.fillRect(centerX - 10 + swayX, bottomY - 100 + swayY, 20, 3);
+    
+    // Lock mechanism
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(centerX - 35 + swayX, bottomY - 130 + swayY, 25, 30);
+    
+    // Hammer
+    ctx.fillStyle = '#0d0d0d';
+    if (player.cocked) {
+        // Cocked position
+        ctx.beginPath();
+        ctx.moveTo(centerX - 25 + swayX, bottomY - 135 + swayY);
+        ctx.lineTo(centerX - 15 + swayX, bottomY - 155 + swayY);
+        ctx.lineTo(centerX - 10 + swayX, bottomY - 150 + swayY);
+        ctx.lineTo(centerX - 20 + swayX, bottomY - 130 + swayY);
+        ctx.closePath();
+        ctx.fill();
+    } else {
+        // Uncocked
+        ctx.beginPath();
+        ctx.moveTo(centerX - 25 + swayX, bottomY - 135 + swayY);
+        ctx.lineTo(centerX - 20 + swayX, bottomY - 125 + swayY);
+        ctx.lineTo(centerX - 15 + swayX, bottomY - 128 + swayY);
+        ctx.lineTo(centerX - 20 + swayX, bottomY - 138 + swayY);
+        ctx.closePath();
+        ctx.fill();
+    }
+    
+    // Frizzen (pan cover)
+    if (player.primed) {
+        ctx.fillStyle = '#2a2a2a';
+        ctx.beginPath();
+        ctx.moveTo(centerX - 32 + swayX, bottomY - 125 + swayY);
+        ctx.lineTo(centerX - 28 + swayX, bottomY - 118 + swayY);
+        ctx.lineTo(centerX - 22 + swayX, bottomY - 120 + swayY);
+        ctx.lineTo(centerX - 26 + swayX, bottomY - 128 + swayY);
+        ctx.closePath();
+        ctx.fill();
+    }
+}
+
+function renderReloadAnimation(ctx, width, height, player) {
+    const centerX = width / 2;
+    const bottomY = height;
+    const swayX = Math.sin(player.swayPhase) * 5;
+    const swayY = Math.cos(player.breathing) * 2;
+    
+    // Progress bar background
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.fillRect(centerX - 120, height - 120, 240, 40);
+    
+    // Progress bar fill
+    ctx.fillStyle = '#8B4513';
+    ctx.fillRect(centerX - 116, height - 116, 232 * player.reloadProgress, 32);
+    
+    // Stage text
+    const stageNames = ['', 'POUR POWDER', 'INSERT BALL', 'RAM ROD', 'PRIME PAN', 'COCK HAMMER'];
+    ctx.fillStyle = '#c4a574';
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(stageNames[player.reloadStage], centerX, height - 92);
+    
+    // Hands animation based on stage
+    ctx.fillStyle = '#d4a574'; // skin tone
+    
+    switch(player.reloadStage) {
+        case RELOAD_STAGES.POUR_POWDER:
+            // Hand with powder horn pouring
+            ctx.beginPath();
+            ctx.arc(centerX + 60 + swayX, bottomY - 180 + swayY, 15, 0, Math.PI * 2);
+            ctx.fill();
+            // Powder horn
+            ctx.fillStyle = '#4a3728';
+            ctx.beginPath();
+            ctx.ellipse(centerX + 80 + swayX, bottomY - 200 + swayY, 20, 30, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+            
+        case RELOAD_STAGES.INSERT_BALL:
+            // Hand placing ball
+            ctx.beginPath();
+            ctx.arc(centerX + 50 + swayX, bottomY - 170 + swayY, 15, 0, Math.PI * 2);
+            ctx.fill();
+            // Ball
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.arc(centerX + 45 + swayX, bottomY - 165 + swayY, 8, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+            
+        case RELOAD_STAGES.RAM_ROD:
+            // Ramrod motion
+            const ramProgress = player.reloadProgress;
+            const ramY = bottomY - 220 + Math.sin(ramProgress * Math.PI * 4) * 30;
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(centerX - 5 + swayX, ramY + swayY, 10, 80);
+            // Hand on ramrod
+            ctx.fillStyle = '#d4a574';
+            ctx.beginPath();
+            ctx.arc(centerX + swayX, ramY + 60 + swayY, 15, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+            
+        case RELOAD_STAGES.PRIME_PAN:
+            // Hand priming
+            ctx.beginPath();
+            ctx.arc(centerX - 60 + swayX, bottomY - 150 + swayY, 15, 0, Math.PI * 2);
+            ctx.fill();
+            // Powder in hand
+            ctx.fillStyle = '#c4a574';
+            ctx.beginPath();
+            ctx.arc(centerX - 55 + swayX, bottomY - 155 + swayY, 5, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+            
+        case RELOAD_STAGES.COCK_HAMMER:
+            // Hand cocking
+            const cockX = centerX - 30 + swayX + (1 - player.reloadProgress) * 20;
+            ctx.beginPath();
+            ctx.arc(cockX, bottomY - 145 + swayY, 15, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+    }
+}
+
+// Game loop
+let lastTime = 0;
+
+function gameLoop(timestamp) {
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+    lastTime = timestamp;
+    
+    // Update players
+    player1.update(dt, keys.p1);
+    player2.update(dt, keys.p2);
+    
+    // Check for game over
+    if (player1.health <= 0 || player2.health <= 0) {
+        // Reset after delay
+        setTimeout(() => {
+            player1.health = 100;
+            player2.health = 100;
+            player1.x = 100; player1.y = 100; player1.angle = 0;
+            player2.x = 900; player2.y = 900; player2.angle = Math.PI;
+            player1.loaded = true; player1.primed = true; player1.cocked = true;
+            player2.loaded = true; player2.primed = true; player2.cocked = true;
+        }, 2000);
+    }
+    
+    // Render
+    const p1Canvas = document.getElementById('p1Canvas');
+    const p2Canvas = document.getElementById('p2Canvas');
+    const p1Ctx = p1Canvas.getContext('2d');
+    const p2Ctx = p2Canvas.getContext('2d');
+    
+    renderView(p1Ctx, player1, p1Canvas.width, p1Canvas.height);
+    renderView(p2Ctx, player2, p2Canvas.width, p2Canvas.height);
+    
+    requestAnimationFrame(gameLoop);
+}
+
+// Start
+document.getElementById('loading').style.display = 'none';
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>

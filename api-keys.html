@@ -488,8 +488,8 @@
 
         <!-- Auth gate — shown when not logged in -->
         <div id="auth-gate" class="auth-gate" style="display:none;">
-            <p>You need an account to create API keys.</p>
-            <a href="/?action=register">Sign Up</a>
+            <p>Sign in to create and manage API keys.</p>
+            <a href="/?action=login">Sign In</a>
         </div>
 
         <!-- Main content — shown when logged in -->
@@ -563,18 +563,29 @@
     var token = null;
     var mcpServers = [];
 
+    function getStorage() {
+        return (window.rhodesStorage && typeof window.rhodesStorage.getItem === 'function')
+            ? window.rhodesStorage
+            : window.localStorage;
+    }
+
     function getToken() {
-        // Try cookie first
-        var cookies = document.cookie.split(';');
-        for (var i = 0; i < cookies.length; i++) {
-            var c = cookies[i].trim();
-            if (c.startsWith('rhodes_session=')) {
-                return c.substring('rhodes_session='.length);
-            }
-        }
-        // Try localStorage
-        var t = localStorage.getItem('rhodes_token') || localStorage.getItem('token');
-        return t || null;
+        var storage = getStorage();
+        var userToken = storage.getItem('rhodes_user_token') || localStorage.getItem('rhodes_user_token');
+        return userToken || null;
+    }
+
+    function getStoredUsername() {
+        var storage = getStorage();
+        return storage.getItem('rhodes_username') || localStorage.getItem('rhodes_username') || '';
+    }
+
+    function clearStoredAuth() {
+        var storage = getStorage();
+        ['rhodes_user_token', 'rhodes_token', 'token', 'rhodes_username'].forEach(function(key) {
+            try { storage.removeItem(key); } catch (e) {}
+            try { localStorage.removeItem(key); } catch (e) {}
+        });
     }
 
     function showToast(msg, duration) {
@@ -850,21 +861,31 @@
             return;
         }
 
-        // Verify token
         try {
             var resp = await fetch('/api/user/me', { headers: authHeaders() });
             var data = await resp.json();
-            if (!data.authenticated) {
+            var storedUsername = getStoredUsername();
+            var liveUsername = data && data.user && data.user.username ? String(data.user.username) : '';
+
+            if (!data.authenticated || !liveUsername) {
+                clearStoredAuth();
+                document.getElementById('auth-gate').style.display = 'block';
+                return;
+            }
+
+            if (storedUsername && storedUsername !== liveUsername) {
+                clearStoredAuth();
+                showToast('Session mismatch cleared. Sign in again.', 4000);
                 document.getElementById('auth-gate').style.display = 'block';
                 return;
             }
         } catch (e) {
+            clearStoredAuth();
             document.getElementById('auth-gate').style.display = 'block';
             return;
         }
 
         document.getElementById('main-content').style.display = 'block';
-
         loadKeys();
     }
 

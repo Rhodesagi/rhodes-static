@@ -20,6 +20,11 @@ window.installRhodesSessionUi = function installRhodesSessionUi(deps) {
         return escapeHtml(String(s ?? ''));
     }
 
+    function withSessionNote(label, note) {
+        const cleanNote = String(note ?? '').trim().toLowerCase();
+        return cleanNote ? (label + ' (' + cleanNote + ')') : label;
+    }
+
     async function requestSessionListViaWS() {
         const ws = getWs();
         if (!ws || ws.readyState !== WebSocket.OPEN || !isWsReady()) {
@@ -79,6 +84,8 @@ window.installRhodesSessionUi = function installRhodesSessionUi(deps) {
 
         // Separate split sessions from normal sessions
         const splitGroups = {};
+        const splitFallbackGroups = {};
+        const splitFallbackKeyClaimedByPrimary = {};
         const normalSessions = [];
         sessions.forEach(s => {
             const isSplit = (s.session_id && s.session_id.includes('split-')) || s.is_split;
@@ -86,13 +93,58 @@ window.installRhodesSessionUi = function installRhodesSessionUi(deps) {
                 const splitGroupId = String(s.split_group_id || '').trim();
                 const created = (s.created_at || s.updated_at || '').substring(0, 16);
                 const userPrefix = s.session_id.replace(/split-\d+-.*/, 'split').replace(/_[a-f0-9]{8}$/, '');
-                const groupKey = splitGroupId ? ('group_' + splitGroupId) : (userPrefix + '_' + created);
+                const fallbackKey = userPrefix + '_' + created;
+                const groupKey = splitGroupId ? ('group_' + splitGroupId) : fallbackKey;
+                s.__splitFallbackKey = fallbackKey;
                 if (!splitGroups[groupKey]) splitGroups[groupKey] = [];
                 splitGroups[groupKey].push(s);
+                if (!splitFallbackGroups[fallbackKey]) splitFallbackGroups[fallbackKey] = [];
+                splitFallbackGroups[fallbackKey].push(s);
+                if (splitGroupId) splitFallbackKeyClaimedByPrimary[fallbackKey] = true;
             } else {
                 normalSessions.push(s);
             }
         });
+
+        function getSplitMessageCount(s) {
+            const persisted = Number(s && s.persisted_message_count);
+            if (Number.isFinite(persisted) && persisted >= 0) return persisted;
+            const raw = Number(s && (s.message_count ?? s.rounds ?? 0));
+            return Number.isFinite(raw) ? raw : 0;
+        }
+
+        function getRenderSplitGroup(key) {
+            const group = splitGroups[key] || [];
+            if (!group.length) return group;
+            const first = group[0];
+            const fallbackKey = first.__splitFallbackKey;
+            if (String(first.split_group_id || '').trim() && splitFallbackGroups[fallbackKey]) {
+                return splitFallbackGroups[fallbackKey];
+            }
+            return group;
+        }
+
+        function buildBestSplitPaneMap(group) {
+            const paneBest = {};
+            (group || []).forEach(function(gs) {
+                const m = gs.session_id && gs.session_id.match(/split-(\d+)/);
+                if (!m) return;
+                const paneNum = parseInt(m[1], 10);
+                const prev = paneBest[paneNum];
+                if (!prev) {
+                    paneBest[paneNum] = gs;
+                    return;
+                }
+                const prevCount = getSplitMessageCount(prev);
+                const currCount = getSplitMessageCount(gs);
+                const prevTs = Date.parse(prev.updated_at || prev.created_at || '') || 0;
+                const currTs = Date.parse(gs.updated_at || gs.created_at || '') || 0;
+                if (currCount > prevCount || (currCount === prevCount && currTs > prevTs)) {
+                    paneBest[paneNum] = gs;
+                }
+            });
+            return paneBest;
+        }
 
         function renderItem(s) {
             const isActive = s.session_id === activeSessionId;
@@ -100,7 +152,7 @@ window.installRhodesSessionUi = function installRhodesSessionUi(deps) {
             const dt = ts ? new Date(ts) : null;
             const date = dt && !isNaN(dt.getTime()) ? dt.toLocaleDateString() : '';
             const time = dt && !isNaN(dt.getTime()) ? dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-            const title = (s.title || '').trim() || s.session_id || 'Session';
+            const title = withSessionNote((s.title || '').trim() || s.session_id || 'Session', s.session_note);
             const count = (s.message_count ?? s.rounds ?? 0);
             const model = (s.model || '').trim();
             return '<div class="session-item' + (isActive ? ' active' : '') + '" onclick="loadSession(\'' + s.session_id + '\', event)">' +
@@ -110,7 +162,15 @@ window.installRhodesSessionUi = function installRhodesSessionUi(deps) {
         }
 
         let html = '';
-        const groupKeys = Object.keys(splitGroups).sort().reverse().filter(key => (splitGroups[key] || []).some(s => Number(s.message_count || 0) > 0));
+        const groupKeys = Object.keys(splitGroups).sort().reverse().filter(key => {
+            const group = splitGroups[key] || [];
+            if (!group.length) return false;
+            const first = group[0];
+            if (!String(first.split_group_id || '').trim() && splitFallbackKeyClaimedByPrimary[first.__splitFallbackKey]) {
+                return false;
+            }
+            return Object.values(buildBestSplitPaneMap(getRenderSplitGroup(key))).some(s => getSplitMessageCount(s) > 0);
+        });
 
         // Split sessions section (highlighted, at top)
         if (groupKeys.length > 0) {
@@ -121,34 +181,18 @@ window.installRhodesSessionUi = function installRhodesSessionUi(deps) {
             html += '<div id="split-sessions-body">';
 
             groupKeys.forEach((key, idx) => {
-                const group = splitGroups[key];
+                const group = getRenderSplitGroup(key);
+                const paneBest = buildBestSplitPaneMap(group);
+                const detailSessions = Object.keys(paneBest).map(Number).sort((a, b) => a - b).map(pn => paneBest[pn]);
                 const first = group[0];
                 const ts = first.created_at || '';
                 const dt = ts ? new Date(ts) : null;
                 const date = dt && !isNaN(dt.getTime()) ? dt.toLocaleDateString() : '';
                 const time = dt && !isNaN(dt.getTime()) ? dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-                const totalMsgs = group.reduce((sum, s) => sum + (s.message_count || 0), 0);
+                const totalMsgs = detailSessions.reduce((sum, s) => sum + getSplitMessageCount(s), 0);
                 const gid = 'split-group-' + idx;
 
-                // Build resume data
-                // Pick the best candidate per pane: prefer sessions that actually have messages,
-                // then prefer the newest timestamp.
                 var resumeData = {};
-                var paneBest = {};
-                group.forEach(function(gs) {
-                    var m = gs.session_id.match(/split-(\d+)/);
-                    if (!m) return;
-                    var paneNum = parseInt(m[1], 10);
-                    var prev = paneBest[paneNum];
-                    if (!prev) { paneBest[paneNum] = gs; return; }
-                    var prevHasMsgs = (Number(prev.message_count || 0) > 0) ? 1 : 0;
-                    var currHasMsgs = (Number(gs.message_count || 0) > 0) ? 1 : 0;
-                    var prevTs = Date.parse(prev.updated_at || prev.created_at || '') || 0;
-                    var currTs = Date.parse(gs.updated_at || gs.created_at || '') || 0;
-                    if (currHasMsgs > prevHasMsgs || (currHasMsgs === prevHasMsgs && currTs > prevTs)) {
-                        paneBest[paneNum] = gs;
-                    }
-                });
                 Object.keys(paneBest).forEach(function(pn) {
                     resumeData[pn] = paneBest[pn].session_id;
                 });
@@ -167,13 +211,12 @@ window.installRhodesSessionUi = function installRhodesSessionUi(deps) {
                 html += "<button class=\"split-resume-btn\" onclick=\"event.stopPropagation();window._multisandboxMode=true;var _rd=" + resumeJson + ";window.enterSplitMode(" + resumePaneCount + ",_rd)\">▶ Resume</button>";
                 html += '</div>';
                 html += '<div id="' + gid + '" style="display:none;padding:4px 0 4px 12px;">';
-                group.forEach(function(s) {
-                    // Render split sub-items with click that resumes full split group
-                    var title = (s.title || '').trim() || s.session_id || 'Session';
-                    var count = (s.message_count || 0);
+                detailSessions.forEach(function(s) {
+                    var title = withSessionNote((s.title || '').trim() || s.session_id || 'Session', s.session_note);
+                    var count = getSplitMessageCount(s);
                     var paneMatch = s.session_id.match(/split-(\d+)/);
                     var paneLabel = paneMatch ? 'Pane ' + paneMatch[1] : '';
-                    html += '<div class="session-item" style="cursor:pointer;" onclick="event.stopPropagation();window._multisandboxMode=true;var _rd=' + resumeJson + ';window.enterSplitMode(' + resumePaneCount + ',_rd)">';
+                    html += '<div class="session-item" style="cursor:pointer;" onclick="loadSession(\'' + s.session_id + '\', event)">';
                     html += '<div class="session-preview">' + (paneLabel ? '<span style="color:var(--cyan);font-size:10px;margin-right:6px;">' + paneLabel + '</span>' : '') + escHtml(title) + '</div>';
                     html += '<div class="session-meta">' + count + ' messages</div>';
                     html += '</div>';

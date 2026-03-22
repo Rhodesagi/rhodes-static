@@ -158,6 +158,7 @@
           <button id="downloadJson">Download MCP Package (json)</button>
         </div>
         <div class="tiny">Default model is web default (`p1.12e`).</div>
+        <div class="tiny">Website-generated configs include a stable MCP client header so follow-up turns stay in one session.</div>
       </div>
       <div id="mcpConfig" class="code" style="margin-top:12px;"></div>
     </div>
@@ -192,6 +193,19 @@
 
     function getApiKeyForMcp() {
       return (mcpKeyEl.value || '').trim() || latestPlainKey;
+    }
+
+    function getOrCreateMcpClientId() {
+      const safeStorage = window.rhodesStorage && typeof window.rhodesStorage.getItem === 'function'
+        ? window.rhodesStorage
+        : window.localStorage;
+      let value = (safeStorage.getItem('rhodes_mcp_client_id') || '').trim();
+      if (!value) {
+        const rand = Math.random().toString(36).slice(2, 12);
+        value = 'webmcp_' + Date.now().toString(36) + '_' + rand;
+        safeStorage.setItem('rhodes_mcp_client_id', value);
+      }
+      return value;
     }
 
     function setStatus(msg, ok = true) {
@@ -231,7 +245,10 @@
       }
       const res = await fetch(path, {
         method: 'GET',
-        headers: { 'x-api-key': key }
+        headers: {
+          'x-api-key': key,
+          'X-Rhodes-Mcp-Client': getOrCreateMcpClientId()
+        }
       });
       if (!res.ok) {
         let err = 'Download failed (HTTP ' + res.status + ')';
@@ -255,13 +272,15 @@
     function renderMcpConfig() {
       const key = getApiKeyForMcp();
       const authVal = key ? ('Bearer ' + key) : 'Bearer ${RHODES_API_KEY}';
+      const mcpClientId = getOrCreateMcpClientId();
       const cfg = {
         mcpServers: {
           "rhodes-live-chat": {
             type: "http",
             url: "https://rhodesagi.com/v1/live-chat/mcp",
             headers: {
-              Authorization: authVal
+              Authorization: authVal,
+              "X-Rhodes-Mcp-Client": mcpClientId
             }
           }
         }

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install DNS Profile</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0d0d08; color:#f0e8d0; font-family:'Courier New',monospace; min-height:100vh; display:flex; align-items:center; justify-content:center; }
+.card { text-align:center; padding:40px 24px; max-width:400px; }
+h1 { color:#ffcc00; font-size:18px; letter-spacing:3px; margin-bottom:16px; }
+p { font-size:14px; line-height:1.6; margin-bottom:24px; color:#b0a080; }
+.btn { display:block; width:100%; padding:16px; background:#ffcc00; color:#0d0d08; font-family:inherit; font-size:16px; font-weight:bold; border:none; cursor:pointer; letter-spacing:1px; margin-bottom:12px; }
+.status { color:#44ff44; font-size:14px; display:none; margin-top:16px; }
+</style>
+</head>
+<body>
+<div class="card">
+<h1>TOTALCONTROL DNS</h1>
+<p>Tap the button below to download the DNS filtering profile.</p>
+<button class="btn" id="dlBtn" onclick="downloadProfile()">DOWNLOAD PROFILE</button>
+<div class="status" id="status">Profile downloaded. Tap Done above, then go to Settings → General → VPN & Device Management to install.</div>
+</div>
+<script>
+function downloadProfile() {
+  var params = new URLSearchParams(window.location.search);
+  var token = params.get('token') || '';
+  window.location.href = '/api/tc/dns-profile?token=' + token;
+  document.getElementById('dlBtn').style.display = 'none';
+  document.getElementById('status').style.display = 'block';
+}
+</script>
+</body>
+</html>

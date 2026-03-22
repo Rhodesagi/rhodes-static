@@ -18,6 +18,17 @@ window.installRhodesShareUi = function installRhodesShareUi(deps) {
     }
 
     async function copyOrPrompt(url, copiedMsg) {
+        // Try Electron's native clipboard first (works on Windows where navigator.clipboard fails)
+        if (window.rhodes && typeof window.rhodes.copyToClipboard === 'function') {
+            try {
+                const result = await window.rhodes.copyToClipboard(url);
+                if (result && result.success) {
+                    showToast(copiedMsg || 'Share link copied!');
+                    return;
+                }
+            } catch (_) {}
+        }
+
         try {
             if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
                 await navigator.clipboard.writeText(url);
@@ -26,8 +37,19 @@ window.installRhodesShareUi = function installRhodesShareUi(deps) {
             }
         } catch (_) {}
 
-        // Clipboard often fails on Safari/iOS unless it's synchronous in a user gesture.
-        // Prompt fallback is ugly but reliable.
+        // Fallback: execCommand
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            ta.style.cssText = 'position:fixed;left:-9999px;';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast(copiedMsg || 'Share link copied!');
+            return;
+        } catch (_) {}
+
         showToast('Share link created (copy manually)');
         try { prompt('Share link:', url); } catch (_) {}
     }

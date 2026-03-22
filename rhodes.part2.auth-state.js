@@ -449,11 +449,11 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
             TAB_ID = 'new_' + Math.random().toString(36).substr(2,8) + '_' + Date.now();
             rhodesSessionStorage.setItem('rhodes_new_tab_id', TAB_ID);
         } else {
-            // Default - use localStorage (persists = same Rhodes always)
-            TAB_ID = rhodesStorage.getItem('rhodes_tab_id');
+            // Default - use sessionStorage so each browser tab keeps its own identity on reload
+            TAB_ID = rhodesSessionStorage.getItem('rhodes_tab_id');
             if (!TAB_ID) {
                 TAB_ID = 'main_' + Math.random().toString(36).substr(2,8);
-                rhodesStorage.setItem('rhodes_tab_id', TAB_ID);
+                rhodesSessionStorage.setItem('rhodes_tab_id', TAB_ID);
             }
         }
 
@@ -1215,6 +1215,519 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
         }
 
         let lastUserMessage = '';  // Track for Q&A sharing
+        const reportModeState = {
+            enabled: false,
+            selected: new Map(),
+            currentRound: 0,
+            msgSerial: 0,
+            sessionId: null,
+            toggleBtn: null,
+            composerBtn: null,
+            modalEl: null
+        };
+        const REPORT_ALLOWED_USERNAMES = new Set(['sebastian', 'markbass', 'anotheruser']);
+
+        function getReportAuthToken() {
+            return rhodesStorage.getItem('rhodes_user_token') || window.USER_TOKEN || '';
+        }
+
+        function getReportUsername() {
+            const username = CURRENT_USERNAME || rhodesStorage.getItem('rhodes_username') || '';
+            return String(username || '').trim().toLowerCase();
+        }
+
+        function canCurrentUserCreateReports() {
+            return !!getReportAuthToken() && REPORT_ALLOWED_USERNAMES.has(getReportUsername());
+        }
+
+        function installReportModeStyles() {
+            if (document.getElementById('rhodes-report-mode-style')) return;
+            const style = document.createElement('style');
+            style.id = 'rhodes-report-mode-style';
+            style.textContent = `
+                .reportable-msg { position: relative; }
+                .reportable-msg.report-selected {
+                    outline: 1px solid rgba(255, 170, 0, 0.95);
+                    box-shadow: 0 0 0 2px rgba(255, 170, 0, 0.16);
+                }
+                .msg-report-btn {
+                    position: absolute;
+                    top: 8px;
+                    right: 8px;
+                    background: rgba(255, 170, 0, 0.14);
+                    border: 1px solid rgba(255, 170, 0, 0.55);
+                    color: #ffd27a;
+                    border-radius: 999px;
+                    font-family: 'Orbitron', monospace;
+                    font-size: 10px;
+                    padding: 3px 9px;
+                    cursor: pointer;
+                    opacity: 0;
+                    transition: opacity 0.15s ease, transform 0.15s ease;
+                    z-index: 2;
+                }
+                .reportable-msg:hover .msg-report-btn,
+                body.report-mode-active .msg-report-btn {
+                    opacity: 1;
+                }
+                .msg-report-btn:hover {
+                    transform: translateY(-1px);
+                    background: rgba(255, 170, 0, 0.22);
+                }
+                #rhodes-report-mode-toggle,
+                #rhodes-report-mode-compose {
+                    position: fixed;
+                    right: 18px;
+                    z-index: 12000;
+                    border-radius: 999px;
+                    font-family: 'Orbitron', monospace;
+                    font-size: 12px;
+                    padding: 10px 16px;
+                    border: 1px solid rgba(255, 170, 0, 0.55);
+                    background: rgba(15, 15, 15, 0.96);
+                    color: #ffd27a;
+                    cursor: pointer;
+                    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+                }
+                #rhodes-report-mode-toggle { bottom: 96px; }
+                #rhodes-report-mode-compose { bottom: 52px; display: none; }
+                body.report-mode-active #rhodes-report-mode-toggle {
+                    background: rgba(255, 170, 0, 0.18);
+                }
+                #rhodes-report-mode-modal {
+                    position: fixed;
+                    inset: 0;
+                    z-index: 13000;
+                    display: none;
+                    align-items: center;
+                    justify-content: center;
+                    background: rgba(0, 0, 0, 0.7);
+                    padding: 24px;
+                }
+                #rhodes-report-mode-modal.open { display: flex; }
+                .rhodes-report-card {
+                    width: min(760px, 100%);
+                    max-height: 88vh;
+                    overflow: auto;
+                    background: #121212;
+                    border: 1px solid rgba(255, 170, 0, 0.42);
+                    border-radius: 12px;
+                    padding: 18px;
+                    color: var(--text);
+                }
+                .rhodes-report-card h3 {
+                    margin-bottom: 12px;
+                    font-family: 'Orbitron', monospace;
+                    color: #ffd27a;
+                }
+                .rhodes-report-card label {
+                    display: block;
+                    margin: 10px 0 6px;
+                    font-size: 12px;
+                    color: var(--cyan);
+                }
+                .rhodes-report-card input,
+                .rhodes-report-card select,
+                .rhodes-report-card textarea {
+                    width: 100%;
+                    background: #0a0a0a;
+                    color: var(--text);
+                    border: 1px solid rgba(255, 255, 255, 0.12);
+                    border-radius: 8px;
+                    padding: 10px 12px;
+                    font: inherit;
+                }
+                .rhodes-report-grid {
+                    display: grid;
+                    gap: 12px;
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+                .rhodes-report-summary {
+                    margin-top: 10px;
+                    padding: 10px 12px;
+                    border: 1px solid rgba(255, 170, 0, 0.2);
+                    border-radius: 8px;
+                    background: rgba(255, 170, 0, 0.06);
+                    font-size: 12px;
+                    white-space: pre-wrap;
+                }
+                .rhodes-report-actions {
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 10px;
+                    margin-top: 14px;
+                }
+                .rhodes-report-actions button {
+                    border-radius: 8px;
+                    border: 1px solid rgba(255, 170, 0, 0.45);
+                    background: rgba(255, 170, 0, 0.12);
+                    color: #ffd27a;
+                    font-family: 'Orbitron', monospace;
+                    cursor: pointer;
+                    padding: 10px 14px;
+                }
+                .rhodes-report-actions button.secondary {
+                    border-color: rgba(255, 255, 255, 0.14);
+                    color: var(--text);
+                    background: rgba(255, 255, 255, 0.04);
+                }
+                @media (max-width: 700px) {
+                    .rhodes-report-grid { grid-template-columns: 1fr; }
+                    #rhodes-report-mode-toggle, #rhodes-report-mode-compose {
+                        right: 12px;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        function syncReportModeButtons() {
+            if (!reportModeState.toggleBtn || !reportModeState.composerBtn) return;
+            const canCreate = canCurrentUserCreateReports();
+            if (!canCreate) {
+                reportModeState.enabled = false;
+                for (const el of document.querySelectorAll('.report-selected')) {
+                    el.classList.remove('report-selected');
+                }
+                reportModeState.selected.clear();
+            }
+            document.body.classList.toggle('report-mode-active', !!reportModeState.enabled && canCreate);
+            reportModeState.toggleBtn.style.display = canCreate ? 'inline-flex' : 'none';
+            reportModeState.toggleBtn.textContent = reportModeState.enabled ? 'EXIT REPORT MODE' : 'REPORT MODE';
+            const count = reportModeState.selected.size;
+            reportModeState.composerBtn.style.display = canCreate && count > 0 ? 'inline-flex' : 'none';
+            reportModeState.composerBtn.textContent = count > 0 ? `CREATE REPORT (${count})` : 'CREATE REPORT';
+        }
+
+        function clearReportSelections() {
+            for (const el of document.querySelectorAll('.report-selected')) {
+                el.classList.remove('report-selected');
+            }
+            reportModeState.selected.clear();
+            syncReportModeButtons();
+        }
+
+        function resetReportModeState() {
+            reportModeState.currentRound = 0;
+            reportModeState.msgSerial = 0;
+            reportModeState.sessionId = RHODES_ID || null;
+            clearReportSelections();
+        }
+
+        function deriveReportRound(role, options) {
+            const explicit = Number.isInteger(options && options.roundNum) ? options.roundNum : null;
+            if (explicit !== null) {
+                reportModeState.currentRound = Math.max(reportModeState.currentRound, explicit);
+                return explicit;
+            }
+            if (role === 'user') {
+                reportModeState.currentRound += 1;
+                return reportModeState.currentRound;
+            }
+            return reportModeState.currentRound || null;
+        }
+
+        function snapshotReportMessage(el) {
+            const roundNumRaw = el.dataset.reportRoundNum || '';
+            const roundNum = roundNumRaw ? Number(roundNumRaw) : null;
+            return {
+                key: el.dataset.reportKey,
+                role: el.dataset.reportRole || 'assistant',
+                round_num: Number.isFinite(roundNum) ? roundNum : null,
+                message_text: el.dataset.reportText || '',
+                excerpt: el.dataset.reportExcerpt || '',
+                highlight_text: el.dataset.reportHighlight || '',
+                start_offset: el.dataset.reportStartOffset ? Number(el.dataset.reportStartOffset) : null,
+                end_offset: el.dataset.reportEndOffset ? Number(el.dataset.reportEndOffset) : null,
+                session_id: el.dataset.reportSessionId || reportModeState.sessionId || RHODES_ID || ''
+            };
+        }
+
+        function setReportSelected(el, force) {
+            const meta = snapshotReportMessage(el);
+            if (!meta.key) return;
+            const shouldSelect = typeof force === 'boolean' ? force : !reportModeState.selected.has(meta.key);
+            if (shouldSelect) {
+                reportModeState.selected.set(meta.key, meta);
+                el.classList.add('report-selected');
+            } else {
+                reportModeState.selected.delete(meta.key);
+                el.classList.remove('report-selected');
+            }
+            syncReportModeButtons();
+        }
+
+        function captureReportSelection() {
+            if (!reportModeState.enabled) return;
+            const sel = window.getSelection && window.getSelection();
+            if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+            const text = String(sel.toString() || '').trim();
+            if (!text) return;
+            const container = sel.getRangeAt(0).commonAncestorContainer;
+                const el = (container && container.nodeType === 1 ? container : container && container.parentElement)
+                ? (container.nodeType === 1 ? container : container.parentElement).closest('.reportable-msg')
+                : null;
+            if (!el) return;
+            setReportSelected(el, true);
+            const key = el.dataset.reportKey;
+            const meta = reportModeState.selected.get(key);
+            if (!meta) return;
+            meta.highlight_text = text;
+            meta.excerpt = text;
+            const fullText = meta.message_text || '';
+            const start = fullText.indexOf(text);
+            if (start >= 0) {
+                meta.start_offset = start;
+                meta.end_offset = start + text.length;
+                el.dataset.reportStartOffset = String(start);
+                el.dataset.reportEndOffset = String(start + text.length);
+            }
+            el.dataset.reportHighlight = text;
+            el.dataset.reportExcerpt = text;
+            reportModeState.selected.set(key, meta);
+        }
+
+        function closeReportComposer() {
+            if (reportModeState.modalEl) reportModeState.modalEl.classList.remove('open');
+        }
+
+        function ensureReportModeUi() {
+            installReportModeStyles();
+            if (!reportModeState.toggleBtn) {
+                const toggle = document.createElement('button');
+                toggle.id = 'rhodes-report-mode-toggle';
+                toggle.type = 'button';
+                toggle.onclick = () => {
+                    if (!getReportAuthToken()) {
+                        showToast('Sign in first to create bug or flaw reports.');
+                        return;
+                    }
+                    if (!canCurrentUserCreateReports()) {
+                        showToast('Report mode is not enabled for this account.');
+                        return;
+                    }
+                    reportModeState.enabled = !reportModeState.enabled;
+                    if (!reportModeState.enabled) clearReportSelections();
+                    syncReportModeButtons();
+                };
+                document.body.appendChild(toggle);
+                reportModeState.toggleBtn = toggle;
+            }
+            if (!reportModeState.composerBtn) {
+                const compose = document.createElement('button');
+                compose.id = 'rhodes-report-mode-compose';
+                compose.type = 'button';
+                compose.onclick = () => openReportComposer();
+                document.body.appendChild(compose);
+                reportModeState.composerBtn = compose;
+            }
+            if (!reportModeState.modalEl) {
+                const modal = document.createElement('div');
+                modal.id = 'rhodes-report-mode-modal';
+                modal.innerHTML = `
+                    <div class="rhodes-report-card">
+                        <h3>Message Report</h3>
+                        <form id="rhodes-report-form">
+                            <div class="rhodes-report-grid">
+                                <div>
+                                    <label for="rhodes-report-type">Type</label>
+                                    <select id="rhodes-report-type">
+                                        <option value="bug">Bug report</option>
+                                        <option value="flaw">Flaw report</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="rhodes-report-severity">Severity</label>
+                                    <select id="rhodes-report-severity">
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                        <option value="critical">Critical</option>
+                                        <option value="low">Low</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="rhodes-report-flaw-wrap">
+                                <label for="rhodes-report-flaw-type">Flaw Type</label>
+                                <input id="rhodes-report-flaw-type" type="text" placeholder="hallucination, refusal failure, tone drift, tool glitch" />
+                            </div>
+                            <label for="rhodes-report-title">Title</label>
+                            <input id="rhodes-report-title" type="text" maxlength="200" placeholder="Short label for the glitch" />
+                            <label for="rhodes-report-description">Description</label>
+                            <textarea id="rhodes-report-description" rows="6" placeholder="What went wrong, why it matters, and what you noticed."></textarea>
+                            <label for="rhodes-report-highlight">Highlighted Text</label>
+                            <textarea id="rhodes-report-highlight" rows="3" placeholder="Optional exact excerpt or highlighted span."></textarea>
+                            <div class="rhodes-report-summary" id="rhodes-report-summary"></div>
+                            <div class="rhodes-report-actions">
+                                <button class="secondary" type="button" id="rhodes-report-cancel">Cancel</button>
+                                <button type="submit" id="rhodes-report-submit">Submit Report</button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+                modal.addEventListener('click', (event) => {
+                    if (event.target === modal) closeReportComposer();
+                });
+                document.body.appendChild(modal);
+                reportModeState.modalEl = modal;
+                modal.querySelector('#rhodes-report-cancel').onclick = () => closeReportComposer();
+                modal.querySelector('#rhodes-report-type').addEventListener('change', (event) => {
+                    const wrap = modal.querySelector('#rhodes-report-flaw-wrap');
+                    wrap.style.display = event.target.value === 'flaw' ? 'block' : 'none';
+                });
+                modal.querySelector('#rhodes-report-form').addEventListener('submit', async (event) => {
+                    event.preventDefault();
+                    const token = getReportAuthToken();
+                    if (!token) {
+                        showToast('Sign in first to submit reports.');
+                        return;
+                    }
+                    if (!canCurrentUserCreateReports()) {
+                        showToast('Report mode is not enabled for this account.');
+                        return;
+                    }
+                    const selectedMessages = Array.from(reportModeState.selected.values());
+                    if (!selectedMessages.length) {
+                        showToast('Select at least one message first.');
+                        return;
+                    }
+                    const submitBtn = modal.querySelector('#rhodes-report-submit');
+                    submitBtn.disabled = true;
+                    try {
+                        const reportType = modal.querySelector('#rhodes-report-type').value;
+                        const payload = {
+                            report_type: reportType,
+                            session_id: reportModeState.sessionId || RHODES_ID || selectedMessages[0].session_id || '',
+                            title: modal.querySelector('#rhodes-report-title').value.trim(),
+                            description: modal.querySelector('#rhodes-report-description').value.trim(),
+                            severity: modal.querySelector('#rhodes-report-severity').value,
+                            flaw_type: modal.querySelector('#rhodes-report-flaw-type').value.trim(),
+                            highlight_text: modal.querySelector('#rhodes-report-highlight').value.trim(),
+                            selected_messages: selectedMessages
+                        };
+                        const res = await fetch('/api/user/message-reports', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': 'Bearer ' + token,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(payload)
+                        });
+                        const body = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            throw new Error(body.error || ('HTTP ' + res.status));
+                        }
+                        if (body.report_type === 'bug') {
+                            showToast('Bug report saved: ' + (body.bug_id || 'ok'));
+                        } else {
+                            showToast('Flaw report saved: #' + (body.id || 'ok'));
+                        }
+                        closeReportComposer();
+                        reportModeState.enabled = false;
+                        clearReportSelections();
+                        syncReportModeButtons();
+                    } catch (err) {
+                        showToast('Report failed: ' + (err && err.message ? err.message : 'unknown error'));
+                    } finally {
+                        submitBtn.disabled = false;
+                    }
+                });
+            }
+            if (!ensureReportModeUi._wired) {
+                document.addEventListener('mouseup', captureReportSelection);
+                document.addEventListener('click', (event) => {
+                    if (!reportModeState.enabled) return;
+                    const target = event.target;
+                    if (!(target instanceof Element)) return;
+                    if (target.closest('.msg-report-btn, a, button, input, textarea, select, label')) return;
+                    const msgEl = target.closest('.reportable-msg');
+                    if (!msgEl) return;
+                    const selection = window.getSelection && window.getSelection();
+                    if (selection && !selection.isCollapsed && String(selection.toString() || '').trim()) return;
+                    event.preventDefault();
+                    setReportSelected(msgEl);
+                }, true);
+                ensureReportModeUi._wired = true;
+            }
+            syncReportModeButtons();
+        }
+
+        function openReportComposer(seedMessageEl) {
+            ensureReportModeUi();
+            if (!canCurrentUserCreateReports()) {
+                showToast('Report mode is not enabled for this account.');
+                return;
+            }
+            if (seedMessageEl) {
+                setReportSelected(seedMessageEl, true);
+            }
+            const selectedMessages = Array.from(reportModeState.selected.values());
+            if (!selectedMessages.length) {
+                showToast('Select one or more messages first.');
+                return;
+            }
+            const modal = reportModeState.modalEl;
+            const summary = selectedMessages.map((item, idx) => {
+                const role = item.role === 'user' ? 'USER' : (item.role === 'tool' ? 'TOOL' : 'AI');
+                const round = item.round_num ? `r${item.round_num}` : 'r?';
+                const excerpt = (item.highlight_text || item.excerpt || item.message_text || '').slice(0, 220);
+                return `${idx + 1}. ${role} ${round}\n${excerpt}`;
+            }).join('\n\n');
+            modal.querySelector('#rhodes-report-summary').textContent = summary;
+            modal.querySelector('#rhodes-report-highlight').value =
+                selectedMessages.map(item => item.highlight_text).filter(Boolean).join('\n\n');
+            modal.querySelector('#rhodes-report-title').value =
+                modal.querySelector('#rhodes-report-title').value.trim() || `Report on ${selectedMessages.length} message${selectedMessages.length === 1 ? '' : 's'}`;
+            modal.classList.add('open');
+        }
+
+        function registerReportableMessage(el, meta) {
+            ensureReportModeUi();
+            if (!canCurrentUserCreateReports()) return;
+            const role = meta && meta.role ? meta.role : 'assistant';
+            const roundNum = deriveReportRound(role, meta || {});
+            const cleanText = String((meta && meta.cleanText) || '');
+            const messageSeq = Number.isInteger(meta && meta.messageSeq) ? meta.messageSeq : (++reportModeState.msgSerial);
+            const key = `msg:${roundNum || 'na'}:${role}:${messageSeq}`;
+            el.classList.add('reportable-msg');
+            el.dataset.reportKey = key;
+            el.dataset.reportRole = role;
+            el.dataset.reportRoundNum = roundNum !== null && roundNum !== undefined ? String(roundNum) : '';
+            el.dataset.reportSessionId = String((meta && meta.sessionId) || reportModeState.sessionId || RHODES_ID || '');
+            el.dataset.reportText = cleanText;
+            el.dataset.reportExcerpt = cleanText.slice(0, 1200);
+            if (!el.querySelector('.msg-report-btn')) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'msg-report-btn';
+                btn.textContent = 'REPORT';
+                btn.onclick = (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (!getReportAuthToken()) {
+                        showToast('Sign in first to create bug or flaw reports.');
+                        return;
+                    }
+                    if (!canCurrentUserCreateReports()) {
+                        showToast('Report mode is not enabled for this account.');
+                        return;
+                    }
+                    reportModeState.enabled = true;
+                    syncReportModeButtons();
+                    openReportComposer(el);
+                };
+                el.appendChild(btn);
+            }
+        }
+
+        window.RhodesReportMode = {
+            resetSession: resetReportModeState,
+            syncSessionId(sessionId) {
+                reportModeState.sessionId = sessionId || RHODES_ID || null;
+            },
+            registerMessage: registerReportableMessage,
+            openComposer: openReportComposer
+        };
+        ensureReportModeUi();
 
         // Outbound queue: if WS is not ready, queue messages and flush after auth.
         let wsReadyForMessages = false;
@@ -1313,6 +1826,13 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
                     '<button onclick="if(window.openHandoffViewer){window.openHandoffViewer(decodeURIComponent(this.dataset.url),String.fromCharCode(86,78,67),String.fromCharCode(66,114,111,119,115,101,114))}" data-url="' + encodeURIComponent(url) + '" style="background:rgba(0,255,65,0.15);border:1px solid var(--green);color:var(--green);padding:5px 16px;cursor:pointer;font-family:Orbitron,monospace;font-size:12px;border-radius:4px;font-weight:bold;">Open</button>' +
                 '</div>';
             });
+            // KasmVNC session URLs (http://IP:PORT/?token=X) -> same modal button
+            html = html.replace(/(?<!="|\'|>)(https?:\/\/rhodesagi\.com\/kasm-session\/7[2-3]\d{2}\/\?token=[^\s<>"'\`]+)/gi, function(match, url) {
+                return '<div style="margin:8px 0;padding:10px 14px;border:1px solid var(--green);border-radius:6px;background:rgba(0,255,65,0.06);display:inline-flex;align-items:center;gap:10px;">' +
+                    '<span style="color:var(--green);font-family:Orbitron,monospace;font-size:11px;">BROWSER SESSION</span>' +
+                    '<button onclick="if(window.openHandoffViewer){window.openHandoffViewer(decodeURIComponent(this.dataset.url),String.fromCharCode(86,78,67),String.fromCharCode(66,114,111,119,115,101,114))}" data-url="' + encodeURIComponent(url) + '" style="background:rgba(0,255,65,0.15);border:1px solid var(--green);color:var(--green);padding:5px 16px;cursor:pointer;font-family:Orbitron,monospace;font-size:12px;border-radius:4px;font-weight:bold;">Open</button>' +
+                '</div>';
+            });
             // Catch-all: any rhodesagi.com VNC URL -> same modal button
             html = html.replace(/(?<!="|\'|>)(https?:\/\/rhodesagi\.com\/sites\/[^\s<>"'`]*vnc[^\s<>"'`]*)/gi, function(match, url) {
                 return '<div style="margin:8px 0;padding:10px 14px;border:1px solid var(--green);border-radius:6px;background:rgba(0,255,65,0.06);display:inline-flex;align-items:center;gap:10px;">' +
@@ -1397,7 +1917,7 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
         }
 
 
-        function addMsg(role, text, skipShare = false, responseTimeLabel = '') {
+        function addMsg(role, text, skipShare = false, responseTimeLabel = '', options = {}) {
             if (chat) chat.classList.remove('intro-center');
             const div = document.createElement('div');
             const hasUsedVoice = rhodesStorage.getItem('hasUsedVoice');
@@ -1442,6 +1962,13 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
                 timeEl.textContent = ' (' + responseTimeLabel + ')';
                 div.appendChild(timeEl);
             }
+
+            registerReportableMessage(div, {
+                role,
+                cleanText,
+                roundNum: Number.isInteger(options.roundNum) ? options.roundNum : null,
+                sessionId: options.sessionId || reportModeState.sessionId || RHODES_ID || null
+            });
 
             chat.appendChild(div);
             _autoScrollChat(chat);

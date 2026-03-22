@@ -26,7 +26,8 @@ window.RHODES_CONFIG = {
         'recall_lang', 'lang_stats',
         'people_search', 'people_search_phone', 'people_search_ip',
         'parse_email_name', 'enrich_user', 'get_search_urls',
-        'report_to_alliance', 'mark_insight'
+        'report_to_alliance', 'mark_insight',
+        'expand_prompt', 'set_system_prompt', 'fine_tune_yourself'
     ],
     
     // Model name mappings
@@ -219,16 +220,16 @@ window.rhodesSessionState = (function() {
 
     function getScopedSessionId(identity) {
         const key = keyForIdentity(identity);
-        return (window.rhodesStorage && window.rhodesStorage.getItem(key)) || '';
+        return (window.rhodesSessionStorage && window.rhodesSessionStorage.getItem(key)) || '';
     }
 
     function setScopedSessionId(sessionId, identity) {
         const key = keyForIdentity(identity);
         if (!sessionId) {
-            if (window.rhodesStorage) window.rhodesStorage.removeItem(key);
+            if (window.rhodesSessionStorage) window.rhodesSessionStorage.removeItem(key);
             return;
         }
-        if (window.rhodesStorage) window.rhodesStorage.setItem(key, sessionId);
+        if (window.rhodesSessionStorage) window.rhodesSessionStorage.setItem(key, sessionId);
     }
 
     function migrateLegacySessionPointer(identity) {
@@ -468,6 +469,12 @@ if (window.rhodesIOS.isIOS) {
         window._renderDownloadCard = function(args, toolResult) {
             var product = (args && args.product) || 'rhodes_code';
             var reason = (args && args.reason) || '';
+
+            // If user is already on Rhodes Code desktop, suppress the rhodes_code download card
+            if (product === 'rhodes_code' && window.rhodes && window.rhodes.isDesktop) {
+                console.log('[DOWNLOAD_OFFER] Suppressed: user already on Rhodes Code desktop');
+                return;
+            }
             var projectZipUrl = (args && args.project_zip_url) || '';
             var projectZipLabel = (args && args.project_zip_label) || 'Download Swift project (.zip)';
             var iosFlowExplicit = !!(args && args.ios_mac_flow);

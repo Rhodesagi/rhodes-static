@@ -129,7 +129,9 @@ window.installRhodesAuthUi = function installRhodesAuthUi(deps) {
                 headers: { 'Authorization': 'Bearer ' + userToken }
             });
             const data = await resp.json();
-            const show = data.is_admin ? '' : 'none';
+            const isAdmin = !!(data && data.is_admin);
+            if (window.RHODES_CONFIG) window.RHODES_CONFIG.isAdmin = isAdmin;
+            const show = isAdmin ? '' : 'none';
             if (adminLink) adminLink.style.display = show;
             if (mobileAdminLink) mobileAdminLink.style.display = show;
 

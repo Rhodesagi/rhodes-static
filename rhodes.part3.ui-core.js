@@ -9,6 +9,27 @@ function _shouldAutoScrollChat(el) {
 function _autoScrollChat(el) {
     if (_shouldAutoScrollChat(el)) el.scrollTop = el.scrollHeight;
 }
+function _normalizeRhodesSessionNote(note) {
+    const clean = String(note ?? '').trim().toLowerCase();
+    return clean || null;
+}
+function _formatRhodesSessionLabel(label, note) {
+    const cleanLabel = String(label ?? '').trim();
+    const cleanNote = _normalizeRhodesSessionNote(note);
+    return cleanNote ? (cleanLabel + ' (' + cleanNote + ')') : cleanLabel;
+}
+window.__rhodesApplySessionNote = function(note) {
+    if (arguments.length > 0) {
+        window.__rhodesSessionNote = _normalizeRhodesSessionNote(note);
+    }
+    const sessionEl = document.getElementById('session-id');
+    if (!sessionEl) return;
+    const sid = (typeof RHODES_ID === 'string' && RHODES_ID) || sessionEl.dataset.sessionId || '';
+    if (!sid) return;
+    sessionEl.dataset.sessionId = sid;
+    sessionEl.textContent = _formatRhodesSessionLabel(sid, window.__rhodesSessionNote);
+    sessionEl.style.display = 'inline';
+};
 
 /* RHODES v2 module: rhodes.part3.ui-core.js */
 /* Source: contiguous slice of rhodes.monolith.js */
@@ -126,9 +147,15 @@ function showDownloads() {
 
         function finalizeStreamingMsg(el, finalText) {
             if (!el) return;
+            el.querySelectorAll('.streaming-cursor').forEach(function(c) { c.remove(); });
             el.classList.remove('streaming');
             // Preserve tool call elements
             const savedTools = Array.from(el.querySelectorAll('.tool-summary'));
+            // Remove empty message boxes (no content and no tool calls)
+            if ((!finalText || !finalText.trim()) && savedTools.length === 0) {
+                el.remove();
+                return;
+            }
             // Strip any remaining action blocks (should be cleaned server-side, but safety)
             let cleanText = finalText
                 .replace(/\[RHODES_ACTION:\s*\w+\][\s\S]*?\[\/RHODES_ACTION\]/gi, '')
@@ -473,6 +500,7 @@ function showDownloads() {
                         // Important: even in ?new=1 mode, reconnects must resume the same in-tab session,
                         // otherwise any transient disconnect (or /stop) looks like "new Rhodes with no memory".
                         resume_session: resumeSession,
+                        force_new: !!wantsNewRhodes,
                         client_version: '3.0.0',
                         platform: (window.rhodes && window.rhodes.isDesktop) ? 'desktop-electron' : 'web',
                         desktop_mode: !!(window.rhodes && window.rhodes.isDesktop),
@@ -518,7 +546,7 @@ function showDownloads() {
                         const prevIdentity = (window.rhodesSessionState && window.rhodesSessionState.getLastIdentity)
                             ? window.rhodesSessionState.getLastIdentity()
                             : null;
-                        const incomingUsername = ((msg.payload.user && msg.payload.user.username) || '').toLowerCase();
+                        const incomingUsername = ((msg.payload.user && msg.payload.user.username) || '').trim();
                         const incomingIdentity = (msg.payload.is_guest || !incomingUsername)
                             ? 'guest'
                             : ('user:' + incomingUsername);
@@ -535,9 +563,11 @@ function showDownloads() {
                         // Clear chat only once for ?new=1 (initial creation); do not clear on reconnect.
                         if (wantsNewRhodes && !didInitialAuth) {
                             chat.innerHTML = '';
+                            if (window.RhodesReportMode && window.RhodesReportMode.resetSession) window.RhodesReportMode.resetSession();
                         }
                         if (identitySwitched) {
                             chat.innerHTML = '';
+                            if (window.RhodesReportMode && window.RhodesReportMode.resetSession) window.RhodesReportMode.resetSession();
                             CONNECTION_MSG_SHOWN = false;
                         }
                         didInitialAuth = true;
@@ -559,8 +589,13 @@ function showDownloads() {
                         if (RHODES_ID) {
                             const sessionEl = document.getElementById('session-id');
                             if (sessionEl) {
-                                sessionEl.textContent = RHODES_ID;
-                                sessionEl.style.display = 'inline';
+                                sessionEl.dataset.sessionId = RHODES_ID;
+                            }
+                            if (window.RhodesReportMode && window.RhodesReportMode.syncSessionId) {
+                                window.RhodesReportMode.syncSessionId(RHODES_ID);
+                            }
+                            if (window.__rhodesApplySessionNote) {
+                                window.__rhodesApplySessionNote(msg.payload.session_note);
                             }
                         }
 
@@ -588,11 +623,11 @@ function showDownloads() {
                         } else {
                             GUEST_HAS_ACTIVITY = false;
                             const username = msg.payload.user?.username || '';
-                            CURRENT_USERNAME = username.toLowerCase();
-                        rhodesStorage.setItem('rhodes_username', CURRENT_USERNAME);
-                        if (window.rhodesSessionState && window.rhodesSessionState.setLastIdentity) {
-                            window.rhodesSessionState.setLastIdentity('user:' + CURRENT_USERNAME);
-                        }
+                            CURRENT_USERNAME = username || null;
+                            rhodesStorage.setItem('rhodes_username', CURRENT_USERNAME || '');
+                            if (window.rhodesSessionState && window.rhodesSessionState.setLastIdentity) {
+                                window.rhodesSessionState.setLastIdentity('user:' + (CURRENT_USERNAME || ''));
+                            }
                             setStatus(true, username ? `CONNECTED (${username})${instanceLabel}` : `CONNECTED${instanceLabel}`);
                             try { authModal.style.display = 'none'; } catch {}
                             window._wsConnectAttempts = 0;
@@ -856,6 +891,8 @@ function showDownloads() {
                             return;
                         }
                         if (!window.streamingMsgEl) {
+                            // First chunk - skip empty chunks (e.g. DSML-stripped content)
+                            if (!chunk || !chunk.trim()) return;
                             // First chunk - create message element
                             hideLoading();
                             // Collapse any open tool container so content appears after tool dots
@@ -878,6 +915,9 @@ function showDownloads() {
                 } else if (msg.msg_type === "ai_message") {
                     console.log("[DEBUG] ai_message received:", JSON.stringify(msg.payload).slice(0, 500));
                     console.log("[DEBUG] debug_reasoning present:", !!msg.payload.debug_reasoning, "len:", msg.payload.debug_reasoning ? msg.payload.debug_reasoning.length : 0);
+                    if (msg.payload && Object.prototype.hasOwnProperty.call(msg.payload, 'session_note') && window.__rhodesApplySessionNote) {
+                        window.__rhodesApplySessionNote(msg.payload.session_note);
+                    }
                     const pendingTurnStartTs = (window._pendingGeneration && window._pendingGeneration.timestamp) ? window._pendingGeneration.timestamp : 0;
                     hideLoading();
                     // Finalize streaming: keep content in place, append wall-to-wall timer
@@ -991,7 +1031,9 @@ function showDownloads() {
                         }
                         // Collapse tool log so any subsequent tool calls appear after this message
                         if (typeof collapseToolCalls === 'function') collapseToolCalls();
-                        const node = addMsg('ai', msg.payload.content, false, responseTimeLabel);
+                        const node = addMsg('ai', msg.payload.content, false, responseTimeLabel, {
+                            sessionId: RHODES_ID || (msg.payload && (msg.payload.session_id || msg.payload.rhodes_id)) || null
+                        });
                         if (node && reqId) node.dataset.reqId = reqId;
                         if (msg.payload.debug_reasoning && window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin) {
                             attachDebugReasoning(node, msg.payload.debug_reasoning);
@@ -1060,10 +1102,10 @@ function showDownloads() {
                         window.__guestOnboardingShown = false;
                         removeGuestOnboardingMessages();
                         authModal.style.display = 'none';
-                        CURRENT_USERNAME = (msg.payload.username || '').toLowerCase();
-                        rhodesStorage.setItem('rhodes_username', CURRENT_USERNAME);
+                        CURRENT_USERNAME = (msg.payload.username || '').trim() || null;
+                        rhodesStorage.setItem('rhodes_username', CURRENT_USERNAME || '');
                         if (window.rhodesSessionState && window.rhodesSessionState.setLastIdentity) {
-                            window.rhodesSessionState.setLastIdentity('user:' + CURRENT_USERNAME);
+                            window.rhodesSessionState.setLastIdentity('user:' + (CURRENT_USERNAME || ''));
                         }
                         setStatus(true, 'CONNECTED (' + msg.payload.username + ')');
                         addMsg('ai', 'Welcome ' + msg.payload.username + '! Your account is ready.');
@@ -1099,10 +1141,10 @@ function showDownloads() {
                             return;
                         }
                         // Session already upgraded server-side — update auth state
-                        CURRENT_USERNAME = (msg.payload.username || '').toLowerCase();
-                        rhodesStorage.setItem('rhodes_username', CURRENT_USERNAME);
+                        CURRENT_USERNAME = (msg.payload.username || '').trim() || null;
+                        rhodesStorage.setItem('rhodes_username', CURRENT_USERNAME || '');
                         if (window.rhodesSessionState && window.rhodesSessionState.setLastIdentity) {
-                            window.rhodesSessionState.setLastIdentity('user:' + CURRENT_USERNAME);
+                            window.rhodesSessionState.setLastIdentity('user:' + (CURRENT_USERNAME || ''));
                         }
                         addMsg('ai', `Welcome back, ${msg.payload.username}!`);
                         setStatus(true, 'CONNECTED (' + msg.payload.username + ')');
@@ -1166,10 +1208,10 @@ function showDownloads() {
                         }
                         authModal.style.display = 'none';
                         // Session already upgraded server-side — update auth state
-                        CURRENT_USERNAME = (msg.payload.username || '').toLowerCase();
-                        rhodesStorage.setItem('rhodes_username', CURRENT_USERNAME);
+                        CURRENT_USERNAME = (msg.payload.username || '').trim() || null;
+                        rhodesStorage.setItem('rhodes_username', CURRENT_USERNAME || '');
                         if (window.rhodesSessionState && window.rhodesSessionState.setLastIdentity) {
-                            window.rhodesSessionState.setLastIdentity('user:' + CURRENT_USERNAME);
+                            window.rhodesSessionState.setLastIdentity('user:' + (CURRENT_USERNAME || ''));
                         }
                         addMsg('ai', `Welcome, ${msg.payload.username}! Signed in with Google.`);
                         setStatus(true, 'CONNECTED (' + msg.payload.username + ')');
@@ -1186,6 +1228,7 @@ function showDownloads() {
                         const conversation = msg.payload.conversation || [];
                         console.log('[RESUME] Received conversation:', conversation.length, 'messages');
                         try { chat.innerHTML = ''; } catch {}
+                        if (window.RhodesReportMode && window.RhodesReportMode.resetSession) window.RhodesReportMode.resetSession();
                         for (const m of conversation) {
                             // Skip tool result messages and empty assistant messages
                             if (m.role === 'tool') continue;
@@ -1206,8 +1249,13 @@ function showDownloads() {
                             }
                             const sessionEl = document.getElementById('session-id');
                             if (sessionEl) {
-                                sessionEl.textContent = RHODES_ID;
-                                sessionEl.style.display = 'inline';
+                                sessionEl.dataset.sessionId = RHODES_ID;
+                            }
+                            if (window.RhodesReportMode && window.RhodesReportMode.syncSessionId) {
+                                window.RhodesReportMode.syncSessionId(RHODES_ID);
+                            }
+                            if (window.__rhodesApplySessionNote) {
+                                window.__rhodesApplySessionNote(msg.payload.session_note);
                             }
                         }
                         // Show model info if present (helps user know what mode they're in)
@@ -1234,6 +1282,7 @@ function showDownloads() {
                     if (msg.payload.success) {
                         // Clear chat and switch to new session
                         try { chat.innerHTML = ''; } catch {}
+                        if (window.RhodesReportMode && window.RhodesReportMode.resetSession) window.RhodesReportMode.resetSession();
                         // Reset tool totals for new session
                         if (typeof resetToolTotals === 'function') resetToolTotals();
                         const sid = msg.payload.session_id || '';
@@ -1248,8 +1297,13 @@ function showDownloads() {
                             }
                             const sessionEl = document.getElementById('session-id');
                             if (sessionEl) {
-                                sessionEl.textContent = RHODES_ID;
-                                sessionEl.style.display = 'inline';
+                                sessionEl.dataset.sessionId = RHODES_ID;
+                            }
+                            if (window.RhodesReportMode && window.RhodesReportMode.syncSessionId) {
+                                window.RhodesReportMode.syncSessionId(RHODES_ID);
+                            }
+                            if (window.__rhodesApplySessionNote) {
+                                window.__rhodesApplySessionNote(msg.payload.session_note);
                             }
                         }
                         showToast('New session created');
@@ -1334,8 +1388,10 @@ function showDownloads() {
                             }
                         const sessionEl = document.getElementById('session-id');
                         if (sessionEl) {
-                            sessionEl.textContent = RHODES_ID;
-                            sessionEl.style.display = 'inline';
+                            sessionEl.dataset.sessionId = RHODES_ID;
+                        }
+                        if (window.__rhodesApplySessionNote) {
+                            window.__rhodesApplySessionNote(msg.payload ? msg.payload.session_note : null);
                         }
                         const reason = (msg.payload.reason || '').toString().toLowerCase();
                         if (reason === 'model_switch' && msg.payload.model) {
@@ -1479,7 +1535,7 @@ function showDownloads() {
                     const isPrivileged = !IS_GUEST && USER_TOKEN;
                     const round = tool.round || 0;
 
-                    if ((toolName.includes('think') || toolName === 'claude_search' || toolName === 'mark_insight') && !isPrivileged) return;
+                    if ((toolName.includes('think') || toolName === 'claude_search' || toolName === 'mark_insight' || toolName === 'expand_prompt' || toolName === 'set_system_prompt' || toolName === 'fine_tune_yourself') && !isPrivileged) return;
 
                     const status = tool.status || 'complete';
                     const fingerprintSrc =
@@ -1576,6 +1632,7 @@ function showDownloads() {
                             if (window.streamingContent && window.marked) {
                                 window.streamingMsgEl.innerHTML = window.marked.parse(window.streamingContent);
                             }
+                            window.streamingMsgEl.querySelectorAll('.streaming-cursor').forEach(function(c) { c.remove(); });
                             window.streamingMsgEl.classList.remove('streaming');
                             window.streamingMsgEl = null;
                             window.streamingContent = '';
@@ -1648,25 +1705,55 @@ function showDownloads() {
                         detailsContent += '<div style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.1);padding-top:6px;"><span style="color:var(--green);">Result:</span>' + resultEmbeds + '<pre style="white-space:pre-wrap;color:var(--text);max-height:150px;overflow:auto;">' + resultHtml + '</pre></div>';
                     }
 
+                    // Idempotent: key on toolName|round only (preview may differ between start/complete)
+                    // Use a sequential counter for multiple tools of same name in same round
+                    if (!window._toolRoundCounters) window._toolRoundCounters = new Map();
+                    const baseKey = toolName + '|' + round;
+                    let toolKey;
+                    if (status === 'starting' || status === 'running') {
+                        // Check for existing running entry (dedup streaming + batch starting events)
+                        toolKey = null;
+                        for (const [k, v] of window._toolItems) {
+                            if (k.startsWith(baseKey + '|') && v.lastStatus && v.lastStatus !== 'complete') {
+                                toolKey = k;
+                                break;
+                            }
+                        }
+                        if (!toolKey) {
+                            const count = window._toolRoundCounters.get(baseKey) || 0;
+                            toolKey = baseKey + '|' + count;
+                            window._toolRoundCounters.set(baseKey, count + 1);
+                        }
+                    } else {
+                        // Complete: find the oldest running entry with same baseKey
+                        toolKey = null;
+                        for (const [k, v] of window._toolItems) {
+                            if (k.startsWith(baseKey + '|') && v.lastStatus !== 'complete' && v.el && v.el.isConnected) {
+                                toolKey = k;
+                                break;
+                            }
+                        }
+                        if (!toolKey) {
+                            // No running entry found — use baseKey with next counter
+                            const count = window._toolRoundCounters.get(baseKey) || 0;
+                            toolKey = baseKey + '|' + count;
+                            window._toolRoundCounters.set(baseKey, count + 1);
+                        }
+                    }
+
                     // Timer logic
-                    const timerKey = toolName + '|' + round;
                     let durationLabel = '';
                     if (status === 'starting' || status === 'running') {
-                        if (!window._toolTimers.has(timerKey)) {
-                            window._toolTimers.set(timerKey, Date.now());
-                            if (typeof trackToolStart === 'function') trackToolStart(timerKey);
+                        if (!window._toolTimers.has(toolKey)) {
+                            window._toolTimers.set(toolKey, Date.now());
+                            if (typeof trackToolStart === 'function') trackToolStart(toolKey);
                         }
                     } else if (status === 'complete') {
-                        const serverDuration = tool.duration_ms;
-                        let durationMs;
-                        if (serverDuration && serverDuration > 0) {
-                            durationMs = serverDuration;
-                        } else {
-                            const startTime = window._toolTimers.get(timerKey);
-                            durationMs = startTime ? (Date.now() - startTime) : 0;
-                        }
-                        durationLabel = durationMs ? formatDuration(durationMs) : '';
-                        if (typeof trackToolComplete === 'function') trackToolComplete(timerKey, serverDuration);
+                        const serverDuration = Number(tool.duration_ms) || 0;
+                        const startTime = window._toolTimers.get(toolKey);
+                        const durationMs = startTime ? Math.max(0, Date.now() - startTime) : serverDuration;
+                        durationLabel = durationMs > 0 ? formatDuration(durationMs) : '';
+                        if (typeof trackToolComplete === 'function') trackToolComplete(toolKey);
                     }
 
                     // Build compact dot indicator
@@ -1694,43 +1781,23 @@ function showDownloads() {
                     wrapperDiv.appendChild(dotSpan);
                     wrapperDiv.appendChild(detDiv);
 
-                    // Idempotent: key on toolName|round only (preview may differ between start/complete)
-                    // Use a sequential counter for multiple tools of same name in same round
-                    if (!window._toolRoundCounters) window._toolRoundCounters = new Map();
-                    const baseKey = toolName + '|' + round;
-                    let toolKey;
-                    if (status === 'starting' || status === 'running') {
-                        // Check for existing running entry (dedup streaming + batch starting events)
-                        toolKey = null;
-                        for (const [k, v] of window._toolItems) {
-                            if (k.startsWith(baseKey + '|') && v.lastStatus && v.lastStatus !== 'complete') {
-                                toolKey = k;
-                                break;
-                            }
-                        }
-                        if (!toolKey) {
-                            const count = window._toolRoundCounters.get(baseKey) || 0;
-                            toolKey = baseKey + '|' + count;
-                            window._toolRoundCounters.set(baseKey, count + 1);
-                        }
-                        // Store the key on the wrapper for completion matching
-                        wrapperDiv.setAttribute('data-tool-key', toolKey);
-                    } else {
-                        // Complete: find the oldest running entry with same baseKey
-                        toolKey = null;
-                        for (const [k, v] of window._toolItems) {
-                            if (k.startsWith(baseKey + '|') && v.lastStatus !== 'complete' && v.el && v.el.isConnected) {
-                                toolKey = k;
-                                break;
-                            }
-                        }
-                        if (!toolKey) {
-                            // No running entry found — use baseKey with next counter
-                            const count = window._toolRoundCounters.get(baseKey) || 0;
-                            toolKey = baseKey + '|' + count;
-                            window._toolRoundCounters.set(baseKey, count + 1);
-                        }
-                    }
+                    const registerToolReportTarget = (targetEl) => {
+                        if (!window.RhodesReportMode || typeof window.RhodesReportMode.registerMessage !== 'function') return;
+                        const toolReportText = JSON.stringify({
+                            name: toolName,
+                            status,
+                            round,
+                            args: toolArgs,
+                            result: tool.result || null,
+                            duration_ms: Number(tool.duration_ms) || null
+                        }, null, 2);
+                        window.RhodesReportMode.registerMessage(targetEl, {
+                            role: 'tool',
+                            roundNum: Number.isInteger(round) ? round : null,
+                            cleanText: toolReportText,
+                            sessionId: typeof RHODES_ID === 'string' ? RHODES_ID : ''
+                        });
+                    };
 
                     const existing = window._toolItems.get(toolKey);
                     if (existing) {
@@ -1740,14 +1807,17 @@ function showDownloads() {
                             existing.el.setAttribute('data-status', status);
                             existing.el.querySelector('.tool-dot').innerHTML = dotSpan.innerHTML;
                             existing.el.querySelector('.tool-dot-details').innerHTML = detailsContent;
+                            registerToolReportTarget(existing.el);
                             existing.lastStatus = status;
                         } else {
                             // Element orphaned (container collapsed) — remove old dot, show in current group
                             if (existing.el && existing.el.parentNode) existing.el.remove();
+                            registerToolReportTarget(wrapperDiv);
                             msgEl.appendChild(wrapperDiv);
                             window._toolItems.set(toolKey, { el: wrapperDiv, lastStatus: status });
                         }
                     } else {
+                        registerToolReportTarget(wrapperDiv);
                         msgEl.appendChild(wrapperDiv);
                         window._toolItems.set(toolKey, { el: wrapperDiv, lastStatus: status });
                         if (typeof updateToolTotalsDisplay === 'function') updateToolTotalsDisplay();

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Total Control - Privacy Policy</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            color: #222;
+            line-height: 1.6;
+            background: #fff;
+        }
+        h1 { font-size: 1.8rem; margin-bottom: 0.2em; }
+        h2 { font-size: 1.2rem; margin-top: 2em; color: #333; }
+        p, li { font-size: 1rem; color: #444; }
+        ul { padding-left: 1.5em; }
+        .updated { color: #888; font-size: 0.9rem; margin-bottom: 2em; }
+        .contact { margin-top: 2em; padding-top: 1em; border-top: 1px solid #eee; }
+        a { color: #1a73e8; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>Total Control &mdash; Privacy Policy</h1>
+    <p class="updated">Last updated: March 14, 2026</p>
+
+    <h2>Overview</h2>
+    <p>Total Control is a self-control and productivity Chrome extension developed by Sebastian Burnham. It monitors your browser tab URLs solely to enforce website-blocking rules that you define. Your privacy is simple: no data ever leaves your computer.</p>
+
+    <h2>What Data Is Collected</h2>
+    <p><strong>None.</strong> Total Control does not collect, store, or transmit any personal information. There are no analytics, no tracking scripts, no cookies, and no external network requests.</p>
+
+    <h2>How the Extension Works</h2>
+    <p>Total Control checks the URLs of your open tabs against blocking rules you have configured. It communicates exclusively with a local server running on your own machine at <code>localhost:7700</code>. No data is sent to any external server, cloud service, or third party.</p>
+
+    <h2>Permissions Used</h2>
+    <p>The extension requests the following browser permissions, all used solely for local URL monitoring and rule enforcement:</p>
+    <ul>
+        <li><strong>tabs</strong> &mdash; to read the current tab URL for blocking-rule checks</li>
+        <li><strong>scripting</strong> &mdash; to inject blocking overlays on restricted pages</li>
+        <li><strong>storage</strong> &mdash; to save your blocking rules locally in the browser</li>
+        <li><strong>alarms</strong> &mdash; to schedule timed blocking sessions</li>
+        <li><strong>declarativeNetRequest</strong> &mdash; to enforce network-level blocking rules</li>
+        <li><strong>host_permissions (&lt;all_urls&gt;)</strong> &mdash; required to monitor and block any website you choose to restrict</li>
+    </ul>
+
+    <h2>Third-Party Services</h2>
+    <p>Total Control uses no third-party services, SDKs, or APIs. All processing happens locally on your device.</p>
+
+    <h2>Data Sharing</h2>
+    <p>Since no data is collected, no data is shared with anyone, for any purpose, ever.</p>
+
+    <h2>Changes to This Policy</h2>
+    <p>If this privacy policy is updated, the revised version will be posted at this URL with an updated date. The extension's core commitment to zero data collection will not change.</p>
+
+    <div class="contact">
+        <h2>Contact</h2>
+        <p>If you have questions about this privacy policy, contact:<br>
+        <strong>Sebastian Burnham</strong><br>
+        <a href="mailto:burnhamsebastian@gmail.com">burnhamsebastian@gmail.com</a></p>
+    </div>
+</body>
+</html>

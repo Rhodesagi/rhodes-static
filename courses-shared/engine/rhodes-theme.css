@@ -345,15 +345,30 @@ kbd { padding: 2px 6px; border: 1px solid #ccc; background: var(--bg-tertiary); 
 }
 
 /* Dark mode overrides for drill type areas */
-body.dark-mode .model-sentence-area, :root[style*="--bg: #0a"] .model-sentence-area {
+body.dark-mode .model-sentence-area {
   background: #0d1a2a; border-left-color: #4169E1;
 }
-body.dark-mode .cue-area, :root[style*="--bg: #0a"] .cue-area {
+body.dark-mode .cue-area {
   background: #1a1400; border-left-color: #d4880a;
 }
-body.dark-mode .pair-option, :root[style*="--bg: #0a"] .pair-option {
+body.dark-mode .pair-option {
   background: var(--bg-secondary); color: var(--text);
 }
+body.dark-mode .progress-bar { background: #444; }
+body.dark-mode .accent-key { border-color: #555; }
+body.dark-mode .accent-key:hover { border-color: var(--text-muted); }
+body.dark-mode .accent-key:active { background: var(--bg-hover); }
+body.dark-mode kbd { border-color: #555; }
+body.dark-mode .flag-bar .c2 { border-color: #555; }
+body.dark-mode .fsi-substitution { background: #0d1a2a !important; border-color: #4169E1 !important; color: #7aa3ff !important; }
+body.dark-mode .fsi-transformation { background: #1a0d2a !important; border-color: #9c27b0 !important; color: #ce93d8 !important; }
+body.dark-mode .fsi-variation { background: #0d2a1a !important; border-color: #4caf50 !important; color: #81c784 !important; }
+body.dark-mode .fsi-response { background: #2a1a0d !important; border-color: #ff9800 !important; color: #ffcc80 !important; }
+body.dark-mode .fsi-review { background: #2a0d1a !important; border-color: #e91e63 !important; color: #f48fb1 !important; }
+body.dark-mode .fsi-lexical { background: #0d2a2a !important; border-color: #009688 !important; color: #80cbc4 !important; }
+body.dark-mode .fsi-question { background: #1a0d2a !important; border-color: #9c27b0 !important; color: #ce93d8 !important; }
+body.dark-mode .cultural-note-area { background: var(--bg-tertiary); }
+body.dark-mode .fill-blank-area { background: var(--bg-tertiary); }
 
 /* Case colors (German/Russian) */
 .case-legend { display: flex; gap: 15px; margin: 10px 0; font-size: 14px; flex-wrap: wrap; }

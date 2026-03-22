@@ -198,7 +198,7 @@ const RhodesEngine = {
       card.innerHTML = `
         <div class="unit-number">UNIT ${unit.id}</div>
         <div class="unit-title">${titleTarget}</div>
-        <div style="font-size: 14px; color: #666;">${titleSource}</div>
+        <div style="font-size: 14px; color: var(--text-dim);">${titleSource}</div>
         <div class="unit-progress">
           <div class="progress-bar"><div class="progress-fill" style="width: ${progress}%"></div></div>
           <div class="progress-text">${progress}%</div>
@@ -335,8 +335,8 @@ const RhodesEngine = {
       const sourceText = line.en || line.source || '';
       return `<div style="margin-bottom: 10px;">
         <strong style="color: var(--accent-primary);">${line.speaker}:</strong>
-        <span style="color: #000;">${targetText}</span><br>
-        <span style="color: #666; font-size: 14px;">${sourceText}</span>
+        <span style="color: var(--text);">${targetText}</span><br>
+        <span style="color: var(--text-dim); font-size: 14px;">${sourceText}</span>
       </div>`;
     }).join('');
     if (el('dialogueContent')) el('dialogueContent').innerHTML = dialogueHtml;
@@ -346,7 +346,7 @@ const RhodesEngine = {
     if (unit.grammar && unit.grammar.length > 0) {
       const grammarHtml = unit.grammar.map(g => `
         <div style="margin-bottom: 12px;">
-          <strong style="color: #8B4513;">${g.title}</strong>
+          <strong style="color: var(--accent-primary);">${g.title}</strong>
           <div style="margin-top: 4px;">${g.desc}</div>
         </div>
       `).join('');
@@ -952,8 +952,8 @@ const RhodesEngine = {
     // Show IPA and English approximation below
     let sourceHtml = '';
     if (drill.ipa) sourceHtml += `<span style="font-family:'Noto Sans',sans-serif;color:var(--accent-primary);">/${drill.ipa}/</span>`;
-    if (drill.english_approx) sourceHtml += (sourceHtml ? '<br>' : '') + `<span style="color:#666;font-size:14px;">${drill.english_approx}</span>`;
-    if (drill.english) sourceHtml += (sourceHtml ? '<br>' : '') + `<span style="color:#888;font-size:13px;">${drill.english}</span>`;
+    if (drill.english_approx) sourceHtml += (sourceHtml ? '<br>' : '') + `<span style="color:var(--text-dim);font-size:14px;">${drill.english_approx}</span>`;
+    if (drill.english) sourceHtml += (sourceHtml ? '<br>' : '') + `<span style="color:var(--text-muted);font-size:13px;">${drill.english}</span>`;
 
     if (promptSource) {
       if (sourceHtml) { promptSource.innerHTML = sourceHtml; promptSource.style.display = 'block'; }
@@ -1057,7 +1057,7 @@ const RhodesEngine = {
 
       if (result.accentWarning && this.drillDirection !== 'fr-fr-dictation') {
         feedbackTitle.textContent = 'Correct!';
-        feedbackDetail.innerHTML = `<span style="color: #856404;">Watch accents:</span> <strong>${expected}</strong>`;
+        feedbackDetail.innerHTML = `<span style="color: var(--yellow);">Watch accents:</span> <strong>${expected}</strong>`;
         feedback.className = 'feedback show success accent-warning';
       } else {
         feedbackTitle.textContent = 'Correct!';
@@ -1113,11 +1113,11 @@ const RhodesEngine = {
       const diff = RhodesUI.highlightDiff(userAnswer, expected);
       let detailHtml = `
         <div style="margin-bottom: 12px; padding: 10px; background: #ffebee; border-left: 4px solid #dc3545;">
-          <div style="font-size: 12px; color: #999; margin-bottom: 4px;">YOU WROTE:</div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">YOU WROTE:</div>
           <div style="font-size: 20px;">${diff.userHighlighted}</div>
         </div>
         <div style="padding: 10px; background: #e8f5e9; border-left: 4px solid #28a745;">
-          <div style="font-size: 12px; color: #999; margin-bottom: 4px;">CORRECT:</div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">CORRECT:</div>
           <div style="font-size: 20px;">${diff.expectedHighlighted}</div>
         </div>
       `;

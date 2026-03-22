@@ -331,7 +331,7 @@
         <a href="/rhodes-french/" style="color: #4ade80; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">🇫🇷 French Course</a>
         <a href="/admin-alliance.html" style="color: #4ade80; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">🤝 Alliance</a>
         <a href="/admin-townhall.html" style="color: #60a5fa; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">🏛️ Town Hall</a>
-        <a href="/admin-prompts.html" style="color: #c4b5fd; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">📝 System Prompts</a>
+        <a href="/admin-prompts.html?v=2.0.18" style="color: #c4b5fd; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">📝 System Prompts</a>
       </div>
     </header>
     <main>
@@ -623,7 +623,7 @@
           <div class="muted">System prompt</div>
           <div class="row" style="gap:8px;">
             <div class="muted">Current + historical (by sha256)</div>
-            <a href="/admin-prompts.html" style="font-size:12px;color:var(--ok);text-decoration:none;">All prompts workspace ↗</a>
+            <a href="/admin-prompts.html?v=2.0.18" style="font-size:12px;color:var(--ok);text-decoration:none;">All prompts workspace ↗</a>
           </div>
         </div>
         <div class="row" style="margin-top: 8px;">
@@ -810,7 +810,6 @@
               <div class="split" style="gap:12px;">
                 <div>
                   <label style="display:block;margin-bottom:6px;"><input type="checkbox" id="seedCfgSysPrompt"> Is System Prompt</label>
-                  <label style="display:block;margin-bottom:6px;"><input type="checkbox" id="seedCfgRhodesOs"> Inject Rhodes OS</label>
                   <label style="display:block;margin-bottom:6px;"><input type="checkbox" id="seedCfgBriefing"> Inject Briefing Over</label>
                 </div>
                 <div>
@@ -3167,7 +3166,6 @@
         html += '<th style="text-align:left;padding:4px 8px;">ID</th>';
         html += '<th style="text-align:center;padding:4px;">Msgs</th>';
         html += '<th style="text-align:center;padding:4px;">SysPrompt</th>';
-        html += '<th style="text-align:center;padding:4px;">RhodesOS</th>';
         html += '<th style="text-align:center;padding:4px;">Briefing</th>';
         html += '<th style="text-align:center;padding:4px;">Reasoning</th>';
         html += '<th style="text-align:left;padding:4px 8px;">Description</th>';
@@ -3181,7 +3179,6 @@
           html += '<td style="padding:4px 8px;font-weight:bold;color:#60a5fa;">' + _escHtml(id) + '</td>';
           html += '<td style="text-align:center;padding:4px;">' + (s.message_count || 0) + '</td>';
           html += '<td style="text-align:center;padding:4px;">' + (s.is_system_prompt ? yes : no) + '</td>';
-          html += '<td style="text-align:center;padding:4px;">' + (s.inject_rhodes_os ? yes : no) + '</td>';
           html += '<td style="text-align:center;padding:4px;">' + (s.inject_briefing_over ? yes : no) + '</td>';
           html += '<td style="text-align:center;padding:4px;">' + (s.has_reasoning ? yes : no) + '</td>';
           html += '<td style="padding:4px 8px;color:var(--muted);">' + _escHtml(s.description || '') + '</td>';
@@ -3200,7 +3197,6 @@
         const cfg = _manifestData.seeds[seedId];
         $('seedCfgId').textContent = seedId;
         $('seedCfgSysPrompt').checked = !!cfg.is_system_prompt;
-        $('seedCfgRhodesOs').checked = !!cfg.inject_rhodes_os;
         $('seedCfgBriefing').checked = !!cfg.inject_briefing_over;
         $('seedCfgSysPromptText').value = cfg.system_prompt_text || '';
         $('seedCfgDescription').value = cfg.description || '';
@@ -3245,7 +3241,6 @@
             method: 'PUT',
             body: JSON.stringify({
               is_system_prompt: $('seedCfgSysPrompt').checked,
-              inject_rhodes_os: $('seedCfgRhodesOs').checked,
               inject_briefing_over: $('seedCfgBriefing').checked,
               system_prompt_text: $('seedCfgSysPromptText').value || null,
               description: $('seedCfgDescription').value,

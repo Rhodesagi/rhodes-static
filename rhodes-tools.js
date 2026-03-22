@@ -64,25 +64,25 @@
         }
 
         function trackToolStart(toolKey) {
+            if (window._toolTotals.activeTools.has(toolKey) || window._toolTotals.startTimes.has(toolKey)) {
+                updateToolTotalsDisplay();
+                return;
+            }
             window._toolTotals.count++;
             window._toolTotals.activeTools.add(toolKey);
             window._toolTotals.startTimes.set(toolKey, Date.now());
             updateToolTotalsDisplay();
         }
 
-        function trackToolComplete(toolKey, serverDurationMs) {
+        function trackToolComplete(toolKey) {
             if (window._toolTotals.activeTools.has(toolKey)) {
                 window._toolTotals.activeTools.delete(toolKey);
-                // DeepSeek duration_ms is cumulative turn time; max() avoids double-counting.
-                if (serverDurationMs && serverDurationMs > 0) {
-                    window._toolTotals.elapsedMs = Math.max(window._toolTotals.elapsedMs, serverDurationMs);
-                } else {
-                    const startTime = window._toolTotals.startTimes.get(toolKey) || window._toolTimers.get(toolKey);
-                    if (startTime) {
-                        window._toolTotals.elapsedMs += (Date.now() - startTime);
-                    }
+                const startTime = window._toolTotals.startTimes.get(toolKey) || window._toolTimers.get(toolKey);
+                if (startTime) {
+                    window._toolTotals.elapsedMs += Math.max(0, Date.now() - startTime);
                 }
             }
+            window._toolTotals.startTimes.delete(toolKey);
             updateToolTotalsDisplay();
         }
 
@@ -176,4 +176,3 @@
             window._toolItems = new Map();
             window._toolTimers = new Map();
         }
-

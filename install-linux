@@ -119,7 +119,19 @@ mkdir -p "$CONFIG_DIR"
 if [ -n "${RHODES_TOKEN:-}" ]; then
     echo "{\"token\": \"$RHODES_TOKEN\"}" > "$CONFIG_DIR/config.json"
     echo "  [OK] Token saved — auto-login enabled"
-elif [ ! -f "$CONFIG_DIR/config.json" ]; then
+else
+    # Clear old login token so fresh install gets fresh login prompt
+    if [ -f "$CONFIG_DIR/config.json" ]; then
+        rm -f "$CONFIG_DIR/config.json"
+        echo "  [OK] Cleared old login — you will be prompted to sign in."
+    fi
+    # Also clear the token file used by the Electron app
+    TOKEN_FILE="$HOME/.config/rhodes/token"
+    if [ -f "$TOKEN_FILE" ]; then
+        rm -f "$TOKEN_FILE"
+    fi
+fi
+if [ ! -f "$CONFIG_DIR/config.json" ] && [ -z "${RHODES_TOKEN:-}" ]; then
     echo ""
     echo "  Login to Rhodes (or press Enter to skip)"
     echo ""

@@ -1,0 +1,5356 @@
+{
+  "generated_at": "2026-03-14T14:54:05",
+  "units": {
+    "2": [
+      {
+        "title": "Accent Marks on Words",
+        "body": "Accent marks in Italian indicate stress on the final vowel and distinguish words that would otherwise be spelled identically.",
+        "examples": [
+          {
+            "it": "perché",
+            "en": "because/why"
+          },
+          {
+            "it": "più",
+            "en": "more"
+          },
+          {
+            "it": "sì",
+            "en": "yes"
+          }
+        ],
+        "tip": "Remember that words ending with an accented vowel have stress on that final syllable.",
+        "source_label": "Accent Marks",
+        "source_drill_ids": [
+          "fsi_u2_0267",
+          "fsi_u2_0268",
+          "fsi_u2_0269"
+        ],
+        "unit": 2
+      },
+      {
+        "title": "Qualcosa da + Infinitive",
+        "body": "Use 'qualcosa da' + infinitive to express 'something to' do, describing an action needed or available.",
+        "examples": [
+          {
+            "it": "Ho qualcosa da dire.",
+            "en": "I have something to say."
+          },
+          {
+            "it": "C'è qualcosa da mangiare?",
+            "en": "Is there something to eat?"
+          }
+        ],
+        "tip": "Think 'something to' + verb - the infinitive stays in its base form after 'da'.",
+        "source_label": "Infinitive Construction",
+        "source_drill_ids": [
+          "fsi_u2_0285",
+          "fsi_u2_0286"
+        ],
+        "unit": 2
+      },
+      {
+        "title": "Formal Address with Lei",
+        "body": "The formal pronoun 'Lei' (you) is capitalized in writing to show respect, and it uses third-person singular verb conjugations.",
+        "examples": [
+          {
+            "it": "Lei parla italiano molto bene.",
+            "en": "You speak Italian very well."
+          },
+          {
+            "it": "Come sta Lei?",
+            "en": "How are you? (formal)"
+          }
+        ],
+        "tip": "Think of capitalizing 'Lei' like capitalizing a title (e.g., Mr., Mrs.) to show respect.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u2_0256",
+          "fsi_u2_0257",
+          "fsi_u2_0258",
+          "fsi_u2_0259",
+          "fsi_u2_0260"
+        ],
+        "unit": 2
+      },
+      {
+        "title": "Using Ecco with Pronouns",
+        "body": "Ecco is a pointing word that can be combined with direct object pronouns to form single words like eccolo (here he/it is) or eccoli (here they are).",
+        "examples": [
+          {
+            "it": "Ecco il libro. → Eccolo!",
+            "en": "Here's the book. → Here it is!"
+          },
+          {
+            "it": "Ecco i ragazzi. → Eccoli!",
+            "en": "Here are the boys. → Here they are!"
+          }
+        ],
+        "tip": "Think of ecco + pronoun as 'here it/they is/are' - the pronoun attaches directly to ecco without spaces.",
+        "source_label": "The word ecco",
+        "source_drill_ids": [
+          "fsi_u2_0302",
+          "fsi_u2_0303"
+        ],
+        "unit": 2
+      }
+    ],
+    "3": [
+      {
+        "title": "Definite Articles with Singular Nouns",
+        "body": "Use 'il' before most masculine singular nouns, 'lo' before masculine nouns starting with z, s+consonant, or certain consonant clusters, and 'l'' before masculine nouns starting with a vowel.",
+        "examples": [
+          {
+            "it": "il dollaro",
+            "en": "the dollar"
+          },
+          {
+            "it": "lo scontrino",
+            "en": "the receipt"
+          },
+          {
+            "it": "l'aeroporto",
+            "en": "the airport"
+          }
+        ],
+        "tip": "Remember: il = normal masculine, lo = special masculine (z, s+consonant), l' = vowel masculine",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u3_0259",
+          "fsi_u3_0260",
+          "fsi_u3_0261",
+          "fsi_u3_0262",
+          "fsi_u3_0263"
+        ],
+        "unit": 3
+      },
+      {
+        "title": "Italian Tens + Uno/Otto",
+        "body": "When combining tens (venti, trenta, etc.) with 'uno' or 'otto', drop the final vowel of the tens numeral.",
+        "examples": [
+          {
+            "it": "ventuno",
+            "en": "twenty-one"
+          },
+          {
+            "it": "ventotto",
+            "en": "twenty-eight"
+          },
+          {
+            "it": "trentuno",
+            "en": "thirty-one"
+          }
+        ],
+        "tip": "Think: 'uno' and 'otto' are special - they make the tens lose their final vowel.",
+        "source_label": "Note",
+        "source_drill_ids": [
+          "fsi_u3_0365",
+          "fsi_u3_0366",
+          "fsi_u3_0367",
+          "fsi_u3_0368"
+        ],
+        "unit": 3
+      }
+    ],
+    "4": [
+      {
+        "title": "Telling Time in Italian",
+        "body": "Use 'è' for singular hours (1:00) and 'sono le' for plural hours (2:00-12:00). Minutes after the hour use 'e', minutes before use 'meno'.",
+        "examples": [
+          {
+            "it": "È l'una e venti",
+            "en": "It's 1:20"
+          },
+          {
+            "it": "Sono le sei meno un quarto",
+            "en": "It's 5:45"
+          }
+        ],
+        "tip": "Think: 'è' for one o'clock only, 'sono le' for all other hours.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u4_0210",
+          "fsi_u4_0211",
+          "fsi_u4_0212",
+          "fsi_u4_0213",
+          "fsi_u4_0214"
+        ],
+        "unit": 4
+      }
+    ],
+    "5": [
+      {
+        "title": "Direct Object Pronouns with Infinitives",
+        "body": "When an infinitive follows a conjugated verb, direct object pronouns attach to the infinitive, which then drops its final -e.",
+        "examples": [
+          {
+            "it": "Faccio portare le valigie → Faccio portarle.",
+            "en": "I have the suitcases brought → I have them brought."
+          },
+          {
+            "it": "Voglio vedere il film → Voglio vederlo.",
+            "en": "I want to see the film → I want to see it."
+          }
+        ],
+        "tip": "Think: 'Attach to the infinitive, drop the -e' when verbs are chained together.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u5_0083",
+          "fsi_u5_0084",
+          "fsi_u5_0085",
+          "fsi_u5_0086",
+          "fsi_u5_0087"
+        ],
+        "unit": 5
+      }
+    ],
+    "6": [
+      {
+        "title": "Placement of 'anche'",
+        "body": "The word 'anche' (also/too) normally comes immediately before the word or phrase it refers to.",
+        "examples": [
+          {
+            "it": "Anch'io vorrei un'altra coperta.",
+            "en": "I would also like another blanket."
+          },
+          {
+            "it": "Vorrei anche un'altra coperta.",
+            "en": "I would also like another blanket."
+          }
+        ],
+        "tip": "Think of 'anche' as pointing directly at what comes next - it modifies whatever follows it.",
+        "source_label": "Note 9",
+        "source_drill_ids": [
+          "fsi_u6_0116",
+          "fsi_u6_0117",
+          "fsi_u6_0118",
+          "fsi_u6_0119",
+          "fsi_u6_0120"
+        ],
+        "unit": 6
+      },
+      {
+        "title": "Fare + Infinitive Construction",
+        "body": "Use fare + infinitive to express having something done or having someone do something. The final -e of fare often drops in common constructions.",
+        "examples": [
+          {
+            "it": "Vorrei far stirare tre vestiti.",
+            "en": "I would like to have three dresses ironed."
+          },
+          {
+            "it": "Devo far lucidare le scarpe.",
+            "en": "I need to have my shoes shined."
+          }
+        ],
+        "tip": "Think 'make/do' + action = have something done. Remember: 'far' not 'fare' before infinitives.",
+        "source_label": "Note 8",
+        "source_drill_ids": [
+          "fsi_u6_0114",
+          "fsi_u6_0115"
+        ],
+        "unit": 6
+      },
+      {
+        "title": "Partitive Articles with Preposition 'di'",
+        "body": "When the preposition 'di' combines with definite articles, it forms partitive articles meaning 'some' or 'any' with uncountable nouns.",
+        "examples": [
+          {
+            "it": "del vino",
+            "en": "some wine"
+          },
+          {
+            "it": "degli studenti",
+            "en": "some students"
+          },
+          {
+            "it": "dell'acqua",
+            "en": "some water"
+          }
+        ],
+        "tip": "Remember: di + il = del, di + lo = dello, di + la = della, di + i = dei, di + gli = degli, di + le = delle",
+        "source_label": "Note 12 Examples",
+        "source_drill_ids": [
+          "fsi_u6_0129",
+          "fsi_u6_0130",
+          "fsi_u6_0131",
+          "fsi_u6_0132",
+          "fsi_u6_0133"
+        ],
+        "unit": 6
+      },
+      {
+        "title": "Partitive Articles (some/any)",
+        "body": "Use partitive articles to express 'some' or 'any' before nouns. The form changes based on gender, number, and the starting letter of the following word.",
+        "examples": [
+          {
+            "it": "Vorrei del pane.",
+            "en": "I would like some bread."
+          },
+          {
+            "it": "Ci sono delle mele.",
+            "en": "There are some apples."
+          },
+          {
+            "it": "Hai degli amici italiani?",
+            "en": "Do you have any Italian friends?"
+          }
+        ],
+        "tip": "Think of partitive articles as 'di + definite article' - del = di + il, dei = di + i, etc.",
+        "source_label": "Note 12",
+        "source_drill_ids": [
+          "fsi_u6_0123",
+          "fsi_u6_0124",
+          "fsi_u6_0125",
+          "fsi_u6_0126",
+          "fsi_u6_0127"
+        ],
+        "unit": 6
+      },
+      {
+        "title": "Three Uses of 'le'",
+        "body": "'Le' has three uses: feminine plural article (le valigie), feminine plural direct object pronoun (le metto), and formal singular indirect object pronoun (Le occorre).",
+        "examples": [
+          {
+            "it": "Le valigie sono pesanti.",
+            "en": "The suitcases are heavy."
+          },
+          {
+            "it": "Dove le metto?",
+            "en": "Where shall I put them?"
+          },
+          {
+            "it": "Le occorre altro?",
+            "en": "Do you need anything else?"
+          }
+        ],
+        "tip": "Remember: article 'le' = the, object 'le' = them, formal 'Le' = to you (capitalized for formal address).",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u6_0206",
+          "fsi_u6_0207",
+          "fsi_u6_0208",
+          "fsi_u6_0209",
+          "fsi_u6_0210"
+        ],
+        "unit": 6
+      },
+      {
+        "title": "Identification Sentences with 'È'",
+        "body": "Use 'è' (is) for identification sentences. Add 'no?' for verification questions, and 'non' for negative statements.",
+        "examples": [
+          {
+            "it": "È Amanda.",
+            "en": "It is Amanda."
+          },
+          {
+            "it": "È Amanda, no?",
+            "en": "It is Amanda, right?"
+          },
+          {
+            "it": "Non è Amanda.",
+            "en": "It is not Amanda."
+          }
+        ],
+        "tip": "Think of 'è' as the Italian 'is' for identifying people/things. Add 'no?' to check, 'non' to deny.",
+        "source_label": "IDENTIFICATION SENTENCES",
+        "source_drill_ids": [
+          "fsi_u6_0332",
+          "fsi_u6_0333",
+          "fsi_u6_0334",
+          "fsi_u6_0335",
+          "fsi_u6_0336"
+        ],
+        "unit": 6
+      }
+    ],
+    "7": [
+      {
+        "title": "Forms of Address with Titles",
+        "body": "Use 'il signor' for a man, 'la signora' for a married or older woman, and 'la signorina' for a young or unmarried woman, followed by the person's last name.",
+        "examples": [
+          {
+            "it": "Il signor Rossi",
+            "en": "Mr. Rossi"
+          },
+          {
+            "it": "La signora Verdi",
+            "en": "Mrs. Verdi"
+          },
+          {
+            "it": "La signorina Bianchi",
+            "en": "Miss Bianchi"
+          }
+        ],
+        "tip": "Remember: 'signor' drops the final 'e' before a consonant, unlike 'signore' (sir).",
+        "source_label": "Lesson VII Forms of Address",
+        "source_drill_ids": [
+          "fsi_u7_0326",
+          "fsi_u7_0327",
+          "fsi_u7_0328"
+        ],
+        "unit": 7
+      },
+      {
+        "title": "Infinitive -e Dropping",
+        "body": "When attaching object pronouns to infinitives, drop the final -e from the -re ending.",
+        "examples": [
+          {
+            "it": "svegliarmi (from svegliare)",
+            "en": "to wake myself up"
+          },
+          {
+            "it": "lasciarmi (from lasciare)",
+            "en": "to leave me"
+          }
+        ],
+        "tip": "Pronoun attachment = lose the -e: infinitivere → infinitiver + pronoun",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u7_0371",
+          "fsi_u7_0372",
+          "fsi_u7_0373",
+          "fsi_u7_0374"
+        ],
+        "unit": 7
+      },
+      {
+        "title": "Verb Forms for 'We', 'You' (plural), 'They'",
+        "body": "The verb endings -iamo, -ate, and -ano correspond to the subjects 'we', 'you' (plural), and 'they' for regular -are verbs like 'portare'.",
+        "examples": [
+          {
+            "it": "portiamo",
+            "en": "we carry"
+          },
+          {
+            "it": "portate",
+            "en": "you (plural) carry"
+          },
+          {
+            "it": "portano",
+            "en": "they carry"
+          }
+        ],
+        "tip": "Remember: 'We' ends with -iamo, 'you all' with -ate, and 'they' with -ano.",
+        "source_label": "Grammar Note 14",
+        "source_drill_ids": [
+          "fsi_u7_0231",
+          "fsi_u7_0232",
+          "fsi_u7_0233",
+          "fsi_u7_0234",
+          "fsi_u7_0235"
+        ],
+        "unit": 7
+      }
+    ],
+    "8": [
+      {
+        "title": "Preposition-Article Contractions",
+        "body": "The prepositions a, di, da, in, and su combine with definite articles to form single contracted words.",
+        "examples": [
+          {
+            "it": "a + il = al",
+            "en": "to the"
+          },
+          {
+            "it": "di + la = della",
+            "en": "of the"
+          },
+          {
+            "it": "in + gli = negli",
+            "en": "in the"
+          }
+        ],
+        "tip": "Learn the contraction patterns as single units rather than trying to combine them each time.",
+        "source_label": "Grammar Note 10",
+        "source_drill_ids": [
+          "fsi_u8_0305",
+          "fsi_u8_0306",
+          "fsi_u8_0307",
+          "fsi_u8_0308",
+          "fsi_u8_0309"
+        ],
+        "unit": 8
+      },
+      {
+        "title": "Formal Commands: Lei vs Loro",
+        "body": "Formal singular (Lei) commands drop the -no from the formal plural (Loro) form, which is derived from the present tense loro form by changing -ano to -ino or -ono to -ano.",
+        "examples": [
+          {
+            "it": "Scusi, signore. (Lei)",
+            "en": "Excuse me, sir. (singular formal)"
+          },
+          {
+            "it": "Scusino, signori. (Loro)",
+            "en": "Excuse me, gentlemen. (plural formal)"
+          }
+        ],
+        "tip": "Think: Lei = Loro minus -no. Singular formal drops the 'no' from plural formal.",
+        "source_label": "Language - Usage Notes 4",
+        "source_drill_ids": [
+          "fsi_u8_0469",
+          "fsi_u8_0470",
+          "fsi_u8_0471",
+          "fsi_u8_0472",
+          "fsi_u8_0473"
+        ],
+        "unit": 8
+      },
+      {
+        "title": "C'è vs. Ci sono with Ne",
+        "body": "Use 'c'è' for singular and 'ci sono' for plural. When replacing a noun with 'ne', 'ci' becomes 'ce' before 'ne'.",
+        "examples": [
+          {
+            "it": "C'è un parrucchiere qui vicino.",
+            "en": "There is a hairdresser nearby."
+          },
+          {
+            "it": "Ce ne sono tanti qui vicino.",
+            "en": "There are many (of them) nearby."
+          }
+        ],
+        "tip": "Think: 'ci' + 'ne' = 'ce ne' - the 'i' drops before 'ne'.",
+        "source_label": "Grammar Note 7",
+        "source_drill_ids": [
+          "fsi_u8_0297",
+          "fsi_u8_0298",
+          "fsi_u8_0299",
+          "fsi_u8_0300",
+          "fsi_u8_0301"
+        ],
+        "unit": 8
+      },
+      {
+        "title": "Direct Object Pronouns",
+        "body": "Direct object pronouns replace nouns and agree in gender and number with what they replace: lo (masc. sing.), la (fem. sing.), li (masc. pl.), le (fem. pl.).",
+        "examples": [
+          {
+            "it": "Dove posso comprarli?",
+            "en": "Where can I buy them (masc.)?"
+          },
+          {
+            "it": "Eccola.",
+            "en": "Here she/it (fem.) is."
+          }
+        ],
+        "tip": "Think LO for him/it (masc.), LA for her/it (fem.), add -I for masculine plural, -E for feminine plural.",
+        "source_label": "Language - Usage Notes 2",
+        "source_drill_ids": [
+          "fsi_u8_0460",
+          "fsi_u8_0461",
+          "fsi_u8_0462",
+          "fsi_u8_0463",
+          "fsi_u8_0464"
+        ],
+        "unit": 8
+      }
+    ],
+    "9": [
+      {
+        "title": "Voi Command Form",
+        "body": "The voi command form is identical to the present indicative voi form, except for four irregular verbs: essere, avere, sapere, and volere.",
+        "examples": [
+          {
+            "it": "Aspettate!",
+            "en": "Wait!"
+          },
+          {
+            "it": "Siate puntuali!",
+            "en": "Be punctual!"
+          }
+        ],
+        "tip": "Remember the four irregulars with the acronym SAVS: S(ere), A(vere), V(olere), S(apere).",
+        "source_label": "Grammar Note 6: The voi request form",
+        "source_drill_ids": [
+          "fsi_u9_0238",
+          "fsi_u9_0239",
+          "fsi_u9_0240",
+          "fsi_u9_0241",
+          "fsi_u9_0242"
+        ],
+        "unit": 9
+      },
+      {
+        "title": "Reflexive Verbs with Lei Form",
+        "body": "Reflexive infinitives ending in -si use 'si' for the polite Lei form, not the standard reflexive pronoun 'si'.",
+        "examples": [
+          {
+            "it": "Si accomodi, signora.",
+            "en": "Have a seat, ma'am."
+          },
+          {
+            "it": "Lei si sveglia presto.",
+            "en": "You (formal) wake up early."
+          }
+        ],
+        "tip": "For Lei form, just add 'si' before the conjugated verb - same as infinitive ending!",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u9_0121",
+          "fsi_u9_0122",
+          "fsi_u9_0123",
+          "fsi_u9_0124",
+          "fsi_u9_0125"
+        ],
+        "unit": 9
+      },
+      {
+        "title": "Formal Imperative with Lei",
+        "body": "Use the third person singular subjunctive (congiuntivo) for formal commands when addressing someone with 'Lei'.",
+        "examples": [
+          {
+            "it": "Se può darmi la somma giusta...",
+            "en": "If you could give me the exact amount..."
+          },
+          {
+            "it": "Mi dia il Suo nome, prego.",
+            "en": "Give me your name, please."
+          }
+        ],
+        "tip": "Think 'he/she' form for polite 'you' commands: instead of 'dammi' (informal), use 'mi dia' (formal).",
+        "source_label": "Variants",
+        "source_drill_ids": [
+          "fsi_u9_0213",
+          "fsi_u9_0214",
+          "fsi_u9_0221"
+        ],
+        "unit": 9
+      },
+      {
+        "title": "da + Infinitive for 'to'",
+        "body": "Use 'da' + infinitive to express 'to' or 'for' when describing something that needs to be done.",
+        "examples": [
+          {
+            "it": "molto da fare",
+            "en": "a lot to do"
+          },
+          {
+            "it": "un vestito da stirare",
+            "en": "a dress to iron"
+          },
+          {
+            "it": "Quanto c'è da aspettare?",
+            "en": "How long is there to wait?"
+          }
+        ],
+        "tip": "Think of 'da' as 'to be done' - something da fare = something to be done.",
+        "source_label": "Grammar Note: da + infinitive",
+        "source_drill_ids": [
+          "fsi_u9_0228",
+          "fsi_u9_0229",
+          "fsi_u9_0230",
+          "fsi_u9_0231",
+          "fsi_u9_0232"
+        ],
+        "unit": 9
+      }
+    ],
+    "10": [
+      {
+        "title": "Short Answers with 'For'",
+        "body": "Use 'for' + a time period to give a short answer about duration, often in response to 'How long...?' questions.",
+        "examples": [
+          {
+            "it": "Sono qui da due settimane.",
+            "en": "I have been here for two weeks."
+          },
+          {
+            "it": "Lavoro qui da un anno.",
+            "en": "I have worked here for a year."
+          }
+        ],
+        "tip": "Think 'da' in Italian for 'for' when talking about a duration that started in the past and continues.",
+        "source_label": "EXPANSION UNIT Objectives",
+        "source_drill_ids": [
+          "fsi_u10_0111",
+          "fsi_u10_0112",
+          "fsi_u10_0113",
+          "fsi_u10_0114"
+        ],
+        "unit": 10
+      },
+      {
+        "title": "Word Order with 'qui/lì' and Names",
+        "body": "In statements, names can appear before or after 'qui/lì', but in yes-no questions they typically come at the end.",
+        "examples": [
+          {
+            "it": "Augusta è lì.",
+            "en": "Augusta is there."
+          },
+          {
+            "it": "È lì Augusta?",
+            "en": "Is Augusta there?"
+          }
+        ],
+        "tip": "Think: statements = flexible order, questions = name last.",
+        "source_label": "RECAP. (I-X), 7",
+        "source_drill_ids": [
+          "fsi_u10_0539",
+          "fsi_u10_0540",
+          "fsi_u10_0541",
+          "fsi_u10_0542",
+          "fsi_u10_0543"
+        ],
+        "unit": 10
+      },
+      {
+        "title": "Placement of Names with 'c'è'",
+        "body": "In questions and affirmative statements with 'c'è' (there is) or 'non c'è' (there isn't), names normally follow the verb phrase.",
+        "examples": [
+          {
+            "it": "C'è Bianca.",
+            "en": "Bianca is here/there."
+          },
+          {
+            "it": "Non c'è mai Bianca?",
+            "en": "Is Bianca never here?"
+          }
+        ],
+        "tip": "Think: 'Is there Bianca?' not 'Bianca is there?' for the normal word order.",
+        "source_label": "RECAP. (I-X) 6",
+        "source_drill_ids": [
+          "fsi_u10_0529",
+          "fsi_u10_0530",
+          "fsi_u10_0531",
+          "fsi_u10_0532",
+          "fsi_u10_0533"
+        ],
+        "unit": 10
+      }
+    ],
+    "11": [
+      {
+        "title": "Formal 'You' in Questions",
+        "body": "In formal questions, the pronoun 'Lei' can be placed at the end or directly after the verb.",
+        "examples": [
+          {
+            "it": "È Lei di Napoli?",
+            "en": "Are you (formal) from Naples?"
+          },
+          {
+            "it": "Di dov'è Lei?",
+            "en": "Where are you (formal) from?"
+          }
+        ],
+        "tip": "Think of 'Lei' as flexible; it can follow the verb or the question word.",
+        "source_label": "Module I, Unit 1 Notes",
+        "source_drill_ids": [
+          "fsi_u11_0088",
+          "fsi_u11_0089"
+        ],
+        "unit": 11
+      },
+      {
+        "title": "Required Words in Italian",
+        "body": "Some words, like subject pronouns or articles, are grammatically required in Italian sentences even when they are omitted in English.",
+        "examples": [
+          {
+            "it": "(Io) studio l'italiano.",
+            "en": "I study Italian."
+          },
+          {
+            "it": "Dov'è (la) stazione?",
+            "en": "Where's the station?"
+          }
+        ],
+        "tip": "If an English sentence feels 'bare,' check if Italian needs a pronoun or article to be grammatically complete.",
+        "source_label": "Conversation Note",
+        "source_drill_ids": [
+          "fsi_u11_0116",
+          "fsi_u11_0117"
+        ],
+        "unit": 11
+      },
+      {
+        "title": "Question Tags with 'no?' and 'vero?'",
+        "body": "Turn any statement into a question by adding 'no?' or 'vero?' at the end.",
+        "examples": [
+          {
+            "it": "Lei è la signora Contini, no?",
+            "en": "You are Mrs. Contini, right?"
+          },
+          {
+            "it": "Lei è la signora Contini, vero?",
+            "en": "You are Mrs. Contini, aren't you?"
+          }
+        ],
+        "tip": "Think of 'no?' as 'right?' and 'vero?' as 'true?' - both work like English question tags.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u11_0548",
+          "fsi_u11_0549",
+          "fsi_u11_0550",
+          "fsi_u11_0551",
+          "fsi_u11_0552"
+        ],
+        "unit": 11
+      },
+      {
+        "title": "Quale + è contraction",
+        "body": "The word 'quale' (which) contracts to 'qual' when followed by the verb 'è' (is).",
+        "examples": [
+          {
+            "it": "Qual è il tuo nome?",
+            "en": "What is your name?"
+          },
+          {
+            "it": "Qual è la tua macchina?",
+            "en": "Which is your car?"
+          }
+        ],
+        "tip": "Think of it like 'qual' + 'è' = 'qual'è' (always with apostrophe)",
+        "source_label": "NOTES ON THE CONVERSATION",
+        "source_drill_ids": [
+          "fsi_u11_0132",
+          "fsi_u11_0133",
+          "fsi_u11_0134",
+          "fsi_u11_0135",
+          "fsi_u11_0136"
+        ],
+        "unit": 11
+      },
+      {
+        "title": "Definite Articles with Masculine Nouns",
+        "body": "Use 'il' for most masculine singular nouns, but 'lo' before z, s+consonant, or vowel (which becomes l').",
+        "examples": [
+          {
+            "it": "il libro",
+            "en": "the book"
+          },
+          {
+            "it": "lo studente",
+            "en": "the student"
+          },
+          {
+            "it": "l'amico",
+            "en": "the friend"
+          }
+        ],
+        "tip": "Remember ZSS: Z, S+consonant, and vowel Sounds get 'lo' (or l').",
+        "source_label": "NOTE:",
+        "source_drill_ids": [
+          "fsi_u11_0159",
+          "fsi_u11_0183",
+          "fsi_u11_0184"
+        ],
+        "unit": 11
+      },
+      {
+        "title": "Preposition 'da' with Time Expressions",
+        "body": "Use 'da' to indicate the starting point of an action that continues into the present, equivalent to 'since' or 'for' in English.",
+        "examples": [
+          {
+            "it": "Lavoro in questa sezione da quattro anni.",
+            "en": "I have worked in this section for four years."
+          },
+          {
+            "it": "Lei lavora all'Ambasciata da molto tempo.",
+            "en": "She has worked at the Embassy for a long time."
+          }
+        ],
+        "tip": "Think of 'da' as pointing back to when something started - it's the starting point marker for ongoing actions.",
+        "source_label": "Examples",
+        "source_drill_ids": [
+          "fsi_u11_0446",
+          "fsi_u11_0447"
+        ],
+        "unit": 11
+      },
+      {
+        "title": "Gender Agreement in Adjectives",
+        "body": "Italian adjectives must match the gender of the person they describe, changing their ending accordingly.",
+        "examples": [
+          {
+            "it": "Lietissima (woman)",
+            "en": "Very pleased (female speaker)"
+          },
+          {
+            "it": "Lietissimo (man)",
+            "en": "Very pleased (male speaker)"
+          },
+          {
+            "it": "Onorato / Onorata",
+            "en": "Honored (male/female)"
+          }
+        ],
+        "tip": "Remember: -o endings are typically masculine, -a endings are typically feminine.",
+        "source_label": "NOTE",
+        "source_drill_ids": [
+          "fsi_u11_0064",
+          "fsi_u11_0065",
+          "fsi_u11_0066",
+          "fsi_u11_0067",
+          "fsi_u11_0068"
+        ],
+        "unit": 11
+      }
+    ],
+    "12": [
+      {
+        "title": "Articles with Nouns Starting with Z or S+Consonant",
+        "body": "Use 'uno' for masculine nouns beginning with Z or S followed by a consonant, instead of 'un'.",
+        "examples": [
+          {
+            "it": "uno zaino",
+            "en": "a backpack"
+          },
+          {
+            "it": "uno studente",
+            "en": "a student"
+          }
+        ],
+        "tip": "Remember Z and S+consonant need 'uno' - think 'Zero Special' cases.",
+        "source_label": "NOTE",
+        "source_drill_ids": [
+          "fsi_u12_0227",
+          "fsi_u12_0232",
+          "fsi_u12_0248",
+          "fsi_u12_0268"
+        ],
+        "unit": 12
+      },
+      {
+        "title": "Future Tense for Probability",
+        "body": "The future tense can express present probability or conjecture, not just future actions.",
+        "examples": [
+          {
+            "it": "Andranno a scuola, allora.",
+            "en": "They probably go to school, then."
+          },
+          {
+            "it": "Saranno le cinque.",
+            "en": "It's probably five o'clock."
+          }
+        ],
+        "tip": "Think 'future form, present guess' - when you're unsure about something happening now.",
+        "source_label": "Language - Usage Notes 4",
+        "source_drill_ids": [
+          "fsi_u12_0440",
+          "fsi_u12_0441",
+          "fsi_u12_0442",
+          "fsi_u12_0443",
+          "fsi_u12_0444"
+        ],
+        "unit": 12
+      },
+      {
+        "title": "Prepositions with Origin",
+        "body": "Use 'da' with verbs of movement like 'venire' to indicate coming from a place, and 'di' with 'essere' to indicate origin or belonging.",
+        "examples": [
+          {
+            "it": "Viene da Roma.",
+            "en": "He/She comes from Rome."
+          },
+          {
+            "it": "È di Milano.",
+            "en": "He/She is from Milan (originates there)."
+          }
+        ],
+        "tip": "Think: 'venire DA' = coming FROM, 'essere DI' = belonging TO a place.",
+        "source_label": "NOTES ON THE CONVERSATION",
+        "source_drill_ids": [
+          "fsi_u12_0024",
+          "fsi_u12_0025",
+          "fsi_u12_0026",
+          "fsi_u12_0027",
+          "fsi_u12_0028"
+        ],
+        "unit": 12
+      },
+      {
+        "title": "Common Italian Verb Expressions",
+        "body": "Italian uses specific verb + preposition combinations to express common actions. These fixed expressions must be memorized as units.",
+        "examples": [
+          {
+            "it": "Non vedo l'ora di cominciare.",
+            "en": "I can't wait to start."
+          },
+          {
+            "it": "Le finestre danno sulla piazza.",
+            "en": "The windows face the square."
+          }
+        ],
+        "tip": "Think of these as 'verb packages' - learn the whole expression (verb + preposition) together, not just the verb alone.",
+        "source_label": "Language - Usage Notes 2",
+        "source_drill_ids": [
+          "fsi_u12_0409",
+          "fsi_u12_0410",
+          "fsi_u12_0411",
+          "fsi_u12_0412",
+          "fsi_u12_0413"
+        ],
+        "unit": 12
+      },
+      {
+        "title": "Expressing Age with Avere",
+        "body": "In Italian, age is expressed using the verb avere (to have) instead of essere (to be).",
+        "examples": [
+          {
+            "it": "Quanti anni hai?",
+            "en": "How old are you? (lit. How many years do you have?)"
+          },
+          {
+            "it": "Marco ha 25 anni.",
+            "en": "Marco is 25 years old. (lit. Marco has 25 years.)"
+          }
+        ],
+        "tip": "Think 'I have years' instead of 'I am years old' - you possess your age in Italian.",
+        "source_label": "Language - Usage Notes 1",
+        "source_drill_ids": [
+          "fsi_u12_0402",
+          "fsi_u12_0403",
+          "fsi_u12_0404",
+          "fsi_u12_0405",
+          "fsi_u12_0406"
+        ],
+        "unit": 12
+      },
+      {
+        "title": "Asking 'How long' with 'essere da'",
+        "body": "To ask how long someone has been in a place, use 'essere' + 'da' + time period. The verb agrees with the subject.",
+        "examples": [
+          {
+            "it": "Da quanto tempo sei a Roma?",
+            "en": "How long have you been in Rome?"
+          },
+          {
+            "it": "Sono a Milano da tre giorni.",
+            "en": "I have been in Milan for three days."
+          }
+        ],
+        "tip": "Think 'to be from' a point in time: 'essere da' = 'to be since/for'.",
+        "source_label": "Module I Objectives - Unit 2",
+        "source_drill_ids": [
+          "fsi_u12_0001",
+          "fsi_u12_0002",
+          "fsi_u12_0003"
+        ],
+        "unit": 12
+      },
+      {
+        "title": "Preposition-Article Contractions",
+        "body": "The preposition 'da' contracts with definite articles to form single words, like 'da + la = dalla'. The contraction 'dall'' is used before vowels.",
+        "examples": [
+          {
+            "it": "Vado dalla nonna.",
+            "en": "I go to my grandmother's (place)."
+          },
+          {
+            "it": "Vengo dall'Italia.",
+            "en": "I come from Italy."
+          }
+        ],
+        "tip": "Think of 'da' merging with the article; 'dall'' is the vowel-friendly version of 'dallo' and 'dalla'.",
+        "source_label": "NOTE:",
+        "source_drill_ids": [
+          "fsi_u12_0055",
+          "fsi_u12_0056",
+          "fsi_u12_0057",
+          "fsi_u12_0058",
+          "fsi_u12_0122"
+        ],
+        "unit": 12
+      },
+      {
+        "title": "Future Tense Formation",
+        "body": "Form the future tense by removing the final -e from the infinitive and adding future endings: -ò, -à, -emo, -ete, -anno. For -are verbs, change the -a to -e first.",
+        "examples": [
+          {
+            "it": "parlare → parlerò",
+            "en": "to speak → I will speak"
+          },
+          {
+            "it": "credere → crederà",
+            "en": "to believe → he/she will believe"
+          },
+          {
+            "it": "preferire → preferiremo",
+            "en": "to prefer → we will prefer"
+          }
+        ],
+        "tip": "Drop the -e, add endings. Remember: -are verbs become -ere verbs first (parlare → parler-).",
+        "source_label": "The future tense",
+        "source_drill_ids": [
+          "fsi_u12_0355",
+          "fsi_u12_0356",
+          "fsi_u12_0357",
+          "fsi_u12_0358",
+          "fsi_u12_0359"
+        ],
+        "unit": 12
+      },
+      {
+        "title": "Present Subjunctive Formation",
+        "body": "The present subjunctive is formed by taking the present indicative 'loro' form, dropping '-no', and adding specific endings: -i, -i, -a, -iamo, -iate, -ano.",
+        "examples": [
+          {
+            "it": "(io) parli, (voi) parliate",
+            "en": "I speak, you (pl.) speak"
+          },
+          {
+            "it": "(io) creda, (voi) crediate",
+            "en": "I believe, you (pl.) believe"
+          },
+          {
+            "it": "(io) preferisca, (voi) preferiate",
+            "en": "I prefer, you (pl.) prefer"
+          }
+        ],
+        "tip": "Start with 'loro' form (parlano), drop '-no' (parla-), add subjunctive endings: -i, -i, -a, -iamo, -iate, -ano.",
+        "source_label": "Language - Usage Notes 3",
+        "source_drill_ids": [
+          "fsi_u12_0418",
+          "fsi_u12_0419",
+          "fsi_u12_0420",
+          "fsi_u12_0421",
+          "fsi_u12_0422"
+        ],
+        "unit": 12
+      }
+    ],
+    "13": [
+      {
+        "title": "Adjective Order for Colors",
+        "body": "When describing shades of colors, the color name comes first, followed by the shade adjective (like chiaro or scuro).",
+        "examples": [
+          {
+            "it": "rosso chiaro",
+            "en": "light red"
+          },
+          {
+            "it": "verde scuro",
+            "en": "dark green"
+          }
+        ],
+        "tip": "Think 'color + shade' in Italian, opposite of English order.",
+        "source_label": "Color Usage Examples",
+        "source_drill_ids": [
+          "fsi_u13_0414",
+          "fsi_u13_0415",
+          "fsi_u13_0416",
+          "fsi_u13_0417"
+        ],
+        "unit": 13
+      },
+      {
+        "title": "Definite Articles with Titles",
+        "body": "The definite article (il, la, etc.) always precedes ranks, titles, and forms of address like Signor, Signora, and Signorina.",
+        "examples": [
+          {
+            "it": "il Tenente Jones",
+            "en": "Lieutenant Jones"
+          },
+          {
+            "it": "la Signora Rossi",
+            "en": "Mrs. Rossi"
+          }
+        ],
+        "tip": "Think: 'the' + title, just like 'the Captain' in English.",
+        "source_label": "NOTES ON THE CONVERSATION",
+        "source_drill_ids": [
+          "fsi_u13_0001",
+          "fsi_u13_0002",
+          "fsi_u13_0003",
+          "fsi_u13_0004",
+          "fsi_u13_0005"
+        ],
+        "unit": 13
+      },
+      {
+        "title": "Adjective Position with Colors",
+        "body": "Most color adjectives follow the noun, but compound color adjectives (like 'grigio scuro') come before the noun.",
+        "examples": [
+          {
+            "it": "un grigio scuro",
+            "en": "a dark gray"
+          },
+          {
+            "it": "uno spinato",
+            "en": "a thorny one"
+          }
+        ],
+        "tip": "Simple colors go after, compound colors (two words) go before the noun.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u13_0418",
+          "fsi_u13_0419",
+          "fsi_u13_0420",
+          "fsi_u13_0421",
+          "fsi_u13_0422"
+        ],
+        "unit": 13
+      },
+      {
+        "title": "Impersonal Si Construction",
+        "body": "Use 'si' + verb to express general statements about what people do. The verb agrees with the subject that follows it.",
+        "examples": [
+          {
+            "it": "Si parla inglese qui.",
+            "en": "English is spoken here."
+          },
+          {
+            "it": "Si parlano tre lingue qui.",
+            "en": "Three languages are spoken here."
+          }
+        ],
+        "tip": "Think of 'si' as 'one' or 'people' - it makes statements general rather than about specific people.",
+        "source_label": "Grammar Note: Impersonal si construction",
+        "source_drill_ids": [
+          "fsi_u13_0575",
+          "fsi_u13_0576",
+          "fsi_u13_0577",
+          "fsi_u13_0578",
+          "fsi_u13_0579"
+        ],
+        "unit": 13
+      },
+      {
+        "title": "Dovere + Verb",
+        "body": "Use 'dovere' + infinitive verb to express obligation or necessity. The modal verb 'dovere' conjugates while the main verb stays in infinitive form.",
+        "examples": [
+          {
+            "it": "Io devo studiare.",
+            "en": "I must study."
+          },
+          {
+            "it": "Lei deve lavorare.",
+            "en": "She must work."
+          }
+        ],
+        "tip": "Think 'must do' - 'dovere' changes with the subject, but the action verb stays in its 'to-' form.",
+        "source_label": "Compare",
+        "source_drill_ids": [
+          "fsi_u13_0156",
+          "fsi_u13_0157"
+        ],
+        "unit": 13
+      },
+      {
+        "title": "Formal vs Informal Questions with Avere",
+        "body": "Use 'Ha' for formal 'you' (Lei) and 'Avete' for plural 'you' (voi) when asking questions with avere.",
+        "examples": [
+          {
+            "it": "Ha (Lei) un libro?",
+            "en": "Do you (formal) have a book?"
+          },
+          {
+            "it": "Avete (Voi) un libro?",
+            "en": "Do you (plural) have a book?"
+          }
+        ],
+        "tip": "Ha for one person (formal), Avete for multiple people (informal or formal plural).",
+        "source_label": "Ha (Lei)...?",
+        "source_drill_ids": [
+          "fsi_u13_0106",
+          "fsi_u13_0107",
+          "fsi_u13_0108",
+          "fsi_u13_0109",
+          "fsi_u13_0110"
+        ],
+        "unit": 13
+      },
+      {
+        "title": "Asking 'Do you have...?' with 'avere'",
+        "body": "Use the verb 'avere' (to have) to ask and answer about possession. The question form is 'Hai...?' for 'you' (informal).",
+        "examples": [
+          {
+            "it": "Hai figli?",
+            "en": "Do you have children?"
+          },
+          {
+            "it": "Hai una macchina?",
+            "en": "Do you have a car?"
+          }
+        ],
+        "tip": "Remember 'hai' for 'you have' - it's the key to asking about what someone possesses.",
+        "source_label": "UNIT 3 Objectives",
+        "source_drill_ids": [
+          "fsi_u13_0025",
+          "fsi_u13_0026"
+        ],
+        "unit": 13
+      },
+      {
+        "title": "Avoiding Possessive Forms",
+        "body": "Italian often avoids possessive adjectives when an indirect object pronoun already indicates the possessor.",
+        "examples": [
+          {
+            "it": "Le prendo le misure.",
+            "en": "I take her measurements. (Literally: I take the measurements to her)"
+          },
+          {
+            "it": "Mi lavo i capelli.",
+            "en": "I wash my hair. (Literally: I wash the hair to myself)"
+          }
+        ],
+        "tip": "Think 'to whom' rather than 'whose' - use indirect pronouns (mi, ti, le, gli, ci, vi) instead of possessive adjectives.",
+        "source_label": "Grammar Note: Avoiding possessive forms",
+        "source_drill_ids": [
+          "fsi_u13_0581",
+          "fsi_u13_0582"
+        ],
+        "unit": 13
+      },
+      {
+        "title": "Verb piacere construction",
+        "body": "Piacere means 'to be pleasing' and uses indirect object pronouns to indicate who likes something. The verb agrees with the thing being liked, not the person.",
+        "examples": [
+          {
+            "it": "Mi piace la giacca.",
+            "en": "I like the jacket. (The jacket is pleasing to me)"
+          },
+          {
+            "it": "Mi piacciono i pantaloni.",
+            "en": "I like the pants. (The pants are pleasing to me)"
+          }
+        ],
+        "tip": "Think 'it pleases me' not 'I like it' - the verb matches the thing liked (singular/plural).",
+        "source_label": "Grammar Note: The verb piacere",
+        "source_drill_ids": [
+          "fsi_u13_0566",
+          "fsi_u13_0567",
+          "fsi_u13_0568",
+          "fsi_u13_0569",
+          "fsi_u13_0570"
+        ],
+        "unit": 13
+      },
+      {
+        "title": "Identification Sentences with 'È'",
+        "body": "Use 'è' (is) to identify objects, with optional question tags or negation. Questions can be formed by intonation or adding 'che cos'è'.",
+        "examples": [
+          {
+            "it": "È un sofà.",
+            "en": "It's a sofa."
+          },
+          {
+            "it": "Non è un sofà.",
+            "en": "It's not a sofa."
+          },
+          {
+            "it": "Che cos'è questo?",
+            "en": "What is this?"
+          }
+        ],
+        "tip": "Think of 'è' as the Italian 'is' for identification - same structure for statements, negatives, and questions.",
+        "source_label": "IDENTIFICATION SENTENCES",
+        "source_drill_ids": [
+          "fsi_u13_0790",
+          "fsi_u13_0791",
+          "fsi_u13_0792",
+          "fsi_u13_0793",
+          "fsi_u13_0794"
+        ],
+        "unit": 13
+      }
+    ],
+    "14": [
+      {
+        "title": "Asking and Answering 'Where in (city)?'",
+        "body": "Use 'in' plus the city name to ask where someone lives within a city. The preposition 'in' does not contract with articles for city names.",
+        "examples": [
+          {
+            "it": "Dove abiti in Roma?",
+            "en": "Where do you live in Rome?"
+          },
+          {
+            "it": "Abito in centro.",
+            "en": "I live downtown."
+          }
+        ],
+        "tip": "Think 'in' for being 'in' a city, just like in English.",
+        "source_label": "UNIT 4 Objectives",
+        "source_drill_ids": [
+          "fsi_u14_0001",
+          "fsi_u14_0002",
+          "fsi_u14_0003",
+          "fsi_u14_0004"
+        ],
+        "unit": 14
+      },
+      {
+        "title": "Number Formation from 21 Onwards",
+        "body": "For numbers 21-99, the tens and units can be written as separate words or combined into one, with the final vowel of the tens digit often dropped before 'uno' or 'otto'.",
+        "examples": [
+          {
+            "it": "ventuno / venti uno",
+            "en": "twenty-one"
+          },
+          {
+            "it": "cinquantotto / cinquanta otto",
+            "en": "fifty-eight"
+          }
+        ],
+        "tip": "Think 'BUMP' for the numbers where the pattern applies: 1, 8, and their multiples in the ones place trigger the vowel drop.",
+        "source_label": "NOTE",
+        "source_drill_ids": [
+          "fsi_u14_0044",
+          "fsi_u14_0124",
+          "fsi_u14_0675"
+        ],
+        "unit": 14
+      },
+      {
+        "title": "Agreement with Past Participles",
+        "body": "When using avere as the auxiliary verb, the past participle must agree in gender and number with any preceding direct object pronouns (lo, la, li, le).",
+        "examples": [
+          {
+            "it": "Ho visto la ragazza → L'ho vista",
+            "en": "I saw the girl → I saw her"
+          },
+          {
+            "it": "Ho comprato i libri → Li ho comprati",
+            "en": "I bought the books → I bought them"
+          }
+        ],
+        "tip": "Remember: With avere, agreement happens only when the object pronoun comes BEFORE the verb.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u14_0374",
+          "fsi_u14_0375",
+          "fsi_u14_0376",
+          "fsi_u14_0377"
+        ],
+        "unit": 14
+      },
+      {
+        "title": "Verb Placement with Prepositions",
+        "body": "Some verbs require prepositions before infinitives, while others don't. 'Aspettare' can follow directly or with 'a' depending on the preceding verb.",
+        "examples": [
+          {
+            "it": "Aspetto qui.",
+            "en": "I wait here."
+          },
+          {
+            "it": "Vado ad aspettare lì.",
+            "en": "I go to wait there."
+          }
+        ],
+        "tip": "Think: 'go to wait' needs 'a' like English, but simple 'wait' stands alone.",
+        "source_label": "Compare the following",
+        "source_drill_ids": [
+          "fsi_u14_0231",
+          "fsi_u14_0232"
+        ],
+        "unit": 14
+      },
+      {
+        "title": "Direct Object Pronouns with Passato Prossimo",
+        "body": "When using direct object pronouns with passato prossimo, the past participle must agree in gender and number with the pronoun it refers to.",
+        "examples": [
+          {
+            "it": "Le ho portato questi",
+            "en": "I brought you these (feminine singular 'you')"
+          },
+          {
+            "it": "Le ho portate queste scarpe",
+            "en": "I brought you these shoes (agrees with 'scarpe')"
+          }
+        ],
+        "tip": "Match the ending of the past participle to the pronoun: -o for masculine singular, -i for masculine plural, -a for feminine singular, -e for feminine plural.",
+        "source_label": "PUTTING IT TOGETHER Variants",
+        "source_drill_ids": [
+          "fsi_u14_0414",
+          "fsi_u14_0415",
+          "fsi_u14_0416"
+        ],
+        "unit": 14
+      }
+    ],
+    "15": [
+      {
+        "title": "Plural Nouns with Singular Meaning",
+        "body": "Some Italian nouns are grammatically plural but refer to singular concepts, requiring plural agreement for adjectives and pronouns.",
+        "examples": [
+          {
+            "it": "I capelli sono belli.",
+            "en": "The hair is beautiful."
+          },
+          {
+            "it": "La gente è buona.",
+            "en": "The people are good."
+          }
+        ],
+        "tip": "Remember: plural form doesn't always mean plural meaning - check agreement patterns.",
+        "source_label": "Grammar Note on Noun Number",
+        "source_drill_ids": [
+          "fsi_u15_0421",
+          "fsi_u15_0422",
+          "fsi_u15_0423",
+          "fsi_u15_0424",
+          "fsi_u15_0425"
+        ],
+        "unit": 15
+      },
+      {
+        "title": "Prepositions with Infinitives",
+        "body": "Use 'per' before an infinitive when it means 'in order to' to express purpose.",
+        "examples": [
+          {
+            "it": "Studio per imparare l'italiano.",
+            "en": "I study in order to learn Italian."
+          },
+          {
+            "it": "Vado al mercato per comprare frutta.",
+            "en": "I go to the market to buy fruit."
+          }
+        ],
+        "tip": "Think 'per' = 'for the purpose of' when followed by a verb.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u15_0095",
+          "fsi_u15_0096",
+          "fsi_u15_0097",
+          "fsi_u15_0098",
+          "fsi_u15_0099"
+        ],
+        "unit": 15
+      },
+      {
+        "title": "Agreement with 'fatto'",
+        "body": "The past participle 'fatto' must agree in gender and number with the subject of the verb 'essere'.",
+        "examples": [
+          {
+            "it": "Com'è fatta la torta?",
+            "en": "How is the cake (feminine singular) made?"
+          },
+          {
+            "it": "Come sono fatti i biscotti?",
+            "en": "How are the cookies (masculine plural) made?"
+          }
+        ],
+        "tip": "Think: 'fatto' changes like an adjective to match what it describes.",
+        "source_label": "Grammar Note 5",
+        "source_drill_ids": [
+          "fsi_u15_0433",
+          "fsi_u15_0434",
+          "fsi_u15_0435"
+        ],
+        "unit": 15
+      },
+      {
+        "title": "Using 'prendere' for ordering",
+        "body": "Use the verb 'prendere' to indicate what you are going to order or have to eat or drink.",
+        "examples": [
+          {
+            "it": "Prendo un caffè.",
+            "en": "I'll have a coffee."
+          },
+          {
+            "it": "La signora prende un'insalata.",
+            "en": "The lady is going to have a salad."
+          }
+        ],
+        "tip": "Think: 'prendere' = to take/order. It's the standard verb for choosing food or drink.",
+        "source_label": "Grammar Note 8",
+        "source_drill_ids": [
+          "fsi_u15_0459",
+          "fsi_u15_0460",
+          "fsi_u15_0461"
+        ],
+        "unit": 15
+      },
+      {
+        "title": "Object Pronoun Redundancy for Emphasis",
+        "body": "When a direct object noun is placed before the verb for emphasis, you must also use a corresponding direct object pronoun with the verb.",
+        "examples": [
+          {
+            "it": "Il biglietto lo prende dal tabaccaio.",
+            "en": "The ticket, he buys it at the tobacco shop."
+          },
+          {
+            "it": "La macchina la guido io.",
+            "en": "The car, I drive it."
+          }
+        ],
+        "tip": "Think 'noun + pronoun' when emphasizing the object upfront - both are required.",
+        "source_label": "Note 6",
+        "source_drill_ids": [
+          "fsi_u15_0123",
+          "fsi_u15_0124"
+        ],
+        "unit": 15
+      },
+      {
+        "title": "Pronoun Combination Changes",
+        "body": "The pronouns mi, si, ci, vi, gli change to me, se, ce, ve, glie when combined with ne, lo, la, li, le.",
+        "examples": [
+          {
+            "it": "Ci porti tre porzioni.",
+            "en": "Bring us three servings."
+          },
+          {
+            "it": "Ce ne porti tre porzioni.",
+            "en": "Bring us three servings of it."
+          }
+        ],
+        "tip": "Think 'me-se-ce-ve-glie' as the special forms before other pronouns like 'ne' or 'lo'.",
+        "source_label": "Grammar Note 6",
+        "source_drill_ids": [
+          "fsi_u15_0436",
+          "fsi_u15_0437",
+          "fsi_u15_0438",
+          "fsi_u15_0439",
+          "fsi_u15_0440"
+        ],
+        "unit": 15
+      },
+      {
+        "title": "Definite Article LO",
+        "body": "Use 'lo' (not 'il') before masculine singular nouns starting with 's' + consonant or the 'sc' sound before 'e' or 'i'.",
+        "examples": [
+          {
+            "it": "lo scontro",
+            "en": "the clash"
+          },
+          {
+            "it": "lo studente",
+            "en": "the student"
+          },
+          {
+            "it": "lo sci",
+            "en": "the ski"
+          }
+        ],
+        "tip": "Think 'lo' for 's' + consonant or 'sc' sound (like 'chef') before e/i.",
+        "source_label": "Grammar Note 7",
+        "source_drill_ids": [
+          "fsi_u15_0454",
+          "fsi_u15_0455",
+          "fsi_u15_0456",
+          "fsi_u15_0457",
+          "fsi_u15_0458"
+        ],
+        "unit": 15
+      },
+      {
+        "title": "Combined Pronouns: Glie + Direct Object",
+        "body": "When combining indirect object pronouns (gli/le) with direct object pronouns (lo/la/li/le/ne), 'glie' is used and written as one word with the direct object pronoun.",
+        "examples": [
+          {
+            "it": "Giovanni glieli darà domani.",
+            "en": "Giovanni will give them to him/her/you/them tomorrow."
+          },
+          {
+            "it": "Io ve li darò domani.",
+            "en": "I'll give them to you tomorrow."
+          }
+        ],
+        "tip": "Think 'glie' + direct object = one word: glielo, gliela, glieli, gliele, gliene",
+        "source_label": "Grammar Note 6 (cont.)",
+        "source_drill_ids": [
+          "fsi_u15_0441",
+          "fsi_u15_0442",
+          "fsi_u15_0443",
+          "fsi_u15_0444",
+          "fsi_u15_0445"
+        ],
+        "unit": 15
+      },
+      {
+        "title": "Negation with Non...",
+        "body": "In Italian, 'non' is placed before the verb to create negation, often combined with other negative words like 'mai' (never) or 'niente' (nothing).",
+        "examples": [
+          {
+            "it": "Non c'è mai.",
+            "en": "There is never."
+          },
+          {
+            "it": "Non fa niente.",
+            "en": "It doesn't matter."
+          }
+        ],
+        "tip": "Think of 'non' as the anchor—it always comes before the verb, and other negative words follow naturally.",
+        "source_label": "SOME USEFUL CONSTRUCTIONS",
+        "source_drill_ids": [
+          "fsi_u15_0824",
+          "fsi_u15_0825",
+          "fsi_u15_0826",
+          "fsi_u15_0827",
+          "fsi_u15_0828"
+        ],
+        "unit": 15
+      },
+      {
+        "title": "Placement of 'c'è' and 'lì'",
+        "body": "In Italian location sentences, 'c'è' (there is) can come before or after the location word 'lì' (there), with the same meaning.",
+        "examples": [
+          {
+            "it": "C'è un sofà lì.",
+            "en": "There is a sofa there."
+          },
+          {
+            "it": "Lì c'è un sofà.",
+            "en": "There is a sofa there."
+          }
+        ],
+        "tip": "Think of it as flexible word order: both 'There is a sofa there' and 'There, there is a sofa' work in Italian.",
+        "source_label": "IDENTIFICATION - LOCATION SENTENCES (Units XIII - XIV)",
+        "source_drill_ids": [
+          "fsi_u15_1028",
+          "fsi_u15_1029",
+          "fsi_u15_1030",
+          "fsi_u15_1031",
+          "fsi_u15_1032"
+        ],
+        "unit": 15
+      }
+    ],
+    "16": [
+      {
+        "title": "Imperfect Tense of 'Essere'",
+        "body": "The verb 'essere' (to be) has irregular forms in the imperfect tense, which describes ongoing or habitual past actions.",
+        "examples": [
+          {
+            "it": "Io ero felice.",
+            "en": "I was happy."
+          },
+          {
+            "it": "Loro erano studenti.",
+            "en": "They were students."
+          }
+        ],
+        "tip": "All imperfect forms start with 'er-' except 'era' (he/she/it was) which is shorter.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u16_0041",
+          "fsi_u16_0042"
+        ],
+        "unit": 16
+      },
+      {
+        "title": "Placement of 'Non' in Health Questions",
+        "body": "In questions about health using 'stare', 'non' can be placed at the beginning to ask if someone is not well, or after the verb in statements.",
+        "examples": [
+          {
+            "it": "Non sta bene Amanda?",
+            "en": "Isn't Amanda well?"
+          },
+          {
+            "it": "Amanda non sta bene.",
+            "en": "Amanda is not well."
+          }
+        ],
+        "tip": "Think: 'Non' first for questioning health, after verb for stating poor health.",
+        "source_label": "HEALTH SENTENCES",
+        "source_drill_ids": [
+          "fsi_u16_0373",
+          "fsi_u16_0374",
+          "fsi_u16_0375",
+          "fsi_u16_0376",
+          "fsi_u16_0377"
+        ],
+        "unit": 16
+      }
+    ],
+    "17": [
+      {
+        "title": "Preposition 'da' in Room Descriptions",
+        "body": "Use 'da' to indicate the purpose or function of a room, connecting the room type with its use.",
+        "examples": [
+          {
+            "it": "camera da letto",
+            "en": "bedroom"
+          },
+          {
+            "it": "sala da pranzo",
+            "en": "dining room"
+          }
+        ],
+        "tip": "Think of 'da' as meaning 'for' when describing what a room is for.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u17_0107",
+          "fsi_u17_0108",
+          "fsi_u17_0109",
+          "fsi_u17_0110",
+          "fsi_u17_0111"
+        ],
+        "unit": 17
+      },
+      {
+        "title": "Ce l'ho construction",
+        "body": "In spoken Italian, 'ce' is placed before 'l'' with forms of 'avere' to avoid awkward consonant clusters and clarify meaning.",
+        "examples": [
+          {
+            "it": "Ce l'ho io.",
+            "en": "I have it."
+          },
+          {
+            "it": "Ce l'hanno dato.",
+            "en": "They gave it to them."
+          }
+        ],
+        "tip": "Think 'ce' as a buffer before 'l' + avere forms - it makes pronunciation smoother and prevents confusion.",
+        "source_label": "Grammar Note 12",
+        "source_drill_ids": [
+          "fsi_u17_0146",
+          "fsi_u17_0147",
+          "fsi_u17_0148",
+          "fsi_u17_0149",
+          "fsi_u17_0150"
+        ],
+        "unit": 17
+      },
+      {
+        "title": "Titles with/without Articles",
+        "body": "Use titles without articles when directly addressing someone, but with articles when referring to them in third person.",
+        "examples": [
+          {
+            "it": "Buongiorno, signora Segni.",
+            "en": "Good morning, Mrs. Segni."
+          },
+          {
+            "it": "Il signor Segni è arrivato.",
+            "en": "Mr. Segni has arrived."
+          }
+        ],
+        "tip": "Direct address = no article; talking about = article + title",
+        "source_label": "TITLES IN DIRECT ADDRESS OR NOT",
+        "source_drill_ids": [
+          "fsi_u17_0457",
+          "fsi_u17_0458",
+          "fsi_u17_0459",
+          "fsi_u17_0460",
+          "fsi_u17_0461"
+        ],
+        "unit": 17
+      }
+    ],
+    "18": [
+      {
+        "title": "Possessives with Kinship Terms",
+        "body": "Most singular possessives require the definite article (il/la), but kinship terms like padre, madre, figlio, figlia do not take articles.",
+        "examples": [
+          {
+            "it": "il suo ufficio",
+            "en": "his/her office"
+          },
+          {
+            "it": "suo figlio",
+            "en": "his/her son"
+          }
+        ],
+        "tip": "Think: family members are close, so no article needed between possessive and kinship term.",
+        "source_label": "Lesson XVIII Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u18_0027",
+          "fsi_u18_0028",
+          "fsi_u18_0029",
+          "fsi_u18_0030",
+          "fsi_u18_0031"
+        ],
+        "unit": 18
+      },
+      {
+        "title": "Location Sentences with C'è and È",
+        "body": "Use 'c'è' for 'there is' with indefinite nouns and 'è' for 'is' with definite nouns or proper names.",
+        "examples": [
+          {
+            "it": "C'è un cono qui.",
+            "en": "There is a cone here."
+          },
+          {
+            "it": "Amanda è qui.",
+            "en": "Amanda is here."
+          }
+        ],
+        "tip": "C'è = there is (something indefinite); È = is (someone/something specific)",
+        "source_label": "LOCATION SENTENCES",
+        "source_drill_ids": [
+          "fsi_u18_0629",
+          "fsi_u18_0630",
+          "fsi_u18_0631",
+          "fsi_u18_0632",
+          "fsi_u18_0633"
+        ],
+        "unit": 18
+      }
+    ],
+    "19": [
+      {
+        "title": "Studio vs. Ufficio",
+        "body": "Use 'studio' for professional offices like doctors or lawyers, not 'ufficio'.",
+        "examples": [
+          {
+            "it": "Lo studio del dottore",
+            "en": "The doctor's office"
+          },
+          {
+            "it": "Lo studio dell'avvocato",
+            "en": "The lawyer's office"
+          }
+        ],
+        "tip": "Think 'studio' for professionals who study their field.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u19_0133",
+          "fsi_u19_0134"
+        ],
+        "unit": 19
+      },
+      {
+        "title": "Piacere Construction",
+        "body": "Piacere means 'to be pleasing' and requires indirect object pronouns. The thing liked is the subject, and the person liking is the indirect object.",
+        "examples": [
+          {
+            "it": "Mi piace Napoli.",
+            "en": "Naples is pleasing to me (I like Naples)."
+          },
+          {
+            "it": "Le piace la pizza?",
+            "en": "Is pizza pleasing to you? (Do you like pizza?)"
+          }
+        ],
+        "tip": "Think 'it pleases me' instead of 'I like it' - the thing you like does the action of pleasing.",
+        "source_label": "NOTES ON THE CONVERSATION",
+        "source_drill_ids": [
+          "fsi_u19_0025",
+          "fsi_u19_0026",
+          "fsi_u19_0027",
+          "fsi_u19_0028",
+          "fsi_u19_0029"
+        ],
+        "unit": 19
+      },
+      {
+        "title": "Ora, Tempo, Volta - Different 'Times'",
+        "body": "Ora means clock time, tempo means duration, and volta means occurrence. They are not interchangeable despite all translating to 'time' in English.",
+        "examples": [
+          {
+            "it": "Che ora è?",
+            "en": "What time is it?"
+          },
+          {
+            "it": "Quanto tempo abbiamo?",
+            "en": "How much time do we have?"
+          },
+          {
+            "it": "Quante volte?",
+            "en": "How many times?"
+          }
+        ],
+        "tip": "Ora = hour (clock), Tempo = temporal (duration), Volta = volte (times/count)",
+        "source_label": "Lesson XIX Grammar Note 5",
+        "source_drill_ids": [
+          "fsi_u19_0158",
+          "fsi_u19_0159",
+          "fsi_u19_0160",
+          "fsi_u19_0161"
+        ],
+        "unit": 19
+      },
+      {
+        "title": "Sapere vs Potere",
+        "body": "Use 'sapere' for knowing how to do something (skill/ability), and 'potere' for being able to do something (permission/circumstance).",
+        "examples": [
+          {
+            "it": "Non sa parlare italiano.",
+            "en": "He doesn't know how to speak Italian."
+          },
+          {
+            "it": "Non può parlare; ha la laringite.",
+            "en": "He can't speak; he has laryngitis."
+          }
+        ],
+        "tip": "Sapere = skill (like 'know-how'), Potere = possibility (like 'may I?')",
+        "source_label": "Lesson XIX Grammar Explanation: Sapere vs Potere",
+        "source_drill_ids": [
+          "fsi_u19_0153",
+          "fsi_u19_0154",
+          "fsi_u19_0155"
+        ],
+        "unit": 19
+      }
+    ],
+    "20": [
+      {
+        "title": "Verbs with Pronoun 'ci'",
+        "body": "The pronoun 'ci' can attach to verbs like 'prendere' to mean 'for ourselves' or 'for us'.",
+        "examples": [
+          {
+            "it": "Andiamo al bar a prenderci qualcosa?",
+            "en": "Shall we go to the bar to get something for ourselves?"
+          }
+        ],
+        "tip": "Think of 'ci' as adding 'for us' to the verb's meaning.",
+        "source_label": "Language - Usage Notes 2",
+        "source_drill_ids": [
+          "fsi_u20_0459",
+          "fsi_u20_0460"
+        ],
+        "unit": 20
+      },
+      {
+        "title": "Definite Articles for Categories",
+        "body": "Use the definite article (il, la, etc.) when referring to categories like public places, transportation, instruments, or illnesses, not just specific items.",
+        "examples": [
+          {
+            "it": "Andiamo al bar o al ristorante?",
+            "en": "Shall we go to a café or a restaurant?"
+          },
+          {
+            "it": "Sono venuto in bicicletta; non ho preso il taxi.",
+            "en": "I came by bicycle; I didn't take a taxi."
+          },
+          {
+            "it": "Ho il raffreddore.",
+            "en": "I have a cold."
+          }
+        ],
+        "tip": "Think of it as 'the' for whole categories (like 'the piano' meaning pianos in general), not just one specific thing.",
+        "source_label": "Language - Usage Notes 1",
+        "source_drill_ids": [
+          "fsi_u20_0452",
+          "fsi_u20_0453",
+          "fsi_u20_0454",
+          "fsi_u20_0455",
+          "fsi_u20_0456"
+        ],
+        "unit": 20
+      },
+      {
+        "title": "Andare + a + Infinitive",
+        "body": "The verb 'andare' requires the preposition 'a' before a following infinitive verb.",
+        "examples": [
+          {
+            "it": "Vado a pranzare.",
+            "en": "I'm going to have lunch."
+          },
+          {
+            "it": "Andiamo a prenderci un caffè.",
+            "en": "Let's go get ourselves a coffee."
+          }
+        ],
+        "tip": "Think 'andare a' as a fixed phrase meaning 'to go to do something' - similar to English structure.",
+        "source_label": "Language - Usage Notes 3",
+        "source_drill_ids": [
+          "fsi_u20_0461",
+          "fsi_u20_0462",
+          "fsi_u20_0463"
+        ],
+        "unit": 20
+      },
+      {
+        "title": "Subject Pronouns for Emphasis",
+        "body": "Subject pronouns are required in Italian for emphasis and often follow the verb in short phrases.",
+        "examples": [
+          {
+            "it": "Ma questa volta offro io!",
+            "en": "But this time I'm paying!"
+          },
+          {
+            "it": "Vieni tu domani.",
+            "en": "You come tomorrow."
+          }
+        ],
+        "tip": "Think: 'I'll do it!' → 'Lo faccio io!' - the pronoun adds emphasis.",
+        "source_label": "Language - Usage Notes 5",
+        "source_drill_ids": [
+          "fsi_u20_0476",
+          "fsi_u20_0477"
+        ],
+        "unit": 20
+      },
+      {
+        "title": "Imperative Irregularities",
+        "body": "Some Italian verbs have irregular imperative forms, especially in the 'tu' form, which don't follow regular conjugation patterns.",
+        "examples": [
+          {
+            "it": "di' la verità",
+            "en": "tell the truth"
+          },
+          {
+            "it": "sii gentile",
+            "en": "be kind"
+          },
+          {
+            "it": "abbi pazienza",
+            "en": "have patience"
+          }
+        ],
+        "tip": "Remember these common irregulars: di' (dire), sii (essere), abbi (avere), sappi (sapere), vogli (volere).",
+        "source_label": "Exceptions to the preceding",
+        "source_drill_ids": [
+          "fsi_u20_0545",
+          "fsi_u20_0546",
+          "fsi_u20_0547",
+          "fsi_u20_0548",
+          "fsi_u20_0549"
+        ],
+        "unit": 20
+      },
+      {
+        "title": "Forming the 'tu' Imperative",
+        "body": "For -are verbs, the 'tu' imperative is identical to the 'lei' present indicative form. For -ere and -ire verbs, it is identical to the 'tu' present indicative form.",
+        "examples": [
+          {
+            "it": "Parla! (parlare)",
+            "en": "Speak!"
+          },
+          {
+            "it": "Scrivi! (scrivere)",
+            "en": "Write!"
+          },
+          {
+            "it": "Dormi! (dormire)",
+            "en": "Sleep!"
+          }
+        ],
+        "tip": "For -are verbs, think 'lei' form; for others, think 'tu' present.",
+        "source_label": "Language - Usage Notes 6",
+        "source_drill_ids": [
+          "fsi_u20_0478",
+          "fsi_u20_0479",
+          "fsi_u20_0480",
+          "fsi_u20_0481",
+          "fsi_u20_0482"
+        ],
+        "unit": 20
+      },
+      {
+        "title": "Invitation Formulas with 'Noi'",
+        "body": "Use present tense 'noi' form, 'Perché non + noi form', or 'vogliamo + infinitive' to make suggestions or invitations.",
+        "examples": [
+          {
+            "it": "Andiamo al bar?",
+            "en": "Shall we go to the bar?"
+          },
+          {
+            "it": "Perché non ci diamo del tu?",
+            "en": "Why don't we use the informal 'tu'?"
+          },
+          {
+            "it": "Vogliamo andare?",
+            "en": "Do we want to go?"
+          }
+        ],
+        "tip": "Three ways to suggest: 1) Simple 'noi' verb, 2) 'Why not + noi', 3) 'We want + infinitive'.",
+        "source_label": "Language - Usage Notes 4",
+        "source_drill_ids": [
+          "fsi_u20_0464",
+          "fsi_u20_0465",
+          "fsi_u20_0466",
+          "fsi_u20_0467",
+          "fsi_u20_0468"
+        ],
+        "unit": 20
+      },
+      {
+        "title": "Fra vs In for Time Expressions",
+        "body": "Use 'fra' followed by a time period to mean '... from now', while 'in' indicates duration or completion within that time.",
+        "examples": [
+          {
+            "it": "Pranzerò fra due ore.",
+            "en": "I'll have dinner in two hours (from now)."
+          },
+          {
+            "it": "Pranzerò in due ore.",
+            "en": "I'll finish dinner in two hours (duration)."
+          }
+        ],
+        "tip": "Think of 'fra' as 'from now' and 'in' as 'within' when talking about time periods.",
+        "source_label": "7. The preposition fra",
+        "source_drill_ids": [
+          "fsi_u20_0552",
+          "fsi_u20_0553",
+          "fsi_u20_0554",
+          "fsi_u20_0555",
+          "fsi_u20_0556"
+        ],
+        "unit": 20
+      },
+      {
+        "title": "Expressing Likes with Verbs",
+        "body": "Use 'piacere' + infinitive to say you like doing something. The indirect object pronoun (mi, ti, gli, etc.) comes before 'piace' to indicate who likes the action.",
+        "examples": [
+          {
+            "it": "Mi piace lavorare.",
+            "en": "I like to work."
+          },
+          {
+            "it": "Non gli piace studiare.",
+            "en": "He doesn't like to study."
+          }
+        ],
+        "tip": "Think: 'To me it pleases to work' = 'I like to work'. The person is the indirect object, not the subject.",
+        "source_label": "'LIKING TO DO SOMETHING'",
+        "source_drill_ids": [
+          "fsi_u20_0829",
+          "fsi_u20_0830",
+          "fsi_u20_0831",
+          "fsi_u20_0832",
+          "fsi_u20_0833"
+        ],
+        "unit": 20
+      }
+    ],
+    "21": [
+      {
+        "title": "Diminutive Suffixes",
+        "body": "The suffix '-etta' is added to nouns to create a diminutive form, indicating something is small or expressing affection.",
+        "examples": [
+          {
+            "it": "valigia → valigetta",
+            "en": "suitcase → small suitcase"
+          }
+        ],
+        "tip": "Think of '-etta' as the Italian '-ette' in 'kitchenette'—it makes things smaller.",
+        "source_label": "NOTES ON THE CONVERSATION",
+        "source_drill_ids": [
+          "fsi_u21_0103",
+          "fsi_u21_0104",
+          "fsi_u21_0105"
+        ],
+        "unit": 21
+      },
+      {
+        "title": "Adjective Agreement with Gender",
+        "body": "Some adjectives like 'grande' have the same form for masculine and feminine, while others like 'questo/questa' change endings based on the noun's gender.",
+        "examples": [
+          {
+            "it": "un grande uomo / una grande donna",
+            "en": "a great man / a great woman"
+          },
+          {
+            "it": "questo libro / questa casa",
+            "en": "this book / this house"
+          }
+        ],
+        "tip": "Remember: 'grande' is gender-neutral, but 'questo' changes to 'questa' for feminine nouns.",
+        "source_label": "Grammar Note",
+        "source_drill_ids": [
+          "fsi_u21_0076",
+          "fsi_u21_0165"
+        ],
+        "unit": 21
+      },
+      {
+        "title": "Using 'ne' with Verbs",
+        "body": "The particle 'ne' replaces a partitive phrase (di + noun) and is placed before the conjugated verb, except with the imperative and infinitive.",
+        "examples": [
+          {
+            "it": "Eccone uno",
+            "en": "Here is one (of them)"
+          },
+          {
+            "it": "Prendiamo",
+            "en": "We take (it)"
+          }
+        ],
+        "tip": "Think of 'ne' as 'of it/them' and attach it to the verb's end in commands or infinitives.",
+        "source_label": "NOTE",
+        "source_drill_ids": [
+          "fsi_u21_0124",
+          "fsi_u21_0125",
+          "fsi_u21_0126",
+          "fsi_u21_0127",
+          "fsi_u21_0128"
+        ],
+        "unit": 21
+      },
+      {
+        "title": "Reflexive Verb Pronouns",
+        "body": "Reflexive verbs ending in -si require matching reflexive pronouns before the verb: mi, ti, si, ci, vi, si.",
+        "examples": [
+          {
+            "it": "Mi lavo le mani.",
+            "en": "I wash my hands."
+          },
+          {
+            "it": "Ti alzi presto.",
+            "en": "You get up early."
+          }
+        ],
+        "tip": "Match the pronoun to the subject: io → mi, tu → ti, lui/lei → si, noi → ci, voi → vi, loro → si.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u21_0446",
+          "fsi_u21_0447"
+        ],
+        "unit": 21
+      },
+      {
+        "title": "Reflexive Verbs in Passato Prossimo",
+        "body": "Reflexive verbs use essere as auxiliary in passato prossimo, and the past participle agrees in gender and number with the subject.",
+        "examples": [
+          {
+            "it": "Ci siamo conosciuti lunedì scorso.",
+            "en": "We met each other last Monday."
+          },
+          {
+            "it": "Mi sono lavato le mani.",
+            "en": "I washed my hands."
+          }
+        ],
+        "tip": "With reflexive verbs, think 'essere + agreement' - the past participle changes like an adjective.",
+        "source_label": "Grammar Note: Reflexive Verbs and Past Tense Usage",
+        "source_drill_ids": [
+          "fsi_u21_0591",
+          "fsi_u21_0592",
+          "fsi_u21_0593",
+          "fsi_u21_0594",
+          "fsi_u21_0595"
+        ],
+        "unit": 21
+      },
+      {
+        "title": "Present Tense with 'È la prima volta che'",
+        "body": "Use the present tense after 'È la prima volta che' to express something happening for the first time right now.",
+        "examples": [
+          {
+            "it": "È la prima volta che viene in Italia?",
+            "en": "Is it the first time you're coming to Italy?"
+          },
+          {
+            "it": "È la seconda volta che mi trovo in questa situazione.",
+            "en": "It's the second time I find myself in this situation."
+          }
+        ],
+        "tip": "Think: 'first time NOW' = present tense, even if in English we might use present perfect.",
+        "source_label": "Grammar Note 5",
+        "source_drill_ids": [
+          "fsi_u21_0551",
+          "fsi_u21_0552",
+          "fsi_u21_0553",
+          "fsi_u21_0554"
+        ],
+        "unit": 21
+      },
+      {
+        "title": "Essere di vs. Venire da",
+        "body": "Use 'essere di' to indicate origin (born/raised in a city/town). Use 'venire da' to indicate coming from a place, often temporarily.",
+        "examples": [
+          {
+            "it": "Sono di Milano.",
+            "en": "I am from Milan (born/raised there)."
+          },
+          {
+            "it": "Vengo da Milano.",
+            "en": "I am coming from Milan (now)."
+          }
+        ],
+        "tip": "'Essere di' is for identity (like 'I am a Milanese'), 'venire da' is for movement (like 'I come from there').",
+        "source_label": "Grammar Note 4",
+        "source_drill_ids": [
+          "fsi_u21_0647",
+          "fsi_u21_0648",
+          "fsi_u21_0649",
+          "fsi_u21_0650"
+        ],
+        "unit": 21
+      },
+      {
+        "title": "Definite Articles with Languages",
+        "body": "Use l' before language names like italiano, francese, spagnolo, except after parlare, in, or di where the article is optional or omitted.",
+        "examples": [
+          {
+            "it": "Parlo l'italiano.",
+            "en": "I speak Italian."
+          },
+          {
+            "it": "Parlo italiano.",
+            "en": "I speak Italian."
+          },
+          {
+            "it": "Un corso di italiano.",
+            "en": "An Italian course."
+          }
+        ],
+        "tip": "Think: 'l'italiano' is standard, but drop it after parlare, in, di.",
+        "source_label": "Grammar Note 3",
+        "source_drill_ids": [
+          "fsi_u21_0645",
+          "fsi_u21_0646"
+        ],
+        "unit": 21
+      },
+      {
+        "title": "Imperfetto Tense Formation",
+        "body": "The imperfetto past tense is formed by replacing the -re of the infinitive with endings containing -v- (except for essere). It describes ongoing or habitual past actions.",
+        "examples": [
+          {
+            "it": "parlavo italiano",
+            "en": "I spoke Italian (ongoing)"
+          },
+          {
+            "it": "piaceva la città",
+            "en": "I liked the city (during a period)"
+          }
+        ],
+        "tip": "Look for the -v- in the ending: parlare → parlavo, parlavi, parlava, etc.",
+        "source_label": "Grammar Note 2",
+        "source_drill_ids": [
+          "fsi_u21_0608",
+          "fsi_u21_0609",
+          "fsi_u21_0610",
+          "fsi_u21_0611",
+          "fsi_u21_0612"
+        ],
+        "unit": 21
+      },
+      {
+        "title": "Present Tense Meanings",
+        "body": "The Italian present tense describes actions happening now, habitual actions, or future plans, not just current moments.",
+        "examples": [
+          {
+            "it": "Chiama ora.",
+            "en": "He is calling now."
+          },
+          {
+            "it": "Chiama ogni sera.",
+            "en": "He calls every evening."
+          },
+          {
+            "it": "Chiama domani.",
+            "en": "He is going to call tomorrow."
+          }
+        ],
+        "tip": "Think 'NOW, ALWAYS, or SOON' - Italian present covers all three time frames.",
+        "source_label": "MEANING OF PRESENT TENSE",
+        "source_drill_ids": [
+          "fsi_u21_1113",
+          "fsi_u21_1114",
+          "fsi_u21_1115",
+          "fsi_u21_1116",
+          "fsi_u21_1117"
+        ],
+        "unit": 21
+      },
+      {
+        "title": "Irregular Imperfetto Verbs",
+        "body": "Three common verbs have irregular stems in the imperfetto tense: essere (er-), dire (dicev-), and fare (facev-).",
+        "examples": [
+          {
+            "it": "io ero, tu eri, lui/lei era",
+            "en": "I was, you were, he/she was"
+          },
+          {
+            "it": "io dicevo, tu dicevi, lui/lei diceva",
+            "en": "I said, you said, he/she said"
+          },
+          {
+            "it": "io facevo, tu facevi, lui/lei faceva",
+            "en": "I did/made, you did/made, he/she did/made"
+          }
+        ],
+        "tip": "Remember the 'E-D-F' trio: Essere, Dire, Fare - the only verbs with irregular imperfetto stems.",
+        "source_label": "Grammar Note 2 (Irregular Imperfetto Verbs)",
+        "source_drill_ids": [
+          "fsi_u21_0632",
+          "fsi_u21_0633",
+          "fsi_u21_0634",
+          "fsi_u21_0635",
+          "fsi_u21_0636"
+        ],
+        "unit": 21
+      },
+      {
+        "title": "Prepositions with Places: A, In, Di",
+        "body": "Use 'di' for origin (È di Roma), 'a' for cities/small islands (a Roma, ad Haiti), and 'in' for countries/large islands (in Italia, in Sicilia).",
+        "examples": [
+          {
+            "it": "Vivo a Milano, ma sono di Napoli.",
+            "en": "I live in Milan, but I am from Naples."
+          },
+          {
+            "it": "Andiamo in Francia e in Corsica.",
+            "en": "We are going to France and to Corsica."
+          }
+        ],
+        "tip": "Cities get 'a', countries get 'in', origin gets 'di'.",
+        "source_label": "RECAP. (XXI-XXV) Grammar Note",
+        "source_drill_ids": [
+          "fsi_u21_1125",
+          "fsi_u21_1126",
+          "fsi_u21_1127",
+          "fsi_u21_1128",
+          "fsi_u21_1129"
+        ],
+        "unit": 21
+      }
+    ],
+    "22": [
+      {
+        "title": "C'è vs Ci sono",
+        "body": "Use 'c'è' for singular and 'ci sono' for plural to express existence or presence of something.",
+        "examples": [
+          {
+            "it": "C'è un libro sul tavolo.",
+            "en": "There is a book on the table."
+          },
+          {
+            "it": "Ci sono due libri sul tavolo.",
+            "en": "There are two books on the table."
+          }
+        ],
+        "tip": "Remember: C'è = singular (one thing), Ci sono = plural (multiple things). Add 'non' before for negatives.",
+        "source_label": "C’è. There is. Ci sono. There are. Non c’è. There is not. Non ci sono. There are not.",
+        "source_drill_ids": [
+          "fsi_u22_0114",
+          "fsi_u22_0115",
+          "fsi_u22_0116",
+          "fsi_u22_0117"
+        ],
+        "unit": 22
+      },
+      {
+        "title": "Using 'Mi serve' for 'I need'",
+        "body": "Use 'mi serve' to express needing a single item or service. It uses the verb 'servire' (to be necessary), which conjugates like the item needed is the subject.",
+        "examples": [
+          {
+            "it": "Mi serve un facchino.",
+            "en": "I need a porter."
+          },
+          {
+            "it": "Mi serve il biglietto.",
+            "en": "I need the ticket."
+          }
+        ],
+        "tip": "Think: 'A porter is necessary to me' = 'Mi serve un facchino.'",
+        "source_label": "NOTE:",
+        "source_drill_ids": [
+          "fsi_u22_0075",
+          "fsi_u22_0076",
+          "fsi_u22_0077",
+          "fsi_u22_0078",
+          "fsi_u22_0079"
+        ],
+        "unit": 22
+      },
+      {
+        "title": "Ne pronoun usage",
+        "body": "Ne replaces phrases introduced by di (of) and means 'of it' or 'of them'.",
+        "examples": [
+          {
+            "it": "Mi dia una dozzina di uova → Me ne dia una dozzina",
+            "en": "Give me a dozen eggs → Give me a dozen of them"
+          },
+          {
+            "it": "Mi dia un chilo di parmigiano → Me ne dia un chilo",
+            "en": "Give me a kilo of parmesan → Give me a kilo of it"
+          }
+        ],
+        "tip": "Think of 'ne' as 'of it/them' - it replaces 'di + noun' phrases.",
+        "source_label": "NOTES ON THE CONVERSATION",
+        "source_drill_ids": [
+          "fsi_u22_0160",
+          "fsi_u22_0161",
+          "fsi_u22_0162",
+          "fsi_u22_0163",
+          "fsi_u22_0415"
+        ],
+        "unit": 22
+      },
+      {
+        "title": "Occorre vs. Occorrono",
+        "body": "Use singular 'occorre' when referring to something needed in general or a singular item, and plural 'occorrono' when referring to multiple specific items.",
+        "examples": [
+          {
+            "it": "Mi occorre un cavolfiore.",
+            "en": "I need a cauliflower."
+          },
+          {
+            "it": "Mi occorrono due cavolfiori.",
+            "en": "I need two cauliflowers."
+          }
+        ],
+        "tip": "Match 'occorre/occorrono' to the number of items: singular item = occorre, multiple items = occorrono.",
+        "source_label": "Grammar Example: occorre/occorrono singular/plural",
+        "source_drill_ids": [
+          "fsi_u22_0739",
+          "fsi_u22_0740",
+          "fsi_u22_0741"
+        ],
+        "unit": 22
+      },
+      {
+        "title": "Asking and Telling Time",
+        "body": "Use 'è l'una' for 1:00 and 'sono le' for all other hours. Minutes follow the hour without 'e' unless specified.",
+        "examples": [
+          {
+            "it": "Che ora è? È l'una.",
+            "en": "What time is it? It's one o'clock."
+          },
+          {
+            "it": "Che ore sono? Sono le tre e venti.",
+            "en": "What time is it? It's three twenty."
+          }
+        ],
+        "tip": "Remember: 1 is singular (è l'una), all others are plural (sono le due/tre...).",
+        "source_label": "l’ora",
+        "source_drill_ids": [
+          "fsi_u22_0236",
+          "fsi_u22_0237",
+          "fsi_u22_0238",
+          "fsi_u22_0239",
+          "fsi_u22_0240"
+        ],
+        "unit": 22
+      },
+      {
+        "title": "Ne with Quantities",
+        "body": "The particle 'ne' replaces direct object nouns in quantitative phrases when the noun isn't expressed. It usually precedes the verb but attaches to infinitives.",
+        "examples": [
+          {
+            "it": "Ne abbiamo firmati due.",
+            "en": "We signed two (of them)."
+          },
+          {
+            "it": "Non desidero comprarne.",
+            "en": "I don't want to buy any (of them)."
+          }
+        ],
+        "tip": "Think of 'ne' as meaning 'of them' when replacing unexpressed nouns after quantities.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u22_1266",
+          "fsi_u22_1267",
+          "fsi_u22_1268",
+          "fsi_u22_1269",
+          "fsi_u22_1270"
+        ],
+        "unit": 22
+      },
+      {
+        "title": "Noun Markers",
+        "body": "Noun markers are words or phrases that come before nouns to indicate gender, number, or quantity.",
+        "examples": [
+          {
+            "it": "un arrosto",
+            "en": "a roast"
+          },
+          {
+            "it": "la signora",
+            "en": "the lady"
+          },
+          {
+            "it": "un po' di birra",
+            "en": "a bit of beer"
+          }
+        ],
+        "tip": "Think of noun markers as 'noun introducers' - they always come before the noun they describe.",
+        "source_label": "NOUN MARKERS",
+        "source_drill_ids": [
+          "fsi_u22_1999",
+          "fsi_u22_2000",
+          "fsi_u22_2001",
+          "fsi_u22_2002",
+          "fsi_u22_2003"
+        ],
+        "unit": 22
+      },
+      {
+        "title": "Gender: Masculine vs Feminine",
+        "body": "Italian nouns are either masculine or feminine. Use 'un/uno' before masculine nouns and 'una/un'' before feminine nouns.",
+        "examples": [
+          {
+            "it": "un americano",
+            "en": "an American (man)"
+          },
+          {
+            "it": "una signora",
+            "en": "a lady"
+          }
+        ],
+        "tip": "Think: 'un' for masculine, 'una' for feminine. Most male beings use 'un', female beings use 'una'.",
+        "source_label": "GENDER: 'MASCULINE' and 'FEMININE'",
+        "source_drill_ids": [
+          "fsi_u22_2008",
+          "fsi_u22_2009",
+          "fsi_u22_2010",
+          "fsi_u22_2011",
+          "fsi_u22_2012"
+        ],
+        "unit": 22
+      },
+      {
+        "title": "Gender Agreement Patterns",
+        "body": "Some Italian nouns have fixed gender (masculine or feminine), while others can be either depending on the person they refer to.",
+        "examples": [
+          {
+            "it": "il capo (m), la bistecca (f)",
+            "en": "the boss (m), the steak (f)"
+          },
+          {
+            "it": "l'insegnante (m/f), l'artista (m/f)",
+            "en": "the teacher (m/f), the artist (m/f)"
+          }
+        ],
+        "tip": "Remember: nouns ending in -o are usually masculine, -a usually feminine, but -e endings can be either gender.",
+        "source_label": "GENDERABLES",
+        "source_drill_ids": [
+          "fsi_u22_2013",
+          "fsi_u22_2014"
+        ],
+        "unit": 22
+      }
+    ],
+    "23": [
+      {
+        "title": "Preposition 'di' for Categories",
+        "body": "Use the preposition 'di' to indicate a category or type of something, often translating to 'of' in English.",
+        "examples": [
+          {
+            "it": "reparto di abbigliamento",
+            "en": "clothing department (department of clothing)"
+          },
+          {
+            "it": "negozio di scarpe",
+            "en": "shoe store (store of shoes)"
+          }
+        ],
+        "tip": "Think 'di' = 'of' when describing what something is made of or its category.",
+        "source_label": "Setting the Scene",
+        "source_drill_ids": [
+          "fsi_u23_0132",
+          "fsi_u23_0141"
+        ],
+        "unit": 23
+      },
+      {
+        "title": "Singular Nouns for Clothing Sets",
+        "body": "In Italian, nouns for clothing items that consist of two parts, like pajamas, are singular.",
+        "examples": [
+          {
+            "it": "Un pigiama",
+            "en": "A pair of pajamas"
+          },
+          {
+            "it": "Un pantalone",
+            "en": "A pair of trousers"
+          }
+        ],
+        "tip": "Think of the set as one unit, so it gets a singular article and verb.",
+        "source_label": "NOTE: Vocabulary Usage",
+        "source_drill_ids": [
+          "fsi_u23_0550",
+          "fsi_u23_0551",
+          "fsi_u23_0552"
+        ],
+        "unit": 23
+      },
+      {
+        "title": "Adjective Agreement with Nouns",
+        "body": "Adjectives must match the gender (masculine/feminine) and number (singular/plural) of the nouns they describe.",
+        "examples": [
+          {
+            "it": "un pullover bianco",
+            "en": "a white sweater"
+          },
+          {
+            "it": "due bluse bianche",
+            "en": "two white blouses"
+          }
+        ],
+        "tip": "Change adjective endings like -o/-a/-i/-e to match the noun's gender and number.",
+        "source_label": "NOTE",
+        "source_drill_ids": [
+          "fsi_u23_0372",
+          "fsi_u23_0373",
+          "fsi_u23_0374",
+          "fsi_u23_0515",
+          "fsi_u23_0656"
+        ],
+        "unit": 23
+      },
+      {
+        "title": "Passato Prossimo Formation",
+        "body": "The passato prossimo is formed with the present tense of avere or essere plus the past participle of the main verb.",
+        "examples": [
+          {
+            "it": "Ho comprato questo pullover",
+            "en": "I bought this sweater"
+          },
+          {
+            "it": "Ho parlato con lui",
+            "en": "I have spoken with him"
+          }
+        ],
+        "tip": "Think 'have/has + past participle' like in English, but remember some verbs use essere instead of avere.",
+        "source_label": "NOTES ON THE CONVERSATION",
+        "source_drill_ids": [
+          "fsi_u23_0403",
+          "fsi_u23_0404",
+          "fsi_u23_0405",
+          "fsi_u23_0406",
+          "fsi_u23_0516"
+        ],
+        "unit": 23
+      },
+      {
+        "title": "Come: How vs. As",
+        "body": "The word 'come' can mean 'how' as a question word, or 'as' when making a comparison or giving an example.",
+        "examples": [
+          {
+            "it": "Come stai?",
+            "en": "How are you?"
+          },
+          {
+            "it": "Come in 'come si dice?'",
+            "en": "As in 'how do you say?'"
+          }
+        ],
+        "tip": "Think: 'Come' asks 'how' and introduces 'as' in examples.",
+        "source_label": "Vocabulary Note",
+        "source_drill_ids": [
+          "fsi_u23_0948",
+          "fsi_u23_0949"
+        ],
+        "unit": 23
+      },
+      {
+        "title": "Invariable Adjective Forms",
+        "body": "Some adjectives have identical forms for masculine/feminine and singular/plural, changing only the article.",
+        "examples": [
+          {
+            "it": "Il ragazzo intelligente",
+            "en": "The intelligent boy"
+          },
+          {
+            "it": "La ragazza intelligente",
+            "en": "The intelligent girl"
+          },
+          {
+            "it": "I ragazzi intelligenti",
+            "en": "The intelligent boys"
+          }
+        ],
+        "tip": "Look for adjectives ending in -e (singular) and -i (plural) - they don't change for gender.",
+        "source_label": "NOTE: Adjective Forms Explanation",
+        "source_drill_ids": [
+          "fsi_u23_0533",
+          "fsi_u23_0534"
+        ],
+        "unit": 23
+      },
+      {
+        "title": "Direct Object Pronouns with 'prendo'",
+        "body": "Direct object pronouns come before the conjugated verb 'prendo' and must agree in gender and number with the noun they replace.",
+        "examples": [
+          {
+            "it": "La prendo (la mela)",
+            "en": "I take it (the apple)"
+          },
+          {
+            "it": "Li prendo (i libri)",
+            "en": "I take them (the books)"
+          }
+        ],
+        "tip": "Remember the pattern: pronoun (la/le/lo/li) + prendo. Match gender (la/lo for singular, le/li for plural) and number.",
+        "source_label": "Direct Object Pronouns with 'prendo'",
+        "source_drill_ids": [
+          "fsi_u23_0666",
+          "fsi_u23_0667",
+          "fsi_u23_0668",
+          "fsi_u23_0669"
+        ],
+        "unit": 23
+      },
+      {
+        "title": "Demonstrative Adjectives: This/That",
+        "body": "Use 'questo' for 'this' (near) and 'quello' for 'that' (far). They agree in gender and number with the noun they modify.",
+        "examples": [
+          {
+            "it": "Questo libro è interessante.",
+            "en": "This book is interesting."
+          },
+          {
+            "it": "Quella casa è grande.",
+            "en": "That house is big."
+          }
+        ],
+        "tip": "Remember: 'questo' = 'this' (close), 'quello' = 'that' (far). Match the ending to the noun's gender and number.",
+        "source_label": "Demonstrative Adjectives Table",
+        "source_drill_ids": [
+          "fsi_u23_0864",
+          "fsi_u23_0865",
+          "fsi_u23_0866",
+          "fsi_u23_0867"
+        ],
+        "unit": 23
+      },
+      {
+        "title": "Passato Prossimo Formation",
+        "body": "Form the passato prossimo with present tense of avere or essere plus past participle. Most verbs use avere, but essere is for movement, state changes, and reflexive verbs.",
+        "examples": [
+          {
+            "it": "Io ho mangiato la pizza",
+            "en": "I ate the pizza"
+          },
+          {
+            "it": "Lei è arrivata ieri",
+            "en": "She arrived yesterday"
+          }
+        ],
+        "tip": "Use essere when the verb describes coming/going, becoming, or reflexive actions (like lavarsi). Otherwise use avere.",
+        "source_label": "Formation of Il Passato Prossimo",
+        "source_drill_ids": [
+          "fsi_u23_0443",
+          "fsi_u23_0444"
+        ],
+        "unit": 23
+      },
+      {
+        "title": "Definite Articles with Preferire/Piacere",
+        "body": "After verbs preferire and piacere, use definite articles (il, lo, la, i, gli, le) before nouns, even when not translated in English.",
+        "examples": [
+          {
+            "it": "Preferisco il pullover.",
+            "en": "I prefer the sweater."
+          },
+          {
+            "it": "Ti piace la giacca?",
+            "en": "Do you like the jacket?"
+          }
+        ],
+        "tip": "Think: 'prefer the X' or 'like the X' in Italian, even if you'd say just 'prefer X' in English.",
+        "source_label": "Grammar Note",
+        "source_drill_ids": [
+          "fsi_u23_0333",
+          "fsi_u23_0993",
+          "fsi_u23_0994",
+          "fsi_u23_0995",
+          "fsi_u23_0996"
+        ],
+        "unit": 23
+      },
+      {
+        "title": "Passato Prossimo with Avere vs. Essere",
+        "body": "Use 'avere' for most verbs and 'essere' for verbs of movement, change, or reflexive verbs. With 'essere', the past participle must agree in gender and number with the subject.",
+        "examples": [
+          {
+            "it": "Io ho comprato il libro.",
+            "en": "I bought the book."
+          },
+          {
+            "it": "Lei è andata al cinema.",
+            "en": "She went to the cinema."
+          },
+          {
+            "it": "Loro sono arrivati tardi.",
+            "en": "They (masc.) arrived late."
+          }
+        ],
+        "tip": "Remember: Avere = actions, Essere = movement/change/reflexive. With Essere, make the ending match (o/a/i/e).",
+        "source_label": "Passato Prossimo Comparison",
+        "source_drill_ids": [
+          "fsi_u23_0445",
+          "fsi_u23_0446"
+        ],
+        "unit": 23
+      },
+      {
+        "title": "Imperative Pronouns Placement",
+        "body": "With affirmative tu, noi, voi imperatives, object pronouns attach to the verb. With lei/loro imperatives, pronouns precede the verb.",
+        "examples": [
+          {
+            "it": "Fallo!",
+            "en": "Do it! (tu)"
+          },
+          {
+            "it": "Lo faccia!",
+            "en": "Do it! (lei)"
+          },
+          {
+            "it": "Facciamolo!",
+            "en": "Let's do it!"
+          }
+        ],
+        "tip": "Attach pronouns after for tu/noi/voi, but before for lei/loro commands.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u23_1362",
+          "fsi_u23_1363",
+          "fsi_u23_1364",
+          "fsi_u23_1365",
+          "fsi_u23_1366"
+        ],
+        "unit": 23
+      },
+      {
+        "title": "Preposition 'da' for Location",
+        "body": "The preposition 'da' can mean 'at the place of' when followed by a person or pronoun, indicating someone's home or location.",
+        "examples": [
+          {
+            "it": "Vengono a trascorrere il weekend da noi.",
+            "en": "They're coming to spend the weekend at our place."
+          },
+          {
+            "it": "Siamo stati dal tabaccaio.",
+            "en": "We were at the tobacconist's."
+          }
+        ],
+        "tip": "Think of 'da' + person = 'at their place' - similar to 'at my place' or 'at their house' in English.",
+        "source_label": "Grammar Notes",
+        "source_drill_ids": [
+          "fsi_u23_1425",
+          "fsi_u23_1426",
+          "fsi_u23_1427",
+          "fsi_u23_1428",
+          "fsi_u23_1429"
+        ],
+        "unit": 23
+      },
+      {
+        "title": "Infinitive After Verbs",
+        "body": "Many Italian verbs are followed directly by the infinitive without any preposition.",
+        "examples": [
+          {
+            "it": "Voglio studiare.",
+            "en": "I want to study."
+          },
+          {
+            "it": "Posso lavorare.",
+            "en": "I can work."
+          },
+          {
+            "it": "Devo partire.",
+            "en": "I must leave."
+          }
+        ],
+        "tip": "Think of 'modal verbs' like want, can, must - they take the infinitive directly.",
+        "source_label": "INFINITIVE CONSTRUCTIONS",
+        "source_drill_ids": [
+          "fsi_u23_2086",
+          "fsi_u23_2087",
+          "fsi_u23_2088",
+          "fsi_u23_2089",
+          "fsi_u23_2090"
+        ],
+        "unit": 23
+      },
+      {
+        "title": "Gender of Geographical Names",
+        "body": "Most geographical names ending in -a are feminine, others are masculine. Cities, islands, and some US states are feminine; oceans, seas, rivers, lakes, and most US states are masculine.",
+        "examples": [
+          {
+            "it": "la California (f)",
+            "en": "California"
+          },
+          {
+            "it": "il Canada (m)",
+            "en": "Canada"
+          }
+        ],
+        "tip": "Think -a = feminine, but remember the five masculine exceptions ending in -a: Canadà, Ghana, Guatemala, Nicaragua, Venezuela.",
+        "source_label": "GENDER OF GEOGRAPHICAL PLACE NAMES",
+        "source_drill_ids": [
+          "fsi_u23_2071",
+          "fsi_u23_2072",
+          "fsi_u23_2073",
+          "fsi_u23_2074",
+          "fsi_u23_2075"
+        ],
+        "unit": 23
+      },
+      {
+        "title": "Place Replacer: Ci",
+        "body": "Use 'ci' to replace a previously mentioned place, especially with movement verbs. Place it before conjugated verbs or attach it to infinitives (dropping the final -e).",
+        "examples": [
+          {
+            "it": "Quando vai a Roma? Ci vado domani.",
+            "en": "When are you going to Rome? I'm going there tomorrow."
+          },
+          {
+            "it": "Vuoi andarci con me?",
+            "en": "Do you want to go there with me?"
+          }
+        ],
+        "tip": "Think of 'ci' as 'there' - it replaces places you've already mentioned.",
+        "source_label": "THE PLACE REPLACER: CI",
+        "source_drill_ids": [
+          "fsi_u23_2092",
+          "fsi_u23_2093",
+          "fsi_u23_2094",
+          "fsi_u23_2095"
+        ],
+        "unit": 23
+      },
+      {
+        "title": "Using 'tu' vs. 'Lei'",
+        "body": "Use 'tu' for informal address and 'Lei' for formal. The verb must agree with the pronoun being used.",
+        "examples": [
+          {
+            "it": "Ci diamo del tu?",
+            "en": "Shall we use the informal 'tu' with each other?"
+          },
+          {
+            "it": "Mi dia del tu, per favore.",
+            "en": "Please use the informal 'tu' with me."
+          }
+        ],
+        "tip": "Remember: 'Lei' is formal and uses third-person verbs (like 'she'), while 'tu' is informal and uses second-person verbs.",
+        "source_label": "Examples of 'tu'/'Lei' usage",
+        "source_drill_ids": [
+          "fsi_u23_2246",
+          "fsi_u23_2247",
+          "fsi_u23_2248"
+        ],
+        "unit": 23
+      }
+    ],
+    "24": [
+      {
+        "title": "Diminutive suffixes -etto/-etta",
+        "body": "Add -etto (masculine) or -etta (feminine) to a noun to indicate a smaller or cuter version.",
+        "examples": [
+          {
+            "it": "statua → statuetta",
+            "en": "statue → small statue"
+          },
+          {
+            "it": "vaso → vasetto",
+            "en": "vase → small vase"
+          }
+        ],
+        "tip": "Think of -etto/-etta as the Italian '-let' or 'little'.",
+        "source_label": "NOTES ON THE CONVERSATION",
+        "source_drill_ids": [
+          "fsi_u24_0256",
+          "fsi_u24_0257",
+          "fsi_u24_0258",
+          "fsi_u24_0259",
+          "fsi_u24_0260"
+        ],
+        "unit": 24
+      },
+      {
+        "title": "Troppo as 'Too'",
+        "body": "When troppo comes before an adjective, it means 'too' rather than 'too much/many'.",
+        "examples": [
+          {
+            "it": "troppo maturi",
+            "en": "too ripe"
+          },
+          {
+            "it": "troppo difficile",
+            "en": "too difficult"
+          }
+        ],
+        "tip": "Think: troppo + adjective = 'too' + adjective (not 'too much')",
+        "source_label": "Grammar Note 6",
+        "source_drill_ids": [
+          "fsi_u24_0531",
+          "fsi_u24_0532"
+        ],
+        "unit": 24
+      },
+      {
+        "title": "Reflexive Verb + di",
+        "body": "The reflexive verb ricordarsi requires the preposition 'di' before the thing being remembered.",
+        "examples": [
+          {
+            "it": "Mi ricorderò di tutto.",
+            "en": "I will remember everything."
+          },
+          {
+            "it": "Me ne ricorderò.",
+            "en": "I will remember it."
+          }
+        ],
+        "tip": "Think 'ricordarsi di' as a fixed pair - the verb always brings its friend 'di' along.",
+        "source_label": "Grammar Note 7",
+        "source_drill_ids": [
+          "fsi_u24_0533",
+          "fsi_u24_0534",
+          "fsi_u24_0535"
+        ],
+        "unit": 24
+      },
+      {
+        "title": "Fare + Infinitive Construction",
+        "body": "The construction 'fare + infinitive' means 'to have something done.' When 'fare' is used in its infinitive form before another infinitive, it often drops its final -e.",
+        "examples": [
+          {
+            "it": "Vorrei far pulire la macchina.",
+            "en": "I would like to have the car cleaned."
+          },
+          {
+            "it": "Le faccio portare le valige.",
+            "en": "I'll have your bags taken."
+          }
+        ],
+        "tip": "Think 'fare' becomes 'far' when followed by another verb in the infinitive to make the phrase flow better.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u24_0526",
+          "fsi_u24_0527",
+          "fsi_u24_0528",
+          "fsi_u24_0529",
+          "fsi_u24_0530"
+        ],
+        "unit": 24
+      },
+      {
+        "title": "Definite Article with Languages",
+        "body": "Use 'l'' before language names (l'italiano), but omit it after prepositions like 'in' or 'd'' (d'italiano).",
+        "examples": [
+          {
+            "it": "Mi piace l'italiano.",
+            "en": "I like Italian."
+          },
+          {
+            "it": "Un corso d'italiano.",
+            "en": "An Italian course."
+          }
+        ],
+        "tip": "Think: Article before, no article after prepositions (in/di).",
+        "source_label": "L'ITALIANO VERSUS ITALIANO",
+        "source_drill_ids": [
+          "fsi_u24_1008",
+          "fsi_u24_1009",
+          "fsi_u24_1010",
+          "fsi_u24_1011",
+          "fsi_u24_1012"
+        ],
+        "unit": 24
+      },
+      {
+        "title": "Conditional Tense -RE Endings",
+        "body": "The conditional tense uses -RE endings to express polite requests or hypothetical situations in the present.",
+        "examples": [
+          {
+            "it": "Vorrebbe venire?",
+            "en": "Would you like to come?"
+          },
+          {
+            "it": "Dovrei domandare.",
+            "en": "I should ask."
+          }
+        ],
+        "tip": "Think of -RE as 'Respectful Expression' for polite requests.",
+        "source_label": "'RE' TENSE",
+        "source_drill_ids": [
+          "fsi_u24_1014",
+          "fsi_u24_1015",
+          "fsi_u24_1016",
+          "fsi_u24_1017",
+          "fsi_u24_1018"
+        ],
+        "unit": 24
+      },
+      {
+        "title": "Formal Imperative for -are Verbs",
+        "body": "For formal commands with Lei (singular) and Loro (plural), regular -are verbs change their endings to -i and -ino respectively.",
+        "examples": [
+          {
+            "it": "Lei arrivi presto.",
+            "en": "You (formal) arrive early."
+          },
+          {
+            "it": "Loro aspettino qui.",
+            "en": "You (formal plural) wait here."
+          }
+        ],
+        "tip": "Think: formal commands swap -are for -i (singular) and -ino (plural).",
+        "source_label": "FORMAL REQUEST FORMS OF REGULAR -ARE VERBS",
+        "source_drill_ids": [
+          "fsi_u24_1019",
+          "fsi_u24_1020",
+          "fsi_u24_1021",
+          "fsi_u24_1022",
+          "fsi_u24_1023"
+        ],
+        "unit": 24
+      },
+      {
+        "title": "Telephone Greetings",
+        "body": "Use 'pronto' to answer the phone in Italian, which literally means 'ready' but functions as 'hello'.",
+        "examples": [
+          {
+            "it": "Pronto, chi parla?",
+            "en": "Hello, who is speaking?"
+          },
+          {
+            "it": "Pronto, sono Maria.",
+            "en": "Hello, it's Maria."
+          }
+        ],
+        "tip": "Think of 'pronto' as signaling you are 'ready' to speak.",
+        "source_label": "ANSWERING THE PHONE",
+        "source_drill_ids": [
+          "fsi_u24_1024",
+          "fsi_u24_1025"
+        ],
+        "unit": 24
+      }
+    ],
+    "25": [
+      {
+        "title": "Ordering with 'I'll take' or 'I would like'",
+        "body": "Use 'Prendo' (I'll take) or 'Vorrei' (I would like) to order food or drinks, followed by the item.",
+        "examples": [
+          {
+            "it": "Prendo un aperitivo.",
+            "en": "I'll take an aperitif."
+          },
+          {
+            "it": "Vorrei il menù, per favore.",
+            "en": "I would like the menu, please."
+          }
+        ],
+        "tip": "Prendo is direct; Vorrei is more polite, using the conditional mood.",
+        "source_label": "UNIT 1",
+        "source_drill_ids": [
+          "fsi_u25_0043",
+          "fsi_u25_0044",
+          "fsi_u25_0045"
+        ],
+        "unit": 25
+      },
+      {
+        "title": "Indefinite Articles: uno, un, una, un'",
+        "body": "Use 'uno' before masculine nouns starting with z or s+consonant. Use 'un' for other masculine nouns. Use 'una' before feminine consonants and 'un'' before feminine vowels.",
+        "examples": [
+          {
+            "it": "uno zaino, uno studente",
+            "en": "a backpack, a student"
+          },
+          {
+            "it": "un libro, una casa, un'amica",
+            "en": "a book, a house, a friend"
+          }
+        ],
+        "tip": "Think: 'uno' for tricky masculine starts (z, s+consonant), 'un'' for feminine vowels (with apostrophe).",
+        "source_label": "uno, un, and una, un' = \"a,\" \"an\"",
+        "source_drill_ids": [
+          "fsi_u25_0050",
+          "fsi_u25_0051",
+          "fsi_u25_0052",
+          "fsi_u25_0053",
+          "fsi_u25_0054"
+        ],
+        "unit": 25
+      },
+      {
+        "title": "Frequency with 'a'",
+        "body": "Use the preposition 'a' + definite article to express how often something happens per time unit.",
+        "examples": [
+          {
+            "it": "6 ore al giorno",
+            "en": "6 hours a day"
+          },
+          {
+            "it": "3 sere al mese",
+            "en": "3 evenings a month"
+          }
+        ],
+        "tip": "Think 'a' = 'per' in English frequency expressions.",
+        "source_label": "Note 7",
+        "source_drill_ids": [
+          "fsi_u25_0149",
+          "fsi_u25_0150",
+          "fsi_u25_0151"
+        ],
+        "unit": 25
+      },
+      {
+        "title": "Irregular Future of Vedere",
+        "body": "The verb vedere has an irregular future stem: vedr- instead of the expected ved- + endings.",
+        "examples": [
+          {
+            "it": "Io vedrò il film domani.",
+            "en": "I will see the film tomorrow."
+          },
+          {
+            "it": "Loro vedranno i risultati.",
+            "en": "They will see the results."
+          }
+        ],
+        "tip": "Remember: vedere → vedr- + future endings (ò, ai, à, emo, ete, anno).",
+        "source_label": "Note 9",
+        "source_drill_ids": [
+          "fsi_u25_0156",
+          "fsi_u25_0157",
+          "fsi_u25_0158",
+          "fsi_u25_0159",
+          "fsi_u25_0160"
+        ],
+        "unit": 25
+      },
+      {
+        "title": "Time Period + che + essere",
+        "body": "Use a time expression followed by che + essere to specify or emphasize a particular day/date within that time period.",
+        "examples": [
+          {
+            "it": "stasera che è sabato",
+            "en": "tonight which is Saturday"
+          },
+          {
+            "it": "oggi che è lunedì",
+            "en": "today which is Monday"
+          },
+          {
+            "it": "ieri che era giorno di festa",
+            "en": "yesterday which was a holiday"
+          }
+        ],
+        "tip": "Think: 'Time period + that it is/was + specific day' - like adding a calendar note to a time word.",
+        "source_label": "Note 5",
+        "source_drill_ids": [
+          "fsi_u25_0143",
+          "fsi_u25_0144",
+          "fsi_u25_0145",
+          "fsi_u25_0146",
+          "fsi_u25_0147"
+        ],
+        "unit": 25
+      },
+      {
+        "title": "Reflexive Verb Agreement",
+        "body": "The reflexive pronoun 'si' in 'mettersi d'accordo' must agree with the subject of the verb.",
+        "examples": [
+          {
+            "it": "Io mi metterò d'accordo con lui.",
+            "en": "I will reach an agreement with him."
+          },
+          {
+            "it": "Loro non si metteranno mai d'accordo.",
+            "en": "They will never reach an agreement."
+          }
+        ],
+        "tip": "Match the reflexive pronoun (mi, ti, si, ci, vi, si) to the subject just like you do with regular verb endings.",
+        "source_label": "Note 10",
+        "source_drill_ids": [
+          "fsi_u25_0163",
+          "fsi_u25_0164",
+          "fsi_u25_0165",
+          "fsi_u25_0166"
+        ],
+        "unit": 25
+      },
+      {
+        "title": "Days of the Week with Definite Articles",
+        "body": "Days of the week don't need articles normally, but adding 'il' or 'la' (for domenica) means 'every' that day.",
+        "examples": [
+          {
+            "it": "Vado in palestra lunedì.",
+            "en": "I go to the gym on Monday."
+          },
+          {
+            "it": "Vado in palestra il lunedì.",
+            "en": "I go to the gym every Monday."
+          }
+        ],
+        "tip": "Think: no article = specific day; with article = habitual/recurring day.",
+        "source_label": "Note 8",
+        "source_drill_ids": [
+          "fsi_u25_0152",
+          "fsi_u25_0153",
+          "fsi_u25_0154",
+          "fsi_u25_0155"
+        ],
+        "unit": 25
+      },
+      {
+        "title": "Singular vs Plural in Italian",
+        "body": "Italian nouns and adjectives change form based on number. Singular forms follow singular markers like 'uno', while plural forms follow plural markers like 'due'.",
+        "examples": [
+          {
+            "it": "un libro",
+            "en": "a book"
+          },
+          {
+            "it": "due libri",
+            "en": "two books"
+          }
+        ],
+        "tip": "Think of 'uno' as pointing to one thing, 'due' as pointing to multiple things - the word changes to match.",
+        "source_label": "NUMBER: 'SINGULAR' AND PLURAL'",
+        "source_drill_ids": [
+          "fsi_u25_0903",
+          "fsi_u25_0904",
+          "fsi_u25_0905",
+          "fsi_u25_0906"
+        ],
+        "unit": 25
+      },
+      {
+        "title": "Causative Fare with Double Pronouns",
+        "body": "In causative constructions with 'fare', when both an actor and direct object are present, the actor becomes an indirect object pronoun placed before 'fare', and the direct object pronoun attaches to the infinitive.",
+        "examples": [
+          {
+            "it": "Posso fargliele avere.",
+            "en": "I can let you have them (literally: I can make-to you-them have)."
+          },
+          {
+            "it": "Gli faccio leggere il libro.",
+            "en": "I make him read the book."
+          }
+        ],
+        "tip": "Remember: Actor becomes indirect (gli/le), object stays direct (lo/la/li/le) and attaches to the infinitive.",
+        "source_label": "Note 11",
+        "source_drill_ids": [
+          "fsi_u25_0167",
+          "fsi_u25_0168"
+        ],
+        "unit": 25
+      },
+      {
+        "title": "Present Progressive with Stare + -ndo",
+        "body": "To describe actions in progress, use stare + verb ending in -ndo. Form -ndo by dropping -are/-ere/-ire and adding -ando or -endo.",
+        "examples": [
+          {
+            "it": "Sto studiando italiano.",
+            "en": "I am studying Italian."
+          },
+          {
+            "it": "Stanno bevendo il caffè.",
+            "en": "They are drinking coffee."
+          }
+        ],
+        "tip": "Think 'stare + -ing' like English 'to be + -ing'. Watch for irregulars: bere→bevendo, dire→dicendo, fare→facendo.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u25_0388",
+          "fsi_u25_0389",
+          "fsi_u25_0390",
+          "fsi_u25_0391",
+          "fsi_u25_0392"
+        ],
+        "unit": 25
+      },
+      {
+        "title": "Word Stress and Accent Marks",
+        "body": "Words ending in a stressed vowel require an accent mark. For other words, stress follows specific vowel position rules based on the ending.",
+        "examples": [
+          {
+            "it": "sofà",
+            "en": "sofa"
+          },
+          {
+            "it": "Italia",
+            "en": "Italy"
+          },
+          {
+            "it": "italiano",
+            "en": "Italian"
+          }
+        ],
+        "tip": "Remember: No accent = stress on last vowel (consonant endings) or third-from-last vowel (-ia/-io endings) or second-from-last vowel (all others).",
+        "source_label": "WORD STRESS AND THE ACCENT MARK",
+        "source_drill_ids": [
+          "fsi_u25_0805",
+          "fsi_u25_0806",
+          "fsi_u25_0807",
+          "fsi_u25_0808",
+          "fsi_u25_0809"
+        ],
+        "unit": 25
+      },
+      {
+        "title": "Singular to Plural Basics",
+        "body": "Most Italian nouns form plurals by changing the final vowel: -o becomes -i, -a becomes -e, -e becomes -i.",
+        "examples": [
+          {
+            "it": "un libro → libri",
+            "en": "a book → books"
+          },
+          {
+            "it": "una mano → mani",
+            "en": "a hand → hands"
+          },
+          {
+            "it": "un poeta → poeti",
+            "en": "a poet → poets"
+          }
+        ],
+        "tip": "Think: O→I, A→E, E→I for regular plurals.",
+        "source_label": "FROM SINGULAR TO PLURAL (GENERAL RULES) Examples",
+        "source_drill_ids": [
+          "fsi_u25_0909",
+          "fsi_u25_0910",
+          "fsi_u25_0911",
+          "fsi_u25_0912",
+          "fsi_u25_0913"
+        ],
+        "unit": 25
+      },
+      {
+        "title": "Masculine Plural for Mixed Groups",
+        "body": "When referring to groups of people or animals, use masculine plural if at least one member is male. Use feminine plural only if all members are female.",
+        "examples": [
+          {
+            "it": "Gli americani (mixed group)",
+            "en": "The Americans (mixed group)"
+          },
+          {
+            "it": "Le americane (all female)",
+            "en": "The Americans (all female)"
+          }
+        ],
+        "tip": "Think 'masculine wins' - one male makes the whole group masculine plural.",
+        "source_label": "MASCULINE PLURAL FOR A MIXED GROUP",
+        "source_drill_ids": [
+          "fsi_u25_0920",
+          "fsi_u25_0921",
+          "fsi_u25_0922"
+        ],
+        "unit": 25
+      },
+      {
+        "title": "Plural of Invariable Nouns",
+        "body": "Some Italian nouns ending in a stressed vowel or consonant don't change form in the plural.",
+        "examples": [
+          {
+            "it": "un sofà → due sofà",
+            "en": "a sofa → two sofas"
+          },
+          {
+            "it": "un bar → due bar",
+            "en": "a bar → two bars"
+          },
+          {
+            "it": "una crisi → due crisi",
+            "en": "a crisis → two crises"
+          }
+        ],
+        "tip": "If the word ends with a stressed vowel (à, è, ì, ò, ù) or a consonant, it's probably invariable in plural.",
+        "source_label": "FROM SINGULAR TO PLURAL (GENERAL RULES) Other genderables",
+        "source_drill_ids": [
+          "fsi_u25_0915",
+          "fsi_u25_0916",
+          "fsi_u25_0917",
+          "fsi_u25_0918",
+          "fsi_u25_0919"
+        ],
+        "unit": 25
+      },
+      {
+        "title": "Singular to Plural Endings",
+        "body": "Feminine singular nouns ending in -a change to -e in plural. All other nouns (masculine -o, -e endings) change to -i in plural.",
+        "examples": [
+          {
+            "it": "la casa → le case",
+            "en": "the house → the houses"
+          },
+          {
+            "it": "il libro → i libri",
+            "en": "the book → the books"
+          },
+          {
+            "it": "il fiore → i fiori",
+            "en": "the flower → the flowers"
+          }
+        ],
+        "tip": "Remember: feminine -a becomes -e, everything else becomes -i.",
+        "source_label": "FROM SINGULAR TO PLURAL (GENERAL RULES)",
+        "source_drill_ids": [
+          "fsi_u25_0907",
+          "fsi_u25_0908"
+        ],
+        "unit": 25
+      }
+    ],
+    "26": [
+      {
+        "title": "Ordering with 'Per cominciare'",
+        "body": "Use 'Per cominciare' to introduce your first course when ordering food. It translates to 'To start' or 'For starters'.",
+        "examples": [
+          {
+            "it": "Per cominciare, vorrei la pasta.",
+            "en": "To start, I would like the pasta."
+          }
+        ],
+        "tip": "Think of 'cominciare' as 'to commence' or begin your meal.",
+        "source_label": "UNIT 2",
+        "source_drill_ids": [
+          "fsi_u26_0011",
+          "fsi_u26_0012",
+          "fsi_u26_0013"
+        ],
+        "unit": 26
+      },
+      {
+        "title": "Articulated Prepositions with 'di'",
+        "body": "The preposition 'di' combines with definite articles to form articulated prepositions, which contract into single words.",
+        "examples": [
+          {
+            "it": "di + il = del",
+            "en": "of the"
+          },
+          {
+            "it": "di + la = della",
+            "en": "of the"
+          },
+          {
+            "it": "di + i = dei",
+            "en": "of the/some"
+          }
+        ],
+        "tip": "Think of 'di' as merging with the article - it always comes first and contracts with what follows.",
+        "source_label": "Grammar Note",
+        "source_drill_ids": [
+          "fsi_u26_0179",
+          "fsi_u26_0180",
+          "fsi_u26_0181",
+          "fsi_u26_0182",
+          "fsi_u26_0183"
+        ],
+        "unit": 26
+      },
+      {
+        "title": "Capitalization of Months",
+        "body": "Months of the year in Italian are not capitalized, unlike in English.",
+        "examples": [
+          {
+            "it": "gennaio",
+            "en": "January"
+          },
+          {
+            "it": "luglio",
+            "en": "July"
+          }
+        ],
+        "tip": "Think: lowercase for Italian months, uppercase for English months.",
+        "source_label": "Language Note 9",
+        "source_drill_ids": [
+          "fsi_u26_0392",
+          "fsi_u26_0393",
+          "fsi_u26_0394",
+          "fsi_u26_0395",
+          "fsi_u26_0396"
+        ],
+        "unit": 26
+      },
+      {
+        "title": "Imperfetto + Past Participle",
+        "body": "Use imperfetto of 'avere' or 'essere' plus past participle to describe ongoing past actions that were interrupted or incomplete.",
+        "examples": [
+          {
+            "it": "Noi non avevamo ancora finito.",
+            "en": "We hadn't finished yet."
+          },
+          {
+            "it": "Io non ero ancora arrivato.",
+            "en": "I hadn't arrived yet."
+          }
+        ],
+        "tip": "Think 'was/were + -ing' in English but for past actions that were still happening when something else occurred.",
+        "source_label": "Grammar Examples",
+        "source_drill_ids": [
+          "fsi_u26_0365",
+          "fsi_u26_0366",
+          "fsi_u26_0367"
+        ],
+        "unit": 26
+      },
+      {
+        "title": "Irregular Past Participles",
+        "body": "Many common Italian verbs have irregular past participles that don't follow the regular -ato, -uto, -ito patterns.",
+        "examples": [
+          {
+            "it": "fatto (fare)",
+            "en": "done (to do)"
+          },
+          {
+            "it": "scritto (scrivere)",
+            "en": "written (to write)"
+          },
+          {
+            "it": "aperto (aprire)",
+            "en": "opened (to open)"
+          }
+        ],
+        "tip": "These must be memorized individually as they don't follow predictable patterns like regular verbs.",
+        "source_label": "Language Note 7",
+        "source_drill_ids": [
+          "fsi_u26_0368",
+          "fsi_u26_0369",
+          "fsi_u26_0370",
+          "fsi_u26_0371",
+          "fsi_u26_0372"
+        ],
+        "unit": 26
+      },
+      {
+        "title": "Present Tense with 'da' for Duration",
+        "body": "Use present tense + 'da' to express how long something has been happening, even when seeing someone again after not seeing them.",
+        "examples": [
+          {
+            "it": "Abito qui da un anno.",
+            "en": "I have lived here for a year."
+          },
+          {
+            "it": "Non ti vedo da parecchio tempo.",
+            "en": "I haven't seen you for a long time."
+          }
+        ],
+        "tip": "Think 'present tense + da + time' = 'have been doing for...' even after a gap.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u26_0445",
+          "fsi_u26_0446",
+          "fsi_u26_0447",
+          "fsi_u26_0448",
+          "fsi_u26_0449"
+        ],
+        "unit": 26
+      },
+      {
+        "title": "Trovare with Venire/Andare a",
+        "body": "When trovare is used with venire a or andare a, it means 'to visit' rather than 'to find'.",
+        "examples": [
+          {
+            "it": "Perché non ci venite a trovare sabato?",
+            "en": "Why don't you come visit us on Saturday?"
+          },
+          {
+            "it": "Vado a trovare mia nonna domani.",
+            "en": "I'm going to visit my grandmother tomorrow."
+          }
+        ],
+        "tip": "Think: 'come to find' = 'come visit' or 'go to find' = 'go visit'.",
+        "source_label": "Language Note 8",
+        "source_drill_ids": [
+          "fsi_u26_0390",
+          "fsi_u26_0391"
+        ],
+        "unit": 26
+      },
+      {
+        "title": "Formal vs Informal 'You'",
+        "body": "Use 'Lei' (capitalized) for formal 'you' with third-person singular verbs, while 'tu' uses second-person verbs.",
+        "examples": [
+          {
+            "it": "Io lavoro ma Lei studia.",
+            "en": "I work but you (formal) study."
+          },
+          {
+            "it": "Studia anche Lei?",
+            "en": "Do you (formal) also study?"
+          }
+        ],
+        "tip": "Think of formal 'Lei' as 'she' - it uses the same verb forms as 'lei' (she).",
+        "source_label": "Examples",
+        "source_drill_ids": [
+          "fsi_u26_1172",
+          "fsi_u26_1173"
+        ],
+        "unit": 26
+      },
+      {
+        "title": "Present Tense Stress Patterns",
+        "body": "Italian verbs follow specific stress patterns in present tense: Class I stresses third vowel from end in singular forms (abito), Class II has variable stress, and Class III mostly follows capisco pattern except about twenty verbs like parto.",
+        "examples": [
+          {
+            "it": "abitare → abito, abiti, abita, abitano",
+            "en": "to live → I live, you live, he/she lives, they live"
+          },
+          {
+            "it": "vincere → vinco, vinci, vince, vincono",
+            "en": "to win → I win, you win, he/she wins, they win"
+          },
+          {
+            "it": "partire → parto, parti, parte, partono",
+            "en": "to leave → I leave, you leave, he/she leaves, they leave"
+          }
+        ],
+        "tip": "Remember: Class I = stress moves back, Class II = watch -cere/-scere/-gere verbs, Class III = mostly -isco except special 20 like partire.",
+        "source_label": "VERB IRREGULARITIES OR PECULIARITIES",
+        "source_drill_ids": [
+          "fsi_u26_1344",
+          "fsi_u26_1345",
+          "fsi_u26_1346"
+        ],
+        "unit": 26
+      }
+    ],
+    "27": [
+      {
+        "title": "Past Participle Agreement with 'Essere'",
+        "body": "When forming the passato prossimo with 'essere', the past participle must agree in gender and number with the subject.",
+        "examples": [
+          {
+            "it": "È stato",
+            "en": "He has been"
+          },
+          {
+            "it": "È stata",
+            "en": "She has been"
+          }
+        ],
+        "tip": "Think: With 'essere', the ending changes to match the subject (o/a/i/e).",
+        "source_label": "NOTE",
+        "source_drill_ids": [
+          "fsi_u27_0114",
+          "fsi_u27_0115",
+          "fsi_u27_0116",
+          "fsi_u27_0117",
+          "fsi_u27_0118"
+        ],
+        "unit": 27
+      },
+      {
+        "title": "Formal Imperative with Lei",
+        "body": "Use the third person singular present subjunctive for formal commands when addressing someone as 'Lei'.",
+        "examples": [
+          {
+            "it": "Gli dica che arrivo tardi.",
+            "en": "Tell him (formal) that I'll arrive late."
+          },
+          {
+            "it": "Resti qui, per favore.",
+            "en": "Stay (formal) here, please."
+          }
+        ],
+        "tip": "Formal commands = present subjunctive (Lei form) - same as 'che Lei dica/resti' without 'che'.",
+        "source_label": "NOTES ON THE CONVERSATION",
+        "source_drill_ids": [
+          "fsi_u27_0197",
+          "fsi_u27_0198",
+          "fsi_u27_0199",
+          "fsi_u27_0200",
+          "fsi_u27_0201"
+        ],
+        "unit": 27
+      },
+      {
+        "title": "Partitive Articles with 'di'",
+        "body": "Use partitive articles (del, dei, dell', degli, della, delle) to express 'some' or 'any' with uncountable nouns. After 'un po' di' (a little), use just 'di' without the article.",
+        "examples": [
+          {
+            "it": "del pane",
+            "en": "some bread"
+          },
+          {
+            "it": "un po' di pane",
+            "en": "a little bread"
+          }
+        ],
+        "tip": "Think: 'di' alone after 'un po' di', but 'di + article' when saying 'some' directly.",
+        "source_label": "Compare",
+        "source_drill_ids": [
+          "fsi_u27_0027",
+          "fsi_u27_0028",
+          "fsi_u27_0029",
+          "fsi_u27_0030",
+          "fsi_u27_0031"
+        ],
+        "unit": 27
+      },
+      {
+        "title": "Verbs of Perception with Infinitives",
+        "body": "Verbs like vedere can take a direct object followed by an infinitive instead of a che clause, creating a more immediate construction.",
+        "examples": [
+          {
+            "it": "Ho visto due macchine scontrarsi.",
+            "en": "I saw two cars crash."
+          },
+          {
+            "it": "L'hai visto scendere dall'autobus?",
+            "en": "Did you see him get off the bus?"
+          }
+        ],
+        "tip": "Use object + infinitive for direct perception, che + conjugated verb for more descriptive observations.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u27_0513",
+          "fsi_u27_0514",
+          "fsi_u27_0515",
+          "fsi_u27_0516",
+          "fsi_u27_0517"
+        ],
+        "unit": 27
+      },
+      {
+        "title": "Future Tense Irregular Stems",
+        "body": "Future tense endings are always regular (-ò, -ai, -à, -emo, -ete, -anno), but some verbs have irregular stems. Many drop the vowel before -r in the infinitive.",
+        "examples": [
+          {
+            "it": "andare → andrò",
+            "en": "to go → I will go"
+          },
+          {
+            "it": "avere → avrò",
+            "en": "to have → I will have"
+          },
+          {
+            "it": "cadere → cadrò",
+            "en": "to fall → I will fall"
+          }
+        ],
+        "tip": "Remove the -are/-ere/-ire ending plus the preceding vowel to form many irregular future stems.",
+        "source_label": "Grammar Notes",
+        "source_drill_ids": [
+          "fsi_u27_0406",
+          "fsi_u27_0407",
+          "fsi_u27_0408",
+          "fsi_u27_0409",
+          "fsi_u27_0410"
+        ],
+        "unit": 27
+      },
+      {
+        "title": "Basic Arithmetic Expressions",
+        "body": "Use 'più' for addition and 'meno' for subtraction, with 'fa' as the equals sign in simple calculations.",
+        "examples": [
+          {
+            "it": "1 più 1 fa 2.",
+            "en": "1 plus 1 equals 2."
+          },
+          {
+            "it": "7 meno 4 fa 3.",
+            "en": "7 minus 4 equals 3."
+          }
+        ],
+        "tip": "Think of 'più' as 'plus' and 'meno' as 'minus' - they sound similar to their English equivalents.",
+        "source_label": "ADDING AND SUBTRACTING",
+        "source_drill_ids": [
+          "fsi_u27_1425",
+          "fsi_u27_1426"
+        ],
+        "unit": 27
+      },
+      {
+        "title": "Verbs and -zione Nouns",
+        "body": "Some long Italian verbs stressed on the third-from-last vowel in present singular forms have related nouns ending in -zione, with stress patterns matching English cognates.",
+        "examples": [
+          {
+            "it": "abito → abitazione",
+            "en": "I live → habitation"
+          },
+          {
+            "it": "organizzo → organizzazione",
+            "en": "I organize → organization"
+          }
+        ],
+        "tip": "If the verb stress is on the third vowel from the end (e.g., a-BI-to), its -zione noun often matches English stress (habi-TA-tion).",
+        "source_label": "RELATIONSHIP BETWEEN CERTAIN VERBS, WORDS IN -ZIONÉ AND THEIR ENGLISH COGNATES",
+        "source_drill_ids": [
+          "fsi_u27_1455",
+          "fsi_u27_1456",
+          "fsi_u27_1457"
+        ],
+        "unit": 27
+      }
+    ],
+    "28": [
+      {
+        "title": "Preposition 'a' with Distance/Time",
+        "body": "Use the preposition 'a' before expressions of distance or time when stating how far away something is.",
+        "examples": [
+          {
+            "it": "Il prossimo è a cinquecento metri.",
+            "en": "The next one is five hundred meters away."
+          },
+          {
+            "it": "È a dieci minuti da qui.",
+            "en": "It's ten minutes from here."
+          }
+        ],
+        "tip": "Think 'a' for 'at' a distance/time - similar to English 'at five minutes away'.",
+        "source_label": "Language - Usage Notes 5",
+        "source_drill_ids": [
+          "fsi_u28_0415",
+          "fsi_u28_0416",
+          "fsi_u28_0417"
+        ],
+        "unit": 28
+      },
+      {
+        "title": "Provare a + infinitive",
+        "body": "The verb 'provare' meaning 'to try' requires the preposition 'a' when followed by an infinitive verb.",
+        "examples": [
+          {
+            "it": "Ha provato a rimettere in moto?",
+            "en": "Did he try to start it up again?"
+          },
+          {
+            "it": "Proviamo a chiamarlo.",
+            "en": "Let's try to call him."
+          }
+        ],
+        "tip": "Think 'provare a' = 'try to' - both have the letter 'a' in the middle.",
+        "source_label": "Language - Usage Notes 1",
+        "source_drill_ids": [
+          "fsi_u28_0404",
+          "fsi_u28_0405",
+          "fsi_u28_0406"
+        ],
+        "unit": 28
+      },
+      {
+        "title": "Negative Elements After Non",
+        "body": "When using non to negate a verb, other negative words like mai, più, nessuno, niente must come after the verb.",
+        "examples": [
+          {
+            "it": "Non vedo nessuno.",
+            "en": "I don't see anyone."
+          },
+          {
+            "it": "Non ci vado più.",
+            "en": "I don't go there anymore."
+          },
+          {
+            "it": "Non capisce niente.",
+            "en": "He doesn't understand anything."
+          }
+        ],
+        "tip": "Think 'non + verb + negative word' - the extra negative always follows the verb.",
+        "source_label": "Language - Usage Notes 2",
+        "source_drill_ids": [
+          "fsi_u28_0407",
+          "fsi_u28_0408",
+          "fsi_u28_0409",
+          "fsi_u28_0410",
+          "fsi_u28_0411"
+        ],
+        "unit": 28
+      },
+      {
+        "title": "Syllabication Rules",
+        "body": "When breaking words at line ends, follow spoken syllable rules with four exceptions: vowel combinations stay together, tense consonants split between letters, s+consonant stays together, and prefixes may separate.",
+        "examples": [
+          {
+            "it": "zio (not z-i-o)",
+            "en": "uncle"
+          },
+          {
+            "it": "ac-qua",
+            "en": "water"
+          },
+          {
+            "it": "que-sto",
+            "en": "this"
+          }
+        ],
+        "tip": "Remember: vowels stick together, double consonants split, s+consonant is a team, and prefixes can detach.",
+        "source_label": "SYLLABICATION IN WRITTEN ITALIAN",
+        "source_drill_ids": [
+          "fsi_u28_1256",
+          "fsi_u28_1257",
+          "fsi_u28_1258",
+          "fsi_u28_1259",
+          "fsi_u28_1260"
+        ],
+        "unit": 28
+      },
+      {
+        "title": "Plural of nouns ending in -co and -go",
+        "body": "Nouns ending in -co form plurals in -chi if the stress is on the syllable before -co, otherwise in -ci. Nouns ending in -go usually form plurals in -ghi, except for -ologo/-ofago professions which use -gi.",
+        "examples": [
+          {
+            "it": "fico → fichi",
+            "en": "fig → figs"
+          },
+          {
+            "it": "medico → medici",
+            "en": "doctor → doctors"
+          },
+          {
+            "it": "astrologo → astrologi",
+            "en": "astrologer → astrologers"
+          }
+        ],
+        "tip": "Stress before -co? Use -chi. No stress? Use -ci. For -go: professions in -ologo use -gi, others use -ghi.",
+        "source_label": "PLURAL OF GENDERABLES IN -CO AND -GO",
+        "source_drill_ids": [
+          "fsi_u28_1287",
+          "fsi_u28_1288",
+          "fsi_u28_1289",
+          "fsi_u28_1290",
+          "fsi_u28_1291"
+        ],
+        "unit": 28
+      }
+    ],
+    "29": [
+      {
+        "title": "Conditional Tense Formation",
+        "body": "The conditional tense uses the same stem as the future tense, with specific endings added to the -r stem.",
+        "examples": [
+          {
+            "it": "Lo farei se potessi.",
+            "en": "I would do it if I could."
+          },
+          {
+            "it": "Lui ci andrebbe se avesse i soldi.",
+            "en": "He would go there if he had the money."
+          }
+        ],
+        "tip": "Future stem + conditional endings = 'would' verb",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u29_0162",
+          "fsi_u29_0163",
+          "fsi_u29_0164",
+          "fsi_u29_0165",
+          "fsi_u29_0166"
+        ],
+        "unit": 29
+      },
+      {
+        "title": "Irregular Conditional Stems",
+        "body": "Three verbs have irregular stems in the conditional: essere → fo-, dare → de-, stare → ste-.",
+        "examples": [
+          {
+            "it": "Lo farei se fossi Lei.",
+            "en": "I would do it if I were you."
+          },
+          {
+            "it": "Ti darei un consiglio.",
+            "en": "I would give you advice."
+          }
+        ],
+        "tip": "Remember FDS: Farei, Darei, Starei for the three irregular conditional stems.",
+        "source_label": "Grammar Note",
+        "source_drill_ids": [
+          "fsi_u29_0350",
+          "fsi_u29_0351",
+          "fsi_u29_0352",
+          "fsi_u29_0353",
+          "fsi_u29_0354"
+        ],
+        "unit": 29
+      },
+      {
+        "title": "Pensare + di + Infinitive",
+        "body": "The verb 'pensare' (to think) requires the preposition 'di' when followed by an infinitive verb.",
+        "examples": [
+          {
+            "it": "Pensiamo di tenerla una settimana.",
+            "en": "We're thinking of keeping it for a week."
+          },
+          {
+            "it": "Penso di partire domani.",
+            "en": "I'm thinking of leaving tomorrow."
+          }
+        ],
+        "tip": "Think of 'pensare di' as a fixed phrase meaning 'to think about doing' something.",
+        "source_label": "Grammar Note 4",
+        "source_drill_ids": [
+          "fsi_u29_0361",
+          "fsi_u29_0362"
+        ],
+        "unit": 29
+      },
+      {
+        "title": "Guidare vs Andare in macchina",
+        "body": "Use 'guidare' for the action of driving a vehicle. Use 'andare in macchina' to express traveling somewhere by car.",
+        "examples": [
+          {
+            "it": "Possiamo guidarla entrambi?",
+            "en": "Can we both drive it?"
+          },
+          {
+            "it": "Siamo andati in Calabria in macchina.",
+            "en": "We went to Calabria by car."
+          }
+        ],
+        "tip": "Guidare = operate the car; Andare in macchina = travel by car",
+        "source_label": "Grammar Note 3",
+        "source_drill_ids": [
+          "fsi_u29_0358",
+          "fsi_u29_0359",
+          "fsi_u29_0360"
+        ],
+        "unit": 29
+      },
+      {
+        "title": "Reflexive Verb + di + Infinitive",
+        "body": "The reflexive verb raccomandarsi followed by di plus an infinitive expresses strong advice or urging someone to do something.",
+        "examples": [
+          {
+            "it": "Mi raccomando di tenere le sicure sempre abbassate.",
+            "en": "I strongly advise you to always keep the safeties on."
+          }
+        ],
+        "tip": "Think: raccomandarsi di = 'to urge/advise to' - the reflexive form makes it personal advice.",
+        "source_label": "Grammar Note 6",
+        "source_drill_ids": [
+          "fsi_u29_0364",
+          "fsi_u29_0365"
+        ],
+        "unit": 29
+      },
+      {
+        "title": "Apostrophe with elision",
+        "body": "Use an apostrophe when dropping the final vowel of certain words before another word starting with a vowel.",
+        "examples": [
+          {
+            "it": "un'italiana",
+            "en": "an Italian woman"
+          },
+          {
+            "it": "che cos'è",
+            "en": "what is it"
+          }
+        ],
+        "tip": "Think of the apostrophe as a 'vowel bridge' connecting words that would otherwise clash.",
+        "source_label": "UNIT XXIX Note 6",
+        "source_drill_ids": [
+          "fsi_u29_1010",
+          "fsi_u29_1011",
+          "fsi_u29_1012",
+          "fsi_u29_1013",
+          "fsi_u29_1014"
+        ],
+        "unit": 29
+      },
+      {
+        "title": "Gender of Professions",
+        "body": "Some professions have fixed gender regardless of the person's gender, while others change with -a/-o endings.",
+        "examples": [
+          {
+            "it": "È una guida.",
+            "en": "He/She is a guide."
+          },
+          {
+            "it": "È un agente.",
+            "en": "He/She is an agent."
+          },
+          {
+            "it": "È una guardia.",
+            "en": "He/She is a guard."
+          }
+        ],
+        "tip": "Remember: guida, guardia, spia are always feminine nouns even for males.",
+        "source_label": "Gender Examples",
+        "source_drill_ids": [
+          "fsi_u29_0822",
+          "fsi_u29_0823",
+          "fsi_u29_0824",
+          "fsi_u29_0825",
+          "fsi_u29_0826"
+        ],
+        "unit": 29
+      },
+      {
+        "title": "Apocopation",
+        "body": "Apocopation is the dropping of the final unstressed vowel or syllable of a word, often occurring before another word in speech.",
+        "examples": [
+          {
+            "it": "vuol parlare",
+            "en": "wants to speak (from vuole parlare)"
+          },
+          {
+            "it": "un po' di pane",
+            "en": "a little bread (from poco)"
+          }
+        ],
+        "tip": "Think of it as 'breath group' shortening - words often lose their final vowel when flowing into the next word.",
+        "source_label": "APOCOPATIOΝ",
+        "source_drill_ids": [
+          "fsi_u29_0993",
+          "fsi_u29_0994",
+          "fsi_u29_0995",
+          "fsi_u29_0996",
+          "fsi_u29_0997"
+        ],
+        "unit": 29
+      },
+      {
+        "title": "Irregular Gender in Plural Nouns",
+        "body": "Some masculine singular nouns become feminine in the plural, often ending in '-a'. This is a small, irregular group.",
+        "examples": [
+          {
+            "it": "il braccio → le braccia",
+            "en": "the arm → the arms"
+          },
+          {
+            "it": "il labbro → le labbra",
+            "en": "the lip → the lips"
+          }
+        ],
+        "tip": "Think of body parts like 'braccia' (arms) and 'labbra' (lips) as having a feminine plural form.",
+        "source_label": "MASGULINE IN THE SINGULAR AND FEMININE IN THE PLURAL",
+        "source_drill_ids": [
+          "fsi_u29_1136",
+          "fsi_u29_1137",
+          "fsi_u29_1138",
+          "fsi_u29_1139",
+          "fsi_u29_1140"
+        ],
+        "unit": 29
+      },
+      {
+        "title": "Apostrophe in Italian",
+        "body": "An apostrophe replaces a vowel when a word ending in a vowel is followed by another word starting with a vowel.",
+        "examples": [
+          {
+            "it": "un'italiana",
+            "en": "an Italian (woman)"
+          },
+          {
+            "it": "l'ufficio",
+            "en": "the office"
+          },
+          {
+            "it": "anch'io",
+            "en": "me too"
+          }
+        ],
+        "tip": "Think of it as vowel collision avoidance - when two vowels meet, the first one gets dropped with an apostrophe.",
+        "source_label": "UNIT XXIX Note 1",
+        "source_drill_ids": [
+          "fsi_u29_0998",
+          "fsi_u29_0999",
+          "fsi_u29_1000",
+          "fsi_u29_1001",
+          "fsi_u29_1002"
+        ],
+        "unit": 29
+      },
+      {
+        "title": "Omission of Unit Marker with Essere",
+        "body": "After 'essere', words for nationality, religion, or profession usually omit the unit marker unless modified by an adjective or answering 'Chi è?'",
+        "examples": [
+          {
+            "it": "È americano.",
+            "en": "He is American."
+          },
+          {
+            "it": "È un buon americano.",
+            "en": "He is a good American."
+          }
+        ],
+        "tip": "No article for simple descriptions, but add 'un/una' when you add an adjective like 'buon' or 'bravo'.",
+        "source_label": "OMISSION AND USE OF THE UNIT MARKER",
+        "source_drill_ids": [
+          "fsi_u29_1126",
+          "fsi_u29_1127",
+          "fsi_u29_1128",
+          "fsi_u29_1129",
+          "fsi_u29_1130"
+        ],
+        "unit": 29
+      },
+      {
+        "title": "Gender Agreement with Extrinsic Nouns",
+        "body": "For animate nouns like 'studente', gender matches the person's sex. For other extrinsic nouns, gender follows either a previously mentioned intrinsic noun or defaults to masculine singular.",
+        "examples": [
+          {
+            "it": "Quella guardia è americana.",
+            "en": "That guard (female) is American."
+          },
+          {
+            "it": "Che cos'è quello?",
+            "en": "What is that?"
+          }
+        ],
+        "tip": "Animate = match sex; Other = follow previous noun or use masculine.",
+        "source_label": "GENDER-NUMBER DETERMINANTS AND GENDER-NUMBER AGREEMENT",
+        "source_drill_ids": [
+          "fsi_u29_1119",
+          "fsi_u29_1120",
+          "fsi_u29_1121",
+          "fsi_u29_1122",
+          "fsi_u29_1123"
+        ],
+        "unit": 29
+      },
+      {
+        "title": "Elision Rules for Demonstratives and Adjectives",
+        "body": "Feminine singular forms like 'una' and 'quella' elide before vowel sounds only. Masculine singular forms like 'quel' and 'bel' elide before both vowels and semivowels.",
+        "examples": [
+          {
+            "it": "un'amica (not una amica)",
+            "en": "a friend (feminine)"
+          },
+          {
+            "it": "quell'uomo (not quello uomo)",
+            "en": "that man"
+          },
+          {
+            "it": "bell'amico (not bello amico)",
+            "en": "nice friend"
+          }
+        ],
+        "tip": "Think: Masculine forms are more flexible - they elide before both vowels AND semivowels (like i, u). Feminine forms only elide before pure vowels.",
+        "source_label": "UNIT XXIX Note 7",
+        "source_drill_ids": [
+          "fsi_u29_1023",
+          "fsi_u29_1024",
+          "fsi_u29_1025",
+          "fsi_u29_1026",
+          "fsi_u29_1027"
+        ],
+        "unit": 29
+      }
+    ],
+    "30": [
+      {
+        "title": "Negatives in Italian",
+        "body": "In Italian, double negatives are grammatically correct and required to express negation.",
+        "examples": [
+          {
+            "it": "Non ho visto nessuno.",
+            "en": "I didn't see anyone."
+          },
+          {
+            "it": "Non voglio niente.",
+            "en": "I don't want anything."
+          }
+        ],
+        "tip": "Think 'non' + negative word = correct negation, unlike English.",
+        "source_label": "Index A",
+        "source_drill_ids": [
+          "fsi_u30_2292",
+          "fsi_u30_2293",
+          "fsi_u30_2294",
+          "fsi_u30_2295",
+          "fsi_u30_2296"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Demonstrative Adjectives",
+        "body": "Use 'questo' for 'this' and 'quello' for 'that'. They must agree in gender and number with the noun they modify.",
+        "examples": [
+          {
+            "it": "questo libro",
+            "en": "this book"
+          },
+          {
+            "it": "quella casa",
+            "en": "that house"
+          }
+        ],
+        "tip": "Remember: 'questo' for close things, 'quello' for distant things. Both change endings like regular adjectives.",
+        "source_label": "AGGETTIVI E PRONOMI DIMOSTRATIVI",
+        "source_drill_ids": [
+          "fsi_u30_1133",
+          "fsi_u30_1134",
+          "fsi_u30_1135",
+          "fsi_u30_1136",
+          "fsi_u30_1137"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Preposizioni Articolate",
+        "body": "Simple prepositions combine with definite articles to form contracted forms. Use these when the preposition is followed by a noun with an article.",
+        "examples": [
+          {
+            "it": "Vado al cinema",
+            "en": "I go to the cinema"
+          },
+          {
+            "it": "Il libro è sulla tavola",
+            "en": "The book is on the table"
+          }
+        ],
+        "tip": "Remember the pattern: preposition + article = one word (a + il = al, di + la = della, etc.)",
+        "source_label": "PREPOSIZIONI",
+        "source_drill_ids": [
+          "fsi_u30_1154",
+          "fsi_u30_1155",
+          "fsi_u30_1156",
+          "fsi_u30_1157",
+          "fsi_u30_1158"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Definite Articles: lo, gli",
+        "body": "Use 'lo' (singular) and 'gli' (plural) before masculine nouns starting with z, or s + consonant.",
+        "examples": [
+          {
+            "it": "lo zio / gli zii",
+            "en": "the uncle / the uncles"
+          },
+          {
+            "it": "lo sbaglio / gli sbagli",
+            "en": "the mistake / the mistakes"
+          }
+        ],
+        "tip": "Remember Z and S+C sounds need special articles: lo for one, gli for many.",
+        "source_label": "ARTICOLI DETERMINATIVI E INDETERMINATIVI",
+        "source_drill_ids": [
+          "fsi_u30_0844",
+          "fsi_u30_0845",
+          "fsi_u30_0846",
+          "fsi_u30_0847",
+          "fsi_u30_0848"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Pronomi Personali Diretti",
+        "body": "Direct object pronouns replace nouns that receive the action directly, without prepositions. They come before the verb in most cases.",
+        "examples": [
+          {
+            "it": "Vedo Maria → La vedo",
+            "en": "I see Maria → I see her"
+          },
+          {
+            "it": "Chiamo i ragazzi → Li chiamo",
+            "en": "I call the boys → I call them"
+          }
+        ],
+        "tip": "Remember 'li' for masculine plural, 'le' for feminine singular/plural - they attach directly to the verb.",
+        "source_label": "PRONOMI PERSONALI",
+        "source_drill_ids": [
+          "fsi_u30_1162",
+          "fsi_u30_1163",
+          "fsi_u30_1164",
+          "fsi_u30_1165",
+          "fsi_u30_1166"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Stare + Gerundio",
+        "body": "Use 'stare' + gerund to form the progressive tense, showing ongoing actions in present, past, or future.",
+        "examples": [
+          {
+            "it": "Sto parlando con lui.",
+            "en": "I am talking with him."
+          },
+          {
+            "it": "Stavo partendo quando ha chiamato.",
+            "en": "I was leaving when he called."
+          }
+        ],
+        "tip": "Think 'to be + -ing' in English, but use 'stare' instead of 'essere'.",
+        "source_label": "STARE + GERUNDIO",
+        "source_drill_ids": [
+          "fsi_u30_0764",
+          "fsi_u30_0765",
+          "fsi_u30_0766",
+          "fsi_u30_0767",
+          "fsi_u30_0768"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Italian Noun Gender Patterns",
+        "body": "Most nouns ending in -o are masculine and form plurals with -i, while most ending in -a are feminine and form plurals with -e.",
+        "examples": [
+          {
+            "it": "il programma → i programmi",
+            "en": "the program → the programs"
+          },
+          {
+            "it": "la stazione → le stazioni",
+            "en": "the station → the stations"
+          }
+        ],
+        "tip": "Think: -o/-i for masculine, -a/-e for feminine (with exceptions like 'mano' which is feminine despite ending in -o).",
+        "source_label": "SOSTANTIVI",
+        "source_drill_ids": [
+          "fsi_u30_0824",
+          "fsi_u30_0825",
+          "fsi_u30_0826",
+          "fsi_u30_0827",
+          "fsi_u30_0828"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Possessive Articles",
+        "body": "Possessive adjectives and pronouns usually require the definite article (il, la, i, le) before them, except with singular kinship terms.",
+        "examples": [
+          {
+            "it": "il mio amico",
+            "en": "my friend (male)"
+          },
+          {
+            "it": "mio padre",
+            "en": "my father"
+          }
+        ],
+        "tip": "Think: 'the my friend' sounds wrong in English but is correct in Italian. Drop 'the' only for close family members.",
+        "source_label": "AGGETTIVI E PRONOMI POSSESSIVI",
+        "source_drill_ids": [
+          "fsi_u30_1198",
+          "fsi_u30_1199",
+          "fsi_u30_1200",
+          "fsi_u30_1201",
+          "fsi_u30_1202"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Trapassato Prossimo Formation",
+        "body": "Form the trapassato prossimo with the imperfect of 'avere' or 'essere' plus the past participle. Use 'essere' with verbs of motion, state, or reflexive verbs.",
+        "examples": [
+          {
+            "it": "Io avevo parlato",
+            "en": "I had spoken"
+          },
+          {
+            "it": "Lui era arrivato",
+            "en": "He had arrived"
+          }
+        ],
+        "tip": "Think 'had + past participle' in English. Remember: movement/state/reflexive → essere (with gender/number agreement).",
+        "source_label": "INDICATIVO TRAPASSATO PROSSIMO",
+        "source_drill_ids": [
+          "fsi_u30_0991",
+          "fsi_u30_0992",
+          "fsi_u30_0993",
+          "fsi_u30_0994",
+          "fsi_u30_0995"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Interrogative Pronouns",
+        "body": "Interrogative pronouns introduce questions and agree in gender and number with the noun they refer to.",
+        "examples": [
+          {
+            "it": "Quale libro legge?",
+            "en": "Which book do you read?"
+          },
+          {
+            "it": "Quanti libri legge?",
+            "en": "How many books do you read?"
+          },
+          {
+            "it": "Di chi è questo libro?",
+            "en": "Whose book is this?"
+          }
+        ],
+        "tip": "Remember: 'quale' is singular, 'quali' is plural; 'quanto/quanta' for singular, 'quanti/quante' for plural.",
+        "source_label": "PRONOMI INTERROGATIVI",
+        "source_drill_ids": [
+          "fsi_u30_1218",
+          "fsi_u30_1219",
+          "fsi_u30_1220",
+          "fsi_u30_1221",
+          "fsi_u30_1222"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Condizionale Passato",
+        "body": "Formed with the conditional of 'avere' or 'essere' plus the past participle. Use 'essere' for movement, state changes, and reflexive verbs.",
+        "examples": [
+          {
+            "it": "Avrei parlato con lui.",
+            "en": "I would have spoken with him."
+          },
+          {
+            "it": "Sarei arrivato in tempo.",
+            "en": "I would have arrived on time."
+          }
+        ],
+        "tip": "Remember: AVERE + past participle for most verbs, ESSERE + past participle for movement/change verbs (and match gender/number with ESSERE).",
+        "source_label": "CONDZIONALE PASSATO",
+        "source_drill_ids": [
+          "fsi_u30_1369",
+          "fsi_u30_1370",
+          "fsi_u30_1371",
+          "fsi_u30_1372",
+          "fsi_u30_1373"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Adjective Endings by Gender and Number",
+        "body": "Adjectives ending in -o have four forms for masculine/feminine and singular/plural. Adjectives ending in -e have two forms, changing only for plural.",
+        "examples": [
+          {
+            "it": "alto, alta, alti, alte",
+            "en": "tall (masc. sing., fem. sing., masc. pl., fem. pl.)"
+          },
+          {
+            "it": "interessante, interessanti",
+            "en": "interesting (sing., pl.)"
+          }
+        ],
+        "tip": "Think: -o adjectives match nouns completely (4 forms), -e adjectives are simpler (2 forms).",
+        "source_label": "AGGETTIVI",
+        "source_drill_ids": [
+          "fsi_u30_1234",
+          "fsi_u30_1235",
+          "fsi_u30_1236",
+          "fsi_u30_1237",
+          "fsi_u30_1238"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Congiuntivo Passato Formation",
+        "body": "Form the past subjunctive with the present subjunctive of 'avere' or 'essere' plus the past participle. Use 'essere' with verbs of motion, reflexive verbs, and some intransitive verbs.",
+        "examples": [
+          {
+            "it": "Credo che sia arrivato ieri.",
+            "en": "I believe he arrived yesterday."
+          },
+          {
+            "it": "Spero che abbia parlato con lei.",
+            "en": "I hope he spoke with her."
+          }
+        ],
+        "tip": "Remember: ESSERE verbs agree in gender/number with the subject (arrivato/a/i/e), while AVERE verbs don't change.",
+        "source_label": "CONGIUNTIVO PASSATO",
+        "source_drill_ids": [
+          "fsi_u30_0583",
+          "fsi_u30_0584",
+          "fsi_u30_0585",
+          "fsi_u30_0586",
+          "fsi_u30_0587"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Futuro Semplice Conjugation",
+        "body": "Form the future tense by adding future endings (-ò, -ai, -à, -emo, -ete, -anno) to the verb's infinitive stem after dropping -are, -ere, or -ire.",
+        "examples": [
+          {
+            "it": "io parlerò",
+            "en": "I will speak"
+          },
+          {
+            "it": "loro arriveranno",
+            "en": "they will arrive"
+          },
+          {
+            "it": "noi finiremo",
+            "en": "we will finish"
+          }
+        ],
+        "tip": "Future endings are the same for all verb types (-are, -ere, -ire), making this tense easier to conjugate than others.",
+        "source_label": "INDICATIVO FUTURO",
+        "source_drill_ids": [
+          "fsi_u30_0373",
+          "fsi_u30_0374",
+          "fsi_u30_0375",
+          "fsi_u30_0376",
+          "fsi_u30_0377"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Irregular Past Participles",
+        "body": "Some Italian verbs have irregular past participles that don't follow the standard -ato/-uto/-ito patterns and must be memorized.",
+        "examples": [
+          {
+            "it": "Ho scritto una lettera.",
+            "en": "I wrote a letter."
+          },
+          {
+            "it": "Sono venuto ieri.",
+            "en": "I came yesterday."
+          },
+          {
+            "it": "Abbiamo visto il film.",
+            "en": "We saw the movie."
+          }
+        ],
+        "tip": "Group irregular participles by pattern: -sto (rimasto), -tto (scritto), -uto (venuto), -so (perso).",
+        "source_label": "PARTICIPIO PASSATO (alcune forme irregolari)",
+        "source_drill_ids": [
+          "fsi_u30_1121",
+          "fsi_u30_1122",
+          "fsi_u30_1123",
+          "fsi_u30_1124",
+          "fsi_u30_1125"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Forming Adverbs with -mente",
+        "body": "Many Italian adverbs are formed by adding -mente to the feminine singular form of the adjective. Adjectives ending in vowel + -le or -re drop the final -e before adding -mente.",
+        "examples": [
+          {
+            "it": "facile → facilmente",
+            "en": "easy → easily"
+          },
+          {
+            "it": "regolare → regolarmente",
+            "en": "regular → regularly"
+          },
+          {
+            "it": "naturale → naturalmente",
+            "en": "natural → naturally"
+          }
+        ],
+        "tip": "Think: feminine adjective + mente = adverb. For -le/-re adjectives, just add -mente after removing the final -e.",
+        "source_label": "AVVERBI",
+        "source_drill_ids": [
+          "fsi_u30_1145",
+          "fsi_u30_1146",
+          "fsi_u30_1147",
+          "fsi_u30_1148",
+          "fsi_u30_1149"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Relative Pronouns: che vs. cui",
+        "body": "Use 'che' as subject or direct object of a verb. Use 'cui' after prepositions like di, a, da, in, con, su, per, tra, fra.",
+        "examples": [
+          {
+            "it": "La persona che sta parlando è americana.",
+            "en": "The person who is speaking is American."
+          },
+          {
+            "it": "La persona con cui vogliamo parlare è americana.",
+            "en": "The person with whom we want to speak is American."
+          }
+        ],
+        "tip": "Remember: CHE = subject/object, CUI = after preposition. Both can be replaced by il/la quale for clarity.",
+        "source_label": "PRONOMI RELATIVI",
+        "source_drill_ids": [
+          "fsi_u30_1212",
+          "fsi_u30_1213",
+          "fsi_u30_1214",
+          "fsi_u30_1215",
+          "fsi_u30_1216"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Present Subjunctive Triggers",
+        "body": "Verbs like 'volere' and 'credere' trigger the present subjunctive in dependent clauses introduced by 'che'.",
+        "examples": [
+          {
+            "it": "La mamma vuole che faccia un corso d'inglese.",
+            "en": "Mom wants me to take an English course."
+          },
+          {
+            "it": "Credo che costi sul milione.",
+            "en": "I think it costs about a million."
+          }
+        ],
+        "tip": "Remember: Wishes, wants, doubts, and opinions (volere, credere, pensare) often need the subjunctive after 'che'.",
+        "source_label": "Language - Usage Notes",
+        "source_drill_ids": [
+          "fsi_u30_1893",
+          "fsi_u30_1894",
+          "fsi_u30_1895",
+          "fsi_u30_1896",
+          "fsi_u30_1897"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Irregular Present Tense Verbs",
+        "body": "Some common verbs like andare, avere, dovere, and dare have irregular conjugations in the present tense that must be memorized.",
+        "examples": [
+          {
+            "it": "io vado, tu hai, lui dà",
+            "en": "I go, you have, he gives"
+          },
+          {
+            "it": "noi andiamo, voi avete, loro devono",
+            "en": "we go, you have, they must"
+          }
+        ],
+        "tip": "Remember 'andare' changes stem (vad-/v-/and-), while 'avere' and 'dovere' keep 'h' and 'v' in some forms.",
+        "source_label": "INDICATIVO PRESENTE (di alcuni verbi irregolari)",
+        "source_drill_ids": [
+          "fsi_u30_1039",
+          "fsi_u30_1040",
+          "fsi_u30_1041",
+          "fsi_u30_1042",
+          "fsi_u30_1043"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Passato Prossimo with Essere",
+        "body": "Some verbs use essere instead of avere in passato prossimo. The past participle must agree in gender and number with the subject.",
+        "examples": [
+          {
+            "it": "Io sono andato/a",
+            "en": "I went"
+          },
+          {
+            "it": "Noi siamo rimasti/e",
+            "en": "We stayed"
+          },
+          {
+            "it": "Lei è stata",
+            "en": "She was"
+          }
+        ],
+        "tip": "Remember verbs of movement, state, or change use essere. The ending changes: -o (masc sing), -a (fem sing), -i (masc plur), -e (fem plur).",
+        "source_label": "PASSATO PROSSIMO (di alcuni verbi usati con essere)",
+        "source_drill_ids": [
+          "fsi_u30_0776",
+          "fsi_u30_0777",
+          "fsi_u30_0778",
+          "fsi_u30_0779",
+          "fsi_u30_0780"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Passato Prossimo: Avere vs Essere",
+        "body": "Use 'avere' with most verbs (parlato, venduto) and 'essere' with verbs of movement/change (arrivato, caduto). With 'essere', the past participle agrees in gender/number with the subject.",
+        "examples": [
+          {
+            "it": "Io ho parlato",
+            "en": "I spoke"
+          },
+          {
+            "it": "Lei è arrivata",
+            "en": "She arrived"
+          }
+        ],
+        "tip": "ESSERE verbs: Arrive, Leave, Enter, Exit, Fall, Be Born, Die, Stay, Return (ALEES BDSR)",
+        "source_label": "INDICATIVO PASSATO PROSSIMO",
+        "source_drill_ids": [
+          "fsi_u30_0901",
+          "fsi_u30_0902",
+          "fsi_u30_0903",
+          "fsi_u30_0904",
+          "fsi_u30_0905"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Italian Verb Conjugations",
+        "body": "Italian verbs are grouped by their infinitive endings: -are (1st conjugation), -ere (2nd conjugation), and -ire (3rd conjugation). Some -ire verbs add -isc- in present tense forms.",
+        "examples": [
+          {
+            "it": "parlare (1st)",
+            "en": "to speak"
+          },
+          {
+            "it": "vendere (2nd)",
+            "en": "to sell"
+          },
+          {
+            "it": "capire (3rd with -isc-)",
+            "en": "to understand"
+          }
+        ],
+        "tip": "Remember: ARE = 1st, ERE = 2nd, IRE = 3rd. For -ire verbs, think 'isc' for most, but common ones like 'aprire' skip it.",
+        "source_label": "VERBI INFINITI",
+        "source_drill_ids": [
+          "fsi_u30_0363",
+          "fsi_u30_0364"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Basic Italian Conjunctions",
+        "body": "Conjunctions connect words, phrases, or clauses. Common coordinating conjunctions include 'e' (and), 'o' (or), and 'ma' (but).",
+        "examples": [
+          {
+            "it": "Mangio pane e burro.",
+            "en": "I eat bread and butter."
+          },
+          {
+            "it": "Vedo Mario ma non Luca.",
+            "en": "I see Mario but not Luca."
+          },
+          {
+            "it": "Starò a casa se piove.",
+            "en": "I will stay home if it rains."
+          }
+        ],
+        "tip": "Remember E-Ma-O: E (and), Ma (but), O (or) - the three most common coordinating conjunctions.",
+        "source_label": "CONGIUNZIONI",
+        "source_drill_ids": [
+          "fsi_u30_1138",
+          "fsi_u30_1139",
+          "fsi_u30_1140",
+          "fsi_u30_1141",
+          "fsi_u30_1142"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Irregular Imperative Forms",
+        "body": "Some verbs have irregular imperative forms that don't follow regular conjugation patterns, especially in the formal 'Lei' and plural 'Loro' forms.",
+        "examples": [
+          {
+            "it": "Faccia silenzio, per favore.",
+            "en": "Be quiet, please. (formal)"
+          },
+          {
+            "it": "Abbiate pazienza!",
+            "en": "Have patience! (plural)"
+          },
+          {
+            "it": "Vadano via!",
+            "en": "Go away! (plural formal)"
+          }
+        ],
+        "tip": "Common irregulars: andare → vada/vadano, fare → faccia/facciano, dire → dica/dicano, avere → abbia/abbiano, essere → sia/siano.",
+        "source_label": "IMPERATIVO (forme irregolari)",
+        "source_drill_ids": [
+          "fsi_u30_0719",
+          "fsi_u30_0720",
+          "fsi_u30_0721",
+          "fsi_u30_0722",
+          "fsi_u30_0723"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Italian Verb Tense Overview",
+        "body": "Italian verbs conjugate across multiple tenses and moods including indicative, subjunctive, conditional, and imperative forms.",
+        "examples": [
+          {
+            "it": "Indicativo: parlo (presente), parlerò (futuro), ho parlato (passato prossimo)",
+            "en": "Indicative: I speak (present), I will speak (future), I have spoken (present perfect)"
+          },
+          {
+            "it": "Congiuntivo: che io parli (presente), che io abbia parlato (passato)",
+            "en": "Subjunctive: that I speak (present), that I have spoken (past)"
+          }
+        ],
+        "tip": "Remember the main categories: Indicative (facts), Subjunctive (doubt/wishes), Conditional (would), Imperative (commands).",
+        "source_label": "Appendix A Grammatical Tables",
+        "source_drill_ids": [
+          "fsi_u30_0468",
+          "fsi_u30_0469",
+          "fsi_u30_0470",
+          "fsi_u30_0471",
+          "fsi_u30_0472"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Congiuntivo Trapassato Formation",
+        "body": "Form the past subjunctive with the imperfect subjunctive of 'avere' or 'essere' plus the past participle. Use 'essere' with verbs of motion, reflexive verbs, and verbs indicating change.",
+        "examples": [
+          {
+            "it": "Speravo che tu avessi parlato con lui.",
+            "en": "I hoped you had spoken with him."
+          },
+          {
+            "it": "Era importante che loro fossero arrivati in tempo.",
+            "en": "It was important that they had arrived on time."
+          }
+        ],
+        "tip": "Think 'had + past participle' in English - same time relationship, just with subjunctive helper verbs.",
+        "source_label": "CONGIUNTIVO TRAPASSATO",
+        "source_drill_ids": [
+          "fsi_u30_1279",
+          "fsi_u30_1280",
+          "fsi_u30_1281",
+          "fsi_u30_1282",
+          "fsi_u30_1283"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Condizionale Presente Conjugation",
+        "body": "Form the present conditional by adding the endings -ei, -esti, -ebbe, -emmo, -este, -ebbero to the verb's infinitive stem (remove -are, -ere, -ire).",
+        "examples": [
+          {
+            "it": "io parlerei",
+            "en": "I would speak"
+          },
+          {
+            "it": "lui arriverebbe",
+            "en": "he would arrive"
+          },
+          {
+            "it": "noi venderemmo",
+            "en": "we would sell"
+          }
+        ],
+        "tip": "Think 'would' + verb: take the infinitive, drop the last 'e' (for -are/-ere verbs) and add the conditional endings.",
+        "source_label": "CONDIZIONALE PRESENTE",
+        "source_drill_ids": [
+          "fsi_u30_1321",
+          "fsi_u30_1322",
+          "fsi_u30_1323",
+          "fsi_u30_1324",
+          "fsi_u30_1325"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Congiuntivo Presente - Irregular Verbs",
+        "body": "The present subjunctive has irregular forms for some verbs. For -are verbs like 'parlare', use 'parli-' stem; for -ere verbs like 'vendere', use 'venda-' stem; for -ire verbs like 'capire', use 'capisca-' stem.",
+        "examples": [
+          {
+            "it": "che io parli, che tu capisca, che noi vendiamo",
+            "en": "that I speak, that you understand, that we sell"
+          },
+          {
+            "it": "che loro arrivino, che voi cadiate",
+            "en": "that they arrive, that you (plural) fall"
+          }
+        ],
+        "tip": "Remember: -are → parli, -ere → venda, -ire → capisca. The endings are regular once you have the correct stem.",
+        "source_label": "CONGIUNTIVO PRESENTE",
+        "source_drill_ids": [
+          "fsi_u30_0535",
+          "fsi_u30_0536",
+          "fsi_u30_0537",
+          "fsi_u30_0538",
+          "fsi_u30_0539"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Imperativo formale e informale",
+        "body": "L'imperativo ha forme diverse per tu/Lei/noi/voi/Loro. Per tu informale usa la forma del presente indicativo, per Lei formale usa la forma del congiuntivo presente.",
+        "examples": [
+          {
+            "it": "parla (tu) / parli (Lei)",
+            "en": "speak (informal/formal)"
+          },
+          {
+            "it": "arriva (tu) / arrivi (Lei)",
+            "en": "arrive (informal/formal)"
+          },
+          {
+            "it": "capisci (tu) / capisca (Lei)",
+            "en": "understand (informal/formal)"
+          }
+        ],
+        "tip": "Informale: usa il presente indicativo. Formale: usa il congiuntivo presente (3a persona).",
+        "source_label": "IMPERATIVO",
+        "source_drill_ids": [
+          "fsi_u30_0679",
+          "fsi_u30_0680",
+          "fsi_u30_0681",
+          "fsi_u30_0682",
+          "fsi_u30_0683"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Congiuntivo Imperfetto Formation",
+        "body": "Form the imperfect subjunctive by taking the infinitive stem, removing -are/-ere/-ire, and adding these endings: -assi, -assi, -asse, -assimo, -aste, -assero for -are verbs; similar patterns for -ere/-ire.",
+        "examples": [
+          {
+            "it": "parlare → parlassi, parlassi, parlasse",
+            "en": "to speak → I spoke, you spoke, he/she spoke (subjunctive)"
+          },
+          {
+            "it": "arrivare → arrivassi, arrivassi, arrivasse",
+            "en": "to arrive → I arrived, you arrived, he/she arrived (subjunctive)"
+          }
+        ],
+        "tip": "Think 'imperfect tense' + 'subjunctive mood' = take the infinitive stem and add the special -ss- endings.",
+        "source_label": "CONGIUNTIVO IMPERFETTO",
+        "source_drill_ids": [
+          "fsi_u30_0631",
+          "fsi_u30_0632",
+          "fsi_u30_0633",
+          "fsi_u30_0634",
+          "fsi_u30_0635"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Imperfetto Conjugation Pattern",
+        "body": "The imperfetto tense is formed by removing -are, -ere, or -ire from the infinitive and adding the endings -avo, -avi, -ava, -avamo, -avate, -avano for -are verbs, and -evo, -evi, -eva, -evamo, -evate, -evano for -ere/-ire verbs.",
+        "examples": [
+          {
+            "it": "io parlavo",
+            "en": "I was speaking"
+          },
+          {
+            "it": "lui vendeva",
+            "en": "he was selling"
+          },
+          {
+            "it": "noi arrivavamo",
+            "en": "we were arriving"
+          }
+        ],
+        "tip": "Remember: -ARE verbs use -AV- endings, -ERE/-IRE verbs use -EV- endings. All forms have the stress on the vowel before the ending.",
+        "source_label": "INDICATIVO IMPERFETTO",
+        "source_drill_ids": [
+          "fsi_u30_0943",
+          "fsi_u30_0944",
+          "fsi_u30_0945",
+          "fsi_u30_0946",
+          "fsi_u30_0947"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Present Indicative Conjugation Patterns",
+        "body": "Regular verbs in present indicative follow three patterns based on their infinitive endings: -are (parlare), -ere (vendere), and -ire (capire). Each pattern has specific endings for each subject pronoun.",
+        "examples": [
+          {
+            "it": "io parlo, tu parli, lui parla",
+            "en": "I speak, you speak, he speaks"
+          },
+          {
+            "it": "io vendo, tu vendi, lui vende",
+            "en": "I sell, you sell, he sells"
+          },
+          {
+            "it": "io capisco, tu capisci, lui capisce",
+            "en": "I understand, you understand, he understands"
+          }
+        ],
+        "tip": "Remember: -are verbs use -o, -i, -a; -ere verbs use -o, -i, -e; -ire verbs add -isc- in three forms (io, tu, lui/lei).",
+        "source_label": "INDICATIVO PRESENTE",
+        "source_drill_ids": [
+          "fsi_u30_0365",
+          "fsi_u30_0366",
+          "fsi_u30_0367",
+          "fsi_u30_0368",
+          "fsi_u30_0369"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Essere vs Avere in Compound Tenses",
+        "body": "Most verbs use avere with past participle, but essere is used with verbs of movement, change of state, or reflexive verbs. With essere, the participle agrees in gender/number with the subject.",
+        "examples": [
+          {
+            "it": "Ho parlato con Maria.",
+            "en": "I spoke with Maria."
+          },
+          {
+            "it": "Sono partiti ieri.",
+            "en": "They left yesterday."
+          }
+        ],
+        "tip": "Use essere with verbs that describe coming/going, being born/dying, or entering/exiting. Remember: 'Andare, venire, entrare, uscire' all take essere.",
+        "source_label": "ESSSERE/AVERE + PARTICIPO PASSATO (past participle)",
+        "source_drill_ids": [
+          "fsi_u30_1111",
+          "fsi_u30_1112",
+          "fsi_u30_1113",
+          "fsi_u30_1114",
+          "fsi_u30_1115"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Chi as Verb Governor",
+        "body": "The word 'chi' (who) always governs verbs in the singular form, even when referring to multiple people.",
+        "examples": [
+          {
+            "it": "Chi è americano qui?",
+            "en": "Who is American here?"
+          },
+          {
+            "it": "Chi viene alla festa?",
+            "en": "Who is coming to the party?"
+          }
+        ],
+        "tip": "Think of 'chi' as asking about each person individually, so it always takes singular verbs.",
+        "source_label": "VERB GOVERNOR",
+        "source_drill_ids": [
+          "fsi_u30_2391",
+          "fsi_u30_2392"
+        ],
+        "unit": 30
+      },
+      {
+        "title": "Formal vs Informal Address",
+        "body": "Use 'tu' for informal singular address, 'voi' for informal plural, and 'Lei' for formal singular address regardless of gender.",
+        "examples": [
+          {
+            "it": "Tu parli italiano?",
+            "en": "Do you speak Italian? (informal)"
+          },
+          {
+            "it": "Lei parla italiano?",
+            "en": "Do you speak Italian? (formal)"
+          }
+        ],
+        "tip": "Remember: Lei (formal) uses third person singular verbs like 'parla' instead of 'parli'.",
+        "source_label": "FORMS OF ADDRESS",
+        "source_drill_ids": [
+          "fsi_u30_2448",
+          "fsi_u30_2449",
+          "fsi_u30_2450",
+          "fsi_u30_2451"
+        ],
+        "unit": 30
+      }
+    ]
+  }
+}

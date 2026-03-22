@@ -113,9 +113,9 @@ function toggleSplitView() {
     <link rel="apple-touch-icon" sizes="180x180" href="/rhodes-icon-180.png">
 
     <!-- Firebase Auth for Google Sign-In -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js?v=1773116988"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js?v=1773116988"></script>
-    <link rel="stylesheet" href="/rhodes.css?v=1773116988">
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js?v=2.0.12"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js?v=2.0.12"></script>
+    <link rel="stylesheet" href="/rhodes.css?v=1773276124.0.12">
 <script>const params=new URLSearchParams(window.location.search);
 if(params.get("nologo")==="1"){document.write(`<style>.logo{visibility:hidden!important}
     /* Slash command autocomplete dropdown */
@@ -471,8 +471,8 @@ if(params.get("chatpad")==="1"){document.write(`<style>#chat{padding-top:180px!i
     </style>`);}
 </script>
     <!-- Silero VAD for speech detection -->
-    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.js?v=1773116988"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.19/dist/bundle.min.js?v=1773116988"></script>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.js?v=2.0.12"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.19/dist/bundle.min.js?v=2.0.12"></script>
 
     <!-- Service Worker Registration -->
     <script>
@@ -548,10 +548,7 @@ body.mobile-menu-open header {
 body.mobile-menu-open #mobile-menu-dropdown.active {
     z-index: 5003 !important;
 }
-#chat, #voice-bar, #input-area, .session-controls {
-    position: relative;
-    z-index: 1000;
-}
+
 </style>
 </head>
 <body>
@@ -604,12 +601,12 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
                         <a href="/projects.html">Projects</a>
                         <div class="account-dropdown-divider"></div>
                         <div class="account-dropdown-divider"></div>
-                        <a href="#" onclick="document.getElementById('cloud-settings-modal').style.display='flex';CloudStorage.refreshStatus();return false;">Cloud Storage</a>
+                        <a href="#" onclick="document.getElementById('cloud-settings-modal').style.display='flex';CloudStorage.refreshStatus();return false;">Google Drive</a>
                         <a href="/upgrade.html">Upgrade Plan</a>
                         <a href="/api.html">API</a>
                         <a href="/donate.html">Donate</a>
                         <div class="account-dropdown-divider"></div>
-                        <a href="/admin-control.html?v=1772056759" id="admin-link" style="display:none;">Control Panel</a>
+                        <a href="/admin-control.html?v=2.0.12" id="admin-link" style="display:none;">Control Panel</a>
                         <a href="#" id="logout-link" onclick="logout(); return false;">Logout</a>
                     </div>
                 </div>
@@ -655,7 +652,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
                     <a href="/upgrade.html" class="mobile-submenu-item" onclick="closeMobileMenu()">Upgrade Plan</a>
                     <a href="/api.html" class="mobile-submenu-item" onclick="closeMobileMenu()">API</a>
                     <a href="/donate.html" class="mobile-submenu-item" onclick="closeMobileMenu()">Donate</a>
-                    <a href="/admin-control.html?v=1772056759" id="mobile-admin-link" class="mobile-submenu-item" style="display:none;" onclick="closeMobileMenu()">Control Panel</a>
+                    <a href="/admin-control.html?v=2.0.12" id="mobile-admin-link" class="mobile-submenu-item" style="display:none;" onclick="closeMobileMenu()">Control Panel</a>
                     <a href="#" class="mobile-submenu-item" onclick="logout(); closeMobileMenu(); return false;">Logout</a>
                 </div>
             </div>
@@ -776,12 +773,12 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
         </div>
     </div>
     <div id="input-area">
-        <div style="text-align:center;margin:0 0 1px 0;display:flex;justify-content:center;"><button onclick="startNewSession()" style="background:transparent;border:1px solid var(--cyan);color:var(--cyan);padding:4px 10px;border-radius:3px 0 0 3px;cursor:pointer;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px;border-right:none;" title="New Session"><span style="font-size:16px;font-weight:900;line-height:0;">+</span><span>NEW</span></button><button id="sessions-up-btn" onclick="window._openSessionsPanel()" style="background:transparent;border:1px solid var(--cyan);color:var(--cyan);padding:4px 8px;border-radius:0 3px 3px 0;cursor:pointer;font-size:12px;border-left:none;" title="Browse sessions">&#9652;</button></div>
+        <div style="text-align:center;margin:0 0 1px 0;display:flex;justify-content:center;"><button onclick="startNewSession()" style="background:transparent;border:1px solid var(--cyan);color:var(--cyan);padding:4px 10px;border-radius:3px 0 0 3px;cursor:pointer;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px;" title="New Session"><span style="font-size:16px;font-weight:900;line-height:0;">+</span><span>NEW</span></button><button id="sessions-up-btn" onclick="window._openSessionsPanel()" style="background:transparent;border:1px solid var(--cyan);color:var(--cyan);padding:4px 8px;border-radius:0 3px 3px 0;cursor:pointer;font-size:12px;" title="Browse sessions">&#9652;</button></div>
         <div class="input-group">
             <div class="input-with-attachment" style="position:relative;">
                 <span class="prompt" aria-hidden="true">&gt;</span>
                 <textarea id="input" placeholder="enter message..." autocomplete="off" rows="1"></textarea>
-                <button type="button" id="cloud-attach-btn" onclick="CloudStorage.openBrowser()" title="Cloud files" style="display:none;">☁️</button>
+                <button type="button" id="cloud-attach-btn" onclick="CloudStorage.openOrConnect()" title="Google Drive">☁️</button>
                 <button type="button" id="attach-btn" onclick="document.getElementById('image-input').click()" title="Attach files">📎</button>
                 <button type="button" id="send-inline" onclick="send()" title="Send message">➤</button>
             </div>
@@ -839,10 +836,10 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
     <div class="modal" id="cloud-settings-modal" style="display:none;">
         <div class="modal-content" style="max-width:500px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                <h3 style="margin:0;font-family:'Orbitron',monospace;color:var(--cyan);">CLOUD STORAGE</h3>
+                <h3 style="margin:0;font-family:'Orbitron',monospace;color:var(--cyan);">GOOGLE DRIVE</h3>
                 <button onclick="document.getElementById('cloud-settings-modal').style.display='none'" style="background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;">&times;</button>
             </div>
-            <p style="color:var(--dim);font-size:13px;margin-bottom:16px;">Connect your cloud storage to let Rhodes read and write your files during conversation.</p>
+            <p style="color:var(--dim);font-size:13px;margin-bottom:16px;">Connect your Google Drive to let Rhodes read and write your files during conversation.</p>
             <div id="cloud-connections"></div>
         </div>
     </div>
@@ -998,7 +995,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
                 </div>
                 <div class="cmd-box" style="margin-bottom:12px;">
                     <div style="color:var(--green);font-size:13px;font-weight:bold;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
-                        <span style="font-size:16px;">&#x1F34E;</span> MAC
+                        <svg width="14" height="16" viewBox="0 0 14 16" style="vertical-align:middle;"><path d="M11.3 8.5c0-2.1 1.7-3.1 1.8-3.2-1-1.4-2.5-1.6-3-1.7-1.3-.1-2.5.8-3.1.8-.7 0-1.7-.7-2.8-.7C2.7 3.7 1.2 4.8 1.2 8.6c0 1.1.2 2.3.6 3.4.5 1.5 2.4 5.2 4.4 5.1 1-.02 1.4-.7 2.7-.7 1.3 0 1.6.7 2.7.7 2-.03 3.7-4.3 3.7-4.3-2.4-1.1-2-5.3 0-4.3zM9.3 2.5C10 1.7 10.3.6 10.2 0 9.2.1 8 .7 7.3 1.5 6.7 2.2 6.2 3.3 6.4 4.3 7.5 4.4 8.6 3.3 9.3 2.5z" fill="currentColor"/></svg> MAC
                     </div>
                     <div class="cmd-row" onclick="copyCmd(this)" style="padding:10px;cursor:pointer;border-radius:3px;background:rgba(0,0,0,0.3);display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='rgba(0,255,65,0.1)'" onmouseout="this.style.background='rgba(0,0,0,0.3)'">
                         <code id="mac-curl-cmd" style="color:var(--text);flex:1;word-break:break-all;font-size:11px;">curl -sL https://rhodesagi.com/install-mac | bash</code>
@@ -1007,7 +1004,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
                 </div>
                 <div class="cmd-box">
                     <div style="color:var(--green);font-size:13px;font-weight:bold;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
-                        <span style="font-size:16px;">&#x1FA9F;</span> WINDOWS
+                        <svg width="16" height="16" viewBox="0 0 16 16" style="vertical-align:middle;"><path d="M0 2.3l6.5-.9v6.3H0zm7.3-1l8.7-1.2v7.6H7.3zM0 8.4h6.5v6.3L0 13.8zm7.3.1V15l8.7 1.2V8.5z" fill="currentColor"/></svg> WINDOWS
                     </div>
                     <div class="cmd-row" onclick="copyCmd(this)" style="padding:10px;cursor:pointer;border-radius:3px;background:rgba(0,0,0,0.3);display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='rgba(0,255,65,0.1)'" onmouseout="this.style.background='rgba(0,0,0,0.3)'">
                         <code id="win-curl-cmd" style="color:var(--text);flex:1;word-break:break-all;font-size:11px;">irm rhodesagi.com/install-win | iex</code>
@@ -1034,20 +1031,20 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
 
     <!-- Courses Panel -->
 
-    <script src="/credentials-popup.js?v=1773116988"></script>
-    <script src="/rhodes-tools.js?v=1773116988"></script>
-    <script src="/rhodes-sessions.js?v=1773118370"></script>
-    <script src="/rhodes-auth.js?v=1773116988"></script>
-    <script src="/rhodes-share.js?v=1773116988"></script>
-    <script src="/rhodes-ws.js?v=1773116988"></script>
-    <script src="/rhodes-media.js?v=1773116988"></script>
-    <script src="/rhodes-send.js?v=1773116988"></script>
-    <script src="/rhodes-voice.js?v=1773116988"></script>
-    <script src="/face-api.min.js?v=1773116988"></script>
-    <script src="/rhodes-valence.js?v=1773116988"></script>
-    <script src="/rhodes.js?v=1773119344"></script>
-    <script src="/rhodes-split.js?v=1773172825"></script>
-    <script src="/rhodes-cloud-storage.js?v=1773116988"></script>
+    <script src="/credentials-popup.js?v=2.0.12"></script>
+    <script src="/rhodes-tools.js?v=2.0.14"></script>
+    <script src="/rhodes-sessions.js?v=2.0.13"></script>
+    <script src="/rhodes-auth.js?v=2.0.14"></script>
+    <script src="/rhodes-share.js?v=2.0.14"></script>
+    <script src="/rhodes-ws.js?v=2.0.14"></script>
+    <script src="/rhodes-media.js?v=2.0.12"></script>
+    <script src="/rhodes-send.js?v=2.0.12"></script>
+    <script src="/rhodes-voice.js?v=2.0.12"></script>
+    <script src="/face-api.min.js?v=2.0.12"></script>
+    <script src="/rhodes-valence.js?v=2.0.12"></script>
+<script src="/rhodes.js?v=2.0.39"></script>
+    <script src="/rhodes-split.js?v=2.0.12"></script>
+    <script src="/rhodes-cloud-storage.js?v=2.0.15"></script>
 
     <!-- PWA Service Worker & Install -->
     <script>
@@ -1842,29 +1839,29 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
         };
 
 
-        window.enterSplitMode = function(paneCount = 4) {
-            window.flashAsciiFace();
-            // Remove old layout classes
-            splitContainer.classList.remove('split-2', 'split-3', 'split-4');
-            // Add appropriate layout class
-            splitContainer.classList.add('active', 'split-' + paneCount);
-            // split-toggle-container removed (using center SPLIT button only)
-
-            // Show/hide panes based on count
-            for (let i = 1; i <= 4; i++) {
-                const pane = document.getElementById('pane-' + i);
-                if (pane) {
-                    pane.style.display = i <= paneCount ? 'flex' : 'none';
+        // FIXED: Do NOT redefine enterSplitMode - rhodes-split.js defines the
+        // resume-capable version. Wrap it to add CSS classes and face flash.
+        (function() {
+            var _rhodesEnterSplit = window.enterSplitMode;
+            window.enterSplitMode = function(paneCount, resumeSessionIds) {
+                if (typeof paneCount === 'undefined') paneCount = 4;
+                window.flashAsciiFace();
+                // Add layout classes (CSS needs these)
+                splitContainer.classList.remove('split-2', 'split-3', 'split-4');
+                splitContainer.classList.add('active', 'split-' + paneCount);
+                // Show/hide panes based on count
+                for (var i = 1; i <= 4; i++) {
+                    var pane = document.getElementById('pane-' + i);
+                    if (pane) {
+                        pane.style.display = i <= paneCount ? 'flex' : 'none';
+                    }
                 }
-            }
-
-            // Connect only the active panes
-            for (let i = 1; i <= paneCount; i++) {
-                if (!paneConnections[i] || paneConnections[i].readyState !== WebSocket.OPEN) {
-                    connectPane(i);
+                // Delegate to rhodes-split.js (handles resume, WebSocket, _splitResumeIds)
+                if (_rhodesEnterSplit) {
+                    _rhodesEnterSplit(paneCount, resumeSessionIds);
                 }
-            }
-        };
+            };
+        })();
 
         window.exitSplitMode = function() {
             splitContainer.classList.remove('active', 'split-2', 'split-3', 'split-4');
@@ -2821,6 +2818,8 @@ window._loadSessionsUp = function(query) {
             }
             // Separate split sessions from normal sessions
             var splitGroups = {};
+            var splitFallbackGroups = {};
+            var splitFallbackKeyClaimedByPrimary = {};
             var normalSessions = [];
             sessions.forEach(function(s) {
                 var isSplit = (s.session_id && s.session_id.indexOf('split-') >= 0) || s.is_split;
@@ -2828,16 +2827,66 @@ window._loadSessionsUp = function(query) {
                     var splitGroupId = String(s.split_group_id || '').trim();
                     var created = (s.created_at || s.updated_at || '').substring(0, 16);
                     var userPrefix = s.session_id.replace(/split-\d+-.*/, 'split').replace(/_[a-f0-9]{8}$/, '');
-                    var groupKey = splitGroupId ? ('group_' + splitGroupId) : (userPrefix + '_' + created);
+                    var fallbackKey = userPrefix + '_' + created;
+                    var groupKey = splitGroupId ? ('group_' + splitGroupId) : fallbackKey;
+                    s.__splitFallbackKey = fallbackKey;
                     if (!splitGroups[groupKey]) splitGroups[groupKey] = [];
                     splitGroups[groupKey].push(s);
+                    if (!splitFallbackGroups[fallbackKey]) splitFallbackGroups[fallbackKey] = [];
+                    splitFallbackGroups[fallbackKey].push(s);
+                    if (splitGroupId) splitFallbackKeyClaimedByPrimary[fallbackKey] = true;
                 } else {
                     normalSessions.push(s);
                 }
             });
+            var getSplitMessageCount = function(s) {
+                var persisted = Number(s && s.persisted_message_count);
+                if (isFinite(persisted) && persisted >= 0) return persisted;
+                var raw = Number(s && ((s.message_count != null) ? s.message_count : (s.rounds || 0)));
+                return isFinite(raw) ? raw : 0;
+            };
+            var getRenderSplitGroup = function(key) {
+                var group = splitGroups[key] || [];
+                if (!group.length) return group;
+                var first = group[0];
+                var fallbackKey = first.__splitFallbackKey;
+                if (String(first.split_group_id || '').trim() && splitFallbackGroups[fallbackKey]) {
+                    return splitFallbackGroups[fallbackKey];
+                }
+                return group;
+            };
+            var buildBestSplitPaneMap = function(group) {
+                var paneBest = {};
+                (group || []).forEach(function(gs) {
+                    var m = gs.session_id && gs.session_id.match(/split-(\d+)/);
+                    if (!m) return;
+                    var paneNum = parseInt(m[1], 10);
+                    var prev = paneBest[paneNum];
+                    if (!prev) {
+                        paneBest[paneNum] = gs;
+                        return;
+                    }
+                    var prevCount = getSplitMessageCount(prev);
+                    var currCount = getSplitMessageCount(gs);
+                    var prevTs = Date.parse(prev.updated_at || prev.created_at || '') || 0;
+                    var currTs = Date.parse(gs.updated_at || gs.created_at || '') || 0;
+                    if (currCount > prevCount || (currCount === prevCount && currTs > prevTs)) {
+                        paneBest[paneNum] = gs;
+                    }
+                });
+                return paneBest;
+            };
             // Ascending: oldest first, newest at bottom (closest to input)
             normalSessions.reverse();
-            var groupKeys = Object.keys(splitGroups).sort().filter(function(key) { return (splitGroups[key] || []).some(function(s) { return Number(s.message_count || 0) > 0; }); });  // ascending for drop-up
+            var groupKeys = Object.keys(splitGroups).sort().filter(function(key) {
+                var group = splitGroups[key] || [];
+                if (!group.length) return false;
+                var first = group[0];
+                if (!String(first.split_group_id || '').trim() && splitFallbackKeyClaimedByPrimary[first.__splitFallbackKey]) {
+                    return false;
+                }
+                return Object.values(buildBestSplitPaneMap(getRenderSplitGroup(key))).some(function(s) { return getSplitMessageCount(s) > 0; });
+            });  // ascending for drop-up
             results.innerHTML = '';
             if (!normalSessions.length && !groupKeys.length) {
                 results.innerHTML = '<div style="padding:12px;color:var(--dim);font-size:15px;">No sessions</div>';
@@ -2903,32 +2952,17 @@ window._loadSessionsUp = function(query) {
                 splitSection.appendChild(splitHeader);
                 var splitGroupRows = [];
                 groupKeys.forEach(function(key, idx) {
-                    var group = splitGroups[key];
+                    var group = getRenderSplitGroup(key);
+                    var paneBest = buildBestSplitPaneMap(group);
+                    var detailSessions = Object.keys(paneBest).map(Number).sort(function(a, b) { return a - b; }).map(function(pn) { return paneBest[pn]; });
                     var first = group[0];
                     var ts = first.created_at || '';
                     var dt = ts ? new Date(ts) : null;
                     var dateStr = '';
                     if (dt && !isNaN(dt.getTime())) dateStr = dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
                     var totalMsgs = 0;
-                    group.forEach(function(gs) { totalMsgs += (gs.message_count || 0); });
-                    // Build resume data
-                    // Pick one best session per pane: prefer panes with messages, then newest timestamp.
+                    detailSessions.forEach(function(gs) { totalMsgs += getSplitMessageCount(gs); });
                     var resumeData = {};
-                    var paneBest = {};
-                    group.forEach(function(gs) {
-                        var m = gs.session_id.match(/split-(\d+)/);
-                        if (!m) return;
-                        var paneNum = parseInt(m[1], 10);
-                        var prev = paneBest[paneNum];
-                        if (!prev) { paneBest[paneNum] = gs; return; }
-                        var prevHasMsgs = (Number(prev.message_count || 0) > 0) ? 1 : 0;
-                        var currHasMsgs = (Number(gs.message_count || 0) > 0) ? 1 : 0;
-                        var prevTs = Date.parse(prev.updated_at || prev.created_at || '') || 0;
-                        var currTs = Date.parse(gs.updated_at || gs.created_at || '') || 0;
-                        if (currHasMsgs > prevHasMsgs || (currHasMsgs === prevHasMsgs && currTs > prevTs)) {
-                            paneBest[paneNum] = gs;
-                        }
-                    });
                     Object.keys(paneBest).forEach(function(pn) {
                         resumeData[pn] = paneBest[pn].session_id;
                     });
@@ -2939,7 +2973,7 @@ window._loadSessionsUp = function(query) {
                     var groupDiv = document.createElement('div');
                     groupDiv.style.cssText = 'padding:4px 10px;border-bottom:1px solid rgba(255,255,255,0.03);';
                     var rowDiv = document.createElement('div');
-                    rowDiv.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
+                    rowDiv.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px;';
                     rowDiv.draggable = true;
                     rowDiv.ondragstart = function(e) {
                         e.dataTransfer.setData('text/plain', 'session-group:' + group.map(function(gs) { return gs.session_id; }).join(','));
@@ -2967,7 +3001,7 @@ window._loadSessionsUp = function(query) {
                         window._assignSplitGroupToProject(group.map(function(gs) { return gs.session_id; }), projId, 'project');
                     };
                     var infoDiv = document.createElement('div');
-                    infoDiv.style.cssText = 'cursor:pointer;flex:1;';
+                    infoDiv.style.cssText = 'cursor:pointer;flex:1 1 auto;min-width:0;overflow:hidden;';
                     var ssNum = 'SS.' + (idx + 1);
                     // Find first pane title
                     var groupTitle = '';
@@ -2995,7 +3029,7 @@ window._loadSessionsUp = function(query) {
                     }; })(gid, infoDiv);
                     var resumeBtn = document.createElement('button');
                     resumeBtn.textContent = '\u25b6 Resume';
-                    resumeBtn.style.cssText = 'background:rgba(0,255,213,0.1);border:1px solid var(--cyan);color:var(--cyan);padding:2px 8px;font-size:13px;font-family:Orbitron,sans-serif;border-radius:3px;cursor:pointer;';
+                    resumeBtn.style.cssText = 'background:rgba(0,255,213,0.1);border:1px solid var(--cyan);color:var(--cyan);padding:2px 8px;font-size:13px;font-family:Orbitron,sans-serif;border-radius:3px;cursor:pointer;flex:0 0 auto;white-space:nowrap;align-self:flex-start;';
                     resumeBtn.onclick = (function(rd, paneCount) { return function(e) {
                         e.stopPropagation();
                         window._multisandboxMode = true;
@@ -3014,7 +3048,7 @@ window._loadSessionsUp = function(query) {
                     var detailDiv = document.createElement('div');
                     detailDiv.id = gid;
                     detailDiv.style.cssText = 'display:none;padding:2px 0 2px 12px;';
-                    group.forEach(function(s) {
+                    detailSessions.forEach(function(s) {
                         var paneDiv = document.createElement('div');
                         paneDiv.style.cssText = 'padding:3px 0;font-size:14px;color:var(--text);cursor:pointer;';
                         paneDiv.onmouseover = function() { this.style.color = 'var(--cyan)'; };
@@ -3041,7 +3075,7 @@ window._loadSessionsUp = function(query) {
                         var paneMatch = s.session_id.match(/split-(\d+)/);
                         var paneNum = paneMatch ? paneMatch[1] : '?';
                         var pTitle = s.title || ('Pane ' + paneNum);
-                        paneDiv.innerHTML = '<span style="color:var(--dim);">\u2514</span> <span style="color:var(--cyan);font-weight:700;">P' + paneNum + '</span> ' + pTitle + ' <span style="color:var(--green);font-weight:700;">(' + (s.message_count || 0) + ' msgs)</span>';
+                        paneDiv.innerHTML = '<span style="color:var(--dim);">\u2514</span> <span style="color:var(--cyan);font-weight:700;">P' + paneNum + '</span> ' + pTitle + ' <span style="color:var(--green);font-weight:700;">(' + getSplitMessageCount(s) + ' msgs)</span>';
                         paneDiv.onclick = function() { window.location.href = '/?resume=' + s.session_id; };
                         detailDiv.appendChild(paneDiv);
                     });

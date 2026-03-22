@@ -1,0 +1,358 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    color: #f1f1f1;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 15px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+header h1 {
+    font-size: 2.5rem;
+    color: #ffd166;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-panel input, .user-panel button {
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: none;
+    font-size: 1rem;
+    margin-left: 10px;
+}
+
+.user-panel input {
+    background: #2d3047;
+    color: #fff;
+    width: 200px;
+}
+
+.user-panel button {
+    background: #06d6a0;
+    color: #000;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.user-panel button:hover {
+    background: #05b585;
+}
+
+#user-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 12px 20px;
+    border-radius: 8px;
+}
+
+.main-area {
+    display: grid;
+    grid-template-columns: 280px 1fr 280px;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.left-sidebar, .right-sidebar {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.left-sidebar h3, .right-sidebar h3 {
+    color: #ffd166;
+    border-bottom: 2px solid #06d6a0;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+button {
+    background: #118ab2;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
+    margin-bottom: 10px;
+}
+
+button:hover {
+    background: #0a6c8f;
+}
+
+button:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+#queue-status, #game-info {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.chessboard-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.timer {
+    width: 100%;
+    max-width: 600px;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    font-size: 2rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.white-timer {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    color: #222;
+}
+
+.black-timer {
+    background: linear-gradient(135deg, #343a40, #212529);
+    color: #f8f9fa;
+}
+
+.timer-label {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+}
+
+.chessboard-container {
+    position: relative;
+    width: 600px;
+    height: 600px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.chessboard {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    border: 4px solid #5a3921;
+}
+
+.square {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+}
+
+.square.light {
+    background-color: #f0d9b5;
+}
+
+.square.dark {
+    background-color: #b58863;
+}
+
+.square.selected {
+    background-color: rgba(255, 255, 0, 0.5) !important;
+}
+
+.square.legal-move {
+    background-color: rgba(0, 255, 0, 0.4) !important;
+}
+
+.piece {
+    font-size: 50px;
+    cursor: grab;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.coordinates {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+.file, .rank {
+    position: absolute;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.file {
+    bottom: -25px;
+    text-align: center;
+    width: 75px;
+    left: 0;
+    transform: translateX(-50%);
+}
+
+.rank {
+    left: -25px;
+    text-align: center;
+    height: 75px;
+    top: 0;
+    transform: translateY(-50%);
+}
+
+.game-controls {
+    display: flex;
+    gap: 20px;
+}
+
+.move-history {
+    height: 300px;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.move-entry {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.move-entry:nth-child(even) {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.captured-pieces {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.captured-white, .captured-black {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 10px;
+}
+
+#captured-white, #captured-black {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.captured-piece {
+    font-size: 30px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 15px;
+    color: #aaa;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: #2d3047;
+    padding: 30px;
+    border-radius: 15px;
+    min-width: 300px;
+    text-align: center;
+}
+
+.promotion-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.promotion-piece {
+    background: #118ab2;
+    padding: 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1.5rem;
+    transition: background 0.3s;
+}
+
+.promotion-piece:hover {
+    background: #0a6c8f;
+}
+
+@media (max-width: 1400px) {
+    .main-area {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+    }
+    .chessboard-container {
+        width: 500px;
+        height: 500px;
+    }
+}

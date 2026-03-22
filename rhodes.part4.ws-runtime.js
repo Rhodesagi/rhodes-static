@@ -237,9 +237,11 @@
                     if (typeof finalizeStreamingMsg === 'function') {
                         finalizeStreamingMsg(window.streamingMsgEl, window.streamingContent || '');
                     } else {
+                        window.streamingMsgEl.querySelectorAll('.streaming-cursor').forEach(function(c) { c.remove(); });
                         window.streamingMsgEl.classList.remove('streaming');
                     }
                 } catch (e) {
+                    try { window.streamingMsgEl.querySelectorAll('.streaming-cursor').forEach(function(c) { c.remove(); }); } catch (_2) {}
                     try { window.streamingMsgEl.classList.remove('streaming'); } catch (_) {}
                 }
                 window.streamingMsgEl = null;

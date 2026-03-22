@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Server Monitoring Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-server"></i> Real-Time Server Monitoring Dashboard</h1>
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="status-label">WebSocket:</span>
+                    <span id="ws-status" class="status-disconnected">Disconnected</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Last Update:</span>
+                    <span id="last-update">Never</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Uptime:</span>
+                    <span id="uptime">-</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- CPU Usage -->
+            <div class="card chart-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-microchip"></i> CPU Usage</h2>
+                    <div class="alert-threshold">
+                        Threshold: <input type="number" id="cpu-threshold" min="0" max="100" value="80">%
+                        <div class="alert-indicator" id="cpu-alert"></div>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="chart-container">
+                        <canvas id="cpu-chart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="chart-info">
+                        <div class="metric">
+                            <span class="metric-label">Current:</span>
+                            <span id="cpu-current" class="metric-value">0%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Cores:</span>
+                            <span id="cpu-cores" class="metric-value">0</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Peak (60s):</span>
+                            <span id="cpu-peak" class="metric-value">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Memory Usage -->
+            <div class="card chart-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-memory"></i> Memory Usage</h2>
+                    <div class="alert-threshold">
+                        Threshold: <input type="number" id="mem-threshold" min="0" max="100" value="85">%
+                        <div class="alert-indicator" id="mem-alert"></div>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="chart-container">
+                        <canvas id="memory-chart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="chart-info">
+                        <div class="metric">
+                            <span class="metric-label">Used:</span>
+                            <span id="mem-used" class="metric-value">0 GB</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Total:</span>
+                            <span id="mem-total" class="metric-value">0 GB</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Percent:</span>
+                            <span id="mem-percent" class="metric-value">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Disk Usage -->
+            <div class="card chart-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-hdd"></i> Disk Usage</h2>
+                    <div class="alert-threshold">
+                        Threshold: <input type="number" id="disk-threshold" min="0" max="100" value="90">%
+                        <div class="alert-indicator" id="disk-alert"></div>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="chart-container">
+                        <canvas id="disk-chart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="chart-info">
+                        <div class="metric">
+                            <span class="metric-label">Used:</span>
+                            <span id="disk-used" class="metric-value">0 GB</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Free:</span>
+                            <span id="disk-free" class="metric-value">0 GB</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">I/O:</span>
+                            <span id="disk-io" class="metric-value">0 B/s</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network Traffic -->
+            <div class="card chart-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-network-wired"></i> Network Traffic</h2>
+                    <div class="alert-threshold">
+                        Threshold: <input type="number" id="net-threshold" min="0" max="1000000" value="100000"> B/s
+                        <div class="alert-indicator" id="net-alert"></div>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="chart-container">
+                        <canvas id="network-chart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="chart-info">
+                        <div class="metric">
+                            <span class="metric-label">In:</span>
+                            <span id="net-in" class="metric-value">0 B/s</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Out:</span>
+                            <span id="net-out" class="metric-value">0 B/s</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Total:</span>
+                            <span id="net-total" class="metric-value">0 B/s</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Process List -->
+            <div class="card wide-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-list"></i> Top 10 Processes by CPU</h2>
+                    <button id="refresh-processes" class="btn"><i class="fas fa-sync-alt"></i> Refresh</button>
+                </div>
+                <div class="card-content">
+                    <table id="process-table">
+                        <thead>
+                            <tr>
+                                <th>PID</th>
+                                <th>Name</th>
+                                <th>CPU %</th>
+                                <th>Memory %</th>
+                                <th>User</th>
+                            </tr>
+                        </thead>
+                        <tbody id="process-body">
+                            <!-- Process rows will be inserted here -->
+                            <tr><td colspan="5" class="empty-message">Waiting for data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- System Log Viewer -->
+            <div class="card wide-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-file-alt"></i> System Log (/var/log/syslog)</h2>
+                    <button id="clear-logs" class="btn"><i class="fas fa-trash"></i> Clear</button>
+                </div>
+                <div class="card-content log-container">
+                    <div id="log-viewer">
+                        <!-- Log lines will be inserted here -->
+                        <div class="log-entry">Loading log entries...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Real-Time Server Monitoring Dashboard | Updated every 2 seconds | WebSocket Port: 8900</p>
+            <p id="connection-info">Not connected to WebSocket server</p>
+        </footer>
+    </div>
+
+    <script src="dashboard.js"></script>
+    <script src="charts.js"></script>
+    <script src="process_list.js"></script>
+    <script src="log_viewer.js"></script>
+</body>
+</html>

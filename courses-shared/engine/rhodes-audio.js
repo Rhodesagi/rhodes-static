@@ -11,6 +11,24 @@ const RhodesAudio = {
   audioFallbackUsed: false,
   audioEndCallback: null,
   dialogueAudio: null,
+  _voiceCache: {},
+
+  // Select best available voice for a language code
+  getBestVoice(langCode) {
+    if (this._voiceCache[langCode]) return this._voiceCache[langCode];
+    const voices = speechSynthesis.getVoices();
+    if (!voices.length) return null;
+    const lang = langCode.split('-')[0];
+    const matches = voices.filter(v => v.lang.startsWith(lang));
+    if (!matches.length) return null;
+    // Prefer enhanced/premium voices, then non-default local voices
+    const premium = matches.find(v => /premium|enhanced|natural|neural/i.test(v.name));
+    if (premium) { this._voiceCache[langCode] = premium; return premium; }
+    const local = matches.find(v => v.localService && !v.name.includes('Compact'));
+    if (local) { this._voiceCache[langCode] = local; return local; }
+    this._voiceCache[langCode] = matches[0];
+    return matches[0];
+  },
 
   initContext() {
     if (!this.ctx) {
@@ -119,7 +137,9 @@ const RhodesAudio = {
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = langCode;
-      utterance.rate = 0.9;
+      utterance.rate = 0.92;
+      const voice = this.getBestVoice(langCode);
+      if (voice) utterance.voice = voice;
       utterance.onend = () => { if (this.audioEndCallback) this.audioEndCallback(); };
       speechSynthesis.speak(utterance);
     };
@@ -166,6 +186,7 @@ const RhodesAudio = {
     this.dialogueAudio = new Audio(audioPath);
     this.dialogueAudio.onerror = () => {
       const langCode = cfg?.langCode || 'fr-FR';
+      const voice = this.getBestVoice(langCode);
       let index = 0;
       const dialogue = unitData.dialogue || [];
       function speakNext() {
@@ -174,8 +195,9 @@ const RhodesAudio = {
         const text = line.fr || line.target || '';
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = langCode;
-        utterance.rate = 0.85;
-        utterance.onend = () => { index++; setTimeout(speakNext, 500); };
+        utterance.rate = 0.88;
+        if (voice) utterance.voice = voice;
+        utterance.onend = () => { index++; setTimeout(speakNext, 400); };
         speechSynthesis.speak(utterance);
       }
       speakNext();
@@ -209,6 +231,7 @@ const RhodesAudio = {
         // TTS fallback with completion tracking
         this.dialogueAudio = null;
         const langCode = cfg?.langCode || 'fr-FR';
+        const voice = this.getBestVoice(langCode);
         let index = 0;
         const dialogue = unitData.dialogue || [];
 
@@ -221,9 +244,10 @@ const RhodesAudio = {
           if (!text) { index++; speakNext(); return; }
           const utterance = new SpeechSynthesisUtterance(text);
           utterance.lang = langCode;
-          utterance.rate = 0.85;
-          utterance.onend = () => { index++; setTimeout(speakNext, 500); };
-          utterance.onerror = () => { index++; setTimeout(speakNext, 500); };
+          utterance.rate = 0.88;
+          if (voice) utterance.voice = voice;
+          utterance.onend = () => { index++; setTimeout(speakNext, 400); };
+          utterance.onerror = () => { index++; setTimeout(speakNext, 400); };
           speechSynthesis.speak(utterance);
         }
         speakNext();

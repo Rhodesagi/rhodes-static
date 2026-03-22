@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rhodes Editor</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" id="prism-theme">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <span class="sidebar-title">EXPLORER</span>
+                <div class="sidebar-actions">
+                    <button class="icon-btn" id="new-file-btn" title="New File (Ctrl+N)">+</button>
+                    <button class="icon-btn" id="refresh-btn" title="Refresh">↻</button>
+                </div>
+            </div>
+            <div class="file-tree" id="file-tree"></div>
+        </aside>
+        <main class="editor-container">
+            <div class="tab-bar" id="tab-bar">
+                <div class="tab active" data-file="welcome">
+                    <span class="tab-name">Welcome</span>
+                    <span class="tab-close">×</span>
+                </div>
+            </div>
+            <div class="editor-wrapper">
+                <div class="line-numbers" id="line-numbers">1</div>
+                <div class="editor-content">
+                    <pre class="syntax-layer" id="syntax-layer"><code class="language-javascript" id="highlighted-content"></code></pre>
+                    <textarea class="editor-textarea" id="editor" spellcheck="false">Welcome to Rhodes Editor!
+
+Features:
+• File management with LocalStorage
+• Syntax highlighting for JavaScript/JSON
+• Find and Replace (Ctrl+F)
+• Word count and line numbers
+• Auto-save functionality
+• Settings (font size, theme)
+• Keyboard shortcuts
+
+Try creating a new file or opening an existing one from the sidebar.</textarea>
+                </div>
+            </div>
+            <div class="find-replace-bar" id="find-replace-bar" style="display: none;">
+                <input type="text" id="find-input" placeholder="Find">
+                <input type="text" id="replace-input" placeholder="Replace">
+                <button id="find-next">Next</button>
+                <button id="find-prev">Prev</button>
+                <button id="replace-btn">Replace</button>
+                <button id="replace-all-btn">Replace All</button>
+                <button id="close-find">×</button>
+            </div>
+            <div class="settings-panel" id="settings-panel" style="display: none;">
+                <h3>Settings</h3>
+                <label>Theme</label>
+                <select id="theme-select"><option value="dark">Dark</option><option value="light">Light</option></select>
+                <label>Font Size</label>
+                <input type="range" id="font-size-slider" min="10" max="24" value="14">
+                <label>Auto Save</label>
+                <input type="checkbox" id="auto-save-check" checked>
+                <button id="close-settings">Close</button>
+            </div>
+            <footer class="status-bar">
+                <span id="cursor-position">Ln 1, Col 1</span>
+                <span id="word-count">0 words</span>
+                <span id="save-status">Saved</span>
+                <button id="settings-btn">Settings</button>
+            </footer>
+        </main>
+    </div>
+    <div class="modal" id="new-file-modal" style="display: none;">
+        <h3>New File</h3>
+        <input type="text" id="new-file-name" placeholder="filename.js">
+        <button id="confirm-new-file">Create</button>
+        <button id="cancel-new-file">Cancel</button>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="js/app.js" type="module"></script>
+</body>
+</html>

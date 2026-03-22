@@ -39,9 +39,9 @@
             --bg: #e8ebe8;
             --panel: #d8dbd8;
             --border: #a0a8a0;
-            --cyan: #006688;
-            --magenta: #990099;
-            --green: #007722;
+            --cyan: #0099aa;
+            --magenta: #bb00bb;
+            --green: #009933;
             --dim: #606860;
             --user: #c0e8c8;
             --ai: transparent;
@@ -97,14 +97,15 @@
             color: var(--cyan);
         }
 
-        /* Light mode logo glow - subtle */
+        /* Light mode logo glow */
         body.light-mode .logo {
             white-space: nowrap;
             
             max-width: 100%;
             overflow: hidden;
             text-overflow: ellipsis;
-            text-shadow: 0 0 10px var(--cyan), 0 0 20px rgba(0,102,136,0.3);
+            color: #008899;
+            text-shadow: 0 0 8px rgba(0,153,170,0.5), 0 0 20px rgba(0,153,170,0.3);
         }
 
         /* Light mode modal */
@@ -206,7 +207,7 @@
         }
 
         header {
-            background: var(--panel);
+            background: #1a1a2e;
             z-index: 1050;
             border-bottom: 1px solid var(--border);
             padding: 14px 15px 4px 15px;
@@ -529,7 +530,7 @@
 
         .msg.ai {
             background: var(--ai);
-            border: 1px solid #1a3a1a;
+            border: 1px solid rgba(0,255,204,0.5);
             border-radius: 12px;
             position: relative;
         }
@@ -554,6 +555,14 @@
         .msg.ai:hover .qa-share-btn {
             opacity: 0.8;
         }
+
+        /* Chat message links - visible on dark background */
+        .msg a { color: var(--cyan); text-decoration: underline; }
+        .msg a:hover { color: #fff; text-shadow: 0 0 8px var(--cyan); }
+        .msg a:visited { color: #00ccaa; }
+        body.light-mode .msg a { color: #0066cc; }
+        body.light-mode .msg a:visited { color: #551a8b; }
+
         .qa-share-btn:hover {
             opacity: 1 !important;
         }
@@ -1806,6 +1815,13 @@
         header .logo {
             text-shadow: 0 0 10px var(--bg), 0 0 20px var(--bg);
         }
+        body.light-mode header .logo {
+            color: #00aacc !important;
+            text-shadow: 0 0 15px rgba(0,170,204,0.6), 0 0 30px rgba(0,170,204,0.3) !important;
+        }
+        body.light-mode header .nav a { color: #007788 !important; }
+        body.light-mode header .nav a:hover { color: #00aacc !important; text-shadow: 0 0 10px rgba(0,170,204,0.5) !important; }
+        body.light-mode .logo-subtitle { color: #009944 !important; }
         header .nav a {
             text-shadow: 0 0 8px var(--bg), 0 0 15px var(--bg);
         }
@@ -1966,7 +1982,7 @@
                 top: 70px;
                 left: 12px;
                 right: 12px;
-                background: var(--panel);
+                background: #1a1a2e;
                 border: 1px solid var(--cyan);
                 border-radius: 4px;
                 padding: 12px;

@@ -4,33 +4,127 @@
 <meta charset="utf-8">
 <title>Rhodes VNC</title>
 <style>
-  body { margin: 0; background: #000; overflow: hidden; }
-  iframe { width: 100vw; height: 100vh; border: none; }
+  :root { color-scheme: dark; }
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+    font-family: system-ui, sans-serif;
+  }
+  #status {
+    position: fixed;
+    left: 12px;
+    bottom: 12px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.74);
+    color: #d0d7de;
+    font-size: 12px;
+    line-height: 1.4;
+    max-width: min(720px, calc(100vw - 24px));
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+  #status.error { color: #ff8a8a; }
+  #status a {
+    color: #7ee787;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  #status a:hover { text-decoration: underline; }
+  #actions[hidden] { display: none; }
 </style>
 </head>
 <body>
+<div id="status">
+  <div id="status-text">Preparing browser session...</div>
+  <div id="actions" hidden>
+    <a id="direct-link" href="#" target="_top" rel="noopener">Open direct viewer</a>
+  </div>
+</div>
 <script>
-// Parse our URL params
-var params = new URLSearchParams(window.location.search);
-var port = params.get("port");
-var password = params.get("password");
+(function () {
+  'use strict';
 
-if (!port || !password) {
-  document.body.innerHTML = "<h1 style=\"color:red;padding:20px\">Missing port or password parameter</h1>";
-} else {
-  // Build the correct noVNC URL with the websocket path set correctly
-  var wsPath = "cli-vnc/" + port + "/websockify";
-  var novncUrl = "/cli-vnc/" + port + "/vnc.html"
-    + "?password=" + encodeURIComponent(password)
-    + "&autoconnect=true"
-    + "&resize=scale"
-    + "&path=" + encodeURIComponent(wsPath);
-  
-  // Use iframe to load noVNC with correct params
-  var iframe = document.createElement("iframe");
-  iframe.src = novncUrl;
-  document.body.appendChild(iframe);
-}
+  var statusEl = document.getElementById('status');
+  var statusTextEl = document.getElementById('status-text');
+  var actionsEl = document.getElementById('actions');
+  var directLinkEl = document.getElementById('direct-link');
+
+  function setStatus(message, isError) {
+    statusTextEl.textContent = message;
+    statusEl.className = isError ? 'error' : '';
+  }
+
+  function showDirectAction(message) {
+    if (message) {
+      setStatus(message);
+    }
+    actionsEl.hidden = false;
+  }
+
+  function normalizeViewerUrl(rawUrl) {
+    var url = new URL(rawUrl, window.location.origin);
+    if (url.pathname.endsWith('/vnc_lite.html')) {
+      url.pathname = url.pathname.slice(0, -'vnc_lite.html'.length) + 'vnc.html';
+    }
+    if (!url.searchParams.get('autoconnect')) {
+      url.searchParams.set('autoconnect', 'true');
+    }
+    if (!url.searchParams.get('resize')) {
+      url.searchParams.set('resize', 'scale');
+    }
+    var parts = url.pathname.split('/').filter(Boolean);
+    if ((parts[0] === 'kasm-session' || parts[0] === 'cli-vnc') && parts[1] && !url.searchParams.get('path')) {
+      url.searchParams.set('path', parts[0] + '/' + parts[1] + '/websockify');
+    }
+    return url;
+  }
+
+  function buildLegacyCliUrl(params) {
+    var port = params.get('port');
+    var password = params.get('password');
+    if (!port || !password) {
+      return null;
+    }
+    var url = new URL('/cli-vnc/' + port + '/vnc.html', window.location.origin);
+    url.searchParams.set('password', password);
+    url.searchParams.set('autoconnect', 'true');
+    url.searchParams.set('resize', 'scale');
+    url.searchParams.set('path', 'cli-vnc/' + port + '/websockify');
+    return url;
+  }
+
+  var params = new URLSearchParams(window.location.search);
+  var targetUrl = params.get('url');
+  if (!targetUrl) {
+    targetUrl = buildLegacyCliUrl(params);
+  }
+
+  if (!targetUrl) {
+    setStatus('Missing browser session URL', true);
+    return;
+  }
+
+  var directUrl = normalizeViewerUrl(targetUrl);
+  directLinkEl.href = directUrl.toString();
+  showDirectAction('Opening direct browser session...');
+
+  setTimeout(function () {
+    try {
+      if (window.top && window.top !== window.self) {
+        window.top.location.replace(directUrl.toString());
+        return;
+      }
+    } catch (error) {}
+    window.location.replace(directUrl.toString());
+  }, 50);
+})();
 </script>
 </body>
 </html>

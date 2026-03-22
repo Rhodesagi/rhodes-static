@@ -30,10 +30,10 @@
         <!-- Mode Selector -->
         <div class="mode-selector">
             <button id="linearModeBtn" class="mode-btn active">
-                <span class="mode-icon">&#x1F4D6;</span> Linear
+                <span class="mode-icon">📖</span> Linear
             </button>
             <button id="srsModeBtn" class="mode-btn">
-                <span class="mode-icon">&#x1F504;</span> SRS Review
+                <span class="mode-icon">🔄</span> SRS Review
             </button>
         </div>
 
@@ -43,7 +43,7 @@
             <div class="stat"><strong>Vocab:</strong> <span id="vocabLearned">0</span></div>
             <div class="stat"><strong>Streak:</strong> <span id="currentStreak">0 days</span></div>
             <div class="stat"><strong>Accuracy:</strong> <span id="accuracy">0%</span></div>
-            <span id="saveIndicator" class="save-indicator">&#x2713; Saved</span>
+            <span id="saveIndicator" class="save-indicator">✓ Saved</span>
         </div>
 
         <!-- Autopilot -->
@@ -81,12 +81,12 @@
 
         <!-- Unit Detail View -->
         <div id="unitDetailView" style="display:none;">
-            <button id="closeUnitBtn" class="btn" style="margin-bottom:15px;">&#x2190; Back to Units</button>
+            <button id="closeUnitBtn" class="btn" style="margin-bottom:15px;">← Back to Units</button>
             <h2 id="unitDetailTitle"></h2>
 
             <div id="dialogueContent" style="margin:15px 0;"></div>
             <div style="display:flex;gap:10px;margin-bottom:20px;">
-                <button id="playDialogueBtn" class="btn">&#x25B6; Play Dialogue</button>
+                <button id="playDialogueBtn" class="btn">▶ Play Dialogue</button>
                 <button id="practiceDialogueBtn" class="btn btn-primary">Practice Dialogue</button>
             </div>
 
@@ -106,20 +106,18 @@
                     <span id="drillProgress" style="margin-left:10px;font-size:14px;color:var(--text-dim);"></span>
                 </div>
                 <div style="display:flex;gap:8px;align-items:center;">
-                    <button id="playFrBtn" class="audio-btn" title="Play Italian">&#x1F50A;</button>
-                    <button id="playEnBtn" class="audio-btn" title="Play English">&#x1F50A;EN</button>
-                    <button id="fullscreenBtn" class="fullscreen-btn" title="Fullscreen">&#x26F6;</button>
-                    <button id="closeDrillBtn" class="btn" title="Close" style="padding:5px 10px;">&#x2715;</button>
+                    <button id="playFrBtn" class="audio-btn" title="Play Italian">🔊</button>
+                    <button id="playEnBtn" class="audio-btn" title="Play English">🔊EN</button>
+                    <button id="fullscreenBtn" class="fullscreen-btn" title="Fullscreen">⛶</button>
+                    <button id="closeDrillBtn" class="btn" title="Close" style="padding:5px 10px;">✕</button>
                 </div>
             </div>
 
-            <!-- Register & Direction Toggles -->
+            <!-- Direction Toggles -->
             <div class="register-toggle">
-                <button id="formalBtn" class="register-btn active">Formal (Lei)</button>
-                <button id="informalBtn" class="register-btn">Informal (tu)</button>
-                <button id="btn-en-fr" class="direction-btn active">EN &#x2192; IT</button>
-                <button id="btn-fr-en" class="direction-btn">IT &#x2192; EN</button>
-                <button id="btn-fr-fr-text" class="direction-btn">IT &#x2192; IT</button>
+                <button id="btn-en-fr" class="direction-btn active">EN → IT</button>
+                <button id="btn-fr-en" class="direction-btn">IT → EN</button>
+                <button id="btn-fr-fr-text" class="direction-btn">IT → IT</button>
                 <button id="btn-fr-fr-dictation" class="direction-btn">DICTATION</button>
             </div>
 
@@ -127,6 +125,12 @@
             <div id="grammarHints" style="display:none;padding:10px;background:var(--bg-tertiary);border:1px solid var(--border);margin-bottom:15px;">
                 <div id="hintsContent"></div>
             </div>
+
+            <!-- FSI Drill Areas (CRITICAL: engine references these) -->
+            <div id="modelSentenceArea" style="display:none;" class="model-sentence-area"></div>
+            <div id="cueArea" style="display:none;" class="cue-area"></div>
+            <div id="fillBlankArea" style="display:none;" class="fill-blank-area"></div>
+            <div id="culturalNoteArea" style="display:none;" class="cultural-note-area"></div>
 
             <!-- Prompt -->
             <div class="drill-content">
@@ -146,25 +150,29 @@
             <div class="input-area">
                 <div class="input-with-mic">
                     <input type="text" id="userInput" placeholder="Type your answer..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-                    <button id="micBtn" class="mic-btn" title="Voice input">&#x1F3A4;</button>
+                    <button id="micBtn" class="mic-btn" title="Voice input">🎤</button>
                 </div>
                 <div id="voiceStatus" class="voice-status"></div>
             </div>
 
-            <!-- Accent Keyboard -->
+            <!-- Italian Accent Keyboard -->
             <div class="accent-keyboard">
-                <button class="accent-key" data-char="&#x00e0;">&#x00e0;</button>
-                <button class="accent-key" data-char="&#x00e8;">&#x00e8;</button>
-                <button class="accent-key" data-char="&#x00e9;">&#x00e9;</button>
-                <button class="accent-key" data-char="&#x00ec;">&#x00ec;</button>
-                <button class="accent-key" data-char="&#x00f2;">&#x00f2;</button>
-                <button class="accent-key" data-char="&#x00f9;">&#x00f9;</button>
-                <button class="accent-key" data-char="'">'</button>
+                <div class="keyboard-row">
+                    <button class="accent-key" data-char="à">à</button>
+                    <button class="accent-key" data-char="è">è</button>
+                    <button class="accent-key" data-char="é">é</button>
+                    <button class="accent-key" data-char="ì">ì</button>
+                    <button class="accent-key" data-char="í">í</button>
+                    <button class="accent-key" data-char="ò">ò</button>
+                    <button class="accent-key" data-char="ó">ó</button>
+                    <button class="accent-key" data-char="ù">ù</button>
+                    <button class="accent-key" data-char="ú">ú</button>
+                </div>
             </div>
 
             <!-- Keyboard Hints -->
             <div class="keyboard-hints">
-                <kbd>Enter</kbd> submit &bull; <kbd>Tab</kbd> hint &bull; <kbd>Esc</kbd> close
+                <kbd>Enter</kbd> submit • <kbd>Tab</kbd> hint • <kbd>Esc</kbd> close
             </div>
 
             <!-- Feedback -->
@@ -179,7 +187,7 @@
                 <button id="hintBtn" class="btn">Hint</button>
                 <button id="skipBtn" class="btn">Skip</button>
                 <button id="checkBtn" class="btn btn-primary">Check</button>
-                <button id="nextBtn" class="btn btn-primary" style="display:none;">Next &#x2192;</button>
+                <button id="nextBtn" class="btn btn-primary" style="display:none;">Next →</button>
             </div>
         </div>
     </div>
@@ -190,7 +198,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <!-- Local Config -->
-    <script src="config.js"></script>
+    <script src="config.js?v=3"></script>
 
     <!-- Shared Engine Modules -->
     <script src="/courses-shared/engine/rhodes-error.js"></script>

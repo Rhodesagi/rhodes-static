@@ -39,6 +39,55 @@ window.installRhodesWsHelpers = function installRhodesWsHelpers(deps) {
         return true;
     }
 
+    function isRhodesProdHost() {
+        const host = String(window.location.hostname || '').toLowerCase();
+        return host === 'rhodesagi.com' || host.endsWith('.rhodesagi.com');
+    }
+
+    function shouldExposeDebugUi() {
+        try {
+            const params = new URLSearchParams(window.location.search || '');
+            if (params.get('debug') === '1' || params.get('allowCustomServer') === '1') return true;
+        } catch {}
+        try {
+            if (window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin) return true;
+        } catch {}
+        const host = String(window.location.hostname || '').toLowerCase();
+        return host === 'localhost' || host === '127.0.0.1';
+    }
+
+    function setDebugButtonVisible(visible) {
+        const debugBtn = document.getElementById('debug-btn');
+        if (!debugBtn) return;
+        debugBtn.style.display = (visible && shouldExposeDebugUi()) ? 'inline' : 'none';
+    }
+
+    function clearScopedResumePointer() {
+        try {
+            if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
+                window.rhodesSessionState.setResumeSessionIdForCurrentIdentity('');
+            }
+        } catch {}
+        try {
+            if (window.rhodesSessionState && window.rhodesSessionState.clearLegacySessionPointer) {
+                window.rhodesSessionState.clearLegacySessionPointer();
+            } else if (rhodesStorage) {
+                rhodesStorage.removeItem('rhodes_session_id');
+            }
+        } catch {}
+    }
+
+    function resetStaleProductionState() {
+        if (!isRhodesProdHost()) return false;
+        console.warn('[WS] Resetting stale production connection state');
+        try {
+            rhodesStorage.removeItem('rhodes_server');
+            rhodesStorage.removeItem('rhodes_token');
+        } catch {}
+        clearScopedResumePointer();
+        return true;
+    }
+
     function handleDesktopBridgeMessage(msg) {
         if (!msg || !msg.type) return false;
 
@@ -90,14 +139,24 @@ window.installRhodesWsHelpers = function installRhodesWsHelpers(deps) {
     }
 
     function handleSocketDisconnect(statusText, wasReady) {
+        const attemptBeforeReset = (getWsConnectAttempts() || 0) + 1;
+        let attempt = attemptBeforeReset;
+        if (!wasReady && attemptBeforeReset >= 3 && !window.__rhodesWsProductionResetDone) {
+            if (resetStaleProductionState()) {
+                window.__rhodesWsProductionResetDone = true;
+                attempt = 1;
+            }
+        }
+
         setWsReadyForMessages(false);
         setConnectionInProgress(false);
-        setStatus(false, statusText);
+        setStatus(false, (!wasReady && !shouldExposeDebugUi()) ? 'RECONNECTING' : statusText);
 
         if ((window._pendingGeneration || window.streamingMsgEl) && wasReady) {
             console.log('[WS] Disconnected during generation, will request continuation on reconnect');
             window._needsContinuation = true;
             if (window.streamingMsgEl) {
+                window.streamingMsgEl.querySelectorAll('.streaming-cursor').forEach(function(c) { c.remove(); });
                 window.streamingMsgEl.classList.remove('streaming');
                 window.streamingMsgEl = null;
                 window.streamingContent = '';
@@ -105,10 +164,8 @@ window.installRhodesWsHelpers = function installRhodesWsHelpers(deps) {
             window._pendingGeneration = null;
         }
 
-        const debugBtn = document.getElementById('debug-btn');
-        if (debugBtn) debugBtn.style.display = 'inline';
+        setDebugButtonVisible(wasReady && shouldExposeDebugUi());
 
-        const attempt = (getWsConnectAttempts() || 0) + 1;
         setWsConnectAttempts(attempt);
         if (!wasReady && attempt > 10) {
             console.log('[WS] Still retrying after ' + attempt + ' attempts (auth never succeeded)');

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RhodesCards</title>
+    <link rel="stylesheet" href="cards.css?v=10">
+    <link rel="stylesheet" href="lib/katex.min.css">
+</head>
+<body>
+<div class="app-container" id="app">
+    <!-- Header -->
+    <div class="app-header">
+        <h1 onclick="RC.showView('decks')" style="cursor:pointer">RHODESCARDS</h1>
+        <div class="header-actions">
+            <div class="header-stats">
+                <span class="streak" id="headerStreak"></span>
+                <span class="retention" id="headerRetention"></span>
+            </div>
+            <button class="btn btn-sm" onclick="RC.showView('stats')">Stats</button>
+            <button class="btn btn-sm" onclick="RC.showView('import')">Import</button>
+            <button class="btn btn-sm" onclick="RC.toggleTheme()" title="Toggle theme">&#9681;</button>
+            <button class="btn btn-sm" onclick="RC.showShortcutsModal()" title="Keyboard shortcuts">&#9000;</button>
+        </div>
+    </div>
+
+    <!-- Deck Browser -->
+    <div class="view active" id="view-decks">
+        <div class="deck-grid" id="deckGrid">
+            <div class="loading"><div class="spinner"></div><br>Loading decks...</div>
+        </div>
+    </div>
+
+    <!-- Deck Detail -->
+    <div class="view" id="view-detail">
+        <div class="deck-header">
+            <div>
+                <button class="back-btn" onclick="RC.showView('decks')">&larr; Back</button>
+                <h2 id="detailName"></h2>
+            </div>
+            <div>
+                <button class="btn btn-sm" onclick="RC.showDeckOptions()">Options</button>
+                <button class="btn btn-sm btn-danger" onclick="RC.deleteDeck()" style="margin-left:6px">Delete</button>
+            </div>
+        </div>
+        <div class="deck-stat-bar" id="detailStats"></div>
+        <div id="examCountdownWidget"></div>
+        <div class="deck-actions">
+            <button class="btn btn-primary btn-lg" id="studyBtn" onclick="RC.startReview()">Study Now</button>
+            <button class="btn" onclick="RC.showBrowse()">Browse</button>
+            <button class="btn" onclick="RC.showAdd()">+ Add Card</button>
+            <button class="btn" onclick="RC.showOcclusion()">Occlusion</button>
+            <button class="btn" onclick="RC.showClozeOverlapper()">Overlapper</button>
+            <button class="btn btn-sm" onclick="RC.showCustomStudy()" title="Custom Study">Custom Study</button>
+            <button class="btn btn-sm" onclick="RC.showExamCountdown()" title="Set exam date">Exam</button>
+            <div style="margin-left:auto;display:flex;gap:6px">
+                <button class="btn btn-sm" onclick="RC.exportDeck('csv')" title="Export CSV">CSV</button>
+                <button class="btn btn-sm" onclick="RC.exportDeck('apkg')" title="Export Anki">APKG</button>
+                <button class="btn btn-sm" onclick="RC.exportDeck('json')" title="Export JSON">JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Session -->
+    <div class="view" id="view-review">
+        <div class="review-container">
+            <div style="width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <button class="back-btn" onclick="RC.exitReview()">&larr; Exit</button>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <span id="pomodoroDisplay" class="pomodoro-display"></span>
+                    <button class="btn btn-sm" onclick="RC.startPomodoro()" title="Pomodoro timer">&#127813;</button>
+                    <button class="btn btn-sm" onclick="RC.toggleSpeedFocus()" title="Speed Focus mode">&#9889;</button>
+                    <button class="btn btn-sm" onclick="RC.showCardInfo()" title="Card Info (I)">&#8505;</button>
+                    <button class="btn btn-sm" onclick="RC._triggerEditMode()" title="Edit Card (E)">&#9998;</button>
+                    <span id="reviewETA" style="color:var(--cyan);font-size:0.85rem"></span>
+                    <span id="reviewCounter" style="color:var(--dim);font-size:0.9rem"></span>
+                    <button class="btn btn-sm" onclick="RC.toggleFullScreen()" title="Full Screen (F11)">&#x26F6;</button>
+                </div>
+            </div>
+            <div class="speed-timer" id="speedTimer" style="display:none"></div>
+            <div class="review-progress"><div class="review-progress-bar" id="reviewProgress"></div></div>
+            <div class="review-card" id="reviewCard" onclick="if(!RC.reviewRevealed)RC.revealAnswer()"></div>
+            <div id="reviewActions"></div>
+        </div>
+    </div>
+
+    <!-- Session Summary -->
+    <div class="view" id="view-summary">
+        <div class="session-summary">
+            <h2>SESSION COMPLETE</h2>
+            <div class="summary-stats" id="summaryStats"></div>
+            <div style="margin-top:8px">
+                <button class="btn btn-primary" onclick="RC.showDeckDetail(RC.currentDeckId)">Back to Deck</button>
+                <button class="btn" style="margin-left:12px" onclick="RC.showView('decks')">All Decks</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Browse -->
+    <div class="view" id="view-browse">
+        <div class="deck-header">
+            <div>
+                <button class="back-btn" onclick="RC.showDeckDetail(RC.currentDeckId)">&larr; Back</button>
+                <h2>Browse Cards</h2>
+            </div>
+        </div>
+        <div class="browse-controls" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input class="search-input" id="browseSearch" style="flex:1;min-width:200px" placeholder="Search... (tag:x is:due prop:ivl>30)" oninput="RC.debounce(RC.loadBrowse, 300)()" onfocus="RC.showSearchHelp(this)" onblur="RC.hideSearchHelp()">
+            <button class="btn btn-sm" onclick="RC.toggleBatchMode()" id="batchToggleBtn" title="Batch edit mode">Batch</button>
+        </div>
+        <div id="batchBar" style="display:none;align-items:center;gap:8px;padding:8px 12px;background:var(--card-bg);border:1px solid var(--border);border-radius:6px;margin-bottom:8px;flex-wrap:wrap">
+            <span id="batchCount" style="font-size:0.85rem;color:var(--dim);min-width:80px">0 selected</span>
+            <div id="batchActions" style="display:flex;gap:4px;flex-wrap:wrap;opacity:0.4">
+                <button class="btn btn-sm" onclick="RC.batchSelectAllPages()" title="Select all matching cards">All Pages</button>
+                <button class="btn btn-sm" onclick="RC.batchAddTag()">+Tag</button>
+                <button class="btn btn-sm" onclick="RC.batchRemoveTag()">-Tag</button>
+                <button class="btn btn-sm" onclick="RC.batchSetFlag()">Flag</button>
+                <button class="btn btn-sm" onclick="RC.batchSuspend()">Suspend</button>
+                <button class="btn btn-sm" onclick="RC.batchUnsuspend()">Unsuspend</button>
+                <button class="btn btn-sm" onclick="RC.batchBury()">Bury</button>
+                <button class="btn btn-sm" onclick="RC.batchMoveDeck()">Move</button>
+                <button class="btn btn-sm btn-danger" onclick="RC.batchDelete()">Delete</button>
+            </div>
+        </div>
+        <div class="browse-layout">
+        <div class="browse-sidebar" id="browseTagSidebar"></div>
+        <div class="browse-main">
+        <div class="browse-tag-bar" id="browseTagBar"></div>
+        <table class="browse-table">
+            <thead><tr id="browseHead"><th>Front</th><th>Back</th><th>State</th><th>Due</th><th>Interval</th><th>Tags</th><th></th></tr></thead>
+            <tbody id="browseBody"></tbody>
+        </table>
+        <div class="pagination" id="browsePagination"></div>
+        </div><!-- /browse-main -->
+        </div><!-- /browse-layout -->
+    </div>
+
+    <!-- Add Card -->
+    <div class="view" id="view-add">
+        <div class="deck-header">
+            <div>
+                <button class="back-btn" onclick="RC.showDeckDetail(RC.currentDeckId)">&larr; Back</button>
+                <h2>Add Card</h2>
+            </div>
+        </div>
+        <div class="add-form">
+            <div class="form-group">
+                <label>Card Type</label>
+                <select id="addType" onchange="RC.updateAddFormHints()">
+                    <option value="basic">Basic (Front / Back)</option>
+                    <option value="reverse">Basic + Reverse</option>
+                    <option value="type_answer">Type Answer</option>
+                    <option value="cloze">Cloze Deletion</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label id="addFrontLabel">FRONT <button class="freeze-btn" id="freeze_addFront" onclick="RC.toggleFreezeField('addFront')" title="Freeze field">&#10052;</button></label>
+                <textarea id="addFront" placeholder="Question or prompt... (Markdown supported)"></textarea>
+                <div class="cloze-help" id="clozeHelp" style="display:none">
+                    Use <code>{{c1::answer}}</code> to create a cloze deletion.<br>
+                    Multiple deletions: <code>{{c1::first}}</code> and <code>{{c2::second}}</code> create separate cards.<br>
+                    Optional hint: <code>{{c1::answer::hint text}}</code>
+                </div>
+            </div>
+            <div class="form-group">
+                <label id="addBackLabel">BACK <button class="freeze-btn" id="freeze_addBack" onclick="RC.toggleFreezeField('addBack')" title="Freeze field">&#10052;</button></label>
+                <textarea id="addBack" placeholder="Answer... (Markdown supported)"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Tags <button class="freeze-btn" id="freeze_addTags" onclick="RC.toggleFreezeField('addTags')" title="Freeze field">&#10052;</button></label>
+                <input id="addTags" placeholder="e.g. vocab, chapter1">
+            </div>
+            <div class="form-actions">
+                <button class="btn" onclick="RC.showDeckDetail(RC.currentDeckId)">Cancel</button>
+                <button class="btn" onclick="RC.addCard(false)">Add</button>
+                <button class="btn btn-primary" onclick="RC.addCard(true)">Add & Next</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import -->
+    <div class="view" id="view-import">
+        <div class="deck-header">
+            <div>
+                <button class="back-btn" onclick="RC.showView('decks')">&larr; Back</button>
+                <h2>Import</h2>
+            </div>
+        </div>
+        <div class="import-section">
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-icon">&#8679;</div>
+                <div class="upload-text">Drop file here or click to upload</div>
+                <div class="upload-hint">.apkg &middot; .csv &middot; .tsv &middot; .txt &middot; .json</div>
+                <input type="file" id="fileInput" accept=".apkg,.csv,.tsv,.txt,.text,.json" style="display:none">
+            </div>
+            <div id="uploadStatus" style="margin:16px 0"></div>
+            <div class="form-group" style="margin-top:12px">
+                <label>Deck name (optional)</label>
+                <input id="importDeckName" placeholder="Auto-detected from file">
+            </div>
+            <h3 style="font-family:var(--font-heading);font-size:0.9rem;color:var(--dim);margin:32px 0 14px;letter-spacing:1px">LANGUAGE COURSES</h3>
+            <ul class="import-lang-list" id="importLangList">
+                <div class="loading"><div class="spinner"></div></div>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="view" id="view-stats">
+        <div class="deck-header">
+            <div>
+                <button class="back-btn" onclick="RC.showView('decks')">&larr; Back</button>
+                <h2>Statistics</h2>
+            </div>
+        </div>
+        <div class="stats-grid" id="statsGrid"></div>
+        <h3 style="font-family:var(--font-heading);font-size:0.9rem;color:var(--dim);margin:24px 0 14px;letter-spacing:1px">REVIEW HEATMAP (90 DAYS)</h3>
+        <div class="heatmap" id="heatmap"></div>
+    </div>
+</div>
+
+<!-- New Deck Modal -->
+<div class="modal-overlay" id="newDeckModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal">
+        <h3>New Deck</h3>
+        <div class="form-group">
+            <label>Name</label>
+            <input id="newDeckName" placeholder="My Deck (use :: for subdecks, e.g. Languages::French)">
+        </div>
+        <div class="form-group">
+            <label>Description (optional)</label>
+            <input id="newDeckDesc" placeholder="">
+        </div>
+        <div class="form-actions">
+            <button class="btn" onclick="document.getElementById('newDeckModal').style.display='none'">Cancel</button>
+            <button class="btn btn-primary" onclick="RC.createDeck()">Create</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Card Modal -->
+<div class="modal-overlay" id="editModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal modal-wide">
+        <h3>Edit Card</h3>
+        <input type="hidden" id="editNoteId">
+        <div class="edit-grid">
+            <div class="edit-fields">
+                <div class="form-group">
+                    <label>Card Type</label>
+                    <select id="editType">
+                        <option value="basic">Basic</option>
+                        <option value="reverse">Basic + Reverse</option>
+                        <option value="type_answer">Type Answer</option>
+                        <option value="cloze">Cloze Deletion</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>FRONT</label>
+                    <textarea id="editFront" oninput="RC.updateEditPreview()" rows="5"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>BACK</label>
+                    <textarea id="editBack" oninput="RC.updateEditPreview()" rows="5"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Tags</label>
+                    <input id="editTags" placeholder="comma-separated">
+                </div>
+            </div>
+            <div class="edit-preview" id="editPreview">
+                <div class="preview-label">Preview</div>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="btn" onclick="document.getElementById('editModal').style.display='none'">Cancel</button>
+            <button class="btn btn-primary" onclick="RC.saveCardEdit()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Deck Options Modal -->
+<div class="modal-overlay" id="deckOptionsModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal">
+        <h3>Deck Options</h3>
+        <div class="form-group">
+            <label>New cards per day</label>
+            <input type="number" id="optNewPerDay" value="20" min="0" max="9999">
+        </div>
+        <div class="form-group">
+            <label>Review cards per day</label>
+            <input type="number" id="optReviewPerDay" value="200" min="0" max="9999">
+        </div>
+        <div class="form-group">
+            <label>Desired retention (0.7 - 0.99)</label>
+            <input type="number" id="optRetention" value="0.9" min="0.7" max="0.99" step="0.01">
+        </div>
+        <div class="form-group">
+            <label>Learning steps (minutes, comma-separated)</label>
+            <input id="optLearningSteps" value="1, 10" placeholder="1, 10">
+        </div>
+        <div class="form-group">
+            <label>Relearning steps (minutes)</label>
+            <input id="optRelearningSteps" value="10" placeholder="10">
+        </div>
+        <div class="form-group">
+            <label>Maximum interval (days)</label>
+            <input type="number" id="optMaxInterval" value="36500" min="1" max="36500">
+        </div>
+        <div class="form-actions">
+            <button class="btn" onclick="document.getElementById('deckOptionsModal').style.display='none'">Cancel</button>
+            <button class="btn btn-primary" onclick="RC.saveDeckOptions()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Image Occlusion Modal -->
+<div class="modal-overlay" id="occlusionModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal modal-wide">
+        <h3>Image Occlusion</h3>
+        <div style="margin-bottom:12px">
+            <input type="file" id="occlusionFileInput" accept="image/*" onchange="RC.handleOcclusionImage(this)" style="display:none">
+            <button class="btn btn-sm" onclick="document.getElementById('occlusionFileInput').click()">Choose Image</button>
+            <span style="color:var(--dim);font-size:0.85rem;margin-left:8px">or paste from clipboard</span>
+            <span style="float:right;color:var(--dim);font-size:0.85rem" id="occlusionRectCount">0 regions</span>
+        </div>
+        <div id="occlusionPreview" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;min-height:200px;max-height:500px;overflow:auto"></div>
+        <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+            <span style="color:var(--dim);font-size:0.8rem">Draw rectangles on the image. Each becomes a cloze card.</span>
+            <button class="btn btn-sm" onclick="RC.undoLastRect()" style="margin-left:auto">Undo Last</button>
+        </div>
+        <div class="form-group" style="margin-top:12px">
+            <label>Tags (comma-separated)</label>
+            <input id="occlusionTags" placeholder="e.g. anatomy, diagram">
+        </div>
+        <div class="form-actions">
+            <button class="btn" onclick="document.getElementById('occlusionModal').style.display='none'">Cancel</button>
+            <button class="btn btn-primary" onclick="RC.createOcclusionCards()">Create Cards</button>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Study Modal -->
+<div class="modal-overlay" id="customStudyModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal">
+        <h3>Custom Study</h3>
+        <div class="custom-study-presets">
+            <button class="btn" style="width:100%;margin-bottom:8px" onclick="RC.createCustomStudy('review_ahead')">Review Ahead</button>
+            <button class="btn" style="width:100%;margin-bottom:8px" onclick="RC.createCustomStudy('forgot_today')">Forgot Today</button>
+            <button class="btn" style="width:100%;margin-bottom:8px" onclick="RC.createCustomStudy('random')">Random Cards</button>
+        </div>
+        <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px">
+            <div class="form-group">
+                <label>Custom filter query</label>
+                <input id="customFilterQuery" placeholder="e.g. tag:vocab is:due prop:ivl>30">
+            </div>
+            <div class="form-group">
+                <label>Card limit</label>
+                <input type="number" id="customFilterLimit" value="100" min="1" max="500">
+            </div>
+            <div class="form-actions">
+                <button class="btn" onclick="document.getElementById('customStudyModal').style.display='none'">Cancel</button>
+                <button class="btn btn-primary" onclick="RC.createCustomStudy('custom')">Create</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cloze Overlapper Modal -->
+<div class="modal-overlay" id="clozeOverlapperModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal">
+        <h3>Cloze Overlapper</h3>
+        <p style="font-size:0.85rem;color:var(--dim);margin-bottom:12px">Enter items one per line. Each creates a cloze card showing surrounding context.</p>
+        <div class="form-group">
+            <label>Items (one per line)</label>
+            <textarea id="overlapperInput" rows="8" placeholder="Step 1: Gather materials&#10;Step 2: Mix ingredients&#10;Step 3: Heat to 200C&#10;Step 4: Bake for 30 min"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Context (items shown around target)</label>
+            <input type="number" id="overlapperContext" value="1" min="0" max="5">
+        </div>
+        <div class="form-group">
+            <label>Tags</label>
+            <input id="overlapperTags" placeholder="comma-separated">
+        </div>
+        <div id="overlapperPreview" style="margin:8px 0"></div>
+        <div class="form-actions">
+            <button class="btn" onclick="RC.generateOverlappingClozes()">Preview</button>
+            <button class="btn" onclick="document.getElementById('clozeOverlapperModal').style.display='none'">Cancel</button>
+            <button class="btn btn-primary" onclick="RC.createOverlappingClozes()">Create Cards</button>
+        </div>
+    </div>
+</div>
+
+<!-- Exam Countdown Modal -->
+<div class="modal-overlay" id="examCountdownModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal">
+        <h3>Exam Countdown</h3>
+        <div class="form-group">
+            <label>Exam Label</label>
+            <input id="examLabel" placeholder="e.g. Final Exam, MCAT, Bar Exam" value="Exam">
+        </div>
+        <div class="form-group">
+            <label>Exam Date</label>
+            <input type="date" id="examDateInput">
+        </div>
+        <div class="form-actions">
+            <button class="btn" onclick="RC.clearExamDate()">Clear</button>
+            <button class="btn" onclick="document.getElementById('examCountdownModal').style.display='none'">Cancel</button>
+            <button class="btn btn-primary" onclick="RC.saveExamDate()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Keyboard Shortcuts Modal -->
+<div class="modal-overlay" id="shortcutsModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal">
+        <h3>Keyboard Shortcuts</h3>
+        <div id="shortcutsBody"></div>
+        <div class="form-actions" style="margin-top:16px">
+            <button class="btn" onclick="RC.resetShortcuts()">Reset Defaults</button>
+            <button class="btn" onclick="document.getElementById('shortcutsModal').style.display='none'">Cancel</button>
+            <button class="btn btn-primary" onclick="RC.saveShortcutsFromModal()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Card Info Modal -->
+<div class="modal-overlay" id="cardInfoModal" style="display:none" onclick="if(event.target===this)RC.closeCardInfo()">
+    <div class="modal modal-wide">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+            <h3>Card Info</h3>
+            <button class="btn btn-sm" onclick="RC.closeCardInfo()" style="font-size:1.2rem">&times;</button>
+        </div>
+        <div id="cardInfoBody"></div>
+    </div>
+</div>
+
+<!-- Vendor libs -->
+<script src="lib/marked.min.js"></script>
+<script src="lib/purify.min.js"></script>
+<script src="lib/katex.min.js"></script>
+<script src="lib/auto-render.min.js"></script>
+<!-- App modules -->
+<script src="js/utils.js?v=10"></script>
+<script src="js/api.js?v=10"></script>
+<script src="js/templates.js?v=10"></script>
+<script src="js/media.js?v=10"></script>
+<script src="js/search.js?v=10"></script>
+<script src="js/decks.js?v=10"></script>
+<script src="js/review.js?v=10"></script>
+<script src="js/batch.js?v=10"></script>
+<script src="js/browse.js?v=10"></script>
+<script src="js/add.js?v=10"></script>
+<script src="js/import.js?v=10"></script>
+<script src="js/stats.js?v=10"></script>
+<script src="js/occlusion.js?v=10"></script>
+<script src="js/tts.js?v=10"></script>
+<script src="js/voice.js?v=10"></script>
+<script src="js/timer.js?v=10"></script>
+<script src="js/tags.js?v=10"></script>
+<script src="js/cardstats.js?v=10"></script>
+<script src="js/countdown.js?v=10"></script>
+<script src="js/eta.js?v=10"></script>
+<script src="js/fullscreen.js?v=10"></script>
+<script src="js/dictionary.js?v=10"></script>
+<script src="js/editor-toolbar.js?v=10"></script>
+<script src="js/editreview.js?v=10"></script>
+<script src="js/cardinfo.js?v=10"></script>
+<script src="js/app.js?v=10"></script>
+</body>
+</html>

@@ -95,7 +95,15 @@ window.COURSE_CONFIG = {
   // ============================================================================
   // TITLE HTML
   // ============================================================================
-  titleHtml: '<span style="color:#009B3A">R</span><span style="color:#FEDF00">H</span><span style="color:#002776">O</span><span style="color:#009B3A">D</span><span style="color:#FEDF00">E</span><span style="color:#002776">S</span> <span style="color:var(--text-primary)">PORTUGUESE</span>',
+  titleHtml: `<div style="display:flex;flex-direction:column;height:30px;width:45px;border:1px solid #ccc;margin-bottom:8px;">
+  <span style="flex:1;background:#009B3A;"></span>
+  <span style="flex:1;background:#FEDF00;"></span>
+  <span style="flex:1;background:#002776;"></span>
+</div>
+<div style="border:2px solid #333;padding:5px 12px;font-size:24px;font-weight:bold;letter-spacing:3px;display:flex;align-items:center;gap:15px;">
+  <span>RHODES PORTUGUESE</span>
+
+</div>`,
 
   // ============================================================================
   // SETTINGS
@@ -136,40 +144,35 @@ window.COURSE_CONFIG = {
   // UNITS
   // ============================================================================
   units: [
-    { id: 1, volume: 1, title_target: 'Cumprimentos', title_source: 'Greetings', title_pt: 'Cumprimentos', title_en: 'Greetings & Introductions', dialogue: [], grammar: [{ title: 'Basic Greetings', desc: 'Bom dia, boa tarde, boa noite. Formal vs informal address.' }] },
-    { id: 2, volume: 1, title_target: 'Apresentações', title_source: 'Introductions', title_pt: 'Apresentações', title_en: 'Meeting People', dialogue: [], grammar: [{ title: 'Introducing Yourself', desc: 'Eu sou..., Meu nome é..., Muito prazer.' }] },
-    { id: 3, volume: 1, title_target: 'Números', title_source: 'Numbers', title_pt: 'Números', title_en: 'Numbers & Counting', dialogue: [], grammar: [{ title: 'Cardinal Numbers', desc: 'Um, dois, três... Agreement with gender.' }] },
-    { id: 4, volume: 1, title_target: 'Família', title_source: 'Family', title_pt: 'Família', title_en: 'Family & Relationships', dialogue: [], grammar: [{ title: 'Family Terms', desc: 'Pai, mãe, irmão, irmã. Possessive adjectives.' }] },
-    { id: 5, volume: 1, title_target: 'Revisão I', title_source: 'Review I', title_pt: 'Revisão I', title_en: 'Review I', dialogue: [], grammar: [] },
-
-    { id: 6, volume: 2, title_target: 'No Restaurante', title_source: 'At the Restaurant', title_pt: 'No Restaurante', title_en: 'At the Restaurant', dialogue: [], grammar: [{ title: 'Ordering Food', desc: 'Eu quero..., Por favor, me dá..., A conta.' }] },
-    { id: 7, volume: 2, title_target: 'Compras', title_source: 'Shopping', title_pt: 'Compras', title_en: 'Shopping & Markets', dialogue: [], grammar: [{ title: 'Shopping Phrases', desc: 'Quanto custa? Tem...? É muito caro.' }] },
-    { id: 8, volume: 2, title_target: 'Direções', title_source: 'Directions', title_pt: 'Direções', title_en: 'Directions & Places', dialogue: [], grammar: [{ title: 'Asking Directions', desc: 'Onde fica...? À direita, à esquerda, em frente.' }] },
-    { id: 9, volume: 2, title_target: 'Transporte', title_source: 'Transportation', title_pt: 'Transporte', title_en: 'Transportation', dialogue: [], grammar: [{ title: 'Getting Around', desc: 'Ônibus, táxi, metrô. Ir de..., Pegar o...' }] },
-    { id: 10, volume: 2, title_target: 'Revisão II', title_source: 'Review II', title_pt: 'Revisão II', title_en: 'Review II', dialogue: [], grammar: [] },
-
-    { id: 11, volume: 3, title_target: 'No Hotel', title_source: 'At the Hotel', title_pt: 'No Hotel', title_en: 'At the Hotel', dialogue: [], grammar: [{ title: 'Hotel Vocabulary', desc: 'Quarto, reserva, diária. Tem vaga?' }] },
-    { id: 12, volume: 3, title_target: 'Telefone', title_source: 'Telephone', title_pt: 'Telefone', title_en: 'Telephone & Communication', dialogue: [], grammar: [{ title: 'Phone Conversations', desc: 'Alô? Quem fala? Um momento, por favor.' }] },
-    { id: 13, volume: 3, title_target: 'Saúde', title_source: 'Health', title_pt: 'Saúde', title_en: 'Health & Body', dialogue: [], grammar: [{ title: 'Health Expressions', desc: 'Estou doente. Dói aqui. Preciso de um médico.' }] },
-    { id: 14, volume: 3, title_target: 'Trabalho', title_source: 'Work', title_pt: 'Trabalho', title_en: 'Work & Occupation', dialogue: [], grammar: [{ title: 'Work Vocabulary', desc: 'Escritório, reunião, colega. Trabalhar, estudar.' }] },
-    { id: 15, volume: 3, title_target: 'Revisão III', title_source: 'Review III', title_pt: 'Revisão III', title_en: 'Review III', dialogue: [], grammar: [] },
-
-    { id: 16, volume: 4, title_target: 'Clima', title_source: 'Weather', title_pt: 'Clima', title_en: 'Weather & Seasons', dialogue: [], grammar: [{ title: 'Weather Expressions', desc: 'Está quente/frio. Vai chover. Faz sol.' }] },
-    { id: 17, volume: 4, title_target: 'Rotina', title_source: 'Daily Routine', title_pt: 'Rotina', title_en: 'Daily Routine', dialogue: [], grammar: [{ title: 'Reflexive Verbs', desc: 'Acordar-se, levantar-se, vestir-se. Daily activities.' }] },
-    { id: 18, volume: 4, title_target: 'Lazer', title_source: 'Leisure', title_pt: 'Lazer', title_en: 'Leisure & Entertainment', dialogue: [], grammar: [{ title: 'Free Time', desc: 'Gostar de..., Preferir..., Jogar, assistir.' }] },
-    { id: 19, volume: 4, title_target: 'Viagem', title_source: 'Travel', title_pt: 'Viagem', title_en: 'Travel & Tourism', dialogue: [], grammar: [{ title: 'Travel Phrases', desc: 'Passaporte, alfândega, embarque. Viajar para...' }] },
-    { id: 20, volume: 4, title_target: 'Revisão IV', title_source: 'Review IV', title_pt: 'Revisão IV', title_en: 'Review IV', dialogue: [], grammar: [] },
-
-    { id: 21, volume: 5, title_target: 'Passado', title_source: 'Past Tense', title_pt: 'Passado', title_en: 'Past Tense & Narration', dialogue: [], grammar: [{ title: 'Pretérito Perfeito', desc: 'Falei, comi, parti. Regular -ar, -er, -ir conjugations.' }] },
-    { id: 22, volume: 5, title_target: 'Futuro', title_source: 'Future', title_pt: 'Futuro', title_en: 'Future & Plans', dialogue: [], grammar: [{ title: 'Future with Ir', desc: 'Vou + infinitive for immediate future. Farei, direi for formal future.' }] },
-    { id: 23, volume: 5, title_target: 'Subjuntivo', title_source: 'Subjunctive', title_pt: 'Subjuntivo', title_en: 'Subjunctive Mood', dialogue: [], grammar: [{ title: 'Present Subjunctive', desc: 'Que eu fale, que ele coma. After esperar que, querer que.' }] },
-    { id: 24, volume: 5, title_target: 'Descrições', title_source: 'Descriptions', title_pt: 'Descrições', title_en: 'Descriptions & Adjectives', dialogue: [], grammar: [{ title: 'Adjective Agreement', desc: 'Gender/number agreement. Position before/after noun.' }] },
-    { id: 25, volume: 5, title_target: 'Revisão V', title_source: 'Review V', title_pt: 'Revisão V', title_en: 'Review V', dialogue: [], grammar: [] },
-
-    { id: 26, volume: 6, title_target: 'Opiniões', title_source: 'Opinions', title_pt: 'Opiniões', title_en: 'Opinions & Discussion', dialogue: [], grammar: [{ title: 'Expressing Opinions', desc: 'Eu acho que..., Na minha opinião..., Concordo/Discordo.' }] },
-    { id: 27, volume: 6, title_target: 'Cultura', title_source: 'Culture', title_pt: 'Cultura', title_en: 'Brazilian Culture', dialogue: [], grammar: [{ title: 'Cultural Context', desc: 'Carnaval, futebol, música. Regional differences.' }] },
-    { id: 28, volume: 6, title_target: 'Negócios', title_source: 'Business', title_pt: 'Negócios', title_en: 'Business Portuguese', dialogue: [], grammar: [{ title: 'Business Language', desc: 'Formal register, meeting vocabulary, correspondence.' }] },
-    { id: 29, volume: 6, title_target: 'Conversação', title_source: 'Conversation', title_pt: 'Conversação Avançada', title_en: 'Advanced Conversation', dialogue: [], grammar: [{ title: 'Advanced Structures', desc: 'Complex sentences, idiomatic expressions, register shifting.' }] },
-    { id: 30, volume: 6, title_target: 'Revisão Final', title_source: 'Final Review', title_pt: 'Revisão Final', title_en: 'Final Review', dialogue: [], grammar: [] },
+    { id: 1, volume: 1, title_target: 'Lição 1: Cumprimentos Formais', title_source: 'Lesson 1: Formal Greetings' },
+    { id: 2, volume: 1, title_target: 'Lição 2: Posse e Objetos', title_source: 'Lesson 2: Possession and Objects' },
+    { id: 3, volume: 1, title_target: 'Lição 3: Locomoção e Destinos', title_source: 'Lesson 3: Transportation and Destinations' },
+    { id: 4, volume: 1, title_target: 'Lição 4: Alugar um Apartamento', title_source: 'Lesson 4: Renting an Apartment' },
+    { id: 5, volume: 1, title_target: 'Lição 5: Planos e Convites', title_source: 'Lesson 5: Plans and Invitations' },
+    { id: 6, volume: 1, title_target: 'Lição 6: Habilidades Linguísticas', title_source: 'Lesson 6: Language Abilities' },
+    { id: 7, volume: 1, title_target: 'Lição 7: Horários e Locais', title_source: 'Lesson 7: Schedules and Places' },
+    { id: 8, volume: 1, title_target: 'Lição 8: Feriados e Obrigações', title_source: 'Lesson 8: Holidays and Obligations' },
+    { id: 9, volume: 1, title_target: 'Lição 9: Comprar Roupas', title_source: 'Lesson 9: Buying Clothes' },
+    { id: 10, volume: 1, title_target: 'Lição 10: Bebidas e Preferências', title_source: 'Lesson 10: Drinks and Preferences' },
+    { id: 11, volume: 1, title_target: 'Lição 11: Manutenção do Carro', title_source: 'Lesson 11: Car Maintenance' },
+    { id: 12, volume: 1, title_target: 'Lição 12: Clima e Perguntas', title_source: 'Lesson 12: Weather and Questions' },
+    { id: 13, volume: 1, title_target: 'Lição 13: Casamento e Apresentações', title_source: 'Lesson 13: Marriage and Introductions' },
+    { id: 14, volume: 1, title_target: 'Lição 14: Telefonemas e Reservas', title_source: 'Lesson 14: Phone Calls and Reservations' },
+    { id: 15, volume: 1, title_target: 'Lição 15: Explicações e Motivos', title_source: 'Lesson 15: Explanations and Reasons' },
+    { id: 16, volume: 2, title_target: 'Lição 16: Correio e Encomendas', title_source: 'Lesson 16: Mail and Packages' },
+    { id: 17, volume: 2, title_target: 'Lição 17: Barbearia e Espera', title_source: 'Lesson 17: Barber Shop and Waiting' },
+    { id: 18, volume: 2, title_target: 'Lição 18: Rotina Matinal', title_source: 'Lesson 18: Morning Routine' },
+    { id: 19, volume: 2, title_target: 'Lição 19: Decisões Passadas', title_source: 'Lesson 19: Past Decisions' },
+    { id: 20, volume: 2, title_target: 'Lição 20: Chegada e Carnaval', title_source: 'Lesson 20: Arrival and Carnival' },
+    { id: 21, volume: 2, title_target: 'Lição 21: Farmácia e Medicamentos', title_source: 'Lesson 21: Pharmacy and Medicine' },
+    { id: 22, volume: 2, title_target: 'Lição 22: Hotel e Serviços', title_source: 'Lesson 22: Hotel and Services' },
+    { id: 23, volume: 2, title_target: 'Lição 23: Hotel e Visitas', title_source: 'Lesson 23: Hotel and Sightseeing' },
+    { id: 24, volume: 2, title_target: 'Lição 24: Cidades do Passado', title_source: 'Lesson 24: Cities of the Past' },
+    { id: 25, volume: 2, title_target: 'Lição 25: Comprar uma Câmera', title_source: 'Lesson 25: Buying a Camera' },
+    { id: 26, volume: 2, title_target: 'Lição 26: Jantar e Babá', title_source: 'Lesson 26: Dinner and Babysitting' },
+    { id: 27, volume: 2, title_target: 'Lição 27: Futebol e Certezas', title_source: 'Lesson 27: Soccer and Certainties' },
+    { id: 28, volume: 2, title_target: 'Lição 28: Jogo de Futebol', title_source: 'Lesson 28: Soccer Match' },
+    { id: 29, volume: 2, title_target: 'Lição 29: Informações de Viagem', title_source: 'Lesson 29: Travel Information' },
+    { id: 30, volume: 2, title_target: 'Lição 30: Vocabulário Diverso', title_source: 'Lesson 30: Miscellaneous Vocabulary' },
   ],
 };

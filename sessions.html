@@ -50,6 +50,17 @@
       .results{max-height:44vh; overflow:auto; margin-top:10px}
       .res{padding:10px 10px; border:1px solid rgba(28,42,70,.9); border-radius:14px; background:rgba(12,21,38,.42); margin:0 0 10px}
       .res .meta{color:var(--muted); font-size:12px; display:flex; gap:10px; flex-wrap:wrap}
+      .report-btn{cursor:pointer; border:1px solid rgba(255,170,0,.45); border-radius:10px; padding:6px 9px; background:rgba(255,170,0,.12); color:#ffd27a; font-weight:600; font-size:11px}
+      .report-btn:hover{background:rgba(255,170,0,.2)}
+      .tool{margin-top:10px; padding:10px; border:1px solid rgba(255,170,0,.18); border-radius:12px; background:rgba(255,170,0,.06)}
+      .tool .meta{color:#ffd27a; font-size:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+      .tool pre{font-family:var(--mono); font-size:12px; margin-top:8px}
+      .modal{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.68); padding:20px; z-index:5000}
+      .modal.open{display:flex}
+      .modal-card{width:min(760px,100%); max-height:88vh; overflow:auto; border:1px solid var(--border); border-radius:16px; background:rgba(15,26,46,.98); padding:16px}
+      .modal-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
+      @media (max-width: 760px){ .modal-grid{grid-template-columns:1fr;} }
+      .summary{margin-top:10px; padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:rgba(12,21,38,.55); white-space:pre-wrap; font-size:12px}
     </style>
   </head>
   <body>
@@ -111,6 +122,44 @@
         </div>
       </div>
     </div>
+    <div id="reportModal" class="modal">
+      <div class="modal-card">
+        <h2 style="padding:0 0 8px;margin:0;color:#ffd27a">Create Report</h2>
+        <div class="modal-grid">
+          <div>
+            <label class="k" for="reportType">Type</label>
+            <select id="reportType" class="in">
+              <option value="bug">Bug report</option>
+              <option value="flaw">Flaw report</option>
+            </select>
+          </div>
+          <div>
+            <label class="k" for="reportSeverity">Severity</label>
+            <select id="reportSeverity" class="in">
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+        </div>
+        <div id="flawTypeWrap">
+          <label class="k" for="reportFlawType">Flaw type</label>
+          <input id="reportFlawType" class="in" placeholder="hallucination, tool failure, refusal failure, etc." />
+        </div>
+        <label class="k" for="reportTitle">Title</label>
+        <input id="reportTitle" class="in" maxlength="200" placeholder="Short label for the issue" />
+        <label class="k" for="reportDescription">Description</label>
+        <textarea id="reportDescription" class="in" rows="6" placeholder="What went wrong, why it matters, and what you observed."></textarea>
+        <label class="k" for="reportHighlight">Highlighted / excerpt text</label>
+        <textarea id="reportHighlight" class="in" rows="3" placeholder="Optional exact excerpt"></textarea>
+        <div id="reportSummary" class="summary"></div>
+        <div class="row" style="justify-content:flex-end; margin-top:12px">
+          <button id="reportCancel" class="btn secondary" type="button">Cancel</button>
+          <button id="reportSubmit" class="btn" type="button">Submit</button>
+        </div>
+      </div>
+    </div>
 
     <script>
       const TOKEN_KEY = "rhodes_user_token";
@@ -124,10 +173,27 @@
         q: document.getElementById("q"),
         search: document.getElementById("search"),
         results: document.getElementById("results"),
+        reportModal: document.getElementById("reportModal"),
+        reportType: document.getElementById("reportType"),
+        reportSeverity: document.getElementById("reportSeverity"),
+        reportFlawType: document.getElementById("reportFlawType"),
+        flawTypeWrap: document.getElementById("flawTypeWrap"),
+        reportTitle: document.getElementById("reportTitle"),
+        reportDescription: document.getElementById("reportDescription"),
+        reportHighlight: document.getElementById("reportHighlight"),
+        reportSummary: document.getElementById("reportSummary"),
+        reportCancel: document.getElementById("reportCancel"),
+        reportSubmit: document.getElementById("reportSubmit"),
       };
       els.token.value = localStorage.getItem(TOKEN_KEY) || "";
 
       let selectedSession = null;
+      let currentRounds = [];
+      let pendingReport = null;
+      const REPORT_ALLOWED_USERNAMES = new Set(["sebastian", "markbass", "anotheruser"]);
+      let reportAccessChecked = false;
+      let reportAccessEnabled = false;
+      let reportAccessUsername = "";
 
       const authHeaders = () => {
         const t = (els.token.value || "").trim();
@@ -153,6 +219,96 @@
         return n;
       };
 
+      const cleanExcerpt = (value) => String(value || "").replace(/\s+/g, " ").trim();
+
+      const canCurrentUserCreateReports = () => reportAccessEnabled;
+
+      const ensureReportAccess = async () => {
+        if (reportAccessChecked) return reportAccessEnabled;
+        const profile = await api("/api/user/profile");
+        reportAccessUsername = String((profile && profile.username) || "").trim().toLowerCase();
+        reportAccessEnabled = REPORT_ALLOWED_USERNAMES.has(reportAccessUsername);
+        reportAccessChecked = true;
+        return reportAccessEnabled;
+      };
+
+      const openReportModal = (seed) => {
+        if (!canCurrentUserCreateReports()) {
+          alert("Message reporting is not enabled for this account.");
+          return;
+        }
+        pendingReport = seed;
+        els.reportType.value = seed.report_type || "bug";
+        els.reportSeverity.value = seed.severity || "medium";
+        els.reportFlawType.value = seed.flaw_type || "";
+        els.reportTitle.value = seed.title || "";
+        els.reportDescription.value = seed.description || "";
+        els.reportHighlight.value = seed.highlight_text || "";
+        els.reportSummary.textContent = (seed.summary || "").trim() || "No selection summary";
+        els.flawTypeWrap.style.display = els.reportType.value === "flaw" ? "block" : "none";
+        els.reportModal.classList.add("open");
+      };
+
+      const closeReportModal = () => {
+        els.reportModal.classList.remove("open");
+        pendingReport = null;
+      };
+
+      const createReportSeed = (base) => ({
+        report_type: base.report_type || "bug",
+        severity: base.severity || "medium",
+        flaw_type: base.flaw_type || "",
+        title: base.title || "",
+        description: base.description || "",
+        highlight_text: base.highlight_text || "",
+        selected_messages: base.selected_messages || [],
+        summary: base.summary || ""
+      });
+
+      const reportButton = (seedBuilder) => {
+        if (!canCurrentUserCreateReports()) return null;
+        const btn = el("button", "report-btn", "Report");
+        btn.type = "button";
+        btn.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openReportModal(seedBuilder());
+        });
+        return btn;
+      };
+
+      const submitReport = async () => {
+        if (!pendingReport) return;
+        if (!canCurrentUserCreateReports()) throw new Error("Message reporting is not enabled for this account");
+        const headers = authHeaders();
+        if (!headers) throw new Error("Missing token");
+        const payload = {
+          report_type: els.reportType.value,
+          session_id: selectedSession || (pendingReport.selected_messages[0] && pendingReport.selected_messages[0].session_id) || "",
+          title: (els.reportTitle.value || "").trim(),
+          description: (els.reportDescription.value || "").trim(),
+          severity: els.reportSeverity.value,
+          flaw_type: (els.reportFlawType.value || "").trim(),
+          highlight_text: (els.reportHighlight.value || "").trim(),
+          selected_messages: pendingReport.selected_messages
+        };
+        const res = await fetch("/api/user/message-reports", {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const txt = await res.text();
+        let data;
+        try { data = JSON.parse(txt); } catch { data = { error: txt }; }
+        if (!res.ok) throw new Error((data && data.error) ? data.error : ("HTTP " + res.status));
+        closeReportModal();
+        if (data.report_type === "bug") {
+          alert("Bug report saved: " + (data.bug_id || "ok"));
+        } else {
+          alert("Flaw report saved: #" + (data.id || "ok"));
+        }
+      };
+
       const renderSessions = (sessions) => {
         els.sessions.textContent = "";
         if (!sessions.length) {
@@ -169,6 +325,7 @@
       };
 
       const renderHistory = (rows) => {
+        currentRounds = Array.isArray(rows) ? rows : [];
         els.history.textContent = "";
         if (!rows.length) {
           els.history.appendChild(el("div", "hint", "No messages found in this session."));
@@ -176,13 +333,62 @@
         }
         for (const r of rows) {
           const box = el("div", "res");
-          box.appendChild(el("div", "meta", `Round ${r.round_num} • ${r.created_at || ""}`));
+          const meta = el("div", "meta");
+          meta.appendChild(el("span", "", `Round ${r.round_num} • ${r.created_at || ""}`));
+          const roundReportBtn = reportButton(() => createReportSeed({
+            title: `Report on session ${selectedSession || ""} round ${r.round_num}`,
+            selected_messages: [
+              {
+                session_id: selectedSession || "",
+                round_num: r.round_num,
+                role: "assistant",
+                message_text: r.response || "",
+                excerpt: cleanExcerpt(r.response || r.user_message || "").slice(0, 1200),
+                highlight_text: ""
+              }
+            ],
+            summary: `Assistant message\nSession: ${selectedSession || ""}\nRound: ${r.round_num}\n\n${cleanExcerpt(r.response || "").slice(0, 280)}`
+          }));
+          if (roundReportBtn) meta.appendChild(roundReportBtn);
+          box.appendChild(meta);
           const u = el("pre", "", r.user_message || "");
           const a = el("pre", "", r.response || "");
           box.appendChild(el("div", "k", "User"));
           box.appendChild(u);
           box.appendChild(el("div", "k", "Assistant"));
           box.appendChild(a);
+          if (Array.isArray(r.tool_calls) && r.tool_calls.length) {
+            box.appendChild(el("div", "k", "Tool calls"));
+            r.tool_calls.forEach((tc, idx) => {
+              const tool = el("div", "tool");
+              const toolMeta = el("div", "meta");
+              toolMeta.appendChild(el("span", "", `${tc.name || "tool"} • call ${idx + 1}`));
+              const toolReportBtn = reportButton(() => {
+                const toolText = JSON.stringify(tc, null, 2);
+                return createReportSeed({
+                  title: `Tool call report on ${selectedSession || ""} round ${r.round_num}`,
+                  report_type: "flaw",
+                  flaw_type: "tool-call",
+                  selected_messages: [
+                    {
+                      session_id: selectedSession || "",
+                      round_num: r.round_num,
+                      role: "tool",
+                      message_text: toolText,
+                      excerpt: cleanExcerpt((tc.name || "tool") + " " + JSON.stringify(tc.arguments || {})).slice(0, 1200),
+                      highlight_text: ""
+                    }
+                  ],
+                  summary: `Tool call\nSession: ${selectedSession || ""}\nRound: ${r.round_num}\nTool: ${tc.name || "tool"}`
+                });
+              });
+              if (toolReportBtn) toolMeta.appendChild(toolReportBtn);
+              tool.appendChild(toolMeta);
+              const toolPre = el("pre", "", JSON.stringify(tc, null, 2));
+              tool.appendChild(toolPre);
+              box.appendChild(tool);
+            });
+          }
           els.history.appendChild(box);
         }
       };
@@ -215,7 +421,24 @@
         }
         for (const r of results) {
           const box = el("div", "res");
-          box.appendChild(el("div", "meta", `${r.session_id} • round ${r.round_num} • ${r.created_at || ""}`));
+          const meta = el("div", "meta");
+          meta.appendChild(el("span", "", `${r.session_id} • round ${r.round_num} • ${r.created_at || ""}`));
+          const searchReportBtn = reportButton(() => createReportSeed({
+            title: `Search result report for ${r.session_id} round ${r.round_num}`,
+            selected_messages: [
+              {
+                session_id: r.session_id,
+                round_num: r.round_num,
+                role: "assistant",
+                message_text: cleanExcerpt(r.snippet || ""),
+                excerpt: cleanExcerpt(r.snippet || "").slice(0, 1200),
+                highlight_text: cleanExcerpt(r.snippet || "")
+              }
+            ],
+            summary: `Search hit\nSession: ${r.session_id}\nRound: ${r.round_num}\n\n${cleanExcerpt(r.snippet || "").slice(0, 280)}`
+          }));
+          if (searchReportBtn) meta.appendChild(searchReportBtn);
+          box.appendChild(meta);
           const snippet = el("div", "");
           snippet.innerHTML = (r.snippet || "").replace(/\\n/g, "<br/>");
           box.appendChild(snippet);
@@ -226,13 +449,23 @@
 
       els.save.addEventListener("click", () => {
         const t = (els.token.value || "").trim();
+        reportAccessChecked = false;
+        reportAccessEnabled = false;
+        reportAccessUsername = "";
         if (!t) { localStorage.removeItem(TOKEN_KEY); return; }
         localStorage.setItem(TOKEN_KEY, t);
       });
-      els.load.addEventListener("click", () => loadSessions().catch(e => alert(e.message)));
-      els.search.addEventListener("click", () => doSearch().catch(e => alert(e.message)));
-      els.q.addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch().catch(err => alert(err.message)); });
+      els.load.addEventListener("click", () => ensureReportAccess().then(loadSessions).catch(e => alert(e.message)));
+      els.search.addEventListener("click", () => ensureReportAccess().then(doSearch).catch(e => alert(e.message)));
+      els.q.addEventListener("keydown", (e) => { if (e.key === "Enter") ensureReportAccess().then(doSearch).catch(err => alert(err.message)); });
+      els.reportType.addEventListener("change", () => {
+        els.flawTypeWrap.style.display = els.reportType.value === "flaw" ? "block" : "none";
+      });
+      els.reportCancel.addEventListener("click", closeReportModal);
+      els.reportSubmit.addEventListener("click", () => submitReport().catch(e => alert(e.message)));
+      els.reportModal.addEventListener("click", (e) => {
+        if (e.target === els.reportModal) closeReportModal();
+      });
     </script>
   </body>
 </html>
-

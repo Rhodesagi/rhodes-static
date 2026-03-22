@@ -11,7 +11,9 @@
 
         // Get auth token from existing Rhodes auth
         _getToken() {
-            return localStorage.getItem('rhodes_token') || '';
+            return (window.rhodesStorage || localStorage).getItem('rhodes_user_token')
+                || (window.rhodesStorage || localStorage).getItem('rhodes_token')
+                || '';
         },
 
         _headers() {
@@ -22,11 +24,21 @@
         async refreshStatus() {
             try {
                 const resp = await fetch('/api/cloud/status', { headers: this._headers() });
-                if (!resp.ok) return;
+                if (!resp.ok) {
+                    const container = document.getElementById('cloud-connections');
+                    if (container) {
+                        container.innerHTML = '<div class="cloud-provider" style="color:var(--dim);text-align:center;padding:20px 0;">Please log in to connect cloud storage.</div>';
+                    }
+                    return;
+                }
                 this.status = await resp.json();
                 this._updateUI();
             } catch (e) {
                 console.warn('[CloudStorage] Status fetch failed:', e);
+                const container = document.getElementById('cloud-connections');
+                if (container) {
+                    container.innerHTML = '<div class="cloud-provider" style="color:var(--dim);text-align:center;padding:20px 0;">Could not load cloud storage status.</div>';
+                }
             }
         },
 
@@ -80,12 +92,7 @@
 
             container.innerHTML = html;
 
-            // Update cloud attach button visibility
-            const cloudBtn = document.getElementById('cloud-attach-btn');
-            if (cloudBtn) {
-                const hasAny = (g?.connected || o?.connected);
-                cloudBtn.style.display = hasAny ? 'inline-flex' : 'none';
-            }
+            // Cloud attach button is always visible
         },
 
         // Start OAuth flow
@@ -100,6 +107,17 @@
                 }
             } catch (e) {
                 alert('Connection failed: ' + e.message);
+            }
+        },
+
+        // Open file browser if connected, or show connection modal
+        openOrConnect() {
+            const g = this.status?.providers?.google;
+            if (g?.connected) {
+                this.openBrowser();
+            } else {
+                document.getElementById('cloud-settings-modal').style.display = 'flex';
+                this.refreshStatus();
             }
         },
 

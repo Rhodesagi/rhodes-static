@@ -6,6 +6,7 @@ window.splitModeActive = false;
 window.splitPaneCount = 0;
 window.paneConnections = {};
 window.paneSessionIds = {};
+window.currentSplitGroupId = null;
 window.splitPanelSizes = {};      // Track panel flex ratios: {1: 0.5, 2: 0.5}
 window.splitRowSizes = {};        // For 2x2 grid row heights: {1: 0.5, 2: 0.5}
 window.splitResizeState = null;   // Active resize drag state
@@ -45,6 +46,7 @@ window.enterSplitMode = function(paneCount, resumeSessionIds) {
     console.log('[SPLIT] Entering split mode with', paneCount, 'panes', resumeSessionIds ? '(resuming)' : '(new)');
     window._splitResumeIds = resumeSessionIds || null;
     window._multisandboxMode = true;  // All split sessions get isolated sandboxes
+    window.currentSplitGroupId = 'splitgrp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     
     // Hide main chat
     const mainChat = document.getElementById('chat');
@@ -123,6 +125,7 @@ window.enterSplitMode = function(paneCount, resumeSessionIds) {
 window.exitSplitMode = function() {
     console.log('[SPLIT] Exiting split mode');
     window.splitActive = false;
+    window.currentSplitGroupId = null;
     
     // Show main chat
     const mainChat = document.getElementById('chat');
@@ -1143,7 +1146,8 @@ function connectPane(paneNum) {
                 user_token: userToken,
                 resume_session: resumeId || false,
                 multisandbox: true,
-                multisandbox_pane: paneNum
+                multisandbox_pane: paneNum,
+                split_group_id: window.currentSplitGroupId || undefined
             }
         }));
     };
@@ -1207,7 +1211,8 @@ function handlePaneAutoLoginTokenMessage(paneNum, msg) {
             user_token: msg.token,
             resume_session: resumeId || false,
             multisandbox: window._multisandboxMode || false,
-            multisandbox_pane: window._multisandboxMode ? paneNum : undefined
+            multisandbox_pane: window._multisandboxMode ? paneNum : undefined,
+            split_group_id: window.currentSplitGroupId || undefined
         }
     }));
 }
