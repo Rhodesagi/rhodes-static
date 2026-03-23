@@ -1629,3 +1629,39 @@ details.rc-collapsible[open] summary { border-bottom: 1px solid var(--border); m
     text-align: left;
 }
 .palace-create-form h3 { margin: 0 0 16px 0; }
+
+/* Palace template selection */
+.palace-create-section { max-width: 700px; margin: 0 auto; padding: 20px; }
+.palace-create-section h3 { color: var(--accent); margin: 16px 0 12px; font-size: 1.1em; }
+.palace-template-grid { display: flex; flex-direction: column; gap: 10px; }
+.palace-template-card {
+    display: flex; align-items: center; gap: 16px; padding: 14px;
+    background: var(--card-bg, #1a1a2e); border: 1px solid var(--border, #333);
+    border-radius: 8px; cursor: pointer; transition: border-color 0.2s, transform 0.1s;
+}
+.palace-template-card:hover { border-color: var(--accent); transform: translateX(4px); }
+.template-preview {
+    width: 60px; height: 60px; border-radius: 6px; flex-shrink: 0;
+}
+.template-info { display: flex; flex-direction: column; gap: 2px; }
+.template-info strong { color: var(--text, #eee); font-size: 1em; }
+.template-desc { color: var(--text-dim, #888); font-size: 0.85em; }
+.template-loci { color: var(--accent); font-size: 0.8em; }
+.palace-divider {
+    display: flex; align-items: center; gap: 12px; margin: 20px 0;
+    color: var(--text-dim, #666); font-size: 0.85em;
+}
+.palace-divider::before, .palace-divider::after {
+    content: ""; flex: 1; height: 1px; background: var(--border, #333);
+}
+.palace-custom-form { display: flex; flex-direction: column; gap: 8px; }
+.palace-custom-form label { color: var(--text-dim, #888); font-size: 0.85em; margin-top: 4px; }
+.loci-hint { color: var(--text-dim, #666); font-size: 0.8em; margin-bottom: 4px; }
+.palace-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.palace-card-new {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: 2px dashed var(--border, #444); cursor: pointer; min-height: 100px;
+    color: var(--text-dim, #888); transition: border-color 0.2s;
+}
+.palace-card-new:hover { border-color: var(--accent); color: var(--accent); }
+.palace-new-icon { font-size: 2em; margin-bottom: 4px; }
