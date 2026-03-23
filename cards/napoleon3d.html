@@ -14,6 +14,10 @@ canvas{display:block}
 <button onclick="zoomTo('hands')">4 HANDS</button>
 <button onclick="zoomTo('legs')">5 LEGS</button>
 <button onclick="zoomTo('full')">6 FULL</button>
+<span style="margin-left:20px"></span>
+<button onclick="setAnim('idle')">I IDLE</button>
+<button onclick="setAnim('walk')">W WALK</button>
+<button onclick="setAnim('run')">R RUN</button>
 <span id="info"></span>
 </div>
 <canvas id="c"></canvas>
@@ -220,14 +224,14 @@ headGroup.add(skull);
 var jawGeo=new THREE.SphereGeometry(0.11,16,12,0,Math.PI*2,Math.PI*0.3,Math.PI*0.4);
 jawGeo.scale(1.05,1.0,0.9);
 var jaw=new THREE.Mesh(jawGeo,skin);
-jaw.position.set(0,-0.06,0.01);
+jaw.position.set(0,-0.06,-0.02);
 headGroup.add(jaw);
 
 // Chin
 var chinGeo=new THREE.SphereGeometry(0.04,12,12);
 chinGeo.scale(1.2,0.8,1.0);
 var chin=new THREE.Mesh(chinGeo,skin);
-chin.position.set(0,-0.13,0.06);
+chin.position.set(0,-0.13,0.0);
 headGroup.add(chin);
 
 // Brow painted in texture
@@ -240,12 +244,7 @@ headGroup.add(chin);
 
 // Ears painted in texture
 
-// Hair — Napoleon's iconic forward-swept fringe
-var fringeGeo=new THREE.SphereGeometry(0.15,16,8,0,Math.PI*2,0,Math.PI*0.45);
-fringeGeo.scale(1.05,0.9,1.0);
-var fringe=new THREE.Mesh(fringeGeo,hair);
-fringe.position.set(0,0.04,0.02);
-headGroup.add(fringe);
+// Hair from portrait
 // Side hair from portrait
 // Hair from portrait texture
 
@@ -412,7 +411,7 @@ var croppedFaceTex=new THREE.TextureLoader().load('lib/napoleon-cropped.jpg');
 var facePlaneGeo=new THREE.CircleGeometry(0.145,32);
 var facePlaneMat=new THREE.MeshStandardMaterial({map:croppedFaceTex,roughness:0.5,metalness:0});
 var facePlane=new THREE.Mesh(facePlaneGeo,facePlaneMat);
-facePlane.position.set(0,-0.02,0.132);
+facePlane.position.set(0,-0.02,0.145);
 headGroup.add(facePlane);
 
 // Keep skull as skin-toned
@@ -721,17 +720,89 @@ window.zoomTo=function(name){
     document.getElementById('info').textContent=' → '+name.toUpperCase();
 };
 
+var animState='idle';
+window.setAnim=function(s){animState=s;document.getElementById('info').textContent=' → '+s.toUpperCase();};
+
 // Animate
 var time=0;
 function animate(){
     requestAnimationFrame(animate);
     time+=0.01;
 
-    // Gentle idle
-    N.rotation.y=Math.sin(time*0.3)*0.08;
-    torso.scale.y=1+Math.sin(time*1.5)*0.008;
-    headGroup.rotation.y=Math.sin(time*0.4)*0.02;
-    headGroup.rotation.x=Math.sin(time*0.3+1)*0.01;
+    // Animation system
+    var speed = animState==='run' ? 8 : animState==='walk' ? 4 : 0;
+    var stride = animState==='run' ? 0.6 : 0.35;
+    var armSwing = animState==='run' ? 0.7 : 0.4;
+    var bobAmt = animState==='run' ? 0.03 : 0.015;
+    var lean = animState==='run' ? 0.12 : 0.03;
+    var t = time * speed;
+    
+    if (animState==='idle') {
+        // Gentle idle sway
+        N.rotation.y=Math.sin(time*0.3)*0.08;
+        N.position.y=0;
+        torso.scale.y=1+Math.sin(time*1.5)*0.008;
+        torso.rotation.x=0;
+        headGroup.rotation.y=Math.sin(time*0.4)*0.02;
+        headGroup.rotation.x=Math.sin(time*0.3+1)*0.01;
+        // Reset limbs
+        legL.rotation.x=0;legR.rotation.x=0;
+        bootL.rotation.x=0;bootR.rotation.x=0;
+        foldL.rotation.x=0;foldR.rotation.x=0;
+        armLUpper.rotation.x=0;armRUpper.rotation.x=0;
+        armLLower.rotation.x=0.1;armRLower.rotation.x=0.35;
+    } else {
+        // Walking/running
+        N.rotation.y=Math.sin(time*0.5)*0.03; // slight body turn while moving
+        
+        // Body bob
+        N.position.y=Math.abs(Math.sin(t))*bobAmt;
+        
+        // Forward lean
+        torso.rotation.x=lean;
+        torso.scale.y=1;
+        
+        // Head stabilization (slight counter-bob)
+        headGroup.rotation.x=-lean*0.5+Math.sin(t*2)*0.02;
+        headGroup.rotation.y=Math.sin(t*0.5)*0.03;
+        
+        // Leg swing (alternating)
+        var legAngle=Math.sin(t)*stride;
+        legL.rotation.x=legAngle;
+        legR.rotation.x=-legAngle;
+        
+        // Boot follows leg with delay
+        bootL.rotation.x=legAngle*0.7;
+        bootR.rotation.x=-legAngle*0.7;
+        foldL.rotation.x=legAngle*0.5;
+        foldR.rotation.x=-legAngle*0.5;
+        
+        // Knee bend on back leg (when leg swings back, boot bends forward)
+        var kneeL=Math.max(0,Math.sin(t))*0.3;
+        var kneeR=Math.max(0,-Math.sin(t))*0.3;
+        bootL.rotation.x+=kneeL;
+        bootR.rotation.x-=kneeR;
+        
+        // Arm swing (opposite to legs)
+        armLUpper.rotation.x=-legAngle*armSwing*0.7;
+        armRUpper.rotation.x=legAngle*armSwing*0.5; // less swing on tucked-in arm
+        armLLower.rotation.x=0.1-legAngle*armSwing*0.5;
+        armRLower.rotation.x=0.35+legAngle*armSwing*0.3;
+        
+        // Shoulder rotation for more natural movement
+        armLUpper.rotation.z=-0.12+Math.sin(t)*0.05;
+        armRUpper.rotation.z=0.25+Math.sin(t)*0.03;
+    }
+    
+    // Coat tails always sway (more when moving)
+    var tailSway = animState==='idle' ? 0.02 : animState==='walk' ? 0.08 : 0.15;
+    tailL.rotation.x=Math.sin(t+0.5)*tailSway;
+    tailR.rotation.x=Math.sin(t+1.0)*tailSway;
+    
+    // Sword sway
+    if(typeof swordGroup!=='undefined'){
+        swordGroup.rotation.x=Math.sin(t)*tailSway*0.5;
+    }
 
     // Camera lerp
     if(camLerp<1){
@@ -754,6 +825,9 @@ document.addEventListener('keydown',function(e){
     if(e.key==='4')zoomTo('hands');
     if(e.key==='5')zoomTo('legs');
     if(e.key==='6')zoomTo('full');
+    if(e.key==='i'||e.key==='I')setAnim('idle');
+    if(e.key==='w'||e.key==='W')setAnim('walk');
+    if(e.key==='r'||e.key==='R')setAnim('run');
 });
 
 window.addEventListener('resize',function(){
