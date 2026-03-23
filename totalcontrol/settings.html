@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settings</title>
+<style>
+:root{--bg:#050505;--cyan:#00ffcc;--green:#00ff66;--red:#ff3b30;--text:#e0e0e0;--dim:#505050;--metal:#111}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;padding:20px}
+h2{color:var(--cyan);font-size:14px;letter-spacing:2px;margin-bottom:12px}
+.card{background:var(--metal);border:1px solid rgba(0,255,204,0.15);padding:14px;margin-bottom:12px}
+.card .label{font-size:11px;color:var(--dim);letter-spacing:1px}
+.card .value{font-size:14px;color:var(--text);margin-top:4px}
+.btn{display:block;width:100%;padding:12px;font-family:inherit;font-size:13px;font-weight:bold;cursor:pointer;border:none;text-align:center;margin-bottom:8px;letter-spacing:1px}
+.btn-outline{background:none;border:1px solid var(--dim);color:var(--dim)}
+.btn-red{background:none;border:1px solid var(--red);color:var(--red)}
+.btn-manage{background:none;border:1px solid var(--cyan);color:var(--cyan)}
+.status{font-size:12px;color:var(--dim);margin-top:8px;text-align:center;min-height:16px}
+</style>
+</head>
+<body>
+<h2>ACCOUNT</h2>
+<div class="card">
+  <div class="label">USERNAME</div>
+  <div class="value" id="username"></div>
+</div>
+
+<h2>SUBSCRIPTION</h2>
+<div class="card">
+  <div class="label">STATUS</div>
+  <div class="value" id="sub-status">Checking...</div>
+</div>
+<a class="btn btn-manage" href="itms-apps://apps.apple.com/account/subscriptions">MANAGE SUBSCRIPTION</a>
+
+<h2 style="margin-top:20px">DANGER ZONE</h2>
+<button class="btn btn-outline" onclick="doLogout()">LOG OUT</button>
+<button class="btn btn-red" onclick="confirmDelete()">DELETE ACCOUNT</button>
+<div class="status" id="status"></div>
+
+<script>
+var USERNAME = window.__TC_USERNAME__ || '';
+document.getElementById('username').textContent = USERNAME || 'Not logged in';
+
+// Check pro status
+var TOKEN = window.__TC_TOKEN__ || '';
+if (TOKEN) {
+  fetch('https://rhodesagi.com/api/tc/pro-status', {headers:{'Authorization':'Bearer '+TOKEN}})
+    .then(r=>r.json()).then(d=>{
+      document.getElementById('sub-status').textContent = d.is_pro ? 'Pro' : 'Free';
+      document.getElementById('sub-status').style.color = d.is_pro ? '#00ff66' : '#e0e0e0';
+    }).catch(()=>{document.getElementById('sub-status').textContent='Unknown'});
+}
+
+function doLogout() {
+  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tcSettings) {
+    window.webkit.messageHandlers.tcSettings.postMessage({action:'logout'});
+  }
+}
+
+function confirmDelete() {
+  if (confirm('Are you sure you want to permanently delete your account? This cannot be undone. All your rules and data will be erased.')) {
+    document.getElementById('status').textContent = 'Deleting...';
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tcSettings) {
+      window.webkit.messageHandlers.tcSettings.postMessage({action:'deleteAccount'});
+    }
+  }
+}
+
+window.onDeleteResult = function(success, error) {
+  document.getElementById('status').textContent = success ? 'Account deleted.' : error;
+};
+</script>
+</body>
+</html>

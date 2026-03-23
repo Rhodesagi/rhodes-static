@@ -19,7 +19,7 @@
             </div>
             <button class="btn btn-sm" onclick="RC.showView('stats')">Stats</button>
             <button class="btn btn-sm" onclick="RC.showView('import')">Import</button>
-            <button class="btn btn-sm" onclick="RC.Palace.showPalaceList()">Palace</button>
+            <button class="btn btn-sm" onclick="RC.showView('palaces')">Palace</button>
             <button class="btn btn-sm" onclick="RC.toggleTheme()" title="Toggle theme">&#9681;</button>
             <button class="btn btn-sm" onclick="RC.showShortcutsModal()" title="Keyboard shortcuts">&#9000;</button>
         </div>
@@ -434,7 +434,7 @@
                 <h2>Memory Palaces</h2>
             </div>
             <div>
-                <button class="btn btn-primary" onclick="alert(2)">+ New Palace</button>
+                <button class="btn btn-primary" onclick="RC.Palace.promptCreate()">+ New Palace</button>
                 <button class="btn btn-sm" onclick="RC.PalaceIO.importPalace()">Import</button>
             </div>
         </div>
@@ -578,7 +578,7 @@ window.addEventListener('error', function(e) {
 });
 </script>
 <!-- Memory Palace modules -->
-<script src="js/palace.js?v=7"></script>
+<script src="js/palace.js?v=9"></script>
 <script src="js/palace-renderer.js?v=3" onerror="console.error('FAILED TO LOAD: palace-renderer.js')"></script>
 <script src="js/palace-walker.js?v=3" onerror="console.error('FAILED TO LOAD: palace-walker.js')"></script>
 <script src="js/palace-builder.js?v=3" onerror="console.error('FAILED TO LOAD: palace-builder.js')"></script>

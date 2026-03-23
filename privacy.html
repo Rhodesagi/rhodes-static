@@ -46,15 +46,29 @@
     </ul>
 
     <h3>TotalControl App</h3>
-    <p>The TotalControl app provides focus and screen time management. Additional data it processes:</p>
-    <ul>
-        <li><strong>Screen Time / Family Controls:</strong> Used to shield apps you choose to block. App selection data stays on your device.</li>
-        <li><strong>Screen Capture (Broadcast Extension):</strong> When enabled, captures screen content to detect social media feeds via on-device OCR. All processing happens locally on your device. No screen content is transmitted to our servers.</li>
-        <li><strong>Browsing Data:</strong> Browser history, bookmarks, and host policies in TotalControl Browser are stored locally on your device only.</li>
-    </ul>
+    <p>Rhodes Total Control is a self-control and website blocking app. Here is how it handles your data:</p>
 
-  
-    <h3>Google Drive Integration</h3>
+    <p><strong>DNS Filtering:</strong> When you enable DNS filtering, your device's DNS queries are routed through our DNS-over-HTTPS server. This means our server processes the domain names you visit to apply your blocking rules. We do not log or permanently store your DNS queries. DNS query data is never shared with third parties or used for advertising.</p>
+
+    <p><strong>HealthKit &amp; Health Data:</strong> TotalControl reads workout data (workout type, duration, distance, calories) from Apple HealthKit to evaluate fitness-based blocking conditions. Workout data is transmitted to our server to log workouts and check status. This data is used solely to evaluate your blocking rules and is never shared with third parties, used for advertising, or stored in iCloud.</p>
+
+    <p><strong>Step Counting:</strong> TotalControl uses CoreMotion to count daily steps for step-based blocking conditions. Step data is processed on-device and is not transmitted to our servers.</p>
+
+    <p><strong>Location Data:</strong> TotalControl uses location services for GPS run tracking and gym geofencing. Geofence data (gym name, coordinates, radius) is stored on our server. GPS route data during runs is processed on-device. You can revoke location access in Settings.</p>
+
+    <p><strong>Device Information:</strong> We collect your device name and a vendor identifier to associate your device with your account for DNS filtering. A heartbeat signal is sent periodically containing device identifier, app version, and DNS status.</p>
+
+    <p><strong>Speech &amp; Microphone:</strong> The microphone and Apple Speech Recognition are used for voice chat with the AI Advisor. Audio is processed on-device by Apple's speech recognition. Only the transcribed text is sent to our chat API.</p>
+
+    <p><strong>Blocking Rules:</strong> Your blocking rules are stored on our server to sync across features and are deleted when you delete your account.</p>
+
+    <p><strong>AI Advisor Chat:</strong> Messages sent to the AI Advisor are processed by our AI infrastructure. Chat history is stored locally on your device.</p>
+
+    <p><strong>Screen Analysis:</strong> The in-app browser may analyze on-screen content using Apple's Vision framework for feed detection. This occurs entirely on-device.</p>
+
+    <p><strong>Account Deletion:</strong> You can delete your account from the Settings tab. This removes all your data from our servers.</p>
+
+<h3>Google Drive Integration</h3>
     <p>Rhodes can connect to your Google Drive account to help you work with documents. When you enable this integration:</p>
     <ul>
         <li><strong>Read Access:</strong> Rhodes can read files in your Google Drive that you choose to share with the assistant, to provide context-aware help.</li>

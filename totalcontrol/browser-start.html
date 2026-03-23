@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>TOTAL CONTROL BROWSER</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050505;--cyan:#00ffcc;--green:#00ff66;--text:#e0e0e0;--dim:#505050;--metal:#111111}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono','Courier New',monospace;min-height:100vh;padding:20px 16px}
+body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:linear-gradient(rgba(0,255,204,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,204,0.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:9999}
+
+h1{color:var(--cyan);font-family:'Orbitron',monospace;font-size:16px;letter-spacing:2px;margin-bottom:10px;text-shadow:0 0 15px rgba(0,255,204,0.3)}
+.desc{color:var(--dim);font-size:13px;line-height:1.6;margin-bottom:20px}
+
+.shortcuts{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;margin-bottom:20px}
+.shortcut{background:var(--metal);border:1px solid rgba(0,255,204,0.15);padding:14px 10px;text-align:center;text-decoration:none;cursor:pointer}
+.shortcut .icon{font-size:22px;margin-bottom:6px}
+.shortcut .name{font-size:11px;font-weight:bold;color:var(--text);letter-spacing:1px}
+
+.section-title{color:var(--cyan);font-size:11px;letter-spacing:2px;margin-bottom:8px;margin-top:16px}
+
+.actions{display:flex;gap:8px;margin-top:12px}
+.action-btn{flex:1;padding:10px;background:none;border:1px solid var(--cyan);color:var(--cyan);font-family:inherit;font-size:11px;font-weight:bold;letter-spacing:1px;cursor:pointer;text-align:center}
+</style>
+</head>
+<body>
+<h1>TOTAL CONTROL BROWSER</h1>
+<p class="desc">Access blocked sites safely — respond to DMs, check messages, and handle essentials without unlocking the full feed.</p>
+
+<div class="section-title">QUICK ACCESS</div>
+<div class="shortcuts" id="shortcuts">
+  <a class="shortcut" onclick="go('x.com/messages')"><div class="icon">💬</div><div class="name">X DMs</div></a>
+  <a class="shortcut" onclick="go('instagram.com/direct')"><div class="icon">📷</div><div class="name">IG DMs</div></a>
+  <a class="shortcut" onclick="go('discord.com')"><div class="icon">🎮</div><div class="name">Discord</div></a>
+  <a class="shortcut" onclick="go('reddit.com/chat')"><div class="icon">💭</div><div class="name">Reddit Chat</div></a>
+  <a class="shortcut" onclick="go('facebook.com/messages')"><div class="icon">💬</div><div class="name">FB Msgs</div></a>
+  <a class="shortcut" onclick="go('music.youtube.com')"><div class="icon">🎵</div><div class="name">YT Music</div></a>
+</div>
+
+<div class="actions">
+  <button class="action-btn" onclick="go('bookmarks')">BOOKMARKS</button>
+  <button class="action-btn" onclick="go('history')">HISTORY</button>
+</div>
+
+<script>
+function go(url) {
+  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tcBrowser) {
+    window.webkit.messageHandlers.tcBrowser.postMessage({action:'navigate', url:url});
+  }
+}
+</script>
+</body>
+</html>

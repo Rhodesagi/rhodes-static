@@ -111,13 +111,12 @@
     // ── Palace list view ──
 
     Palace.showPalaceList = async function() {
-        RC.showView('palaces');
         const list = document.getElementById('palace-list');
         list.innerHTML = '<div class="loading">Loading palaces...</div>';
         const palaces = await this.loadPalaceList();
         if (palaces.length === 0) {
             list.innerHTML = '<div class="empty-state"><p>No memory palaces yet.</p>' +
-                '<button onclick="alert(1)" class="btn btn-primary">Create Your First Palace</button></div>';
+                '<button onclick="RC.Palace.promptCreate()" class="btn btn-primary">Create Your First Palace</button></div>';
             return;
         }
         list.innerHTML = palaces.map(p =>

@@ -86,6 +86,17 @@ button:focus{outline:none}
 
   <!-- TODAY -->
   <div class="section active" id="sec-today">
+    <!-- Steps -->
+    <div class="card" style="text-align:center">
+      <div style="color:var(--text-dim);font-size:10px;letter-spacing:2px;margin-bottom:4px">TODAY'S STEPS</div>
+      <div id="step-count" style="font-size:42px;font-weight:bold;color:var(--cyan)">--</div>
+      <div id="step-dist" style="font-size:12px;color:var(--text-dim);margin-top:2px"></div>
+      <div style="margin:10px auto 0;max-width:280px;height:6px;background:var(--panel);border-radius:3px;overflow:hidden">
+        <div id="step-bar" style="height:100%;width:0%;background:var(--cyan);border-radius:3px;transition:width 0.5s"></div>
+      </div>
+      <div id="step-goal" style="font-size:10px;color:var(--text-dim);margin-top:4px">0 / 10,000</div>
+    </div>
+
     <div class="card" id="today-status">
       <p style="color:var(--text-dim)">Loading...</p>
     </div>
@@ -380,7 +391,31 @@ function addGym() {
   }
 }
 
+// ── Steps ──
+var stepGoal = 10000;
+
+window.onStepUpdate = function(d) {
+  document.getElementById('step-count').textContent = d.steps.toLocaleString();
+  var pct = Math.min(100, (d.steps / stepGoal) * 100);
+  document.getElementById('step-bar').style.width = pct + '%';
+  document.getElementById('step-goal').textContent = d.steps.toLocaleString() + ' / ' + stepGoal.toLocaleString();
+  if (d.distance > 0) {
+    document.getElementById('step-dist').textContent = (d.distance / 1000).toFixed(1) + ' km';
+  }
+  if (pct >= 100) {
+    document.getElementById('step-bar').style.background = 'var(--green)';
+    document.getElementById('step-count').style.color = 'var(--green)';
+  }
+};
+
+function requestSteps() {
+  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tcFitness) {
+    window.webkit.messageHandlers.tcFitness.postMessage({ action: 'startSteps' });
+  }
+}
+
 // ── Init ──
+requestSteps();
 loadToday();
 </script>
 </body>
