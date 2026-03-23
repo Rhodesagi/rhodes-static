@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html><head><title>Napoleon 3D</title>
+<style>body{margin:0;background:#0a0a14;overflow:hidden}
+#hud{position:fixed;top:10px;left:50%;transform:translateX(-50%);color:#0f8;font:13px monospace;z-index:9999;pointer-events:auto}
+#hud button{background:#222;color:#0f8;border:1px solid #0f8;padding:8px 16px;margin:3px;cursor:pointer;font:13px monospace;pointer-events:auto}
+#hud button:hover{background:#0f8;color:#000}
+canvas{display:block}
+</style>
+</head><body>
+<div id="hud">
+<button onclick="zoomTo('face')">1 FACE</button>
+<button onclick="zoomTo('hat')">2 HAT</button>
+<button onclick="zoomTo('torso')">3 TORSO</button>
+<button onclick="zoomTo('hands')">4 HANDS</button>
+<button onclick="zoomTo('legs')">5 LEGS</button>
+<button onclick="zoomTo('full')">6 FULL</button>
+<span id="info"></span>
+</div>
+<canvas id="c"></canvas>
+<script src="lib/three.min.js?v=137"></script>
+<script>
+var scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0a0a14);
+var camera=new THREE.PerspectiveCamera(40,innerWidth/innerHeight,0.01,100);
+camera.position.set(0,1.5,4);
+var renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.1;
+
+// Lights — museum quality
+scene.add(new THREE.AmbientLight(0x334455,0.4));
+var key=new THREE.DirectionalLight(0xffeedd,1.0);
+key.position.set(3,5,4);key.castShadow=true;
+key.shadow.mapSize.width=2048;key.shadow.mapSize.height=2048;
+key.shadow.camera.near=0.5;key.shadow.camera.far=20;
+scene.add(key);
+var rim=new THREE.DirectionalLight(0x4466aa,0.5);
+rim.position.set(-3,3,-2);scene.add(rim);
+var fill=new THREE.PointLight(0xffaa44,0.3,10);
+fill.position.set(-2,1,3);scene.add(fill);
+// Subtle warm uplight
+var up=new THREE.PointLight(0xff8844,0.2,5);
+up.position.set(0,0,1);scene.add(up);
+
+// Materials — more realistic
+var skinCanvas=document.createElement('canvas');
+skinCanvas.width=128;skinCanvas.height=128;
+var skc=skinCanvas.getContext('2d');
+skc.fillStyle='#c8a078';skc.fillRect(0,0,128,128);
+// Warm undertone
+skc.fillStyle='rgba(200,140,100,0.2)';skc.fillRect(0,0,128,128);
+// Skin pore noise (darker)
+skc.fillStyle='rgba(150,110,80,0.1)';
+for(var i=0;i<200;i++){skc.fillRect(Math.random()*128,Math.random()*128,1.5,1.5);}
+// Knuckle creases (darker)
+skc.strokeStyle='rgba(130,90,60,0.15)';skc.lineWidth=1;
+for(var i=0;i<6;i++){skc.beginPath();skc.moveTo(0,20+i*18);skc.lineTo(128,20+i*18);skc.stroke();}
+// Pink warmth in center (knuckle redness)
+skc.fillStyle='rgba(190,120,100,0.12)';skc.beginPath();skc.arc(64,64,40,0,Math.PI*2);skc.fill();
+// Vein hints (bluer)
+skc.strokeStyle='rgba(90,110,150,0.08)';skc.lineWidth=2;
+skc.beginPath();skc.moveTo(30,10);skc.quadraticCurveTo(50,64,35,120);skc.stroke();
+skc.beginPath();skc.moveTo(90,10);skc.quadraticCurveTo(75,64,85,120);skc.stroke();
+var skinTex=new THREE.CanvasTexture(skinCanvas);
+var skin=new THREE.MeshStandardMaterial({map:skinTex,color:0xdbb896,roughness:0.65,metalness:0});
+var skinDark=new THREE.MeshStandardMaterial({map:skinTex,color:0xc8a080,roughness:0.7,metalness:0});
+// Paint coat fabric texture
+var coatCanvas=document.createElement('canvas');
+coatCanvas.width=256;coatCanvas.height=256;
+var cc=coatCanvas.getContext('2d');
+cc.fillStyle='#1a2744';cc.fillRect(0,0,256,256);
+// Fabric weave pattern
+cc.strokeStyle='rgba(30,45,80,0.3)';cc.lineWidth=1;
+for(var wi=0;wi<256;wi+=4){cc.beginPath();cc.moveTo(wi,0);cc.lineTo(wi,256);cc.stroke();}
+for(var wi=0;wi<256;wi+=4){cc.beginPath();cc.moveTo(0,wi);cc.lineTo(256,wi);cc.stroke();}
+// Subtle sheen variation
+cc.fillStyle='rgba(40,60,100,0.1)';
+for(var si=0;si<20;si++){cc.fillRect(Math.random()*256,Math.random()*256,30,30);}
+var coatTex=new THREE.CanvasTexture(coatCanvas);
+var coat=new THREE.MeshStandardMaterial({map:coatTex,roughness:0.55,metalness:0.05});
+var coatDark=new THREE.MeshStandardMaterial({map:coatTex,color:0x121c36,roughness:0.6,metalness:0.05});
+var whiteCanvas=document.createElement('canvas');
+whiteCanvas.width=128;whiteCanvas.height=128;
+var wc=whiteCanvas.getContext('2d');
+wc.fillStyle='#e8e0d0';wc.fillRect(0,0,128,128);
+// Fine fabric weave
+wc.strokeStyle='rgba(220,210,195,0.25)';wc.lineWidth=0.5;
+for(var i=0;i<128;i+=2){wc.beginPath();wc.moveTo(i,0);wc.lineTo(i,128);wc.stroke();}
+for(var i=0;i<128;i+=2){wc.beginPath();wc.moveTo(0,i);wc.lineTo(128,i);wc.stroke();}
+// Slight wrinkle shadows
+wc.strokeStyle='rgba(180,170,155,0.08)';wc.lineWidth=2;
+for(var i=0;i<5;i++){wc.beginPath();wc.moveTo(0,25*i+10);wc.quadraticCurveTo(64,25*i+15,128,25*i+8);wc.stroke();}
+var whiteTex=new THREE.CanvasTexture(whiteCanvas);
+var white=new THREE.MeshStandardMaterial({map:whiteTex,roughness:0.6,metalness:0});
+var whiteShiny=new THREE.MeshStandardMaterial({map:whiteTex,color:0xf0ece0,roughness:0.4,metalness:0.05});
+// Gold with subtle texture
+var goldCanvas=document.createElement('canvas');
+goldCanvas.width=64;goldCanvas.height=64;
+var gc=goldCanvas.getContext('2d');
+gc.fillStyle='#d4a830';gc.fillRect(0,0,64,64);
+gc.fillStyle='rgba(220,185,60,0.3)';
+for(var gi=0;gi<30;gi++){gc.fillRect(Math.random()*64,Math.random()*64,3,3);}
+gc.fillStyle='rgba(180,140,30,0.2)';
+for(var gi=0;gi<20;gi++){gc.fillRect(Math.random()*64,Math.random()*64,4,2);}
+var goldTex=new THREE.CanvasTexture(goldCanvas);
+var gold=new THREE.MeshStandardMaterial({map:goldTex,roughness:0.25,metalness:0.8});
+var goldDark=new THREE.MeshStandardMaterial({color:0xb08820,roughness:0.35,metalness:0.7});
+// Paint boot leather texture
+var bootCanvas=document.createElement('canvas');
+bootCanvas.width=128;bootCanvas.height=128;
+var bc=bootCanvas.getContext('2d');
+bc.fillStyle='#1a1008';bc.fillRect(0,0,128,128);
+// Leather grain
+bc.strokeStyle='rgba(40,25,15,0.3)';bc.lineWidth=1;
+for(var li=0;li<50;li++){
+    bc.beginPath();var lx=Math.random()*128;var ly=Math.random()*128;
+    bc.moveTo(lx,ly);bc.lineTo(lx+Math.random()*20-10,ly+Math.random()*8);bc.stroke();
+}
+// Polish shine spots
+bc.fillStyle='rgba(60,40,20,0.15)';
+bc.beginPath();bc.arc(64,40,30,0,Math.PI*2);bc.fill();
+var bootTex=new THREE.CanvasTexture(bootCanvas);
+var boot=new THREE.MeshStandardMaterial({map:bootTex,roughness:0.35,metalness:0.2});
+var hatCanvas=document.createElement('canvas');
+hatCanvas.width=128;hatCanvas.height=128;
+var hc=hatCanvas.getContext('2d');
+hc.fillStyle='#0e0e18';hc.fillRect(0,0,128,128);
+// Felt texture — tiny fuzzy dots
+hc.fillStyle='rgba(25,25,40,0.3)';
+for(var i=0;i<400;i++){hc.fillRect(Math.random()*128,Math.random()*128,2,1);}
+hc.fillStyle='rgba(15,15,30,0.2)';
+for(var i=0;i<200;i++){hc.fillRect(Math.random()*128,Math.random()*128,1,2);}
+// Subtle sheen band
+hc.fillStyle='rgba(30,30,50,0.1)';hc.fillRect(0,50,128,20);
+var hatTex=new THREE.CanvasTexture(hatCanvas);
+var hat=new THREE.MeshStandardMaterial({map:hatTex,roughness:0.45,metalness:0.05});
+var hairCanvas=document.createElement('canvas');
+hairCanvas.width=128;hairCanvas.height=128;
+var hrc=hairCanvas.getContext('2d');
+hrc.fillStyle='#3a2810';hrc.fillRect(0,0,128,128);
+// Hair strands
+hrc.strokeStyle='rgba(55,35,15,0.4)';hrc.lineWidth=1;
+for(var i=0;i<80;i++){
+    hrc.beginPath();var x=Math.random()*128;
+    hrc.moveTo(x,0);hrc.lineTo(x+Math.random()*10-5,128);hrc.stroke();
+}
+// Highlights
+hrc.strokeStyle='rgba(80,55,25,0.15)';hrc.lineWidth=2;
+for(var i=0;i<15;i++){
+    hrc.beginPath();var x=Math.random()*128;
+    hrc.moveTo(x,0);hrc.lineTo(x+3,128);hrc.stroke();
+}
+var hairTex=new THREE.CanvasTexture(hairCanvas);
+var hair=new THREE.MeshStandardMaterial({map:hairTex,roughness:0.85,metalness:0});
+var pedCanvas=document.createElement('canvas');
+pedCanvas.width=256;pedCanvas.height=256;
+var pc=pedCanvas.getContext('2d');
+pc.fillStyle='#666660';pc.fillRect(0,0,256,256);
+// Marble veining
+pc.strokeStyle='rgba(120,115,105,0.15)';pc.lineWidth=2;
+for(var i=0;i<8;i++){
+    pc.beginPath();
+    var x1=Math.random()*256,y1=Math.random()*256;
+    pc.moveTo(x1,y1);
+    for(var j=0;j<4;j++){pc.lineTo(x1+Math.random()*80-40,y1+Math.random()*80);}
+    pc.stroke();
+}
+// Stone grain
+pc.fillStyle='rgba(100,95,85,0.1)';
+for(var i=0;i<100;i++){pc.fillRect(Math.random()*256,Math.random()*256,4+Math.random()*6,2);}
+// Subtle polish highlight
+var pedGrad=pc.createRadialGradient(128,80,20,128,128,128);
+pedGrad.addColorStop(0,'rgba(140,135,125,0.12)');pedGrad.addColorStop(1,'rgba(100,95,85,0)');
+pc.fillStyle=pedGrad;pc.fillRect(0,0,256,256);
+var pedTex=new THREE.CanvasTexture(pedCanvas);
+var pedMat=new THREE.MeshStandardMaterial({map:pedTex,roughness:0.5,metalness:0.1});
+var red=new THREE.MeshStandardMaterial({color:0xcc2222,roughness:0.4,metalness:0.2});
+var blue=new THREE.MeshStandardMaterial({color:0x1a3388,roughness:0.4,metalness:0.2});
+var lip=new THREE.MeshStandardMaterial({map:skinTex,color:0xc08070,roughness:0.5,metalness:0});
+var eyeWhite=new THREE.MeshStandardMaterial({color:0xf0ece8,roughness:0.3,metalness:0.05});
+var iris=new THREE.MeshStandardMaterial({color:0x556677,roughness:0.3,metalness:0.1});
+var pupil=new THREE.MeshStandardMaterial({color:0x111115,roughness:0.2,metalness:0.1});
+var bladeCanvas=document.createElement('canvas');
+bladeCanvas.width=64;bladeCanvas.height=64;
+var blc=bladeCanvas.getContext('2d');
+blc.fillStyle='#ccccdd';blc.fillRect(0,0,64,64);
+// Damascus pattern
+blc.strokeStyle='rgba(200,200,215,0.15)';blc.lineWidth=1;
+for(var i=0;i<20;i++){blc.beginPath();blc.moveTo(0,i*3+Math.random()*2);blc.quadraticCurveTo(32,i*3+2,64,i*3);blc.stroke();}
+var bladeTex=new THREE.CanvasTexture(bladeCanvas);
+var bladeMat=new THREE.MeshStandardMaterial({map:bladeTex,roughness:0.08,metalness:0.95});
+var sashCanvas=document.createElement('canvas');
+sashCanvas.width=64;sashCanvas.height=64;
+var sc=sashCanvas.getContext('2d');
+sc.fillStyle='#882222';sc.fillRect(0,0,64,64);
+// Silk sheen — diagonal highlights
+sc.strokeStyle='rgba(170,50,50,0.2)';sc.lineWidth=3;
+for(var i=0;i<8;i++){sc.beginPath();sc.moveTo(i*12,0);sc.lineTo(i*12+20,64);sc.stroke();}
+sc.fillStyle='rgba(200,60,60,0.08)';sc.fillRect(10,0,20,64);
+var sashTex=new THREE.CanvasTexture(sashCanvas);
+var sash=new THREE.MeshStandardMaterial({map:sashTex,roughness:0.35,metalness:0.15});
+
+var N=new THREE.Group();
+
+// ══════════════════════════
+// HEAD — sculpted, not a ball
+// ══════════════════════════
+var headGroup=new THREE.Group();
+
+// Skull — slightly elongated, flattened sides
+var skullGeo=new THREE.SphereGeometry(0.14,24,24);
+skullGeo.scale(1.0,1.12,0.95);
+var skull=new THREE.Mesh(skullGeo,skin);
+headGroup.add(skull);
+
+// Jaw — wider bottom, gives masculine shape
+var jawGeo=new THREE.SphereGeometry(0.11,16,12,0,Math.PI*2,Math.PI*0.3,Math.PI*0.4);
+jawGeo.scale(1.05,1.0,0.9);
+var jaw=new THREE.Mesh(jawGeo,skin);
+jaw.position.set(0,-0.06,0.01);
+headGroup.add(jaw);
+
+// Chin
+var chinGeo=new THREE.SphereGeometry(0.04,12,12);
+chinGeo.scale(1.2,0.8,1.0);
+var chin=new THREE.Mesh(chinGeo,skin);
+chin.position.set(0,-0.13,0.06);
+headGroup.add(chin);
+
+// Brow painted in texture
+
+// Nose in texture only
+
+// Eyes painted in texture
+
+// Mouth painted in texture
+
+// Ears painted in texture
+
+// Hair — Napoleon's iconic forward-swept fringe
+var fringeGeo=new THREE.SphereGeometry(0.15,16,8,0,Math.PI*2,0,Math.PI*0.45);
+fringeGeo.scale(1.05,0.9,1.0);
+var fringe=new THREE.Mesh(fringeGeo,hair);
+fringe.position.set(0,0.04,0.02);
+headGroup.add(fringe);
+// Side hair from portrait
+// Hair from portrait texture
+
+// Sideburns from portrait
+
+// Paint FULL face texture — eyes, nose, mouth, everything
+var faceCanvas=document.createElement('canvas');
+faceCanvas.width=1024;faceCanvas.height=1024;
+var fc=faceCanvas.getContext('2d');
+// Base skin — warm gradient
+var skinGrad=fc.createRadialGradient(512,480,80,512,512,512);
+skinGrad.addColorStop(0,'#ecd0b0');skinGrad.addColorStop(0.4,'#dbb896');skinGrad.addColorStop(0.8,'#c8a080');skinGrad.addColorStop(1,'#a08060');
+fc.fillStyle=skinGrad;fc.fillRect(0,0,1024,1024);
+
+// Forehead — slightly lighter/warmer
+fc.fillStyle='rgba(240,200,160,0.2)';fc.fillRect(300,200,424,120);
+
+// Cheeks — rosy warmth
+fc.globalAlpha=0.18;
+fc.fillStyle='#cc8888';
+fc.beginPath();fc.ellipse(370,540,55,45,0,0,Math.PI*2);fc.fill();
+fc.beginPath();fc.ellipse(654,540,55,45,0,0,Math.PI*2);fc.fill();
+fc.globalAlpha=1.0;
+
+// Cheekbone highlights
+fc.fillStyle='rgba(255,230,200,0.12)';
+fc.beginPath();fc.ellipse(380,510,35,20,-0.2,0,Math.PI*2);fc.fill();
+fc.beginPath();fc.ellipse(644,510,35,20,0.2,0,Math.PI*2);fc.fill();
+
+// ── EYES ──
+function paintEye(cx,cy,flip){
+    // Eye socket shadow
+    fc.fillStyle='rgba(100,70,50,0.18)';
+    fc.beginPath();fc.ellipse(cx,cy,52,35,0,0,Math.PI*2);fc.fill();
+    // Eyeball white
+    fc.fillStyle='#f0ece8';
+    fc.beginPath();fc.ellipse(cx,cy,32,20,0,0,Math.PI*2);fc.fill();
+    // Slight redness at corners
+    fc.fillStyle='rgba(200,140,140,0.15)';
+    fc.beginPath();fc.ellipse(cx-28*flip,cy,10,12,0,0,Math.PI*2);fc.fill();
+    fc.beginPath();fc.ellipse(cx+28*flip,cy,8,10,0,0,Math.PI*2);fc.fill();
+    // Iris
+    var irisGrad=fc.createRadialGradient(cx+3,cy-3,2,cx,cy,18);
+    irisGrad.addColorStop(0,'#667788');irisGrad.addColorStop(0.4,'#556677');
+    irisGrad.addColorStop(0.8,'#445566');irisGrad.addColorStop(1,'#334455');
+    fc.fillStyle=irisGrad;
+    fc.beginPath();fc.arc(cx,cy,18,0,Math.PI*2);fc.fill();
+    // Iris detail — radial lines
+    fc.strokeStyle='rgba(80,100,120,0.3)';fc.lineWidth=1;
+    for(var ri=0;ri<12;ri++){
+        var a=ri*Math.PI/6;
+        fc.beginPath();fc.moveTo(cx+Math.cos(a)*6,cy+Math.sin(a)*6);
+        fc.lineTo(cx+Math.cos(a)*16,cy+Math.sin(a)*16);fc.stroke();
+    }
+    // Pupil
+    fc.fillStyle='#111118';
+    fc.beginPath();fc.arc(cx,cy,9,0,Math.PI*2);fc.fill();
+    // Specular highlight
+    fc.fillStyle='rgba(255,255,255,0.9)';
+    fc.beginPath();fc.arc(cx+6,cy-6,4,0,Math.PI*2);fc.fill();
+    fc.fillStyle='rgba(255,255,255,0.4)';
+    fc.beginPath();fc.arc(cx-4,cy+4,2.5,0,Math.PI*2);fc.fill();
+    // Upper eyelid
+    fc.fillStyle='rgba(190,150,120,0.85)';
+    fc.beginPath();fc.ellipse(cx,cy-6,36,22,0,Math.PI,Math.PI*2);fc.fill();
+    // Eyelid crease
+    fc.strokeStyle='rgba(140,100,70,0.4)';fc.lineWidth=2;
+    fc.beginPath();fc.ellipse(cx,cy-14,38,18,0,Math.PI+0.3,Math.PI*2-0.3);fc.stroke();
+    // Lower eyelid line
+    fc.strokeStyle='rgba(160,120,90,0.25)';fc.lineWidth=1.5;
+    fc.beginPath();fc.ellipse(cx,cy+4,34,18,0,0.2,Math.PI-0.2);fc.stroke();
+    // Eyelashes — upper
+    fc.strokeStyle='rgba(50,30,20,0.7)';fc.lineWidth=2;
+    fc.beginPath();fc.ellipse(cx,cy-2,34,20,0,Math.PI+0.15,Math.PI*2-0.15);fc.stroke();
+    // Lower lashes (subtle)
+    fc.strokeStyle='rgba(80,50,30,0.3)';fc.lineWidth=1;
+    fc.beginPath();fc.ellipse(cx,cy+2,32,18,0,0.2,Math.PI-0.2);fc.stroke();
+    // Eyebrow
+    fc.fillStyle='rgba(50,30,15,0.75)';
+    fc.beginPath();
+    fc.moveTo(cx-40,cy-38);
+    fc.quadraticCurveTo(cx-10,cy-52,cx+35,cy-40);
+    fc.quadraticCurveTo(cx-10,cy-44,cx-40,cy-38);
+    fc.fill();
+}
+paintEye(405,465,1);
+paintEye(619,465,-1);
+
+// ── NOSE ──
+// Bridge shadow (left side)
+fc.fillStyle='rgba(170,130,100,0.15)';
+fc.beginPath();fc.moveTo(490,430);fc.quadraticCurveTo(485,520,492,580);
+fc.lineTo(500,580);fc.quadraticCurveTo(498,520,500,430);fc.fill();
+// Bridge highlight (right side)
+fc.fillStyle='rgba(255,235,210,0.18)';
+fc.beginPath();fc.moveTo(505,420);fc.quadraticCurveTo(515,500,510,570);
+fc.lineTo(518,570);fc.quadraticCurveTo(520,500,512,420);fc.fill();
+// Nose tip — round
+fc.fillStyle='rgba(210,170,140,0.25)';
+fc.beginPath();fc.ellipse(512,585,22,16,0,0,Math.PI*2);fc.fill();
+// Nostrils
+fc.fillStyle='rgba(120,80,60,0.35)';
+fc.beginPath();fc.ellipse(496,598,10,7,-0.3,0,Math.PI*2);fc.fill();
+fc.beginPath();fc.ellipse(528,598,10,7,0.3,0,Math.PI*2);fc.fill();
+// Nostril highlight
+fc.fillStyle='rgba(220,180,150,0.15)';
+fc.beginPath();fc.ellipse(512,590,14,8,0,Math.PI,Math.PI*2);fc.fill();
+
+// ── MOUTH ──
+// Lip line
+fc.strokeStyle='rgba(140,80,70,0.5)';fc.lineWidth=2;
+fc.beginPath();fc.moveTo(470,650);fc.quadraticCurveTo(512,644,554,650);fc.stroke();
+// Upper lip
+var lipGrad=fc.createLinearGradient(470,635,470,655);
+lipGrad.addColorStop(0,'rgba(190,120,100,0.6)');lipGrad.addColorStop(1,'rgba(180,110,95,0.8)');
+fc.fillStyle=lipGrad;
+fc.beginPath();fc.moveTo(470,650);fc.quadraticCurveTo(490,638,512,635);
+fc.quadraticCurveTo(534,638,554,650);fc.quadraticCurveTo(512,645,470,650);fc.fill();
+// Cupid's bow
+fc.fillStyle='rgba(200,140,120,0.3)';
+fc.beginPath();fc.moveTo(500,640);fc.lineTo(512,635);fc.lineTo(524,640);fc.quadraticCurveTo(512,638,500,640);fc.fill();
+// Lower lip
+fc.fillStyle='rgba(195,125,110,0.7)';
+fc.beginPath();fc.moveTo(475,652);fc.quadraticCurveTo(512,672,549,652);
+fc.quadraticCurveTo(512,658,475,652);fc.fill();
+// Lip highlight
+fc.fillStyle='rgba(240,200,180,0.2)';
+fc.beginPath();fc.ellipse(512,660,18,5,0,0,Math.PI*2);fc.fill();
+// Chin dimple
+fc.fillStyle='rgba(170,130,100,0.1)';
+fc.beginPath();fc.ellipse(512,700,8,6,0,0,Math.PI*2);fc.fill();
+
+// ── NASOLABIAL FOLDS ──
+fc.strokeStyle='rgba(160,120,90,0.15)';fc.lineWidth=2.5;
+fc.beginPath();fc.moveTo(468,560);fc.quadraticCurveTo(455,610,465,660);fc.stroke();
+fc.beginPath();fc.moveTo(556,560);fc.quadraticCurveTo(569,610,559,660);fc.stroke();
+
+// ── FOREHEAD LINES ──
+fc.strokeStyle='rgba(180,140,110,0.08)';fc.lineWidth=1.5;
+for(var fi=0;fi<3;fi++){
+    fc.beginPath();fc.moveTo(390,330+fi*18);fc.quadraticCurveTo(512,325+fi*18,634,330+fi*18);fc.stroke();
+}
+
+// ── CHIN/JAW shadow ──
+fc.fillStyle='rgba(150,110,80,0.1)';
+fc.beginPath();fc.ellipse(512,730,80,30,0,0,Math.PI*2);fc.fill();
+
+// ── STUBBLE shadow ──
+fc.globalAlpha=0.06;
+fc.fillStyle='#667';
+for(var si=0;si<200;si++){
+    var sx=440+Math.random()*144,sy=620+Math.random()*100;
+    fc.fillRect(sx,sy,1.5,1.5);
+}
+fc.globalAlpha=1.0;
+
+// ── TEMPLE shadow ──
+fc.fillStyle='rgba(160,120,90,0.08)';
+fc.beginPath();fc.ellipse(360,440,30,60,0.2,0,Math.PI*2);fc.fill();
+fc.beginPath();fc.ellipse(664,440,30,60,-0.2,0,Math.PI*2);fc.fill();
+
+// Load pre-cropped face (OpenCV auto-detected + oval masked)
+var croppedFaceTex=new THREE.TextureLoader().load('lib/napoleon-cropped.jpg');
+var facePlaneGeo=new THREE.CircleGeometry(0.145,32);
+var facePlaneMat=new THREE.MeshStandardMaterial({map:croppedFaceTex,roughness:0.5,metalness:0});
+var facePlane=new THREE.Mesh(facePlaneGeo,facePlaneMat);
+facePlane.position.set(0,-0.02,0.132);
+headGroup.add(facePlane);
+
+// Keep skull as skin-toned
+skull.material=new THREE.MeshStandardMaterial({map:skinTex,color:0xdbb896,roughness:0.65,metalness:0});
+jaw.material=skull.material;
+chin.material=skull.material;
+
+headGroup.position.set(0,1.55,0);
+N.add(headGroup);
+
+// ══════════════════════════
+// BICORNE HAT — proper curved shape
+// ══════════════════════════
+var hatGroup=new THREE.Group();
+
+// Hat body — use an extruded shape for the curve
+var hatBodyGeo=new THREE.CylinderGeometry(0.17,0.19,0.14,16);
+hatBodyGeo.scale(1.1,1,0.7);
+var hatBody=new THREE.Mesh(hatBodyGeo,hat);
+hatBody.position.y=0.05;hatGroup.add(hatBody);
+
+// Brim — torus section for the curved rim
+var brimGeo=new THREE.CylinderGeometry(0.22,0.23,0.025,20);
+brimGeo.scale(1.1,1,0.75);
+var brimMesh=new THREE.Mesh(brimGeo,hat);
+brimMesh.position.y=-0.02;hatGroup.add(brimMesh);
+
+// Upturned sides (the iconic bicorne shape) — angled planes
+var turnGeo=new THREE.BoxGeometry(0.04,0.2,0.25);
+var turnL=new THREE.Mesh(turnGeo,hat);
+turnL.position.set(-0.2,0.06,0);turnL.rotation.z=0.25;hatGroup.add(turnL);
+var turnR=new THREE.Mesh(turnGeo,hat);
+turnR.position.set(0.2,0.06,0);turnR.rotation.z=-0.25;hatGroup.add(turnR);
+
+// Gold trim along edges
+var trimGeo=new THREE.TorusGeometry(0.22,0.005,4,20,Math.PI);
+var trimF=new THREE.Mesh(trimGeo,gold);
+trimF.position.set(0,-0.015,0.005);trimF.rotation.x=Math.PI/2;trimF.rotation.z=Math.PI;
+hatGroup.add(trimF);
+
+// Cockade (larger, more detailed)
+var cockBase=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.015,16),white);
+cockBase.position.set(0,0.06,0.17);cockBase.rotation.x=Math.PI/2;hatGroup.add(cockBase);
+var cockRing1=new THREE.Mesh(new THREE.TorusGeometry(0.03,0.006,8,16),red);
+cockRing1.position.set(0,0.06,0.175);cockRing1.rotation.x=Math.PI/2;hatGroup.add(cockRing1);
+var cockRing2=new THREE.Mesh(new THREE.TorusGeometry(0.04,0.006,8,16),blue);
+cockRing2.position.set(0,0.06,0.175);cockRing2.rotation.x=Math.PI/2;hatGroup.add(cockRing2);
+
+hatGroup.position.set(0,1.68,0);
+N.add(hatGroup);
+
+// ══════════════════════════
+// COLLAR — high standing collar
+// ══════════════════════════
+var collarGeo=new THREE.CylinderGeometry(0.12,0.15,0.07,16,1,true);
+var collar=new THREE.Mesh(collarGeo,whiteShiny);
+collar.position.set(0,1.4,0);N.add(collar);
+// Gold collar trim
+var colTrim=new THREE.Mesh(new THREE.TorusGeometry(0.125,0.004,4,16),gold);
+colTrim.position.set(0,1.44,0);colTrim.rotation.x=Math.PI/2;N.add(colTrim);
+
+// ══════════════════════════
+// TORSO — shaped coat, not a cylinder
+// ══════════════════════════
+// Main body — tapered
+var torsoGeo=new THREE.CylinderGeometry(0.16,0.2,0.5,12);
+var torso=new THREE.Mesh(torsoGeo,coat);
+torso.position.set(0,1.1,0);N.add(torso);
+
+// Coat front panels — open showing vest
+var panelGeo=new THREE.BoxGeometry(0.08,0.4,0.03);
+var panelL=new THREE.Mesh(panelGeo,coat);panelL.position.set(-0.12,1.1,0.14);panelL.rotation.y=0.15;N.add(panelL);
+var panelR=new THREE.Mesh(panelGeo,coat);panelR.position.set(0.12,1.1,0.14);panelR.rotation.y=-0.15;N.add(panelR);
+
+// Vest
+var vestGeo=new THREE.BoxGeometry(0.16,0.35,0.03);
+var vestMesh=new THREE.Mesh(vestGeo,white);vestMesh.position.set(0,1.08,0.15);N.add(vestMesh);
+
+// Buttons (gold, 6 on each panel)
+for(var bi=0;bi<6;bi++){
+    var btnGeo=new THREE.SphereGeometry(0.008,8,8);
+    var btnL=new THREE.Mesh(btnGeo,gold);btnL.position.set(-0.06,1.28-bi*0.05,0.17);N.add(btnL);
+    var btnR=new THREE.Mesh(btnGeo,gold);btnR.position.set(0.06,1.28-bi*0.05,0.17);N.add(btnR);
+}
+
+// Sash (red, diagonal)
+var sashGeo=new THREE.BoxGeometry(0.06,0.4,0.015);
+var sashMesh=new THREE.Mesh(sashGeo,sash);
+sashMesh.position.set(0.03,1.1,0.16);sashMesh.rotation.z=-0.3;N.add(sashMesh);
+
+// Coat tails (back)
+var tailGeo=new THREE.BoxGeometry(0.14,0.4,0.05);
+var tailL=new THREE.Mesh(tailGeo,coatDark);tailL.position.set(-0.08,0.72,-0.12);N.add(tailL);
+var tailR=new THREE.Mesh(tailGeo,coatDark);tailR.position.set(0.08,0.72,-0.12);N.add(tailR);
+
+// Epaulettes — more detailed
+function makeEpaulette(x){
+    var eg=new THREE.Group();
+    var baseGeo=new THREE.SphereGeometry(0.05,12,8);
+    baseGeo.scale(1.6,0.4,1.2);
+    eg.add(new THREE.Mesh(baseGeo,gold));
+    // Crescent
+    var crescGeo=new THREE.TorusGeometry(0.04,0.008,6,12,Math.PI);
+    var cresc=new THREE.Mesh(crescGeo,goldDark);
+    cresc.position.set(x>0?0.02:-0.02,-0.01,0);cresc.rotation.z=x>0?-Math.PI/2:Math.PI/2;
+    eg.add(cresc);
+    // Fringe threads
+    for(var fi=0;fi<8;fi++){
+        var fGeo=new THREE.CylinderGeometry(0.004,0.002,0.05+Math.random()*0.02,3);
+        var f=new THREE.Mesh(fGeo,gold);
+        var angle=(-0.4+fi*0.1);
+        f.position.set(x>0?0.03:-0.03,-0.03,angle*0.15);
+        f.rotation.z=x>0?-0.5:0.5;
+        eg.add(f);
+    }
+    eg.position.set(x,1.33,0);
+    return eg;
+}
+N.add(makeEpaulette(-0.22));
+N.add(makeEpaulette(0.22));
+
+// Medals — Legion d'Honneur star + others
+var starShape=new THREE.Shape();
+for(var si=0;si<10;si++){
+    var r=si%2===0?0.025:0.012;
+    var a=si*Math.PI/5-Math.PI/2;
+    if(si===0)starShape.moveTo(Math.cos(a)*r,Math.sin(a)*r);
+    else starShape.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+}
+var starGeo=new THREE.ExtrudeGeometry(starShape,{depth:0.005,bevelEnabled:false});
+var legionStar=new THREE.Mesh(starGeo,gold);
+legionStar.position.set(-0.08,1.18,0.18);N.add(legionStar);
+// Medal ribbon
+var ribbonGeo=new THREE.BoxGeometry(0.015,0.04,0.005);
+var ribbon=new THREE.Mesh(ribbonGeo,red);ribbon.position.set(-0.08,1.24,0.18);N.add(ribbon);
+// Small medals
+for(var mi=0;mi<3;mi++){
+    var mGeo=new THREE.CylinderGeometry(0.01,0.01,0.003,8);
+    var mMesh=new THREE.Mesh(mGeo,gold);
+    mMesh.position.set(-0.02+mi*0.025,1.22,0.18);mMesh.rotation.x=Math.PI/2;N.add(mMesh);
+}
+
+// ══════════════════════════
+// ARMS
+// ══════════════════════════
+// Right arm — hand in coat (iconic pose)
+var armRUpper=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.05,0.22,8),coat);
+armRUpper.position.set(0.17,1.22,0.04);armRUpper.rotation.z=0.25;armRUpper.rotation.x=0.15;N.add(armRUpper);
+var armRLower=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.045,0.18,8),coat);
+armRLower.position.set(0.1,1.06,0.12);armRLower.rotation.z=0.6;armRLower.rotation.x=0.35;N.add(armRLower);
+// Hand pressing against vest — visible bulge + fingers gripping coat edge
+var handRPalm=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.04,0.025),skin);
+handRPalm.position.set(0.02,1.05,0.17);handRPalm.rotation.z=0.1;N.add(handRPalm);
+// Fingers curling over coat edge (4 fingers visible)
+for(var rfi=0;rfi<4;rfi++){
+    var rfGeo=new THREE.CylinderGeometry(0.007,0.006,0.035,6);
+    var rf=new THREE.Mesh(rfGeo,skin);
+    rf.position.set(-0.01+rfi*0.015,1.03,0.175);
+    rf.rotation.x=0.6;rf.rotation.z=0.1;
+    N.add(rf);
+    // Fingertips curling down
+    var rtGeo=new THREE.SphereGeometry(0.007,6,6);
+    var rt=new THREE.Mesh(rtGeo,skin);
+    rt.position.set(-0.01+rfi*0.015,1.02,0.17);
+    N.add(rt);
+}
+// Thumb visible on outside of coat
+var rThumb=new THREE.Mesh(new THREE.CylinderGeometry(0.008,0.007,0.03,6),skin);
+rThumb.position.set(0.05,1.06,0.17);rThumb.rotation.z=-0.5;rThumb.rotation.x=0.3;N.add(rThumb);
+// Coat bulge where hand presses from inside
+var bulgeMat=new THREE.MeshStandardMaterial({color:0x1a2744,roughness:0.55,metalness:0.05});
+var bulgeGeo=new THREE.SphereGeometry(0.045,12,12);
+bulgeGeo.scale(1.2,0.7,0.6);
+var bulge=new THREE.Mesh(bulgeGeo,bulgeMat);
+bulge.position.set(0.02,1.08,0.16);N.add(bulge);
+
+// Left arm — at side, slightly behind
+var armLUpper=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.05,0.22,8),coat);
+armLUpper.position.set(-0.18,1.22,0);armLUpper.rotation.z=-0.12;N.add(armLUpper);
+// Cuff (gold trim at wrist)
+var cuffL=new THREE.Mesh(new THREE.CylinderGeometry(0.048,0.046,0.03,8),gold);
+cuffL.position.set(-0.2,1.08,0.02);cuffL.rotation.z=-0.12;N.add(cuffL);
+var armLLower=new THREE.Mesh(new THREE.CylinderGeometry(0.038,0.044,0.2,8),coat);
+armLLower.position.set(-0.21,1.02,0.03);armLLower.rotation.z=-0.08;armLLower.rotation.x=0.1;N.add(armLLower);
+// Left hand — relaxed, slightly curled, holding gloves/document
+var handLPalm=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.06,0.025),skin);
+handLPalm.position.set(-0.22,0.88,0.05);handLPalm.rotation.x=0.15;N.add(handLPalm);
+// Wrist
+var wristL=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.022,0.04,6),skin);
+wristL.position.set(-0.22,0.92,0.04);N.add(wristL);
+// 4 fingers — slightly curled
+for(var lfi=0;lfi<4;lfi++){
+    // Proximal
+    var lfp=new THREE.Mesh(new THREE.CylinderGeometry(0.006,0.007,0.025,6),skin);
+    lfp.position.set(-0.235+lfi*0.012,0.855,0.055);lfp.rotation.x=0.3;N.add(lfp);
+    // Middle segment
+    var lfm=new THREE.Mesh(new THREE.CylinderGeometry(0.0055,0.006,0.02,6),skin);
+    lfm.position.set(-0.235+lfi*0.012,0.84,0.06);lfm.rotation.x=0.5;N.add(lfm);
+    // Fingertip
+    var lft=new THREE.Mesh(new THREE.SphereGeometry(0.006,6,6),skin);
+    lft.position.set(-0.235+lfi*0.012,0.83,0.065);N.add(lft);
+    // Fingernail
+    var lfn=new THREE.Mesh(new THREE.CircleGeometry(0.004,6),new THREE.MeshStandardMaterial({map:skinTex,color:0xf0ddd0,roughness:0.2,metalness:0.05}));
+    lfn.position.set(-0.235+lfi*0.012,0.828,0.07);N.add(lfn);
+}
+// Thumb — opposed, slightly open
+var thumbL1=new THREE.Mesh(new THREE.CylinderGeometry(0.008,0.009,0.025,6),skin);
+thumbL1.position.set(-0.2,0.87,0.07);thumbL1.rotation.z=0.7;thumbL1.rotation.x=-0.2;N.add(thumbL1);
+var thumbL2=new THREE.Mesh(new THREE.CylinderGeometry(0.007,0.008,0.02,6),skin);
+thumbL2.position.set(-0.19,0.865,0.08);thumbL2.rotation.z=0.9;N.add(thumbL2);
+var thumbLTip=new THREE.Mesh(new THREE.SphereGeometry(0.007,6,6),skin);
+thumbLTip.position.set(-0.18,0.86,0.085);N.add(thumbLTip);
+// Holding a rolled document/gloves
+var docGeo=new THREE.CylinderGeometry(0.012,0.012,0.08,8);
+var docMat=new THREE.MeshStandardMaterial({color:0xf0e8d0,roughness:0.7});
+var doc=new THREE.Mesh(docGeo,docMat);
+doc.position.set(-0.225,0.85,0.05);doc.rotation.z=0.1;doc.rotation.x=0.3;N.add(doc);
+
+// ══════════════════════════
+// LEGS — proper proportioned
+// ══════════════════════════
+// Trousers
+var legGeo=new THREE.CylinderGeometry(0.06,0.065,0.38,8);
+var legL=new THREE.Mesh(legGeo,white);legL.position.set(-0.08,0.64,0);N.add(legL);
+var legR=new THREE.Mesh(legGeo,white);legR.position.set(0.08,0.64,0);N.add(legR);
+
+// Boots — with folded tops
+var bootGeo=new THREE.CylinderGeometry(0.065,0.08,0.42,10);
+var bootL=new THREE.Mesh(bootGeo,boot);bootL.position.set(-0.08,0.24,0);N.add(bootL);
+var bootR=new THREE.Mesh(bootGeo,boot);bootR.position.set(0.08,0.24,0);N.add(bootR);
+// Boot fold
+var foldGeo=new THREE.CylinderGeometry(0.075,0.068,0.06,10);
+var foldL=new THREE.Mesh(foldGeo,boot);foldL.position.set(-0.08,0.46,0);N.add(foldL);
+var foldR=new THREE.Mesh(foldGeo,boot);foldR.position.set(0.08,0.46,0);N.add(foldR);
+// Boot soles
+var soleGeo=new THREE.BoxGeometry(0.09,0.02,0.12);
+var soleL=new THREE.Mesh(soleGeo,new THREE.MeshStandardMaterial({color:0x111111}));
+soleL.position.set(-0.08,0.03,0.01);N.add(soleL);
+var soleR=new THREE.Mesh(soleGeo.clone(),new THREE.MeshStandardMaterial({color:0x111111}));
+soleR.position.set(0.08,0.03,0.01);N.add(soleR);
+
+// ══════════════════════════
+// SWORD — detailed
+// ══════════════════════════
+var swordGroup=new THREE.Group();
+var hiltGeo=new THREE.CylinderGeometry(0.012,0.014,0.1,8);
+swordGroup.add(new THREE.Mesh(hiltGeo,goldDark));
+var guardGeo=new THREE.BoxGeometry(0.07,0.01,0.015);
+var guardMesh=new THREE.Mesh(guardGeo,gold);guardMesh.position.y=-0.05;swordGroup.add(guardMesh);
+// Blade
+var bladeGeo=new THREE.CylinderGeometry(0.004,0.001,0.45,4);
+var bladeMesh=new THREE.Mesh(bladeGeo,bladeMat);bladeMesh.position.y=-0.28;swordGroup.add(bladeMesh);
+// Pommel
+var pomGeo=new THREE.SphereGeometry(0.015,8,8);
+swordGroup.add(new THREE.Mesh(pomGeo,gold));
+swordGroup.position.set(-0.25,0.85,0);swordGroup.rotation.z=0.2;
+N.add(swordGroup);
+
+// ══════════════════════════
+// PEDESTAL — marble-like
+// ══════════════════════════
+var pedGroup=new THREE.Group();
+var p1=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.3,0.04,20),pedMat);p1.position.y=0;pedGroup.add(p1);
+var p2=new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.32,0.12,20),pedMat);p2.position.y=-0.1;pedGroup.add(p2);
+var p3=new THREE.Mesh(new THREE.CylinderGeometry(0.38,0.4,0.08,20),pedMat);p3.position.y=-0.2;pedGroup.add(p3);
+// Nameplate
+var plateGeo=new THREE.BoxGeometry(0.25,0.05,0.015);
+var plateMesh=new THREE.Mesh(plateGeo,new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:0.3,metalness:0.4}));
+plateMesh.position.set(0,-0.1,0.3);pedGroup.add(plateMesh);
+var borderMesh=new THREE.Mesh(new THREE.BoxGeometry(0.27,0.055,0.012),goldDark);
+borderMesh.position.set(0,-0.1,0.295);pedGroup.add(borderMesh);
+// Text
+var tc=document.createElement('canvas');tc.width=256;tc.height=64;
+var tx=tc.getContext('2d');tx.fillStyle='#111';tx.fillRect(0,0,256,64);
+tx.fillStyle='#d4a830';tx.font='bold 34px Georgia,serif';tx.textAlign='center';tx.fillText('NAPOLEON',128,42);
+var ttex=new THREE.CanvasTexture(tc);
+var tmat=new THREE.MeshBasicMaterial({map:ttex});
+var tmesh=new THREE.Mesh(new THREE.PlaneGeometry(0.23,0.04),tmat);
+tmesh.position.set(0,-0.1,0.31);pedGroup.add(tmesh);
+pedGroup.position.y=-0.02;
+N.add(pedGroup);
+
+// Shadows
+N.traverse(function(o){if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+scene.add(N);
+
+// Floor
+var floorMesh=new THREE.Mesh(new THREE.PlaneGeometry(12,12),new THREE.MeshStandardMaterial({color:0x222228,roughness:0.85}));
+floorMesh.rotation.x=-Math.PI/2;floorMesh.position.y=-0.26;floorMesh.receiveShadow=true;scene.add(floorMesh);
+
+// Camera targets
+var targets={
+    face:{pos:[0,1.55,1.2],look:[0,1.53,0]},
+    hat:{pos:[0,1.9,0.8],look:[0,1.75,0]},
+    torso:{pos:[0.3,1.1,1.2],look:[0,1.1,0]},
+    hands:{pos:[0.4,1.0,0.8],look:[0.05,1.0,0.1]},
+    legs:{pos:[0.3,0.4,1.5],look:[0,0.4,0]},
+    full:{pos:[0,1.3,3.2],look:[0,1.0,0]}
+};
+var camTarget=targets.full;
+var camLerp=0;
+
+window.zoomTo=function(name){
+    camTarget=targets[name]||targets.full;
+    camLerp=0;
+    document.getElementById('info').textContent=' → '+name.toUpperCase();
+};
+
+// Animate
+var time=0;
+function animate(){
+    requestAnimationFrame(animate);
+    time+=0.01;
+
+    // Gentle idle
+    N.rotation.y=Math.sin(time*0.3)*0.08;
+    torso.scale.y=1+Math.sin(time*1.5)*0.008;
+    headGroup.rotation.y=Math.sin(time*0.4)*0.02;
+    headGroup.rotation.x=Math.sin(time*0.3+1)*0.01;
+
+    // Camera lerp
+    if(camLerp<1){
+        camLerp=Math.min(1,camLerp+0.02);
+        var t=camLerp*camLerp*(3-2*camLerp); // smoothstep
+        camera.position.lerp(new THREE.Vector3(camTarget.pos[0],camTarget.pos[1],camTarget.pos[2]),t);
+        var lookTarget=new THREE.Vector3(camTarget.look[0],camTarget.look[1],camTarget.look[2]);
+        camera.lookAt(lookTarget);
+    }
+
+    renderer.render(scene,camera);
+}
+animate();
+
+// Keyboard camera controls
+document.addEventListener('keydown',function(e){
+    if(e.key==='1')zoomTo('face');
+    if(e.key==='2')zoomTo('hat');
+    if(e.key==='3')zoomTo('torso');
+    if(e.key==='4')zoomTo('hands');
+    if(e.key==='5')zoomTo('legs');
+    if(e.key==='6')zoomTo('full');
+});
+
+window.addEventListener('resize',function(){
+    camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth,innerHeight);
+});
+zoomTo('face');
+</script>
+</body></html>
