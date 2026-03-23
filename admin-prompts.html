@@ -1745,9 +1745,21 @@ function getDefaultActiveTools() {
     : [];
 }
 
+function normalizeActiveToolsForInjectionConfig(activeTools) {
+  var tools = Array.isArray(activeTools) ? activeTools.slice() : [];
+  if (CURRENT_INJECTION_CONFIG['expand_prompt'] === false) {
+    tools = tools.filter(function(name) { return name !== 'expand_prompt'; });
+  }
+  return tools;
+}
+
+function syncInjectionDependentTools() {
+  CURRENT_ACTIVE_TOOLS = normalizeActiveToolsForInjectionConfig(Array.isArray(CURRENT_ACTIVE_TOOLS) ? CURRENT_ACTIVE_TOOLS : getDefaultActiveTools());
+  syncToolCategoriesFromActiveTools();
+}
+
 function getEffectiveActiveTools() {
-  if (Array.isArray(CURRENT_ACTIVE_TOOLS)) return CURRENT_ACTIVE_TOOLS.slice();
-  return getDefaultActiveTools();
+  return normalizeActiveToolsForInjectionConfig(Array.isArray(CURRENT_ACTIVE_TOOLS) ? CURRENT_ACTIVE_TOOLS : getDefaultActiveTools());
 }
 
 function getCategoryTools(category) {
@@ -1819,8 +1831,9 @@ function renderToolConfig() {
     toolHtml += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px">';
     categoryTools.forEach(function(toolName) {
       var checked = activeSet.has(toolName);
-      toolHtml += '<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#0b1226;border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer">';
-      toolHtml += '<input type="checkbox" ' + (checked ? 'checked ' : '') + 'onchange="toggleModelTool(' + JSON.stringify(toolName) + ', this.checked)">';
+      var blockedByInjection = toolName === 'expand_prompt' && CURRENT_INJECTION_CONFIG['expand_prompt'] === false;
+      toolHtml += '<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#0b1226;border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:' + (blockedByInjection ? 'not-allowed' : 'pointer') + ';opacity:' + (blockedByInjection ? '0.55' : '1') + '">';
+      toolHtml += '<input type="checkbox" ' + (checked ? 'checked ' : '') + (blockedByInjection ? 'disabled ' : '') + 'onchange="toggleModelTool(' + JSON.stringify(toolName) + ', this.checked)">';
       toolHtml += '<span style="font-family:var(--mono)">' + esc(toolName) + '</span>';
       toolHtml += '</label>';
     });
@@ -1839,8 +1852,9 @@ function renderToolConfig() {
     toolHtml += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px">';
     uncategorized.forEach(function(toolName) {
       var checked = activeSet.has(toolName);
-      toolHtml += '<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#0b1226;border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer">';
-      toolHtml += '<input type="checkbox" ' + (checked ? 'checked ' : '') + 'onchange="toggleModelTool(' + JSON.stringify(toolName) + ', this.checked)">';
+      var blockedByInjection = toolName === 'expand_prompt' && CURRENT_INJECTION_CONFIG['expand_prompt'] === false;
+      toolHtml += '<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#0b1226;border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:' + (blockedByInjection ? 'not-allowed' : 'pointer') + ';opacity:' + (blockedByInjection ? '0.55' : '1') + '">';
+      toolHtml += '<input type="checkbox" ' + (checked ? 'checked ' : '') + (blockedByInjection ? 'disabled ' : '') + 'onchange="toggleModelTool(' + JSON.stringify(toolName) + ', this.checked)">';
       toolHtml += '<span style="font-family:var(--mono)">' + esc(toolName) + '</span>';
       toolHtml += '</label>';
     });
@@ -1858,23 +1872,26 @@ function toggleToolCategory(category, checked) {
     if (checked) activeSet.add(name); else activeSet.delete(name);
   });
   CURRENT_ACTIVE_TOOLS = (TOOL_CATALOG.tools || []).filter(function(name) { return activeSet.has(name); });
-  syncToolCategoriesFromActiveTools();
+  syncInjectionDependentTools();
   renderToolConfig();
   onBuilderChange();
 }
 
 function toggleModelTool(toolName, checked) {
   var activeSet = new Set(getEffectiveActiveTools());
+  if (toolName === 'expand_prompt' && CURRENT_INJECTION_CONFIG['expand_prompt'] === false) {
+    checked = false;
+  }
   if (checked) activeSet.add(toolName); else activeSet.delete(toolName);
   CURRENT_ACTIVE_TOOLS = (TOOL_CATALOG.tools || []).filter(function(name) { return activeSet.has(name); });
-  syncToolCategoriesFromActiveTools();
+  syncInjectionDependentTools();
   renderToolConfig();
   onBuilderChange();
 }
 
 function setAllModelTools(on) {
   CURRENT_ACTIVE_TOOLS = on ? getDefaultActiveTools() : [];
-  syncToolCategoriesFromActiveTools();
+  syncInjectionDependentTools();
   renderToolConfig();
   onBuilderChange();
 }
@@ -1890,7 +1907,7 @@ async function loadModelToolCatalog() {
     if (CURRENT_ACTIVE_TOOLS === null) {
       CURRENT_ACTIVE_TOOLS = getDefaultActiveTools();
     }
-    syncToolCategoriesFromActiveTools();
+    syncInjectionDependentTools();
     renderToolConfig();
   } catch (e) {
     $('bToolConfigSummary').textContent = 'load failed';
@@ -1936,6 +1953,9 @@ function onInjectionToggle() {
       if (lbl) lbl.className = el.checked ? 'active' : '';
     }
   });
+  syncInjectionDependentTools();
+  renderToolConfig();
+  onBuilderChange();
 }
 
 function setAllInjections(on) {
@@ -3029,6 +3049,7 @@ async function loadBaseModelInfo(baseAlias) {
     await onSeedChange();
     CURRENT_TOOL_CATEGORIES = Array.isArray(data.tool_categories) ? data.tool_categories.slice() : [];
     CURRENT_ACTIVE_TOOLS = Array.isArray(data.active_tools) ? data.active_tools.slice() : getDefaultActiveTools();
+    syncInjectionDependentTools();
     renderToolConfig();
     await loadFineTuneInline(data.fine_tune_id || baseAlias);
     $('bNotes').value = 'Agent: ' + (data.agent || '?') + ' | Context: ' + ((data.context_window||0)/1000) + 'K';
@@ -3517,6 +3538,7 @@ async function loadModelIntoBuilder(alias) {
   CURRENT_ACTIVE_TOOLS = Array.isArray(clone.active_tools) ? clone.active_tools.slice() : getDefaultActiveTools();
   $('bThoughtSanitize').checked = !!clone.thought_sanitize;
   renderInjectionToggles();
+  syncInjectionDependentTools();
   renderToolConfig();
   syncBuilderPromptSourceAuto();
   await loadFineTuneInline(clone.fine_tune_id || clone.alias);
