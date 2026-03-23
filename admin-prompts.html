@@ -1899,16 +1899,34 @@ function appendSeedToolCall() {
 
   var argsRaw = ($('bSeedToolArgs').value || '').trim() || '{}';
   var argsParsed;
+  // Helper: escape control chars inside JSON string literals so textarea newlines don't break parse
+  function escapeJsonStringControls(raw) {
+    return raw.replace(/"(?:[^"\\]|\\.)*"/g, function(m) {
+      return m.replace(/[\x00-\x1f]/g, function(c) {
+        switch (c.charCodeAt(0)) {
+          case 10: return '\\n';
+          case 13: return '\\r';
+          case 9:  return '\\t';
+          default: return '\\u' + ('0000' + c.charCodeAt(0).toString(16)).slice(-4);
+        }
+      });
+    });
+  }
   try {
     argsParsed = JSON.parse(argsRaw);
   } catch (e) {
-    // For prompt-based tools, auto-wrap plain text into {"prompt": "..."}
-    var promptTools = ['set_system_prompt', 'fine_tune_yourself', 'write_system_prompt'];
-    if (promptTools.indexOf(toolName) >= 0 && argsRaw && !argsRaw.startsWith('{')) {
-      argsParsed = {prompt: argsRaw};
-    } else {
-      alert('Tool arguments must be valid JSON: ' + e.message);
-      return;
+    // Textarea newlines inside JSON strings are invalid control chars -- escape and retry
+    try {
+      argsParsed = JSON.parse(escapeJsonStringControls(argsRaw));
+    } catch (e2) {
+      // For prompt-based tools, auto-wrap plain text into {"prompt": "..."}
+      var promptTools = ['set_system_prompt', 'fine_tune_yourself', 'write_system_prompt'];
+      if (promptTools.indexOf(toolName) >= 0 && argsRaw && !argsRaw.startsWith('{')) {
+        argsParsed = {prompt: argsRaw};
+      } else {
+        alert('Tool arguments must be valid JSON: ' + e2.message);
+        return;
+      }
     }
   }
 
