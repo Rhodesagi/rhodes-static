@@ -1,0 +1,112 @@
+/* Additional styling for Le Musket Quatre */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#hud {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.player-info {
+    background: linear-gradient(to bottom, rgba(30, 15, 0, 0.9), rgba(60, 30, 0, 0.9));
+    border: 3px solid #D2691E;
+    box-shadow: 0 0 10px rgba(210, 105, 30, 0.5);
+    margin: 10px;
+    transition: all 0.3s ease;
+}
+
+.player-info h3 {
+    text-shadow: 0 0 5px rgba(210, 105, 30, 0.8);
+    font-size: 20px;
+    border-bottom: 2px solid #D2691E;
+    padding-bottom: 5px;
+}
+
+.controls {
+    background: linear-gradient(to bottom, rgba(20, 20, 20, 0.9), rgba(40, 40, 40, 0.9));
+    border: 3px solid #444;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+.reload-indicator {
+    background: linear-gradient(to bottom, rgba(30, 15, 0, 0.9), rgba(60, 30, 0, 0.9));
+    border: 3px solid #8B4513;
+    box-shadow: 0 0 10px rgba(139, 69, 19, 0.5);
+}
+
+.reload-step {
+    border: 1px solid #444;
+    transition: all 0.5s ease;
+    text-align: center;
+    font-weight: bold;
+}
+
+.reload-step.active {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    text-shadow: 0 0 5px white;
+}
+
+#aimSight {
+    filter: drop-shadow(0 0 2px rgba(255, 0, 0, 0.8));
+}
+
+.sight-dot {
+    box-shadow: 0 0 5px 2px rgba(255, 0, 0, 0.7);
+}
+
+.sight-hair {
+    box-shadow: 0 0 3px 1px rgba(255, 0, 0, 0.5);
+}
+
+.key {
+    background: linear-gradient(to bottom, #555, #333);
+    border: 2px solid #666;
+    box-shadow: 0 2px 0 #222;
+    margin: 0 2px;
+    min-width: 30px;
+    text-align: center;
+    display: inline-block;
+}
+
+.control-item {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px 0;
+}
+
+.control-item:last-child {
+    border-bottom: none;
+}
+
+#gameContainer {
+    background: #000;
+}
+
+@media (max-width: 1200px) {
+    .player-info, .controls, .reload-indicator {
+        width: 250px;
+    }
+}
+
+@media (max-width: 900px) {
+    #hud {
+        flex-direction: column;
+    }
+    
+    .player-info, .controls, .reload-indicator {
+        width: auto;
+        max-width: 400px;
+        margin: 10px auto;
+        position: static;
+    }
+    
+    .controls {
+        order: 3;
+    }
+    
+    .reload-indicator {
+        order: 2;
+    }
+}
