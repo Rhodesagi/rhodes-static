@@ -1,276 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>TOTAL CONTROL</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Total Control — Block Distractions with AI</title>
 <style>
-:root {
-  --bg: #0d0d08; --panel: #1a1a12; --metal: #2a2a1c;
-  --amber: #ffcc00; --amber-dim: #cc9900;
-  --green: #44ff44; --green-dim: #22aa22;
-  --red: #ff5555; --text: #f0e8d0; --text-dim: #b0a080;
-  --border: #1f1b12; --cyan: #00ffcc;
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-html,body { background:var(--bg); color:var(--text); font-family:'Share Tech Mono','Courier New',monospace; height:100%; overflow:hidden; }
-body::after { content:''; position:fixed; top:0;left:0;right:0;bottom:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px); pointer-events:none; z-index:9999; }
-
-.app { display:flex; flex-direction:column; height:100%; padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
-.header { background:var(--metal); border-bottom:1px solid var(--amber-dim); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
-.header h1 { color:var(--amber); font-family:'Orbitron',monospace; font-size:15px; font-weight:700; letter-spacing:3px; text-shadow:0 0 12px rgba(255,204,0,0.3); }
-.user-badge { font-size:11px; color:var(--green); letter-spacing:1px; }
-
-.chat-messages { flex:1; overflow-y:auto; padding:12px 16px; -webkit-overflow-scrolling:touch; }
-.msg { margin-bottom:12px; max-width:85%; padding:10px 14px; font-size:14px; line-height:1.5; word-wrap:break-word; }
-.msg.user { margin-left:auto; background:rgba(255,204,0,0.12); border:1px solid var(--amber-dim); border-radius:12px 12px 2px 12px; }
-.msg.assistant { background:var(--panel); border:1px solid var(--border); border-radius:12px 12px 12px 2px; }
-.msg.system { max-width:100%; text-align:center; background:none; color:var(--text-dim); font-size:12px; padding:6px; }
-.msg a { color:var(--cyan); }
-.msg strong { color:var(--amber); }
-.msg code { background:var(--metal); padding:1px 4px; }
-
-.typing { display:none; padding:10px 14px; background:var(--panel); border:1px solid var(--border); border-radius:12px 12px 12px 2px; max-width:80px; margin-bottom:12px; }
-.typing.on { display:block; }
-.dots { display:flex; gap:4px; }
-.dots span { width:6px;height:6px;background:var(--amber);border-radius:50%;animation:blink 1.4s infinite; }
-.dots span:nth-child(2){animation-delay:.2s} .dots span:nth-child(3){animation-delay:.4s}
-@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
-
-.input-wrap { display:flex; padding:8px 12px; background:var(--metal); border-top:1px solid var(--border); gap:8px; flex-shrink:0; }
-.input-wrap textarea { flex:1; background:var(--bg); border:1px solid var(--border); color:var(--text); font-family:inherit; font-size:15px; padding:10px 12px; resize:none; max-height:100px; line-height:1.4; }
-.input-wrap textarea::placeholder { color:var(--text-dim); }
-.input-wrap textarea:focus { outline:none; border-color:var(--amber-dim); }
-.send-btn { background:var(--amber); color:var(--bg); border:none; padding:0 18px; font-family:inherit; font-size:14px; font-weight:bold; cursor:pointer; letter-spacing:1px; }
-.send-btn:disabled { opacity:.4; }
-
-.login-msg { text-align:center; padding:40px 20px; }
-.login-msg h2 { color:var(--amber); font-family:'Orbitron',monospace; margin-bottom:16px; font-size:18px; letter-spacing:3px; }
-.login-msg p { color:var(--text); font-size:15px; line-height:1.8; margin-bottom:16px; }
-.login-msg a { color:var(--cyan); text-decoration:none; font-weight:bold; }
-.auth-form { max-width:300px; margin:0 auto; text-align:left; }
-.auth-form input { width:100%; background:var(--metal); border:2px solid var(--amber-dim); color:var(--text); font-family:inherit; font-size:15px; padding:12px; margin-bottom:10px; }
-.auth-form input::placeholder { color:var(--text-dim); }
-.auth-form input:focus { outline:none; border-color:var(--amber); }
-.auth-form .btn { width:100%; background:var(--amber); color:var(--bg); border:none; padding:14px; font-family:inherit; font-size:16px; font-weight:bold; cursor:pointer; letter-spacing:2px; margin-bottom:8px; }
-.auth-form .btn:disabled { opacity:0.4; }
-.auth-form .btn-outline { width:100%; background:none; border:2px solid var(--amber); color:var(--amber); padding:12px; font-family:inherit; font-size:14px; font-weight:bold; cursor:pointer; letter-spacing:1px; }
-.auth-form .btn-outline:hover { background:rgba(255,204,0,0.1); }
-.auth-form .error { color:var(--red); font-size:13px; min-height:20px; text-align:center; margin-top:8px; }
-.auth-form .toggle { color:var(--text-dim); font-size:13px; text-align:center; margin-top:12px; }
-.auth-form .toggle a { color:var(--cyan); cursor:pointer; text-decoration:none; }
-
-::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:var(--bg)} ::-webkit-scrollbar-thumb{background:var(--metal)}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;max-width:700px;margin:0 auto;padding:40px 20px;background:#050505;color:#e0e0e0;line-height:1.7}
+h1{color:#00ffcc;font-size:2em;text-align:center;letter-spacing:2px}
+.subtitle{text-align:center;color:#888;font-size:1.1em;margin-bottom:30px}
+h2{color:#00ffcc;margin-top:30px}
+.feature{background:#111;border:1px solid #222;padding:16px;margin:10px 0;border-radius:6px}
+.feature h3{color:#00ff66;margin:0 0 6px 0}
+.feature p{color:#bbb;margin:0}
+.cta{display:block;text-align:center;background:#00ffcc;color:#050505;padding:16px 32px;font-size:1.1em;font-weight:bold;text-decoration:none;margin:30px auto;max-width:300px;border-radius:8px}
+.badges{text-align:center;margin:20px 0}
+.price{text-align:center;color:#888;margin:20px 0}
+.footer{text-align:center;margin-top:40px;color:#444;font-size:0.9em}
+.footer a{color:#00ffcc}
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="header">
-    <h1>TOTAL CONTROL</h1>
-    <span id="badge" class="user-badge"></span>
-  </div>
-  <div id="messages" class="chat-messages"></div>
-  <div class="typing" id="typing"><div class="dots"><span></span><span></span><span></span></div></div>
-  <div class="input-wrap">
-    <textarea id="input" rows="1" placeholder="Tell me what to block..."
-      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send();}"></textarea>
-    <button id="sendBtn" class="send-btn" onclick="send()">SEND</button>
-  </div>
+<h1>TOTAL CONTROL</h1>
+<p class="subtitle">Block distractions. Earn your access. Take back your attention.</p>
+
+<div class="feature">
+<h3>DNS Blocking</h3>
+<p>Block distracting sites across all apps and browsers on your phone — Safari, Chrome, TikTok, Instagram, everything. Works system-wide via encrypted DNS.</p>
 </div>
-<script>
-const WS_URL = 'wss://rhodesagi.com/ws';
-let ws = null;
-let token = null;
-let username = null;
-let history = [];
-let streaming = false;
-let currentMsgDiv = null;
-let fullResponse = '';
 
-// Grab auth from Rhodes (same origin = same localStorage)
-token = localStorage.getItem('rhodes_user_token') || localStorage.getItem('rhodes_token');
-username = localStorage.getItem('rhodes_username');
+<div class="feature">
+<h3>AI Advisor</h3>
+<p>Chat with Rhodes, an AI discipline advisor that helps you set up blocking rules, negotiate access, and build a focus schedule tailored to your life.</p>
+</div>
 
-if (token && username) {
-  document.getElementById('badge').textContent = username;
-  addMsg('system', 'Counselor ready. Tell me what to block.');
-} else {
-  document.getElementById('messages').innerHTML =
-    '<div class="login-msg">' +
-    '<h2>TOTAL CONTROL</h2>' +
-    '<p>Sign in to your Rhodes account</p>' +
-    '<div class="auth-form">' +
-    '<input id="authUser" type="text" placeholder="Username" autocomplete="username" autocapitalize="none">' +
-    '<input id="authPass" type="password" placeholder="Password" autocomplete="current-password">' +
-    '<button class="btn" onclick="doAuth(\'login\')">LOG IN</button>' +
-    '<button class="btn-outline" onclick="doAuth(\'register\')">CREATE ACCOUNT</button>' +
-    '<div id="authError" class="error"></div>' +
-    '<div class="toggle">Need help? <a href="https://rhodesagi.com" target="_blank">rhodesagi.com</a></div>' +
-    '</div></div>';
-  document.getElementById('input').disabled = true;
-  document.getElementById('sendBtn').disabled = true;
-}
+<div class="feature">
+<h3>Smart Blocking</h3>
+<p>Block feeds while keeping DMs accessible. Block Netflix until you work out. Block social media during work hours. Set conditions based on time, steps, workouts, and more.</p>
+</div>
 
-// Auto-resize
-document.getElementById('input').addEventListener('input', function() {
-  this.style.height = 'auto';
-  this.style.height = Math.min(this.scrollHeight, 100) + 'px';
-});
+<div class="feature">
+<h3>Filtered Browser</h3>
+<p>Access blocked sites safely through the in-app browser — respond to DMs, check messages, and handle essentials without unlocking the full feed.</p>
+</div>
 
-function addMsg(role, text) {
-  const el = document.createElement('div');
-  el.className = 'msg ' + role;
-  if (role === 'assistant') el.innerHTML = md(text);
-  else el.textContent = text;
-  document.getElementById('messages').appendChild(el);
-  document.getElementById('messages').scrollTop = 99999;
-  return el;
-}
+<div class="feature">
+<h3>Fitness Integration</h3>
+<p>Track steps, log workouts, and go for runs with GPS tracking. Earn access to blocked sites through exercise — block Twitter until 10,000 steps.</p>
+</div>
 
-function md(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-    .replace(/`(.*?)`/g,'<code>$1</code>')
-    .replace(/\n/g,'<br>');
-}
+<div class="feature">
+<h3>Voice Control</h3>
+<p>Speak to set up blocks. The AI Advisor understands voice commands so you can manage your rules hands-free.</p>
+</div>
 
-async function doAuth(action) {
-  const user = document.getElementById('authUser').value.trim();
-  const pass = document.getElementById('authPass').value.trim();
-  const errEl = document.getElementById('authError');
-  errEl.textContent = '';
-  if (!user || !pass) { errEl.textContent = 'Enter username and password'; return; }
+<a class="cta" href="https://apps.apple.com/app/id6760947843">Download on the App Store</a>
 
-  const endpoint = action === 'register' ? '/api/user/register' : '/api/user/login';
-  try {
-    const res = await fetch('https://rhodesagi.com' + endpoint, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({username: user, password: pass})
-    });
-    const data = await res.json();
-    if (!res.ok || !data.token) {
-      errEl.textContent = data.message || data.error || 'Failed';
-      return;
-    }
-    // Store token and reload
-    localStorage.setItem('rhodes_user_token', data.token);
-    localStorage.setItem('rhodes_token', data.token);
-    localStorage.setItem('rhodes_username', user);
-    location.reload();
-  } catch(e) {
-    errEl.textContent = 'Connection failed';
-  }
-}
+<div class="price">
+<p><strong>Free:</strong> DNS blocking, filtered browser, fitness tracking, manual rules</p>
+<p><strong>Pro:</strong> AI Advisor — $4.99/month or $39.99/year</p>
+</div>
 
-function send() {
-  const input = document.getElementById('input');
-  const text = input.value.trim();
-  if (!text || streaming) return;
-  input.value = '';
-  input.style.height = 'auto';
-  addMsg('user', text);
-  history.push({role:'user', content:text});
-  streaming = true;
-  document.getElementById('sendBtn').disabled = true;
-  document.getElementById('typing').classList.add('on');
-  fullResponse = '';
-  currentMsgDiv = addMsg('assistant', '');
-  connectAndSend(text);
-}
-
-function connectAndSend(text) {
-  // Use WebSocket like the main Rhodes site
-  ws = new WebSocket(WS_URL);
-
-  ws.onopen = function() {
-    // Authenticate
-    ws.send(JSON.stringify({type:'auth', token: token}));
-
-    // Send counselor system prompt + user message
-    const sysPrompt = "You are the TOTAL CONTROL COUNSELOR — an AI discipline advisor for a self-control app. Direct, concise, firm but supportive. Help users create blocking rules. When creating rules, output them as JSON in <tc-cmd> tags. Presets: Social Media, Streaming, Messaging, Gaming, News, Dating. Modes: until, during, allowDuring. Conditions: time, timeRange, tomorrow, schedule, password, studyTime, taskTime.";
-
-    ws.send(JSON.stringify({
-      type: 'chat',
-      message: text,
-      system_prompt: sysPrompt,
-      history: history.slice(-18),
-      model: 'rhodes'
-    }));
-  };
-
-  ws.onmessage = function(e) {
-    try {
-      const data = JSON.parse(e.data);
-      if (data.type === 'ai_message_chunk' || data.msg_type === 'ai_message_chunk') {
-        const chunk = data.content || data.text || data.chunk || '';
-        if (chunk) {
-          fullResponse += chunk;
-          currentMsgDiv.innerHTML = md(fullResponse);
-          document.getElementById('messages').scrollTop = 99999;
-        }
-      } else if (data.type === 'ai_message' || data.msg_type === 'ai_message') {
-        // Full message (non-streaming) or final
-        const content = data.content || data.text || '';
-        if (content && !fullResponse) {
-          fullResponse = content;
-          currentMsgDiv.innerHTML = md(fullResponse);
-        }
-      } else if (data.type === 'stream_end' || data.msg_type === 'stream_end' || data.type === 'done') {
-        finish();
-      } else if (data.type === 'error') {
-        currentMsgDiv.innerHTML = '<span style="color:var(--red)">Error: ' + (data.message||data.error||'Unknown') + '</span>';
-        finish();
-      }
-    } catch(err) {
-      console.log('[TC] WS parse error:', err, e.data);
-    }
-  };
-
-  ws.onerror = function(e) {
-    console.log('[TC] WS error:', e);
-    // Fallback to REST API
-    fallbackREST(text);
-  };
-
-  ws.onclose = function() {
-    if (streaming) finish();
-  };
-}
-
-async function fallbackREST(text) {
-  // If WebSocket fails, try REST API with the token
-  try {
-    const sysPrompt = "You are the TOTAL CONTROL COUNSELOR — an AI discipline advisor for a self-control app. Direct, concise, firm but supportive. Help users create blocking rules.";
-    const messages = [{role:'system', content:sysPrompt}, ...history.slice(-18)];
-
-    const res = await fetch('https://rhodesagi.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json', 'Authorization':'Bearer ' + token},
-      body: JSON.stringify({model:'rhodes', messages, max_tokens:1500, stream:false})
-    });
-
-    if (!res.ok) throw new Error('API ' + res.status);
-    const data = await res.json();
-    fullResponse = data.choices?.[0]?.message?.content || 'No response';
-    currentMsgDiv.innerHTML = md(fullResponse);
-  } catch(e) {
-    currentMsgDiv.innerHTML = '<span style="color:var(--red)">Error: ' + e.message + '</span>';
-  }
-  finish();
-}
-
-function finish() {
-  streaming = false;
-  document.getElementById('sendBtn').disabled = false;
-  document.getElementById('typing').classList.remove('on');
-  if (fullResponse) history.push({role:'assistant', content:fullResponse});
-  document.getElementById('messages').scrollTop = 99999;
-  if (ws) { try { ws.close(); } catch(e){} ws = null; }
-}
-</script>
+<div class="footer">
+<p>By Rhodes AGI LLC</p>
+<p><a href="/support">Support</a> · <a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of Use</a></p>
+</div>
 </body>
 </html>

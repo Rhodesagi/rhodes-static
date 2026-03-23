@@ -533,9 +533,6 @@
     </div>
 </div>
 
-<!-- Three.js for Memory Palace -->
-<script src="lib/three.min.js?v=137"></script>
-<script src="lib/PointerLockControls.js?v=2"></script>
 <!-- Vendor libs -->
 <script src="lib/marked.min.js"></script>
 <script src="lib/purify.min.js"></script>
@@ -567,26 +564,11 @@
 <script src="js/editor-toolbar.js?v=10"></script>
 <script src="js/editreview.js?v=10"></script>
 <script src="js/cardinfo.js?v=10"></script>
-<!-- Palace debug -->
-<script>
-window._palaceErrors = [];
-window.addEventListener('error', function(e) {
-    if (e.filename && e.filename.indexOf('palace') !== -1) {
-        window._palaceErrors.push(e.filename + ':' + e.lineno + ' ' + e.message);
-        console.error('PALACE LOAD ERROR:', e.filename, e.lineno, e.message);
-    }
-});
-</script>
 <!-- Memory Palace modules -->
-<script src="js/palace-templates.js?v=1"></script>
-<script src="js/palace-generator.js?v=1"></script>
-<script src="js/palace.js?v=10"></script>
-<script src="js/palace-renderer.js?v=3" onerror="console.error('FAILED TO LOAD: palace-renderer.js')"></script>
-<script src="js/palace-walker.js?v=3" onerror="console.error('FAILED TO LOAD: palace-walker.js')"></script>
-<script src="js/palace-builder.js?v=3" onerror="console.error('FAILED TO LOAD: palace-builder.js')"></script>
-<script src="js/palace-traverse.js?v=3" onerror="console.error('FAILED TO LOAD: palace-traverse.js')"></script>
-<script src="js/palace-loci.js?v=3" onerror="console.error('FAILED TO LOAD: palace-loci.js')"></script>
-<script src="js/palace-io.js?v=3" onerror="console.error('FAILED TO LOAD: palace-io.js')"></script>
+<script src="js/palace-raycaster.js?v=4"></script>
+<script src="js/palace-mapgen.js?v=1"></script>
+<script src="js/palace-loci.js?v=2"></script>
+<script src="js/palace.js?v=11"></script>
 <script src="js/app.js?v=10"></script>
 </body>
 </html>

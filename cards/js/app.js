@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
     RC.showView('decks');
 
     // Register service worker for offline support
-    if ("serviceWorker" in navigator) {
+    if (false && "serviceWorker" in navigator) {
         navigator.serviceWorker.register('/cards/cards-sw.js', { scope: '/cards/' })
             .then(function(reg) {
                 setInterval(function() { reg.update(); }, 3600000);

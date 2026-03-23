@@ -1830,7 +1830,73 @@
           wrap.textContent = '(no results - try leaving query blank to browse)';
           return;
         }
-        for (const r of results) {
+        // Group single-round sessions by user within 30min windows
+        var grouped = [];
+        var currentGroup = null;
+        for (var gi = 0; gi < results.length; gi++) {
+          var r = results[gi];
+          var who = r.username || r.client_id || '';
+          var ts = typeof r.created_at === 'number' ? r.created_at : (new Date(r.created_at || 0).getTime() / 1000);
+          var mc = Number(r.message_count || r.round_count || 1);
+          var isApi = mc <= 1 && (r.session_id || '').match(/^(live_|rotated_|apiws_)/);
+          if (isApi && currentGroup && currentGroup.who === who && Math.abs(ts - currentGroup.lastTs) < 1800) {
+            currentGroup.items.push(r);
+            currentGroup.lastTs = ts;
+          } else if (isApi) {
+            if (currentGroup) grouped.push(currentGroup);
+            currentGroup = { type: 'group', who: who, firstTs: ts, lastTs: ts, items: [r], model: r.model || '' };
+          } else {
+            if (currentGroup) { grouped.push(currentGroup); currentGroup = null; }
+            grouped.push({ type: 'single', item: r });
+          }
+        }
+        if (currentGroup) grouped.push(currentGroup);
+        // Render
+        for (var gg = 0; gg < grouped.length; gg++) {
+          var g = grouped[gg];
+          if (g.type === 'single') {
+            var r = g.item;
+            renderOneSessionResult(wrap, r, mode);
+          } else if (g.items.length === 1) {
+            renderOneSessionResult(wrap, g.items[0], mode);
+          } else {
+            // Grouped API sessions
+            var gDiv = document.createElement('div');
+            gDiv.className = 'resultItem';
+            gDiv.style.borderLeft = '3px solid #f59e0b';
+            var gWhen = fmtEpoch(g.firstTs);
+            var gModel = g.model ? ' \u00b7 model:' + g.model : '';
+            gDiv.innerHTML = '<div class="mono" style="font-size:12px;margin-bottom:6px;">' +
+              esc(gWhen) + ' \u00b7 <span style="color:#f59e0b;font-weight:bold;">API thread (' + g.items.length + ' exchanges)</span> \u00b7 ' +
+              esc(g.who) + esc(gModel) + '</div>' +
+              '<details><summary style="cursor:pointer;color:var(--muted);font-size:11px;">Expand ' + g.items.length + ' messages</summary>' +
+              '<div class="api-thread-inner" style="margin-top:6px;"></div></details>';
+            var innerDiv = gDiv.querySelector('.api-thread-inner');
+            for (var ai = 0; ai < g.items.length; ai++) {
+              var ar = g.items[ai];
+              var aItem = document.createElement('div');
+              aItem.style.cssText = 'padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:11px;cursor:pointer;';
+              aItem.className = 'mono';
+              aItem.textContent = 'Round ' + (ai+1) + ': ' + (ar.snippet || '').substring(0, 80) + (ar.snippet && ar.snippet.length > 80 ? '...' : '');
+              (function(sid) {
+                aItem.addEventListener('click', function(e) {
+                  e.stopPropagation();
+                  openSession(sid).catch(function(err) { $('actionOut').textContent = err.message; });
+                });
+              })(ar.session_id);
+              innerDiv.appendChild(aItem);
+            }
+            // Click header opens first session
+            gDiv.addEventListener('click', function(e) {
+              if (e.target.tagName === 'SUMMARY' || e.target.closest('details')) return;
+              openSession(g.items[0].session_id).catch(function(err) { $('actionOut').textContent = err.message; });
+            });
+            wrap.appendChild(gDiv);
+          }
+        }
+      }
+
+      function renderOneSessionResult(wrap, r, mode) {
           const item = document.createElement('div');
           item.className = 'resultItem';
           const whoLabel = r.username ? `user:${r.username}` : (r.client_id ? `guest:${r.client_id}` : 'unknown');
@@ -1872,7 +1938,6 @@
           });
           item.addEventListener('click', () => openSession(r.session_id).catch(err => $('actionOut').textContent = err.message));
           wrap.appendChild(item);
-        }
       }
 
       async function shareSession() {

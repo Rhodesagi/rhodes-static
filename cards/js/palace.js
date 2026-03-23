@@ -1,54 +1,53 @@
 /**
- * RhodesCards Memory Palace — Main module
- * Orchestrates renderer, walker, builder, traversal, loci, and I/O.
- * All on RC.Palace namespace.
+ * RhodesCards Memory Palace — Main orchestrator (Raycaster version)
+ * Manages palace CRUD, create flow, and coordinates raycaster + map gen.
  */
 (function() {
     'use strict';
 
-    const Palace = {
+    var Palace = {
         currentPalace: null,
-        surfaces: [],
-        connectors: [],
-        loci: [],
-        mode: 'walk',
-        dirty: false,
+        mapData: null, // { map, width, height, sprites, spawn }
 
-        // ── Palace list / management ──
-
+        // ── API ──
         async loadPalaceList() {
             var res = await RC.api('GET', '/palaces');
-            if (!res.palaces) return [];
-            return res.palaces;
+            return (res && res.palaces) ? res.palaces : [];
         },
 
         async createPalace(name, templateId, lociCount) {
             var res = await RC.api('POST', '/palaces', { name: name || 'Untitled Palace' });
             if (!res || !res.id) return null;
-            var palaceId = res.id;
 
-            // Generate layout
-            var layout;
+            // Generate map
+            var data;
             if (templateId) {
-                layout = RC.PalaceTemplates.generate(templateId);
-            } else if (lociCount) {
-                layout = RC.PalaceGenerator.generate(lociCount);
+                data = RC.PalaceMapGen.generateFromTemplate(templateId);
             } else {
-                layout = RC.PalaceGenerator.generate(20);
+                data = RC.PalaceMapGen.generate(lociCount || 20);
             }
 
-            // Save generated layout to DB via bulk endpoint
-            if (layout) {
-                await RC.api('PUT', '/palaces/' + palaceId + '/bulk', {
-                    name: name,
-                    spawn_point: layout.spawn_point,
-                    surfaces: layout.surfaces,
-                    connectors: layout.connectors,
-                    loci: layout.loci
-                });
-            }
+            // Convert sprites to loci format for DB
+            var loci = data.sprites.map(function(s) {
+                return {
+                    position: [s.x, s.y],
+                    marker_type: s.type,
+                    marker_settings: {},
+                    card_ids: s.data.card_ids || [],
+                    label: s.data.label || ''
+                };
+            });
 
-            return { id: palaceId };
+            // Save to DB
+            await RC.api('PUT', '/palaces/' + res.id + '/bulk', {
+                name: name,
+                spawn_point: { position: data.spawn },
+                settings: { map: data.map, width: data.width, height: data.height, version: 2 },
+                surfaces: [], connectors: [],
+                loci: loci
+            });
+
+            return { id: res.id };
         },
 
         async deletePalace(id) {
@@ -57,100 +56,116 @@
 
         async loadPalace(id) {
             var res = await RC.api('GET', '/palaces/' + id);
-            if (!res.palace) return null;
+            if (!res || !res.palace) return null;
             this.currentPalace = res.palace;
-            this.surfaces = res.surfaces || [];
-            this.connectors = res.connectors || [];
-            this.loci = res.loci || [];
-            this.dirty = false;
+
+            // Reconstruct map data
+            var settings = res.palace.settings || {};
+            if (settings.map && settings.width) {
+                this.mapData = {
+                    map: settings.map,
+                    width: settings.width,
+                    height: settings.height,
+                    spawn: res.palace.spawn_point ? res.palace.spawn_point.position : [3, 3],
+                    sprites: (res.loci || []).map(function(l) {
+                        return {
+                            x: l.position[0],
+                            y: l.position[1],
+                            type: l.marker_type || 'orb',
+                            data: { label: l.label, card_ids: l.card_ids || [], id: l.id }
+                        };
+                    })
+                };
+            }
             return res;
         },
 
         async savePalace() {
-            if (!this.currentPalace) return;
-            var sceneData = RC.PalaceRenderer.exportSceneData();
+            if (!this.currentPalace || !this.mapData) return;
+            var loci = this.mapData.sprites.map(function(s) {
+                return {
+                    position: [s.x, s.y],
+                    marker_type: s.type,
+                    marker_settings: {},
+                    card_ids: s.data.card_ids || [],
+                    label: s.data.label || ''
+                };
+            });
             await RC.api('PUT', '/palaces/' + this.currentPalace.id + '/bulk', {
                 name: this.currentPalace.name,
-                spawn_point: this.currentPalace.spawn_point,
-                surfaces: sceneData.surfaces,
-                connectors: sceneData.connectors,
-                loci: sceneData.loci
+                spawn_point: { position: this.mapData.spawn },
+                settings: { map: this.mapData.map, width: this.mapData.width, height: this.mapData.height, version: 2 },
+                surfaces: [], connectors: [],
+                loci: loci
             });
-            this.dirty = false;
             RC.toast('Palace saved');
         },
 
-        // ── Mode switching ──
-
-        setMode(mode) {
-            this.mode = mode;
-            if (mode === 'build') {
-                RC.PalaceBuilder.enable();
-                RC.PalaceWalker.unlock();
-            } else if (mode === 'walk') {
-                RC.PalaceBuilder.disable();
-                RC.PalaceWalker.lock();
-            } else if (mode === 'review') {
-                RC.PalaceBuilder.disable();
-                RC.PalaceWalker.lock();
-            }
-            this._updateUI();
-        },
-
-        // ── Enter palace view ──
-
+        // ── Enter palace ──
         async enter(palaceId) {
             document.getElementById('view-palaces').classList.remove('active');
             document.getElementById('view-palace').classList.add('active');
+
             var data = await this.loadPalace(palaceId);
-            if (!data) { RC.toast('Failed to load palace'); return; }
-            RC.PalaceRenderer.init('palace-canvas');
-            RC.PalaceRenderer.buildScene(this.surfaces, this.connectors, this.loci);
-            RC.PalaceWalker.init(RC.PalaceRenderer.camera, RC.PalaceRenderer.renderer.domElement);
-            RC.PalaceLoci.init(this.loci);
-            this.setMode('walk');
-            this._updateUI();
-            RC.PalaceRenderer.animate();
+            if (!data || !this.mapData) { RC.toast('Failed to load palace'); return; }
+
+            RC.Raycaster.init('palace-canvas');
+            RC.Raycaster.setMap(this.mapData.map, this.mapData.width, this.mapData.height);
+            RC.Raycaster.setSprites(this.mapData.sprites);
+            RC.Raycaster.setPos(this.mapData.spawn[0], this.mapData.spawn[1], 0);
+            RC.Raycaster.interactCallback = this._onInteract.bind(this);
+            RC.Raycaster.start();
+
+            document.getElementById('palace-name').textContent = this.currentPalace.name;
         },
 
-        exit() {
-            RC.PalaceWalker.dispose();
-            RC.PalaceRenderer.dispose();
-            RC.PalaceBuilder.disable();
+        _onInteract: function(sprite, index) {
+            if (!sprite.data) return;
+            var cardIds = sprite.data.card_ids || [];
+            if (cardIds.length === 0) {
+                this._showBindDialog(sprite, index);
+            } else {
+                RC.PalaceLoci.activateLocusRay(sprite, index);
+            }
+        },
+
+        _showBindDialog: function(sprite, index) {
+            RC.Raycaster.stop();
+            if (document.pointerLockElement) document.exitPointerLock();
+            var overlay = document.getElementById('palace-review-overlay');
+            overlay.style.display = 'flex';
+            overlay.innerHTML = '<div class="palace-review-card">' +
+                '<h3>' + RC.esc(sprite.data.label || 'Empty Locus') + '</h3>' +
+                '<p>No cards bound to this location.</p>' +
+                '<button class="btn btn-primary" onclick="RC.PalaceLoci.openCardBinderRay(' + index + ')">Bind Cards</button>' +
+                '<button class="btn" onclick="RC.Palace.closeOverlay()">Close</button>' +
+            '</div>';
+        },
+
+        closeOverlay: function() {
+            document.getElementById('palace-review-overlay').style.display = 'none';
+            RC.Raycaster.start();
+        },
+
+        exit: function() {
+            RC.Raycaster.dispose();
             document.getElementById('view-palace').classList.remove('active');
             this.currentPalace = null;
+            this.mapData = null;
             RC.showView('decks');
         },
-
-        _updateUI() {
-            var bar = document.getElementById('palace-toolbar');
-            if (!bar) return;
-            bar.querySelectorAll('.mode-btn').forEach(function(b) { b.classList.remove('active'); });
-            var active = bar.querySelector('[data-mode="' + this.mode + '"]');
-            if (active) active.classList.add('active');
-            var nameEl = document.getElementById('palace-name');
-            if (nameEl) nameEl.textContent = this.currentPalace ? this.currentPalace.name : '';
-        }
     };
 
     // ── Palace list view ──
-
     Palace.showPalaceList = async function() {
         var list = document.getElementById('palace-list');
         if (!list) return;
         list.innerHTML = '<div class="loading">Loading palaces...</div>';
 
-        try {
-            var palaces = await this.loadPalaceList();
-        } catch(e) {
-            list.innerHTML = '<div class="empty-state"><p>Failed to load palaces.</p></div>';
-            return;
-        }
+        try { var palaces = await this.loadPalaceList(); }
+        catch(e) { list.innerHTML = '<div class="empty-state"><p>Failed to load.</p></div>'; return; }
 
-        if (palaces.length === 0) {
-            this._showCreateView(list);
-            return;
-        }
+        if (!palaces.length) { this._showCreateView(list); return; }
 
         var html = '<div class="palace-grid">';
         html += palaces.map(function(p) {
@@ -166,38 +181,25 @@
         list.innerHTML = html;
     };
 
-    // ── Create view: templates + custom ──
-
+    // ── Create view ──
     Palace._showCreateView = function(container) {
-        var templates = RC.PalaceTemplates.catalog;
+        var templates = RC.PalaceMapGen.templates;
         var html = '<div class="palace-create-section">';
-        html += '<h3>Choose a Template</h3>';
-        html += '<div class="palace-template-grid">';
+        html += '<h3>Choose a Template</h3><div class="palace-template-grid">';
         templates.forEach(function(t) {
             html += '<div class="palace-template-card" onclick="RC.Palace._createFromTemplate(\'' + t.id + '\', \'' + RC.esc(t.name) + '\')">' +
-                '<div class="template-preview" style="background:' + t.preview + '"></div>' +
-                '<div class="template-info">' +
-                    '<strong>' + RC.esc(t.name) + '</strong>' +
-                    '<span class="template-desc">' + RC.esc(t.desc) + '</span>' +
-                    '<span class="template-loci">' + t.loci + ' loci</span>' +
-                '</div></div>';
+                '<div class="template-preview" style="background:' + (t.preview || '#333') + '"></div>' +
+                '<div class="template-info"><strong>' + RC.esc(t.name) + '</strong>' +
+                '<span class="template-desc">' + RC.esc(t.desc) + '</span>' +
+                '<span class="template-loci">' + t.loci + ' loci</span></div></div>';
         });
-        html += '</div>';
-
-        html += '<div class="palace-divider"><span>or</span></div>';
-
-        html += '<h3>Generate Custom Palace</h3>';
-        html += '<div class="palace-custom-form">' +
-            '<label>Palace name</label>' +
-            '<input type="text" id="customPalaceName" class="modal-input" placeholder="e.g. Anatomy Palace, History Manor...">' +
-            '<label>How many loci?</label>' +
-            '<input type="number" id="customLociCount" class="modal-input" value="20" min="4" max="200">' +
-            '<div class="loci-hint">Each locus holds one flashcard. More loci = bigger palace.</div>' +
-            '<button class="btn btn-primary" onclick="RC.Palace._createCustom()">Generate Palace</button>' +
-        '</div>';
-
-        html += '<div style="margin-top:12px"><button class="btn btn-sm" onclick="RC.Palace.showPalaceList()">Back</button></div>';
-        html += '</div>';
+        html += '</div><div class="palace-divider"><span>or</span></div>';
+        html += '<h3>Generate Custom Palace</h3><div class="palace-custom-form">' +
+            '<label>Palace name</label><input type="text" id="customPalaceName" class="modal-input" placeholder="e.g. Anatomy Palace...">' +
+            '<label>How many loci?</label><input type="number" id="customLociCount" class="modal-input" value="20" min="4" max="200">' +
+            '<div class="loci-hint">Each locus holds one flashcard. More loci = bigger dungeon.</div>' +
+            '<button class="btn btn-primary" onclick="RC.Palace._createCustom()">Generate Palace</button></div>';
+        html += '<div style="margin-top:12px"><button class="btn btn-sm" onclick="RC.Palace.showPalaceList()">Back</button></div></div>';
         container.innerHTML = html;
     };
 
@@ -205,51 +207,33 @@
         var list = document.getElementById('palace-list');
         list.innerHTML = '<div class="loading">Building palace...</div>';
         var res = await this.createPalace(templateName, templateId, null);
-        if (res && res.id) {
-            this.enter(res.id);
-        } else {
-            RC.toast('Failed to create palace');
-            this.showPalaceList();
-        }
+        if (res && res.id) this.enter(res.id);
+        else { RC.toast('Failed'); this.showPalaceList(); }
     };
 
     Palace._createCustom = async function() {
-        var nameInput = document.getElementById('customPalaceName');
-        var countInput = document.getElementById('customLociCount');
-        var name = nameInput ? nameInput.value.trim() : '';
-        var count = countInput ? parseInt(countInput.value) : 20;
-        if (!name) { if (nameInput) nameInput.style.borderColor = '#f44'; return; }
-        if (count < 4) count = 4;
-        if (count > 200) count = 200;
-
+        var name = (document.getElementById('customPalaceName').value || '').trim();
+        var count = parseInt(document.getElementById('customLociCount').value) || 20;
+        if (!name) { document.getElementById('customPalaceName').style.borderColor = '#f44'; return; }
+        count = Math.max(4, Math.min(200, count));
         var list = document.getElementById('palace-list');
-        list.innerHTML = '<div class="loading">Generating ' + count + ' loci palace...</div>';
+        list.innerHTML = '<div class="loading">Generating ' + count + '-loci palace...</div>';
         var res = await this.createPalace(name, null, count);
-        if (res && res.id) {
-            this.enter(res.id);
-        } else {
-            RC.toast('Failed to create palace');
-            this.showPalaceList();
-        }
+        if (res && res.id) this.enter(res.id);
+        else { RC.toast('Failed'); this.showPalaceList(); }
     };
 
     Palace.confirmDelete = function(id, name) {
-        var modal = document.getElementById('palaceDeleteModal');
+        var m = document.getElementById('palaceDeleteModal');
         document.getElementById('palaceDeleteName').textContent = name;
-        modal.style.display = 'flex';
-        modal._deleteId = id;
+        m.style.display = 'flex'; m._deleteId = id;
     };
-
     Palace._confirmDelete = function() {
-        var modal = document.getElementById('palaceDeleteModal');
-        var id = modal._deleteId;
-        modal.style.display = 'none';
-        this.deletePalace(id).then(function() { RC.Palace.showPalaceList(); });
+        var m = document.getElementById('palaceDeleteModal');
+        m.style.display = 'none';
+        this.deletePalace(m._deleteId).then(function() { RC.Palace.showPalaceList(); });
     };
-
-    Palace._cancelDelete = function() {
-        document.getElementById('palaceDeleteModal').style.display = 'none';
-    };
+    Palace._cancelDelete = function() { document.getElementById('palaceDeleteModal').style.display = 'none'; };
 
     RC.Palace = Palace;
 })();
