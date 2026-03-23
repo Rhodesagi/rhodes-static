@@ -378,6 +378,27 @@ textarea {
 .seed-msg-actions button {
   font-size: 10px; padding: 2px 6px; border-radius: 3px;
 }
+.seed-msg-header.role-tool { background: #2d1f3d; color: #c4b5fd; }
+.seed-msg[draggable="true"] { cursor: grab; }
+.seed-msg[draggable="true"]:active { cursor: grabbing; }
+.seed-msg.drag-over { border-top: 3px solid var(--accent); margin-top: -3px; }
+.seed-msg.dragging { opacity: 0.3; }
+.seed-msg-handle { cursor: grab; margin-right: 8px; font-size: 14px; opacity: 0.5; user-select: none; }
+.seed-msg-handle:hover { opacity: 1; }
+.seed-tc-block { border-top: 1px dashed var(--border); padding: 8px 12px; }
+.seed-tc-label { font-size: 10px; font-weight: 600; color: #c4b5fd; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.seed-tc-label .tc-name { color: #e879f9; font-family: var(--mono); }
+.seed-tc-label .tc-id { color: var(--muted); font-family: var(--mono); font-weight: 400; }
+.seed-tc-args { width: 100%; border: none; background: rgba(196,181,253,0.06); color: #c4b5fd;
+  font-family: var(--mono); font-size: 11px; line-height: 1.5; padding: 6px 10px; resize: vertical;
+  outline: none; min-height: 40px; border-radius: 4px; margin-top: 4px; }
+.seed-tc-result-inline { font-size: 11px; color: var(--muted); padding: 4px 12px; border-top: 1px dashed var(--border);
+  font-family: var(--mono); white-space: pre-wrap; word-break: break-all; max-height: 120px; overflow-y: auto; }
+.seed-tool-result-content { width: 100%; border: none; background: rgba(196,181,253,0.04); color: var(--muted);
+  font-family: var(--mono); font-size: 11px; line-height: 1.5; padding: 6px 10px; resize: vertical;
+  outline: none; min-height: 40px; border-radius: 4px; }
+.seed-msg-group { margin-bottom: 12px; border: 2px solid transparent; border-radius: 10px; }
+.seed-msg-group.drag-over { border-color: var(--accent); }
 .seed-editor-toolbar {
   padding: 8px 16px; border-top: 1px solid var(--border);
   display: flex; gap: 8px; align-items: center; flex-shrink: 0;
@@ -1017,6 +1038,7 @@ body .tab:hover {
           <button onclick="spAddMessage('system')" style="font-size:11px">+ System</button>
           <button onclick="spAddMessage('user')" style="font-size:11px">+ User</button>
           <button onclick="spAddMessage('assistant')" style="font-size:11px">+ Assistant</button>
+          <button onclick="spAddToolCallPair()" style="font-size:11px;color:#c4b5fd;border-color:#5b3080">+ Tool Call</button>
           <div style="flex:1"></div>
           <span id="spMsgCount" style="font-size:11px;color:var(--muted)"></span>
         </div>
@@ -1165,15 +1187,43 @@ function renderSeedEditor() {
     var content = msg.content || '';
     var reasoning = msg.reasoning_content !== undefined ? msg.reasoning_content : null;
     var roleClass = 'role-' + role;
-    var html = '<div class="seed-msg" data-idx="'+i+'">';
+    var html = '<div class="seed-msg" data-idx="'+i+'" draggable="true">';
     html += '<div class="seed-msg-header '+roleClass+'">';
-    html += '<span>'+role.toUpperCase()+' #'+(i+1)+'</span>';
+    html += '<span><span class="seed-msg-handle" title="Drag to reorder">&#9776;</span>'+role.toUpperCase()+' #'+(i+1);
+    // For tool role, show the tool_call_id
+    if (role === 'tool' && msg.tool_call_id) {
+      html += ' <span style="font-weight:400;color:var(--muted);font-family:var(--mono)">(' + esc(msg.tool_call_id) + ')</span>';
+    }
+    html += '</span>';
     html += '<div class="seed-msg-actions">';
-    if (i > 0) html += '<button data-action="moveUp" data-idx="'+i+'">&#9650;</button>';
-    if (i < SP_MESSAGES.length-1) html += '<button data-action="moveDown" data-idx="'+i+'">&#9660;</button>';
-    html += '<button class="danger" data-action="deleteMsg" data-idx="'+i+'">&#10005;</button>';
+    if (i > 0) html += '<button data-action="moveUp" data-idx="'+i+'" title="Move up">&#9650;</button>';
+    if (i < SP_MESSAGES.length-1) html += '<button data-action="moveDown" data-idx="'+i+'" title="Move down">&#9660;</button>';
+    html += '<button class="danger" data-action="deleteMsg" data-idx="'+i+'" title="Delete">&#10005;</button>';
     html += '</div></div>';
-    html += '<textarea class="seed-msg-content" data-idx="'+i+'" data-field="content" oninput="spEditMsg(this)" rows="'+Math.max(3, content.split("\n").length)+'">' + esc(content) + '</textarea>';
+    // Content textarea (for tool role, this is the tool result content)
+    if (role === 'tool') {
+      html += '<div class="seed-tc-block"><div class="seed-tc-label">TOOL RESULT</div>';
+      html += '<textarea class="seed-tool-result-content" data-idx="'+i+'" data-field="content" oninput="spEditMsg(this)" rows="'+Math.max(2, String(content).split("\n").length)+'">' + esc(content) + '</textarea>';
+      html += '</div>';
+    } else {
+      html += '<textarea class="seed-msg-content" data-idx="'+i+'" data-field="content" oninput="spEditMsg(this)" rows="'+Math.max(3, String(content).split("\n").length)+'">' + esc(content) + '</textarea>';
+    }
+    // Tool calls on assistant messages
+    if (role === 'assistant' && Array.isArray(msg.tool_calls) && msg.tool_calls.length) {
+      msg.tool_calls.forEach(function(tc, tci) {
+        var fn = (tc.function || tc);
+        var tcName = fn.name || '(unknown)';
+        var tcId = tc.id || '';
+        var tcArgs = fn.arguments || '{}';
+        // Pretty-print if valid JSON
+        try { tcArgs = JSON.stringify(JSON.parse(tcArgs), null, 2); } catch(e) {}
+        html += '<div class="seed-tc-block">';
+        html += '<div class="seed-tc-label">TOOL CALL <span class="tc-name">' + esc(tcName) + '</span> <span class="tc-id">id: ' + esc(tcId) + '</span></div>';
+        html += '<textarea class="seed-tc-args" data-idx="'+i+'" data-tci="'+tci+'" data-tcfield="arguments" oninput="spEditToolCall(this)" rows="'+Math.max(2, tcArgs.split("\n").length)+'">' + esc(tcArgs) + '</textarea>';
+        html += '</div>';
+      });
+    }
+    // Reasoning block for assistant
     if (role === 'assistant') {
       if (reasoning !== null) {
         html += '<div class="seed-msg-reasoning">';
@@ -1187,6 +1237,7 @@ function renderSeedEditor() {
     html += '</div>';
     return html;
   }).join('');
+  initSeedDragDrop();
   updateSpDirty();
 }
 
@@ -1198,6 +1249,66 @@ function spEditMsg(el) {
     editorToRaw();
     updateSpDirty();
   }
+}
+
+function spEditToolCall(el) {
+  var idx = parseInt(el.dataset.idx);
+  var tci = parseInt(el.dataset.tci);
+  var field = el.dataset.tcfield;
+  if (SP_MESSAGES[idx] && SP_MESSAGES[idx].tool_calls && SP_MESSAGES[idx].tool_calls[tci]) {
+    var fn = SP_MESSAGES[idx].tool_calls[tci].function || SP_MESSAGES[idx].tool_calls[tci];
+    if (field === 'arguments') {
+      // Store as compact JSON string if valid, else raw
+      try { fn.arguments = JSON.stringify(JSON.parse(el.value)); } catch(e) { fn.arguments = el.value; }
+    }
+    editorToRaw();
+    updateSpDirty();
+  }
+}
+
+// ---- Drag and Drop for seed messages ----
+var _seedDragIdx = null;
+
+function initSeedDragDrop() {
+  var cards = document.querySelectorAll('#spEditor .seed-msg[draggable="true"]');
+  cards.forEach(function(card) {
+    card.addEventListener('dragstart', function(e) {
+      _seedDragIdx = parseInt(card.dataset.idx);
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', _seedDragIdx);
+    });
+    card.addEventListener('dragend', function() {
+      card.classList.remove('dragging');
+      document.querySelectorAll('#spEditor .seed-msg.drag-over').forEach(function(el) {
+        el.classList.remove('drag-over');
+      });
+      _seedDragIdx = null;
+    });
+    card.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      var targetIdx = parseInt(card.dataset.idx);
+      if (targetIdx !== _seedDragIdx) {
+        card.classList.add('drag-over');
+      }
+    });
+    card.addEventListener('dragleave', function() {
+      card.classList.remove('drag-over');
+    });
+    card.addEventListener('drop', function(e) {
+      e.preventDefault();
+      card.classList.remove('drag-over');
+      var fromIdx = _seedDragIdx;
+      var toIdx = parseInt(card.dataset.idx);
+      if (fromIdx === null || fromIdx === toIdx) return;
+      // Move the message
+      var moved = SP_MESSAGES.splice(fromIdx, 1)[0];
+      SP_MESSAGES.splice(toIdx, 0, moved);
+      editorToRaw();
+      renderSeedEditor();
+    });
+  });
 }
 
 function spMoveMsg(idx, dir) {
@@ -1243,6 +1354,29 @@ function spAddMessage(role) {
   editorToRaw();
   renderSeedEditor();
   // Scroll to bottom
+  $('spEditor').scrollTop = $('spEditor').scrollHeight;
+}
+
+function spAddToolCallPair() {
+  var tcId = 'tc_' + Date.now();
+  var assistantMsg = {
+    role: 'assistant',
+    content: '',
+    tool_calls: [{
+      id: tcId,
+      type: 'function',
+      function: { name: 'tool_name', arguments: '{}' }
+    }]
+  };
+  var toolMsg = {
+    role: 'tool',
+    tool_call_id: tcId,
+    content: '{"success": true}'
+  };
+  SP_MESSAGES.push(assistantMsg);
+  SP_MESSAGES.push(toolMsg);
+  editorToRaw();
+  renderSeedEditor();
   $('spEditor').scrollTop = $('spEditor').scrollHeight;
 }
 
