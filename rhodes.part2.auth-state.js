@@ -1867,9 +1867,9 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
             // 1. Markdown links: [text](url)
             html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+?)(?:\*\*|')?\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:underline;">$1</a>');
             // 2. Bare URLs with protocol (not already in href="...")
-            html = html.replace(/(?<!="|\'|>)(https?:\/\/[^\s<>"'`\)\]]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:underline;">$1</a>');
+            html = html.replace(/(?<!="|\'|>)(https?:\/\/[^\s<>"'`\)\]*]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:underline;">$1</a>');
             // 3. rhodesagi.com URLs without protocol (with path)
-            html = html.replace(/(^|[\s>])(rhodesagi\.com\/[^\s<>"'`\)\]]*)/g, '$1<a href="https://$2" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:underline;">$2</a>');
+            html = html.replace(/(^|[\s>])(rhodesagi\.com\/[^\s<>"'`\)\]*]*)/g, '$1<a href="https://$2" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:underline;">$2</a>');
             // 4. Bare rhodesagi.com (no path)
             html = html.replace(/(^|[\s>])(rhodesagi\.com)(?=[\s<,.]|$)/g, '$1<a href="https://$2" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:underline;">$2</a>');
             return html;
