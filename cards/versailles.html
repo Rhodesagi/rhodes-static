@@ -1,550 +1,430 @@
 <!DOCTYPE html>
-<html><head><title>Salle du Congres - Versailles</title>
+<html><head><title>Salle du Congres — Versailles</title>
 <style>body{margin:0;overflow:hidden;background:#1a1008}
-#hud{position:fixed;bottom:10px;left:10px;color:#daa520;font:12px monospace;z-index:5}
-#info{position:fixed;top:10px;left:10px;color:#daa520;font:13px monospace;z-index:5}
-</style>
-</head><body>
-<div id="info">Salle du Congres | Click to look, WASD move, Arrows turn</div>
+#hud{position:fixed;bottom:10px;left:10px;color:#daa520;font:12px monospace;z-index:5;text-shadow:0 0 4px #000}
+#info{position:fixed;top:10px;left:10px;color:#daa520;font:13px monospace;z-index:5;text-shadow:0 0 4px #000}
+</style></head><body>
+<div id="info">Salle du Congres | Click to look · WASD move · Shift=run · Arrows=turn</div>
 <div id="hud"></div>
 <script src="lib/three.min.js?v=137"></script>
 <script>
-var W=32, D=28, H=12, TIERS=9, TH=0.6, TD=1.2;
-var DS=THREE.DoubleSide;
-
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 1: CONSTANTS + SCENE + RENDERER
+   ═══════════════════════════════════════════════════════════════════════════ */
+var W=32,D=28,H=12,TIERS=9,TH=0.6,TD=1.2,R0=3.5;
+var WALL_R=W/2, COL_R=WALL_R-1.2, DRAPE_R=WALL_R-0.3, NCOLS=16;
+var DS=THREE.DoubleSide, PI=Math.PI;
+var AISLES=[PI*0.5,PI*0.25,PI*0.75,PI*0.15,PI*0.85];
 var scene=new THREE.Scene();
-scene.background=new THREE.Color(0xc8b898);
-scene.fog=new THREE.Fog(0xc8b898, 30, 70);
-
-var camera=new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 80);
-// Spawn: center of hall, looking at the curved back wall (the impressive view)
-camera.position.set(0, 2, 0);
-camera.rotation.order='YXZ';
-
+scene.background=new THREE.Color(0xd8c8a8);
+scene.fog=new THREE.Fog(0xd8c8a8,25,55);
+var camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.1,80);
+camera.position.set(0,1.7,2);camera.rotation.order='YXZ';
 var renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.2;
+renderer.toneMappingExposure=1.1;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
-// ── Textures ──
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 2: TEXTURES (all Canvas-painted)
+   ═══════════════════════════════════════════════════════════════════════════ */
 function mkTex(w,h,fn){var c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);var t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;}
 
-var velvetTex=mkTex(64,64,function(c,w,h){c.fillStyle='#4a0808';c.fillRect(0,0,w,h);c.fillStyle='rgba(80,12,15,0.1)';for(var i=0;i<100;i++)c.fillRect(Math.random()*w,Math.random()*h,3,2);c.strokeStyle='rgba(120,20,25,0.12)';for(var i=0;i<h;i+=3){c.beginPath();c.moveTo(0,i);c.lineTo(w,i);c.stroke();}});
-var woodTex=mkTex(64,64,function(c,w,h){c.fillStyle='#6a4a28';c.fillRect(0,0,w,h);c.strokeStyle='rgba(90,60,30,0.3)';for(var i=0;i<20;i++){c.beginPath();c.moveTo(Math.random()*w,0);c.lineTo(Math.random()*w,h);c.stroke();}});
-var marbleTex=mkTex(64,64,function(c,w,h){c.fillStyle='#c4877a';c.fillRect(0,0,w,h);c.strokeStyle='rgba(160,85,70,0.3)';c.lineWidth=2;for(var i=0;i<14;i++){c.beginPath();c.moveTo(Math.random()*w,Math.random()*h);c.quadraticCurveTo(Math.random()*w,Math.random()*h,Math.random()*w,Math.random()*h);c.stroke();}});
-var goldTex=mkTex(32,32,function(c,w,h){c.fillStyle='#e8c848';c.fillRect(0,0,w,h);c.fillStyle='rgba(210,180,50,0.3)';for(var i=0;i<20;i++)c.fillRect(Math.random()*w,Math.random()*h,3,2);});
+var velvetTex=mkTex(64,64,function(c,w,h){
+    c.fillStyle='#5a0a0a';c.fillRect(0,0,w,h);
+    c.fillStyle='rgba(90,15,18,0.12)';for(var i=0;i<100;i++)c.fillRect(Math.random()*w,Math.random()*h,2,1);
+    c.strokeStyle='rgba(80,12,15,0.08)';c.lineWidth=0.5;
+    for(var i=0;i<h;i+=2){c.beginPath();c.moveTo(0,i);c.lineTo(w,i);c.stroke();}
+    c.fillStyle='rgba(70,10,12,0.15)';
+    for(var dy=0;dy<h;dy+=10)for(var dx=0;dx<w;dx+=10){
+        var ox=(Math.floor(dy/10)%2)*5;
+        c.beginPath();c.arc(dx+ox,dy,1,0,PI*2);c.fill();
+    }
+});
+var woodTex=mkTex(64,64,function(c,w,h){
+    c.fillStyle='#7a5a30';c.fillRect(0,0,w,h);
+    c.strokeStyle='rgba(100,70,35,0.25)';c.lineWidth=1;
+    for(var i=0;i<25;i++){c.beginPath();c.moveTo(Math.random()*w,0);c.lineTo(Math.random()*w,h);c.stroke();}
+});
+var marbleTex=mkTex(128,128,function(c,w,h){
+    c.fillStyle='#c08070';c.fillRect(0,0,w,h);
+    c.strokeStyle='rgba(200,170,150,0.25)';c.lineWidth=2;
+    for(var i=0;i<20;i++){c.beginPath();c.moveTo(Math.random()*w,Math.random()*h);c.quadraticCurveTo(Math.random()*w,Math.random()*h,Math.random()*w,Math.random()*h);c.stroke();}
+    c.strokeStyle='rgba(160,85,70,0.15)';c.lineWidth=1;
+    for(var i=0;i<12;i++){c.beginPath();c.moveTo(Math.random()*w,Math.random()*h);c.quadraticCurveTo(Math.random()*w,Math.random()*h,Math.random()*w,Math.random()*h);c.stroke();}
+});
+var goldTex=mkTex(64,64,function(c,w,h){
+    c.fillStyle='#d4af37';c.fillRect(0,0,w,h);
+    c.fillStyle='rgba(220,190,60,0.3)';for(var i=0;i<30;i++)c.fillRect(Math.random()*w,Math.random()*h,4,3);
+    c.fillStyle='rgba(160,120,30,0.2)';for(var i=0;i<20;i++)c.fillRect(Math.random()*w,Math.random()*h,3,4);
+});
 var floorTex=mkTex(128,128,function(c,w,h){
-    // Rich marble checkerboard
+    // Warm marble tile — two close tones, no harsh grid
     for(var y=0;y<h;y+=32)for(var x=0;x<w;x+=32){
         var alt=(Math.floor(x/32)+Math.floor(y/32))%2;
-        c.fillStyle=alt?'#d8c8a8':'#8a7a5a';
+        c.fillStyle=alt?'#c8b898':'#b0a080';
         c.fillRect(x,y,32,32);
-        // Marble veining
-        c.strokeStyle=alt?'rgba(200,185,160,0.3)':'rgba(110,95,75,0.3)';
+        // Subtle marble veining
+        c.strokeStyle=alt?'rgba(180,165,140,0.2)':'rgba(150,135,110,0.2)';
         c.lineWidth=1;
-        c.beginPath();c.moveTo(x+Math.random()*32,y);c.quadraticCurveTo(x+16,y+16,x+Math.random()*32,y+32);c.stroke();
+        c.beginPath();c.moveTo(x+Math.random()*32,y);
+        c.quadraticCurveTo(x+16,y+16+Math.random()*8,x+Math.random()*32,y+32);c.stroke();
     }
-    // Grout lines
-    c.strokeStyle='rgba(60,50,35,0.2)';c.lineWidth=1;
+    // Very subtle grout (nearly invisible)
+    c.strokeStyle='rgba(160,145,125,0.1)';c.lineWidth=0.5;
     for(var i=0;i<w;i+=32){c.beginPath();c.moveTo(i,0);c.lineTo(i,h);c.stroke();}
     for(var i=0;i<h;i+=32){c.beginPath();c.moveTo(0,i);c.lineTo(w,i);c.stroke();}
+});floorTex.repeat.set(4,4);
+var carpetTex=mkTex(32,32,function(c,w,h){
+    c.fillStyle='#5a0a0a';c.fillRect(0,0,w,h);
+    c.fillStyle='rgba(80,15,15,0.15)';for(var i=0;i<40;i++)c.fillRect(Math.random()*w,Math.random()*h,2,2);
 });
-floorTex.repeat.set(4,4);
 var ceilTex=mkTex(256,256,function(c,w,h){
     c.fillStyle='#c8a050';c.fillRect(0,0,w,h);
     for(var y=0;y<h;y+=64)for(var x=0;x<w;x+=64){
-        // Deep coffer recess
         c.fillStyle='#a08030';c.fillRect(x+2,y+2,60,60);
         c.fillStyle='#b89838';c.fillRect(x+6,y+6,52,52);
-        // Painted panel inside coffer (sky blue/allegory hint)
-        c.fillStyle='#8aaa9a';c.fillRect(x+12,y+12,40,40);
-        c.fillStyle='#7a9a8a';c.fillRect(x+14,y+14,36,36);
-        // Gold rosette at center of each coffer
-        c.fillStyle='#d4b040';
-        c.beginPath();c.arc(x+32,y+32,6,0,Math.PI*2);c.fill();
-        c.fillStyle='#e8c848';
-        c.beginPath();c.arc(x+32,y+32,3,0,Math.PI*2);c.fill();
-        // Gold border
+        c.fillStyle='#4a6a5a';c.fillRect(x+10,y+10,44,44);
+        c.fillStyle='#e8c848';c.beginPath();c.arc(x+32,y+32,7,0,PI*2);c.fill();
         c.strokeStyle='#d4b040';c.lineWidth=2;c.strokeRect(x+4,y+4,56,56);
     }
 });
-var creamTex=mkTex(32,32,function(c,w,h){c.fillStyle='#d8c8a8';c.fillRect(0,0,w,h);});
-var drapeTex=mkTex(128,256,function(c,w,h){
-    c.fillStyle='#6a1218';c.fillRect(0,0,w,h);
-    // Deep fold pattern
-    for(var i=0;i<w;i+=8){
-        var depth=Math.sin(i*Math.PI/5)*50;
-        c.fillStyle='rgba('+(100+depth)+','+(15+depth/4)+','+(20+depth/4)+',0.5)';
-        c.fillRect(i,0,4,h);
-        c.fillStyle='rgba('+(140+depth)+','+(25+depth/3)+','+(30+depth/3)+',0.3)';
-        c.fillRect(i+4,0,4,h);
-    }
-    // Horizontal gather lines
-    c.strokeStyle='rgba(60,8,12,0.15)';c.lineWidth=1;
-    for(var y=0;y<h;y+=20){c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke();}
-    // Gold trim at top
-    c.fillStyle='#c8a030';c.fillRect(0,0,w,6);
-    // Gold trim at bottom
-    c.fillStyle='#c8a030';c.fillRect(0,h-4,w,4);
-});
-
-// Materials
-var velvet=new THREE.MeshLambertMaterial({map:velvetTex,side:DS,color:0x601010});
-var wood=new THREE.MeshLambertMaterial({map:woodTex,side:DS});
-var marble=new THREE.MeshLambertMaterial({map:marbleTex,side:DS,emissive:0x3a2018,emissiveIntensity:0.15});
-var gold=new THREE.MeshStandardMaterial({map:goldTex,side:DS,color:0xd4af37,metalness:0.8,roughness:0.25,emissive:0x604010,emissiveIntensity:0.3});
-var cream=new THREE.MeshLambertMaterial({map:creamTex,side:DS});
-var floorMat=new THREE.MeshLambertMaterial({map:floorTex,side:DS});
-var ceilMat=new THREE.MeshLambertMaterial({map:ceilTex,side:DS});
-var drapeMat=new THREE.MeshLambertMaterial({map:drapeTex,side:DS});
-// Panel wall material (for upper walls, front wall, side walls)
 var panelTex=mkTex(128,128,function(c,w,h){
-    c.fillStyle='#c8b898';c.fillRect(0,0,w,h);
-    for(var y=0;y<h;y+=32)for(var x=0;x<w;x+=32){
-        c.strokeStyle='rgba(180,160,130,0.3)';c.lineWidth=1;c.strokeRect(x+2,y+2,28,28);
-        c.fillStyle='rgba(200,180,150,0.08)';c.fillRect(x+4,y+4,24,24);
-    }
-    c.strokeStyle='rgba(200,170,80,0.2)';c.lineWidth=2;
-    for(var y=0;y<h;y+=32){c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke();}
+    c.fillStyle='#d8c8a8';c.fillRect(0,0,w,h);
+    c.strokeStyle='rgba(190,160,80,0.25)';c.lineWidth=2;
+    for(var y=0;y<h;y+=32)for(var x=0;x<w;x+=32){c.strokeRect(x+3,y+3,26,26);}
+    c.fillStyle='rgba(220,210,190,0.08)';
+    for(var y=0;y<h;y+=32)for(var x=0;x<w;x+=32){c.fillRect(x+5,y+5,22,22);}
 });
-var panelMat=new THREE.MeshLambertMaterial({map:panelTex,side:DS});
-
-// ═══════════════════════════════════════
-// HEMICYCLE TIERS — flat rings + box risers (NO ExtrudeGeometry)
-// ═══════════════════════════════════════
-for(var t=0;t<TIERS;t++){
-    var iR=3.5+t*TD, oR=iR+TD, y=t*TH;
-    // Flat floor ring
-    var ring=new THREE.Mesh(new THREE.RingGeometry(iR,oR,48,1,0,Math.PI),((t%2==0)?floorMat:wood));
-    ring.rotation.x=-Math.PI/2; ring.position.y=y+0.01;
-    scene.add(ring);
-    // Riser (vertical step face) — build as curved wall segments
-    if(t>0){
-        for(var i=0;i<24;i++){
-            var a1=Math.PI*i/24,a2=Math.PI*(i+1)/24;
-            var x1=Math.cos(a1)*iR,z1=Math.sin(a1)*iR;
-            var x2=Math.cos(a2)*iR,z2=Math.sin(a2)*iR;
-            var g=new THREE.BufferGeometry();
-            g.setAttribute('position',new THREE.BufferAttribute(new Float32Array([x1,y-TH,z1,x2,y-TH,z2,x2,y,z2,x1,y-TH,z1,x2,y,z2,x1,y,z1]),3));
-            g.computeVertexNormals();
-            scene.add(new THREE.Mesh(g,wood));
-        }
+var drapeTex=mkTex(128,256,function(c,w,h){
+    c.fillStyle='#4a0a0e';c.fillRect(0,0,w,h);
+    for(var i=0;i<w;i+=6){
+        var d=Math.sin(i*PI/6)*50;
+        c.fillStyle='rgba('+(130+d)+','+(22+d/3)+','+(28+d/3)+',0.5)';c.fillRect(i,0,3,h);
+        c.fillStyle='rgba('+(40-d/2)+','+(5)+','+(7)+',0.5)';c.fillRect(i+3,0,3,h);
     }
-    // Desk front at outer edge
+    // Highlight ridges
+    c.fillStyle='rgba(160,30,38,0.15)';
+    for(var i=0;i<w;i+=12){c.fillRect(i,0,2,h);}
+    c.fillStyle='#c8a030';c.fillRect(0,0,w,6);c.fillRect(0,h-3,w,3);
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 3: MATERIALS
+   ═══════════════════════════════════════════════════════════════════════════ */
+var velvet=new THREE.MeshPhongMaterial({map:velvetTex,side:DS,color:0x6b1020,emissive:0x200505,emissiveIntensity:0.15,shininess:15,specular:0x331010});
+var carpet=new THREE.MeshLambertMaterial({map:carpetTex,side:DS,color:0x5a0a0a});
+var wood=new THREE.MeshLambertMaterial({map:woodTex,side:DS});
+var marble=new THREE.MeshLambertMaterial({map:marbleTex,side:DS,emissive:0x3a2018,emissiveIntensity:0.12});
+var gold=new THREE.MeshStandardMaterial({map:goldTex,side:DS,color:0xd4af37,metalness:0.7,roughness:0.3,emissive:0x604010,emissiveIntensity:0.3});
+var cream=new THREE.MeshLambertMaterial({map:panelTex,side:DS});
+var floorMat=new THREE.MeshLambertMaterial({map:floorTex,side:DS});
+var ceilMat=new THREE.MeshLambertMaterial({map:ceilTex,side:DS,emissive:0x403020,emissiveIntensity:0.15});
+var drapeMat=new THREE.MeshLambertMaterial({map:drapeTex,side:DS});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 4: HEMICYCLE TIERS + SEATS
+   ═══════════════════════════════════════════════════════════════════════════ */
+function isAisle(a){for(var i=0;i<AISLES.length;i++)if(Math.abs(a-AISLES[i])<0.055)return true;return false;}
+function addM(geo,mat,px,py,pz,ry){var m=new THREE.Mesh(geo,mat);m.position.set(px,py,pz);if(ry)m.rotation.y=ry;scene.add(m);return m;}
+
+for(var t=0;t<TIERS;t++){
+    var iR=R0+t*TD,oR=iR+TD,y=t*TH;
+    // Tier floor
+    var ring=new THREE.Mesh(new THREE.RingGeometry(iR,oR,48,1,0,PI),carpet);
+    ring.rotation.x=-PI/2;ring.position.y=y+0.01;scene.add(ring);
+    // Risers
+    if(t>0)for(var i=0;i<24;i++){
+        var a1=PI*i/24,a2=PI*(i+1)/24;
+        var x1=Math.cos(a1)*iR,z1=Math.sin(a1)*iR,x2=Math.cos(a2)*iR,z2=Math.sin(a2)*iR;
+        var g=new THREE.BufferGeometry();
+        g.setAttribute('position',new THREE.BufferAttribute(new Float32Array([x1,y-TH,z1,x2,y-TH,z2,x2,y,z2,x1,y-TH,z1,x2,y,z2,x1,y,z1]),3));
+        g.computeVertexNormals();scene.add(new THREE.Mesh(g,wood));
+    }
+    // Desk fronts
     for(var i=0;i<24;i++){
-        var a1=Math.PI*i/24,a2=Math.PI*(i+1)/24;
-        var x1=Math.cos(a1)*oR,z1=Math.sin(a1)*oR;
-        var x2=Math.cos(a2)*oR,z2=Math.sin(a2)*oR;
+        var a1=PI*i/24,a2=PI*(i+1)/24;
+        var x1=Math.cos(a1)*oR,z1=Math.sin(a1)*oR,x2=Math.cos(a2)*oR,z2=Math.sin(a2)*oR;
         var g=new THREE.BufferGeometry();
         g.setAttribute('position',new THREE.BufferAttribute(new Float32Array([x1,y,z1,x2,y,z2,x2,y+0.45,z2,x1,y,z1,x2,y+0.45,z2,x1,y+0.45,z1]),3));
-        g.computeVertexNormals();
-        scene.add(new THREE.Mesh(g,wood));
+        g.computeVertexNormals();scene.add(new THREE.Mesh(g,wood));
     }
-    // Seats — L-shaped chairs with back + cushion + armrests
-    var nSeats=Math.floor(10+t*5);
-    for(var s=0;s<nSeats;s++){
-        var a=Math.PI*(0.05+s*0.9/(nSeats-1)+0.025);
-        var r=iR+TD*0.45;
-        var sx=Math.cos(a)*r, sz=Math.sin(a)*r;
+    // Seats
+    var nS=Math.floor(7+t*3);
+    for(var s=0;s<nS;s++){
+        var a=PI*(0.04+s*0.92/(nS-1));
+        if(isAisle(a))continue;
+        var r=iR+TD*0.5,sx=Math.cos(a)*r,sz=Math.sin(a)*r;
         var seat=new THREE.Group();
-        var _sb=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.4,0.04),velvet);_sb.position.set(0,0.32,-0.15);seat.add(_sb);
-        var _sc=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.06,0.26),velvet);_sc.position.set(0,0.1,0.02);seat.add(_sc);
-        var _al=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.22,0.24),gold);_al.position.set(-0.14,0.18,0);seat.add(_al);
-        var _ar=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.22,0.24),gold);_ar.position.set(0.14,0.18,0);seat.add(_ar);
-        var legGeo=new THREE.CylinderGeometry(0.015,0.015,0.08,4);
-        var _l1=new THREE.Mesh(legGeo,wood);_l1.position.set(-0.11,0.04,-0.09);seat.add(_l1);
-        var _l2=new THREE.Mesh(legGeo,wood);_l2.position.set(0.11,0.04,-0.09);seat.add(_l2);
-        var _l3=new THREE.Mesh(legGeo,wood);_l3.position.set(-0.11,0.04,0.09);seat.add(_l3);
-        var _l4=new THREE.Mesh(legGeo,wood);_l4.position.set(0.11,0.04,0.09);seat.add(_l4);
-        seat.position.set(sx,y,sz);
-        seat.rotation.y=-a-Math.PI/2;
+        // Curved back (half-cylinder, larger)
+        var sb=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.22,0.42,16,1,false,0,PI),velvet);
+        sb.position.set(0,0.35,-0.12);sb.rotation.y=PI;sb.rotation.x=0.28;seat.add(sb);
+        // Gold wood frame strip on top edge of back (catches light, visible at distance)
+        var sbf=new THREE.Mesh(new THREE.CylinderGeometry(0.23,0.23,0.025,16,1,false,0,PI),gold);
+        sbf.position.set(0,0.57,-0.13);sbf.rotation.y=PI;sbf.rotation.x=0.28;seat.add(sbf);
+        // Dark border ring at back edges (upholstery-meets-frame)
+        var br=new THREE.Mesh(new THREE.TorusGeometry(0.225,0.012,6,16,PI),new THREE.MeshLambertMaterial({color:0x2a1508,side:THREE.DoubleSide}));
+        br.position.set(0,0.56,-0.12);br.rotation.y=PI;br.rotation.x=0.28;seat.add(br);
+        // Side border strips
+        var bsl=new THREE.Mesh(new THREE.BoxGeometry(0.015,0.42,0.015),new THREE.MeshLambertMaterial({color:0x2a1508,side:THREE.DoubleSide}));
+        bsl.position.set(-0.22,0.35,-0.12);bsl.rotation.x=0.28;seat.add(bsl);
+        var bsr=new THREE.Mesh(new THREE.BoxGeometry(0.015,0.42,0.015),new THREE.MeshLambertMaterial({color:0x2a1508,side:THREE.DoubleSide}));
+        bsr.position.set(0.22,0.35,-0.12);bsr.rotation.x=0.28;seat.add(bsr);
+        // Padded cushion (flattened sphere for roundness)
+        var sc=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6),velvet);
+        sc.scale.set(1.0,0.35,0.7);sc.position.set(0,0.11,0.03);seat.add(sc);
+        // Gilt armrests with scroll tops
+        var al=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.22,0.28),gold);al.position.set(-0.2,0.22,0);seat.add(al);
+        var ar=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.22,0.28),gold);ar.position.set(0.2,0.22,0);seat.add(ar);
+        // Scroll tops (small torus)
+        var stl=new THREE.Mesh(new THREE.TorusGeometry(0.03,0.015,6,8),gold);stl.position.set(-0.2,0.35,0.12);stl.rotation.y=PI/2;seat.add(stl);
+        var str=new THREE.Mesh(new THREE.TorusGeometry(0.03,0.015,6,8),gold);str.position.set(0.2,0.35,0.12);str.rotation.y=PI/2;seat.add(str);
+        // Armrest flat tops
+        var atl=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.025,0.3),gold);atl.position.set(-0.2,0.34,0);seat.add(atl);
+        var atr=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.025,0.3),gold);atr.position.set(0.2,0.34,0);seat.add(atr);
+        seat.position.set(sx,y,sz);seat.rotation.y=-a+PI/2;
         scene.add(seat);
     }
 }
 
-// ═══════════════════════════════════════
-// CENTRAL FLOOR
-// ═══════════════════════════════════════
-var cf=new THREE.Mesh(new THREE.CircleGeometry(3.5,32,0,Math.PI),floorMat);
-cf.rotation.x=-Math.PI/2; cf.position.y=0.01; scene.add(cf);
-// Main floor extending behind tribune
-var mf=new THREE.Mesh(new THREE.PlaneGeometry(W,D),floorMat);
-mf.rotation.x=-Math.PI/2; mf.position.set(0,-0.01,0); scene.add(mf);
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 5: CENTRAL FLOOR + TRIBUNE
+   ═══════════════════════════════════════════════════════════════════════════ */
+var cf=new THREE.Mesh(new THREE.CircleGeometry(R0,32,0,PI),floorMat);cf.rotation.x=-PI/2;cf.position.y=0.01;scene.add(cf);
+var mf=new THREE.Mesh(new THREE.PlaneGeometry(W+6,D+6),floorMat);mf.rotation.x=-PI/2;mf.position.y=-0.01;mf.receiveShadow=true;scene.add(mf);
+addM(new THREE.BoxGeometry(2.5,1,1.2),wood,0,0.5,-0.5);
+addM(new THREE.BoxGeometry(2.7,0.06,1.4),wood,0,1.03,-0.5);
+addM(new THREE.BoxGeometry(2.7,0.05,0.06),gold,0,1.06,-0.2);
+addM(new THREE.BoxGeometry(0.06,0.9,0.06),gold,-1.2,0.5,-0.2);
+addM(new THREE.BoxGeometry(0.06,0.9,0.06),gold,1.2,0.5,-0.2);
 
-// ═══════════════════════════════════════
-// TRIBUNE
-// ═══════════════════════════════════════
-var trib=new THREE.Mesh(new THREE.BoxGeometry(2.5,1,1.2),wood);
-trib.position.set(0,0.5,-0.5); scene.add(trib);
-var tribTop=new THREE.Mesh(new THREE.BoxGeometry(2.7,0.06,1.4),wood);
-tribTop.position.set(0,1.03,-0.5); scene.add(tribTop);
-
-// ═══════════════════════════════════════
-// FRONT WALL + PAINTING
-// ═══════════════════════════════════════
-var fw=new THREE.Mesh(new THREE.PlaneGeometry(W+10,H+4),panelMat);
-fw.position.set(0,H/2,-D/2+0.5); scene.add(fw);
-// Gold frame
-var ft=new THREE.Mesh(new THREE.BoxGeometry(7.5,0.12,0.08),gold); ft.position.set(0,10.5,-D/2+0.6); scene.add(ft);
-var fb=new THREE.Mesh(new THREE.BoxGeometry(7.5,0.12,0.08),gold); fb.position.set(0,6,-D/2+0.6); scene.add(fb);
-var fl=new THREE.Mesh(new THREE.BoxGeometry(0.12,4.5,0.08),gold); fl.position.set(-3.75,8.25,-D/2+0.6); scene.add(fl);
-var fr=new THREE.Mesh(new THREE.BoxGeometry(0.12,4.5,0.08),gold); fr.position.set(3.75,8.25,-D/2+0.6); scene.add(fr);
-// Couder painting
-var pTex=new THREE.TextureLoader().load('lib/couder-painting.jpg');
-var painting=new THREE.Mesh(new THREE.PlaneGeometry(7,4),new THREE.MeshLambertMaterial({map:pTex,side:DS}));
-painting.position.set(0,8.25,-D/2+0.62); scene.add(painting);
-
-// ═══════════════════════════════════════
-// CURVED BACK WALL (red drapes)
-// ═══════════════════════════════════════
-var wallR=W/2;
-// Drapes with 3D fold geometry
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 6: DRAPES (3D sinusoidal fold geometry)
+   ═══════════════════════════════════════════════════════════════════════════ */
+var FOLDS=6;
 for(var i=0;i<32;i++){
-    var a1=Math.PI*i/32,a2=Math.PI*(i+1)/32;
-    var aMid=(a1+a2)/2;
-    // Create folded drape — 4 vertical strips per segment with sinusoidal z-offset
-    for(var fi=0;fi<4;fi++){
-        var fa=a1+(a2-a1)*fi/4, fb=a1+(a2-a1)*(fi+1)/4;
-        var foldDepth=Math.sin(fi*Math.PI/2)*0.12;
-        var r1=wallR+foldDepth, r2=wallR+Math.sin((fi+1)*Math.PI/2)*0.12;
-        var fx1=Math.cos(fa)*r1,fz1=Math.sin(fa)*r1;
-        var fx2=Math.cos(fb)*r2,fz2=Math.sin(fb)*r2;
+    var a1=PI*i/32,a2=PI*(i+1)/32;
+    for(var fi=0;fi<FOLDS;fi++){
+        var fa=a1+(a2-a1)*fi/FOLDS,fb=a1+(a2-a1)*(fi+1)/FOLDS;
+        var fA=Math.sin(fi*PI/(FOLDS/2))*0.35,fB=Math.sin((fi+1)*PI/(FOLDS/2))*0.35;
+        var rA=DRAPE_R+fA,rB=DRAPE_R+fB;
+        var x1=Math.cos(fa)*rA,z1=Math.sin(fa)*rA,x2=Math.cos(fb)*rB,z2=Math.sin(fb)*rB;
         var g=new THREE.BufferGeometry();
-        g.setAttribute('position',new THREE.BufferAttribute(new Float32Array([
-            fx2,0,fz2, fx1,0,fz1, fx1,7,fz1, fx2,0,fz2, fx1,7,fz1, fx2,7,fz2
-        ]),3));
+        g.setAttribute('position',new THREE.BufferAttribute(new Float32Array([x2,0,z2,x1,0,z1,x1,7.5,z1,x2,0,z2,x1,7.5,z1,x2,7.5,z2]),3));
         g.setAttribute('uv',new THREE.BufferAttribute(new Float32Array([1,0,0,0,0,1,1,0,0,1,1,1]),2));
-        g.computeVertexNormals();
-        scene.add(new THREE.Mesh(g,drapeMat));
+        g.computeVertexNormals();scene.add(new THREE.Mesh(g,drapeMat));
     }
 }
 
-// ═══════════════════════════════════════
-// COLUMNS (around perimeter)
-// ═══════════════════════════════════════
-var nCols=16;
-for(var i=0;i<nCols;i++){
-    var a=Math.PI*(0.06+i*0.88/(nCols-1));
-    var cr=wallR-2.5;
-    var cx=Math.cos(a)*cr, cz=Math.sin(a)*cr;
-    // Fluted shaft (16-sided for visible facets = fluting)
-    var shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.35,7.2,16),marble);
-    shaft.position.set(cx,3.9,cz); scene.add(shaft);
-    // Entasis ring (slight bulge at 1/3 height)
-    var ent=new THREE.Mesh(new THREE.CylinderGeometry(0.33,0.33,0.3,16),marble);
-    ent.position.set(cx,2.8,cz); scene.add(ent);
-    // CORINTHIAN CAPITAL — elaborate
-    // Necking (narrow ring below capital)
-    var neck=new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.3,0.12,12),gold);
-    neck.position.set(cx,7.56,cz); scene.add(neck);
-    // Bell (main capital body, flared)
-    var bell=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.28,0.5,12),gold);
-    bell.position.set(cx,7.87,cz); scene.add(bell);
-    // Abacus (square top plate)
-    var abacus=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.1,0.9),gold);
-    abacus.position.set(cx,8.17,cz); scene.add(abacus);
-    // Volutes (scroll ornaments at 4 corners)
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 7: COLUMNS + CORINTHIAN CAPITALS
+   ═══════════════════════════════════════════════════════════════════════════ */
+for(var ci=0;ci<NCOLS;ci++){
+    var a=PI*(0.04+ci*0.92/(NCOLS-1)),cx=Math.cos(a)*COL_R,cz=Math.sin(a)*COL_R;
+    // Shaft (fluted — 16 facets)
+    var shaft=addM(new THREE.CylinderGeometry(0.33,0.38,7.2,16),marble,cx,3.9,cz);shaft.castShadow=true;
+    // Entasis bulge
+    addM(new THREE.CylinderGeometry(0.36,0.36,0.25,16),marble,cx,2.7,cz);
+    // Base: plinth + torus
+    addM(new THREE.BoxGeometry(0.85,0.12,0.85),marble,cx,0.06,cz);
+    var bt=new THREE.Mesh(new THREE.TorusGeometry(0.36,0.045,8,16),marble);bt.rotation.x=PI/2;bt.position.set(cx,0.2,cz);scene.add(bt);
+    // Capital: necking + bell + abacus
+    addM(new THREE.CylinderGeometry(0.26,0.28,0.1,12),gold,cx,7.56,cz);
+    addM(new THREE.CylinderGeometry(0.52,0.3,0.6,12),gold,cx,7.87,cz);
+    addM(new THREE.BoxGeometry(1.05,0.12,1.05),gold,cx,8.2,cz);
+    // Volutes (4 corner scrolls)
     for(var vi=0;vi<4;vi++){
-        var va=vi*Math.PI/2+Math.PI/4;
-        var vol=new THREE.Mesh(new THREE.TorusGeometry(0.08,0.025,6,8,Math.PI*1.5),gold);
-        vol.position.set(cx+Math.cos(va)*0.38,8.0,cz+Math.sin(va)*0.38);
-        vol.rotation.y=va; scene.add(vol);
+        var va=vi*PI/2+PI/4;
+        var vt=new THREE.Mesh(new THREE.TorusGeometry(0.08,0.025,6,8,PI*1.5),gold);
+        vt.position.set(cx+Math.cos(va)*0.4,8.05,cz+Math.sin(va)*0.4);vt.rotation.y=va;scene.add(vt);
     }
-    // Acanthus leaf hints (small vertical fins around bell)
+    // Acanthus leaves (8 fins)
     for(var li=0;li<8;li++){
-        var la=li*Math.PI/4;
-        var leaf=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.3,0.12),gold);
-        leaf.position.set(cx+Math.cos(la)*0.35,7.75,cz+Math.sin(la)*0.35);
-        leaf.rotation.y=-la; scene.add(leaf);
+        var la=li*PI/4;
+        addM(new THREE.BoxGeometry(0.04,0.28,0.12),gold,cx+Math.cos(la)*0.35,7.72,cz+Math.sin(la)*0.35,-la);
     }
-    // Base — torus molding + plinth
-    var baseTorus=new THREE.Mesh(new THREE.TorusGeometry(0.38,0.05,8,16),marble);
-    baseTorus.rotation.x=Math.PI/2; baseTorus.position.set(cx,0.25,cz); scene.add(baseTorus);
-    var plinth=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.15,0.8),marble);
-    plinth.position.set(cx,0.08,cz); scene.add(plinth);
 }
 
-// Upper curved wall above gallery (cream with gold panels)
-for(var i=0;i<32;i++){
-    var a1=Math.PI*i/32,a2=Math.PI*(i+1)/32;
-    var x1=Math.cos(a1)*wallR,z1=Math.sin(a1)*wallR;
-    var x2=Math.cos(a2)*wallR,z2=Math.sin(a2)*wallR;
-    var ug=new THREE.BufferGeometry();
-    ug.setAttribute('position',new THREE.BufferAttribute(new Float32Array([
-        x2,7,z2, x1,7,z1, x1,H,z1, x2,7,z2, x1,H,z1, x2,H,z2
-    ]),3));
-    ug.setAttribute('uv',new THREE.BufferAttribute(new Float32Array([1,0,0,0,0,1,1,0,0,1,1,1]),2));
-    ug.computeVertexNormals();
-    scene.add(new THREE.Mesh(ug,panelMat));
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 8: ENTABLATURE (architrave + frieze + cornice)
+   ═══════════════════════════════════════════════════════════════════════════ */
+function curvedBand(yBot,yTop,r,mat){
+    for(var i=0;i<32;i++){
+        var a1=PI*i/32,a2=PI*(i+1)/32;
+        var x1=Math.cos(a1)*r,z1=Math.sin(a1)*r,x2=Math.cos(a2)*r,z2=Math.sin(a2)*r;
+        var g=new THREE.BufferGeometry();
+        g.setAttribute('position',new THREE.BufferAttribute(new Float32Array([x2,yBot,z2,x1,yBot,z1,x1,yTop,z1,x2,yBot,z2,x1,yTop,z1,x2,yTop,z2]),3));
+        g.computeVertexNormals();scene.add(new THREE.Mesh(g,mat));
+    }
 }
+curvedBand(8.3,8.6,COL_R,gold);       // architrave
+curvedBand(8.6,9.1,COL_R+0.08,cream); // frieze
+curvedBand(9.1,9.35,COL_R+0.2,gold);  // cornice
 
-// ═══════════════════════════════════════
-// ENTABLATURE (horizontal band above columns)
-// ═══════════════════════════════════════
-var entR=wallR-2.2;
-// Architrave (bottom strip — gold)
-for(var i=0;i<32;i++){
-    var a1=Math.PI*i/32,a2=Math.PI*(i+1)/32;
-    var x1=Math.cos(a1)*entR,z1=Math.sin(a1)*entR;
-    var x2=Math.cos(a2)*entR,z2=Math.sin(a2)*entR;
-    var eg=new THREE.BufferGeometry();
-    eg.setAttribute('position',new THREE.BufferAttribute(new Float32Array([
-        x2,8.3,z2, x1,8.3,z1, x1,8.6,z1, x2,8.3,z2, x1,8.6,z1, x2,8.6,z2
-    ]),3));eg.computeVertexNormals();
-    scene.add(new THREE.Mesh(eg,gold));
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 9: UPPER GALLERY + BALUSTRADE
+   ═══════════════════════════════════════════════════════════════════════════ */
+var galY=7.5,galRo=WALL_R-0.3,galRi=COL_R-0.8;
+var galF=new THREE.Mesh(new THREE.RingGeometry(galRi,galRo,32,1,0,PI),wood);galF.rotation.x=-PI/2;galF.position.y=galY;scene.add(galF);
+// Balusters (vase-shaped: 3 stacked cylinders)
+for(var bi=0;bi<40;bi++){
+    var ba=PI*(0.02+bi*0.96/39),bx=Math.cos(ba)*(galRi+0.08),bz=Math.sin(ba)*(galRi+0.08);
+    addM(new THREE.CylinderGeometry(0.02,0.03,0.15,6),gold,bx,galY+0.08,bz);
+    addM(new THREE.CylinderGeometry(0.03,0.05,0.25,6),gold,bx,galY+0.28,bz);
+    addM(new THREE.CylinderGeometry(0.05,0.025,0.2,6),gold,bx,galY+0.5,bz);
 }
-// Frieze (middle — cream)
-for(var i=0;i<32;i++){
-    var a1=Math.PI*i/32,a2=Math.PI*(i+1)/32;
-    var x1=Math.cos(a1)*(entR+0.1),z1=Math.sin(a1)*(entR+0.1);
-    var x2=Math.cos(a2)*(entR+0.1),z2=Math.sin(a2)*(entR+0.1);
-    var eg=new THREE.BufferGeometry();
-    eg.setAttribute('position',new THREE.BufferAttribute(new Float32Array([
-        x2,8.6,z2, x1,8.6,z1, x1,9.0,z1, x2,8.6,z2, x1,9.0,z1, x2,9.0,z2
-    ]),3));eg.computeVertexNormals();
-    scene.add(new THREE.Mesh(eg,cream));
-}
-// Cornice (top — gold, projecting)
-for(var i=0;i<32;i++){
-    var a1=Math.PI*i/32,a2=Math.PI*(i+1)/32;
-    var x1=Math.cos(a1)*(entR+0.25),z1=Math.sin(a1)*(entR+0.25);
-    var x2=Math.cos(a2)*(entR+0.25),z2=Math.sin(a2)*(entR+0.25);
-    var eg=new THREE.BufferGeometry();
-    eg.setAttribute('position',new THREE.BufferAttribute(new Float32Array([
-        x2,9.0,z2, x1,9.0,z1, x1,9.2,z1, x2,9.0,z2, x1,9.2,z1, x2,9.2,z2
-    ]),3));eg.computeVertexNormals();
-    scene.add(new THREE.Mesh(eg,gold));
-}
+// Top rail
+var tr=new THREE.Mesh(new THREE.RingGeometry(galRi,galRi+0.08,32,1,0,PI),gold);tr.rotation.x=-PI/2;tr.position.y=galY+0.65;scene.add(tr);
 
-// ═══════════════════════════════════════
-// UPPER GALLERY
-// ═══════════════════════════════════════
-var galY=7, galR=wallR-0.5, galRi=wallR-2;
-var galFloor=new THREE.Mesh(new THREE.RingGeometry(galRi,galR,32,1,0,Math.PI),wood);
-galFloor.rotation.x=-Math.PI/2; galFloor.position.y=galY; scene.add(galFloor);
-// Balustrade
-for(var i=0;i<30;i++){
-    var a=Math.PI*(0.02+i*0.96/29);
-    var bx=Math.cos(a)*(galRi+0.1), bz=Math.sin(a)*(galRi+0.1);
-    var bar=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,0.8,4),gold);
-    bar.position.set(bx,galY+0.4,bz); scene.add(bar);
-}
-// Railing
-var rail=new THREE.Mesh(new THREE.RingGeometry(galRi,galRi+0.06,32,1,0,Math.PI),gold);
-rail.rotation.x=-Math.PI/2; rail.position.y=galY+0.8; scene.add(rail);
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 10: WALLS + FRONT WALL + PAINTING
+   ═══════════════════════════════════════════════════════════════════════════ */
+// Upper curved wall (above entablature, panels with gilt frames)
+curvedBand(9.35,H,WALL_R,cream);
+// Gilt horizontal bands on upper wall
+curvedBand(10.0,10.08,WALL_R+0.02,gold);
+curvedBand(11.2,11.28,WALL_R+0.02,gold);
+// Front wall
+addM(new THREE.PlaneGeometry(W+8,H+4),cream,0,H/2,-D/2+0.5);
+// Painting
+var pTex=new THREE.TextureLoader().load('lib/couder-painting.jpg');
+var pMat=new THREE.MeshLambertMaterial({map:pTex,side:DS});
+addM(new THREE.PlaneGeometry(7.5,4.5),pMat,0,8.5,-D/2+0.62);
+// Gilt frame
+addM(new THREE.BoxGeometry(7.8,0.14,0.1),gold,0,10.78,-D/2+0.6);
+addM(new THREE.BoxGeometry(7.8,0.14,0.1),gold,0,6.22,-D/2+0.6);
+addM(new THREE.BoxGeometry(0.14,4.7,0.1),gold,-3.9,8.5,-D/2+0.6);
+addM(new THREE.BoxGeometry(0.14,4.7,0.1),gold,3.9,8.5,-D/2+0.6);
+// Pilasters flanking painting
+addM(new THREE.BoxGeometry(0.4,7,0.2),marble,-5,4,-D/2+0.6);
+addM(new THREE.BoxGeometry(0.4,7,0.2),marble,5,4,-D/2+0.6);
+addM(new THREE.BoxGeometry(0.55,0.4,0.3),gold,-5,7.7,-D/2+0.6);
+addM(new THREE.BoxGeometry(0.55,0.4,0.3),gold,5,7.7,-D/2+0.6);
+// Side walls
+addM(new THREE.PlaneGeometry(D+14,H+4),cream,-WALL_R,H/2,0,PI/2);
+addM(new THREE.PlaneGeometry(D+14,H+4),cream,WALL_R,H/2,0,-PI/2);
 
-// ═══════════════════════════════════════
-// CEILING
-// ═══════════════════════════════════════
-// Coffered ceiling base
-var ceil=new THREE.Mesh(new THREE.PlaneGeometry(W+8,W+8),ceilMat);
-ceil.rotation.x=Math.PI/2; ceil.position.y=H; ceil.position.z=2; scene.add(ceil);
-// full ceiling covers all
-
-// Coffer grid ribs (gold beams forming grid pattern)
-for(var ci=0;ci<8;ci++){
-    var ca=Math.PI*(0.05+ci*0.9/7);
-    var ribR=wallR*0.9;
-    // Radial ribs
-    var ribGeo=new THREE.BoxGeometry(0.08,0.15,ribR);
-    var rib=new THREE.Mesh(ribGeo,gold);
-    rib.position.set(Math.cos(ca)*ribR/2,H-0.08,Math.sin(ca)*ribR/2);
-    rib.rotation.y=-ca+Math.PI/2;
-    scene.add(rib);
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 11: CEILING + COFFERS
+   ═══════════════════════════════════════════════════════════════════════════ */
+var ceil=new THREE.Mesh(new THREE.PlaneGeometry(W+8,W+8),ceilMat);ceil.rotation.x=PI/2;ceil.position.set(0,H,2);scene.add(ceil);
+// Radial ribs
+for(var ri=0;ri<8;ri++){
+    var ra=PI*(0.06+ri*0.88/7),rLen=WALL_R*0.85;
+    var rib=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.18,rLen),gold);
+    rib.position.set(Math.cos(ra)*rLen/2,H-0.09,Math.sin(ra)*rLen/2);rib.rotation.y=-ra+PI/2;scene.add(rib);
 }
 // Concentric arc ribs
-for(var ri=0;ri<4;ri++){
-    var arcR=4+ri*3.5;
-    for(var ai=0;ai<16;ai++){
-        var a1=Math.PI*ai/16,a2=Math.PI*(ai+1)/16;
-        var x1=Math.cos(a1)*arcR,z1=Math.sin(a1)*arcR;
-        var x2=Math.cos(a2)*arcR,z2=Math.sin(a2)*arcR;
-        var ag=new THREE.BufferGeometry();
-        ag.setAttribute('position',new THREE.BufferAttribute(new Float32Array([
-            x1,H,z1, x2,H,z2, x2,H-0.12,z2, x1,H,z1, x2,H-0.12,z2, x1,H-0.12,z1
-        ]),3));
-        ag.computeVertexNormals();
-        scene.add(new THREE.Mesh(ag,gold));
-    }
+for(var cr=0;cr<4;cr++){
+    var arcR=4+cr*3.5;
+    curvedBand(H-0.15,H,arcR,gold);
 }
-// Central skylight (glowing panel)
-var skyGeo=new THREE.CircleGeometry(4,16,0,Math.PI);
-var skyMat=new THREE.MeshBasicMaterial({color:0xfffff0,transparent:true,opacity:0.2});
-var sky=new THREE.Mesh(skyGeo,skyMat);
-sky.rotation.x=Math.PI/2; sky.position.y=H-0.02; scene.add(sky);
-// Skylight light
-var skyPt=new THREE.PointLight(0xfffff0,1.0,20);
-skyPt.position.set(0,H-0.5,5); scene.add(skyPt);
+// Skylight
+var skyG=new THREE.Mesh(new THREE.CircleGeometry(3.5,16,0,PI),new THREE.MeshBasicMaterial({color:0xfffff0,transparent:true,opacity:0.2}));
+skyG.rotation.x=PI/2;skyG.position.set(0,H-0.01,5);scene.add(skyG);
 
-// ═══════════════════════════════════════
-// LIGHTING
-// ═══════════════════════════════════════
-scene.add(new THREE.AmbientLight(0xffeedd,0.35));
-// Crystal chandeliers
-function buildChandelier(px,py,pz,scale){
-    var cg=new THREE.Group();
-    // Chain
-    var _cc=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,1.5,4),gold);_cc.position.y=1.2;cg.add(_cc);
-    // Crown
-    var _cr=new THREE.Mesh(new THREE.TorusGeometry(0.15*scale,0.03,6,12),gold);_cr.rotation.x=Math.PI/2;_cr.position.y=0.5;cg.add(_cr);
-    // Main body
-    var _cb=new THREE.Mesh(new THREE.CylinderGeometry(0.3*scale,0.15*scale,0.4,8),gold);_cb.position.y=0.2;cg.add(_cb);
-    // Arms + crystals (2 tiers)
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 12: CHANDELIERS + SCONCES
+   ═══════════════════════════════════════════════════════════════════════════ */
+function chandelier(px,py,pz,sc){
+    var g=new THREE.Group();
+    var ch=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,H-py,4),gold);ch.position.y=(H-py)/2;g.add(ch);
+    var cr=new THREE.Mesh(new THREE.TorusGeometry(0.18*sc,0.035,6,12),gold);cr.rotation.x=PI/2;cr.position.y=0.5;g.add(cr);
+    var bd=new THREE.Mesh(new THREE.CylinderGeometry(0.35*sc,0.15*sc,0.5,8),gold);bd.position.y=0.15;g.add(bd);
     for(var tier=0;tier<2;tier++){
-        var ty=tier*-0.4;
-        var armR=(0.6-tier*0.15)*scale;
+        var ty=-tier*0.45,armR=(0.7-tier*0.15)*sc;
         for(var ai=0;ai<8;ai++){
-            var aa=ai*Math.PI/4;
-            // Arm
-            var arm=new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,armR,4),gold);
-            arm.position.set(Math.cos(aa)*armR/2,ty,Math.sin(aa)*armR/2);
-            arm.rotation.z=Math.PI/2;arm.rotation.y=-aa;
-            cg.add(arm);
-            // Crystal drop
-            var crystal=new THREE.Mesh(new THREE.SphereGeometry(0.025,6,6),
-                new THREE.MeshLambertMaterial({color:0xffffff,transparent:true,opacity:0.5,side:DS}));
-            crystal.position.set(Math.cos(aa)*armR,ty-0.06,Math.sin(aa)*armR);
-            cg.add(crystal);
-            // Candle flame
-            var flame=new THREE.Mesh(new THREE.SphereGeometry(0.02,4,4),
-                new THREE.MeshBasicMaterial({color:0xffeeaa}));
-            flame.position.set(Math.cos(aa)*armR,ty+0.05,Math.sin(aa)*armR);
-            cg.add(flame);
+            var aa=ai*PI/4,ax=Math.cos(aa),az=Math.sin(aa);
+            var arm=new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,armR,4),gold);
+            arm.position.set(ax*armR/2,ty,az*armR/2);arm.rotation.z=PI/2;arm.rotation.y=-aa;g.add(arm);
+            var dr=new THREE.Mesh(new THREE.OctahedronGeometry(0.03*sc,0),new THREE.MeshLambertMaterial({color:0xffffff,transparent:true,opacity:0.4,side:DS}));
+            dr.position.set(ax*armR,ty-0.08,az*armR);g.add(dr);
+            var fl=new THREE.Mesh(new THREE.SphereGeometry(0.025,4,4),new THREE.MeshBasicMaterial({color:0xffeeaa}));
+            fl.position.set(ax*armR,ty+0.06,az*armR);g.add(fl);
         }
     }
-    // Bottom finial
-    var _cf=new THREE.Mesh(new THREE.SphereGeometry(0.08*scale,8,8),gold);_cf.position.y=-0.5;cg.add(_cf);
-    // Light
-    var cl=new THREE.PointLight(0xffcc66,1.5*scale,20,1.5);
-    cl.position.y=0;cg.add(cl);
-    cg.position.set(px,py,pz);
-    cg.children.forEach(function(ch){if(!ch.position)return;});
-    scene.add(cg);
+    var fn=new THREE.Mesh(new THREE.SphereGeometry(0.1*sc,8,8),gold);fn.position.y=-0.55;g.add(fn);
+    var lt=new THREE.PointLight(0xffcc66,1.8*sc,22,1.5);g.add(lt);
+    g.position.set(px,py,pz);scene.add(g);
 }
-buildChandelier(0,8,5,1.5);
-buildChandelier(-5,8,8,1.0);
-buildChandelier(5,8,8,1.0);
-buildChandelier(-8,8,4,0.8);
-buildChandelier(8,8,4,0.8);
-scene.add(new THREE.HemisphereLight(0xffeedd,0x4a3a20,0.4));
-// Skylight
-var skyL=new THREE.PointLight(0xfffff0,1.5,40);
-skyL.position.set(0,H-1,4); scene.add(skyL);
-// Directional from above
-var dir=new THREE.DirectionalLight(0xffeedd,0.6);
-dir.position.set(0,H,5); scene.add(dir);
-// Wall sconces with bracket fixtures
-for(var i=0;i<12;i++){
-    var a=Math.PI*(0.06+i*0.88/11);
-    var lr=wallR-1.2;
-    var sx=Math.cos(a)*lr, sz=Math.sin(a)*lr;
-    // Warm point light
-    var l=new THREE.PointLight(0xffbb55,0.7,14,1.5);
-    l.position.set(sx,5.5,sz); scene.add(l);
-    // Bracket (gold arm)
-    var bracket=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.04,0.3),gold);
-    bracket.position.set(sx,5.2,sz); bracket.rotation.y=-a; scene.add(bracket);
-    // Lamp body
-    var lamp=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.1,0.2,6),gold);
-    lamp.position.set(sx,5.35,sz); scene.add(lamp);
-    // Flame glow
-    var flame=new THREE.Mesh(new THREE.SphereGeometry(0.04,6,6),new THREE.MeshBasicMaterial({color:0xffdd88}));
-    flame.position.set(sx,5.5,sz); scene.add(flame);
-}
-// Front wall lights
-for(var i=-2;i<=2;i++){
-    var fl2=new THREE.PointLight(0xffcc88,0.4,10);
-    fl2.position.set(i*3.5,11,-D/2+2); scene.add(fl2);
-}
-// Side walls (close the gap between front wall and hemicycle)
-// panelMat already defined above
-var sideWallL=new THREE.Mesh(new THREE.PlaneGeometry(D+20,H+6),panelMat);
-sideWallL.position.set(-wallR,H/2,0); sideWallL.rotation.y=Math.PI/2; scene.add(sideWallL);
-var sideWallR=new THREE.Mesh(new THREE.PlaneGeometry(D+20,H+6),panelMat);
-sideWallR.position.set(wallR,H/2,0); sideWallR.rotation.y=-Math.PI/2; scene.add(sideWallR);
+chandelier(0,H-2.5,6,1.5);
+chandelier(-5,H-2.5,9,1.0);chandelier(5,H-2.5,9,1.0);
+chandelier(-8,H-2.5,4,0.8);chandelier(8,H-2.5,4,0.8);
 
-// Crown molding along walls (gold strip at ceiling junction)
-for(var ci=0;ci<32;ci++){
-    var ca1=Math.PI*ci/32,ca2=Math.PI*(ci+1)/32;
-    var cr=wallR+0.5;
-    var cx1=Math.cos(ca1)*cr,cz1=Math.sin(ca1)*cr;
-    var cx2=Math.cos(ca2)*cr,cz2=Math.sin(ca2)*cr;
-    var mg=new THREE.BufferGeometry();
-    mg.setAttribute('position',new THREE.BufferAttribute(new Float32Array([
-        cx1,H-0.3,cz1, cx2,H-0.3,cz2, cx2,H,cz2, cx1,H-0.3,cz1, cx2,H,cz2, cx1,H,cz1
-    ]),3));
-    mg.computeVertexNormals();
-    scene.add(new THREE.Mesh(mg,gold));
+// Sconces
+for(var si=0;si<12;si++){
+    var sa=PI*(0.05+si*0.9/11),sr=COL_R+0.3;
+    var sx=Math.cos(sa)*sr,sz=Math.sin(sa)*sr;
+    addM(new THREE.BoxGeometry(0.05,0.05,0.35),gold,sx,5.2,sz,-sa);
+    addM(new THREE.CylinderGeometry(0.07,0.12,0.22,6),gold,sx,5.4,sz);
+    addM(new THREE.SphereGeometry(0.04,6,6),new THREE.MeshBasicMaterial({color:0xffdd88}),sx,5.55,sz);
+    var sl=new THREE.PointLight(0xffbb55,0.8,12,1.5);sl.position.set(sx,5.5,sz);scene.add(sl);
 }
 
-// Player torch
-var torch=new THREE.PointLight(0xffcc88,0.8,12,1.5);
-scene.add(torch);
-// Tier fill lights
-for(var t=0;t<TIERS;t+=3){
-    var lr=3.5+t*TD+TD/2;
-    for(var i=0;i<3;i++){
-        var la=Math.PI*(0.2+i*0.6/2);
-        var tl=new THREE.PointLight(0xffddaa,0.2,5);
-        tl.position.set(Math.cos(la)*lr,t*TH+1,Math.sin(la)*lr); scene.add(tl);
-    }
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 13: LIGHTING
+   ═══════════════════════════════════════════════════════════════════════════ */
+scene.add(new THREE.AmbientLight(0xffeedd,0.25));
+scene.add(new THREE.HemisphereLight(0xfff0dd,0x6a3a20,0.4));
+var dir=new THREE.DirectionalLight(0xffeedd,0.5);
+dir.position.set(0,H,5);dir.castShadow=true;
+dir.shadow.mapSize.width=1024;dir.shadow.mapSize.height=1024;
+dir.shadow.camera.near=0.5;dir.shadow.camera.far=30;
+dir.shadow.camera.left=-20;dir.shadow.camera.right=20;
+dir.shadow.camera.top=20;dir.shadow.camera.bottom=-20;
+scene.add(dir);
+var skyL=new THREE.PointLight(0xfffff0,1.2,35);skyL.position.set(0,H-0.5,5);scene.add(skyL);
+for(var fi=-2;fi<=2;fi++){var fpl=new THREE.PointLight(0xffcc88,0.35,10);fpl.position.set(fi*3,11,-D/2+2);scene.add(fpl);}
+var torch=new THREE.PointLight(0xffcc88,0.6,10,1.5);scene.add(torch);
+for(var t=0;t<TIERS;t+=3){var lr=R0+t*TD+TD/2;for(var fi=0;fi<3;fi++){var la=PI*(0.2+fi*0.3);var tl=new THREE.PointLight(0xffddaa,0.15,5);tl.position.set(Math.cos(la)*lr,t*TH+1.2,Math.sin(la)*lr);scene.add(tl);}}
 
-// ═══════════════════════════════════════
-// CONTROLS
-// ═══════════════════════════════════════
-var keys={},yaw=Math.PI,pitch=0.15,dragging=false,lmx=0,lmy=0;
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 14: CONTROLS
+   ═══════════════════════════════════════════════════════════════════════════ */
+var keys={},yaw=PI,pitch=0.1,dragging=false,lmx=0,lmy=0;
 document.addEventListener('keydown',function(e){keys[e.code]=true;});
 document.addEventListener('keyup',function(e){keys[e.code]=false;});
 renderer.domElement.addEventListener('mousedown',function(e){dragging=true;lmx=e.clientX;lmy=e.clientY;renderer.domElement.requestPointerLock();});
 document.addEventListener('mouseup',function(){dragging=false;});
 document.addEventListener('mousemove',function(e){
     if(document.pointerLockElement===renderer.domElement){yaw-=e.movementX*0.002;pitch-=e.movementY*0.002;}
-    else if(dragging){yaw-=(e.clientX-lmx)*0.005;pitch-=(e.clientY-lmy)*0.005;lmx=e.clientX;lmy=e.clientY;}
+    else if(dragging){yaw-=(e.clientX-lmx)*0.004;pitch-=(e.clientY-lmy)*0.004;lmx=e.clientX;lmy=e.clientY;}
     pitch=Math.max(-1.3,Math.min(1.3,pitch));
-    camera.rotation.y=yaw;camera.rotation.x=pitch;
 });
 
-// ═══════════════════════════════════════
-// GAME LOOP
-// ═══════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 15: GAME LOOP
+   ═══════════════════════════════════════════════════════════════════════════ */
 var clock=new THREE.Clock();
 function animate(){
     requestAnimationFrame(animate);
     var dt=Math.min(clock.getDelta(),0.05);
-    var p=camera.position;
-    var speed=(keys.ShiftLeft||keys.ShiftRight)?8:4;
-    // Arrow key rotation
-    if(keys.ArrowLeft)yaw+=2*dt;
-    if(keys.ArrowRight)yaw-=2*dt;
+    var p=camera.position,speed=(keys.ShiftLeft||keys.ShiftRight)?8:4;
+    if(keys.ArrowLeft)yaw+=2*dt;if(keys.ArrowRight)yaw-=2*dt;
     camera.rotation.y=yaw;camera.rotation.x=pitch;
-    // Movement
     var fwd=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);fwd.y=0;fwd.normalize();
     var right=new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);right.y=0;right.normalize();
     if(keys.KeyW||keys.ArrowUp){p.x+=fwd.x*speed*dt;p.z+=fwd.z*speed*dt;}
     if(keys.KeyS||keys.ArrowDown){p.x-=fwd.x*speed*dt;p.z-=fwd.z*speed*dt;}
     if(keys.KeyA){p.x-=right.x*speed*dt;p.z-=right.z*speed*dt;}
     if(keys.KeyD){p.x+=right.x*speed*dt;p.z+=right.z*speed*dt;}
-    // Boundary
     var dist=Math.sqrt(p.x*p.x+p.z*p.z);
-    if(dist>wallR-1.5){var ang=Math.atan2(p.z,p.x);p.x=Math.cos(ang)*(wallR-1.5);p.z=Math.sin(ang)*(wallR-1.5);}
-    if(p.z<-D/2+1)p.z=-D/2+1;
-    // Auto height — walk up tiers
-    var playerR=Math.sqrt(p.x*p.x+p.z*p.z);
-    var tierIdx=(p.z>0)?Math.max(0,Math.floor((playerR-3.5)/TD)):0;
-    var targetY=Math.min(tierIdx,TIERS-1)*TH+1.6;
-    if(playerR<3.5||p.z<=0)targetY=1.6;
-    p.y+=(targetY-p.y)*0.12;
-    // NaN guard
-    if(isNaN(p.x)||isNaN(p.z)){p.set(0,2,0);}
-    // Torch
+    if(p.z>0&&dist>WALL_R-1.5){var ang=Math.atan2(p.z,p.x);p.x=Math.cos(ang)*(WALL_R-1.5);p.z=Math.sin(ang)*(WALL_R-1.5);}
+    if(p.z<-D/2+1.5)p.z=-D/2+1.5;
+    if(p.z<=0){if(p.x<-WALL_R+1)p.x=-WALL_R+1;if(p.x>WALL_R-1)p.x=WALL_R-1;}
+    var pR=Math.sqrt(p.x*p.x+p.z*p.z),ti=0;
+    if(p.z>0&&pR>R0){ti=Math.floor((pR-R0)/TD);ti=Math.max(0,Math.min(ti,TIERS-1));}
+    var tgtY=ti*TH+1.7;if(pR<R0||p.z<=0)tgtY=1.7;
+    p.y+=(tgtY-p.y)*0.12;
+    if(isNaN(p.x)||isNaN(p.z))p.set(0,1.7,2);
     torch.position.set(p.x,p.y-0.3,p.z);
-    // HUD
-    document.getElementById('hud').textContent=Math.round(p.x)+','+Math.round(p.z)+' y:'+p.y.toFixed(1)+' | Tier:'+(tierIdx+1);
+    document.getElementById('hud').textContent=p.x.toFixed(1)+','+p.z.toFixed(1)+' y:'+p.y.toFixed(1)+' Tier:'+(ti+1);
     renderer.render(scene,camera);
 }
 animate();
 window.addEventListener('resize',function(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
-</script>
-</body></html>
+</script></body></html>
