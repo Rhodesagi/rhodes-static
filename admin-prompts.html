@@ -3059,6 +3059,8 @@ async function loadBaseModelInfo(baseAlias) {
     }
     // Load seed content (messages + tool calls)
     await onSeedChange();
+    CURRENT_INJECTION_CONFIG = data.injection_config || {};
+    renderInjectionToggles();
     CURRENT_TOOL_CATEGORIES = Array.isArray(data.tool_categories) ? data.tool_categories.slice() : [];
     CURRENT_ACTIVE_TOOLS = Array.isArray(data.active_tools) ? data.active_tools.slice() : getDefaultActiveTools();
     syncInjectionDependentTools();
