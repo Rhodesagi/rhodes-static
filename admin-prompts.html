@@ -628,6 +628,8 @@ body .tab:hover {
                     <option value="congress_read_law">Law Search (congress_read_law)</option>
                     <option value="web_search">Web Search</option>
                     <option value="web_fetch">Web Fetch</option>
+                    <option value="company_chat_send">Company Chat (send)</option>
+                    <option value="company_chat_read">Company Chat (read)</option>
                   </select>
                 </div>
                 <div class="form-field" style="flex:1;min-width:220px">
@@ -2008,6 +2010,16 @@ function applySeedToolPreset() {
     $('bSeedToolId').value = 'tc_web_fetch';
     $('bSeedToolArgs').value = JSON.stringify({url: 'https://www.congress.gov/'}, null, 2);
     $('bSeedToolResult').value = JSON.stringify({success: true, content: 'Fetch seeded.'}, null, 2);
+  } else if (preset === 'company_chat_send') {
+    $('bSeedToolName').value = 'company_chat';
+    $('bSeedToolId').value = 'tc_company_chat_send';
+    $('bSeedToolArgs').value = JSON.stringify({action: 'send', message: 'Rhodesia reporting in. Systems nominal.', channel: 'general', priority: 'normal'}, null, 2);
+    $('bSeedToolResult').value = JSON.stringify({success: true, message: 'Message sent to Rhodes Family channel.', channel: 'general'}, null, 2);
+  } else if (preset === 'company_chat_read') {
+    $('bSeedToolName').value = 'company_chat';
+    $('bSeedToolId').value = 'tc_company_chat_read';
+    $('bSeedToolArgs').value = JSON.stringify({action: 'read', channel: 'general', limit: 20}, null, 2);
+    $('bSeedToolResult').value = JSON.stringify({success: true, messages: [], count: 0, channel: 'general'}, null, 2);
   } else {
     $('bSeedToolId').value = '';
   }
