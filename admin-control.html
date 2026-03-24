@@ -407,6 +407,7 @@
         <a href="/admin-alliance.html" style="color: #4ade80; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">🤝 Alliance</a>
         <a href="/admin-townhall.html" style="color: #60a5fa; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">🏛️ Town Hall</a>
         <a href="/admin-prompts.html?v=2.0.18" style="color: #c4b5fd; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">📝 System Prompts</a>
+        <a href="/admin-chat.html" style="color: #c4b5fd; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">💬 Company Chat</a>
       </div>
     </header>
     <main>
@@ -1122,16 +1123,6 @@
         </div>
       </div>
 
-      <!-- Company Chat -->
-      <div class="card" style="margin-top:20px;" id="companyChatCard">
-        <h3 style="margin-bottom:12px;color:#c4b5fd;">Company Chat <span style="font-size:11px;font-weight:400;color:var(--muted);">(Rhodes Family backchannel)</span></h3>
-        <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;">
-          <input type="text" id="chatSearchInput" placeholder="Search messages..." style="flex:1;padding:6px 10px;font-size:12px;">
-          <button onclick="loadChat()" style="padding:6px 12px;font-size:11px;">Refresh</button>
-          <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;">
-            <input type="checkbox" id="chatAutoRefresh" checked> Auto
-          </label>
-        </div>
         <div id="chatMessages" style="max-height:500px;min-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;background:rgba(0,0,0,0.3);margin-bottom:10px;display:flex;flex-direction:column;gap:4px;">
           <div style="text-align:center;color:var(--muted);padding:40px;">Loading...</div>
         </div>
@@ -3723,103 +3714,5 @@ console.log('Admin panel script fully loaded');
       loadTSStatus();
 
     </script>
-  
-<script>
-// ---- Company Chat ----
-var _chatTimer = null;
-var _chatLastId = 0;
-
-async function loadChat() {
-  var q = (document.getElementById('chatSearchInput') || {}).value || '';
-  var url = '/api/admin/chat?limit=100' + (q ? '&q=' + encodeURIComponent(q) : '');
-  try {
-    var r = await fetch(url, {headers: {'Authorization': 'Bearer ' + (localStorage.getItem('admin_token') || '')}});
-    if (!r.ok) { document.getElementById('chatMessages').innerHTML = '<div style="color:var(--bad);padding:20px;text-align:center">Auth failed — log in first</div>'; return; }
-    var data = await r.json();
-    renderChat(data.messages || []);
-  } catch(e) {
-    document.getElementById('chatMessages').innerHTML = '<div style="color:var(--bad);padding:20px;text-align:center">Error: ' + e.message + '</div>';
-  }
-}
-
-function renderChat(messages) {
-  var el = document.getElementById('chatMessages');
-  if (!messages.length) {
-    el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;">No messages yet. Send the first one.</div>';
-    return;
-  }
-  var wasAtBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 30;
-  var newLastId = messages.length ? messages[messages.length-1].id : 0;
-  el.innerHTML = messages.map(function(m) {
-    var isCmd = (m.from || '').toLowerCase() === 'commander';
-    var priColor = m.priority === 'urgent' ? 'var(--bad)' : m.priority === 'high' ? 'var(--warn)' : 'var(--muted)';
-    var bgColor = isCmd ? 'rgba(91,48,128,0.15)' : 'rgba(30,58,95,0.2)';
-    var borderColor = isCmd ? '#5b3080' : '#27325c';
-    var ts = (m.at || '').replace(/T/, ' ').slice(0, 19);
-    var html = '<div style="padding:8px 10px;border-radius:6px;background:' + bgColor + ';border-left:3px solid ' + borderColor + ';">';
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
-    html += '<span style="font-size:11px;font-weight:600;color:' + (isCmd ? '#c4b5fd' : '#7dd3fc') + ';">' + esc(m.from || 'unknown') + '</span>';
-    html += '<div style="display:flex;gap:8px;align-items:center;">';
-    if (m.priority && m.priority !== 'normal') html += '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:' + priColor + ';color:#000;font-weight:600;">' + m.priority.toUpperCase() + '</span>';
-    html += '<span style="font-size:10px;color:var(--muted);">' + esc(ts) + '</span>';
-    html += '<button onclick="deleteChat(' + m.id + ')" style="font-size:9px;padding:1px 4px;color:var(--bad);background:transparent;border:1px solid var(--bad);border-radius:3px;cursor:pointer;opacity:0.5;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0.5">x</button>';
-    html += '</div></div>';
-    html += '<div style="font-size:13px;white-space:pre-wrap;word-break:break-word;line-height:1.5;">' + esc(m.message) + '</div>';
-    if (m.session_id && m.session_id !== 'commander') html += '<div style="font-size:10px;color:var(--muted);margin-top:4px;">session: ' + esc(m.session_id) + '</div>';
-    html += '</div>';
-    return html;
-  }).join('');
-  _chatLastId = newLastId;
-  if (wasAtBottom) el.scrollTop = el.scrollHeight;
-}
-
-function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-async function sendChat() {
-  var input = document.getElementById('chatInput');
-  var msg = (input.value || '').trim();
-  if (!msg) return;
-  var pri = document.getElementById('chatPriority').value;
-  input.value = '';
-  try {
-    var r = await fetch('/api/admin/chat', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('admin_token') || '')},
-      body: JSON.stringify({message: msg, priority: pri})
-    });
-    if (!r.ok) { alert('Send failed: ' + r.status); return; }
-    loadChat();
-  } catch(e) { alert('Error: ' + e.message); }
-}
-
-async function deleteChat(id) {
-  if (!confirm('Delete message #' + id + '?')) return;
-  try {
-    await fetch('/api/admin/chat/' + id, {
-      method: 'DELETE',
-      headers: {'Authorization': 'Bearer ' + (localStorage.getItem('admin_token') || '')}
-    });
-    loadChat();
-  } catch(e) {}
-}
-
-// Auto-refresh every 8 seconds
-function startChatAutoRefresh() {
-  if (_chatTimer) clearInterval(_chatTimer);
-  _chatTimer = setInterval(function() {
-    if (document.getElementById('chatAutoRefresh') && document.getElementById('chatAutoRefresh').checked) {
-      loadChat();
-    }
-  }, 8000);
-}
-
-// Search on Enter
-document.addEventListener('DOMContentLoaded', function() {
-  var si = document.getElementById('chatSearchInput');
-  if (si) si.addEventListener('keydown', function(e) { if (e.key === 'Enter') loadChat(); });
-  loadChat();
-  startChatAutoRefresh();
-});
-</script>
-</body>
+  </body>
 </html>
