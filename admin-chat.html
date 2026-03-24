@@ -94,15 +94,29 @@
   <div class="status-bar" id="statusBar"></div>
 
 <script>
-var _token = localStorage.getItem('admin_token') || '';
+var TOKEN_KEY = 'rhodes_admin_token';
+var USER_TOKEN_KEY = 'rhodes_user_token';
 var _timer = null;
 var _lastCount = 0;
 
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+function token() {
+  return localStorage.getItem(USER_TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || '';
+}
+
 async function api(url, opts) {
   opts = opts || {};
-  opts.headers = Object.assign({'Authorization': 'Bearer ' + _token}, opts.headers || {});
+  var headers = Object.assign({}, opts.headers || {});
+  var t = token();
+  if (t) {
+    if (localStorage.getItem(USER_TOKEN_KEY)) {
+      headers['Authorization'] = 'Bearer ' + t;
+    } else {
+      headers['X-Rhodes-Admin-Token'] = t;
+    }
+  }
+  opts.headers = headers;
   var r = await fetch(url, opts);
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return r.json();
@@ -117,7 +131,7 @@ async function loadChat() {
     document.getElementById('chatCount').textContent = (data.messages||[]).length + ' / ' + (data.total||0) + ' total';
     document.getElementById('statusBar').textContent = 'Last refresh: ' + new Date().toLocaleTimeString();
   } catch(e) {
-    document.getElementById('chatMessages').innerHTML = '<div class="empty" style="color:var(--bad);">Auth failed. <a href="/admin-control.html" style="color:var(--ok);">Log in on Control Panel first</a>, then come back.</div>';
+    document.getElementById('chatMessages').innerHTML = '<div class="empty" style="color:var(--bad);">Admin auth missing or expired. <a href="/admin-control.html" style="color:var(--ok);">Open Control Panel</a> to refresh login, then reload this page.</div>';
   }
 }
 
