@@ -1652,9 +1652,20 @@ async function loadModelClones() {
     populateBaseModelOptions();
     renderModelList();
     populateTestModelDropdown();
+    return MODEL_CLONES;
   } catch(e) {
     $('modelListItems').innerHTML = '<div style="padding:12px;color:var(--bad)">'+esc(e.message)+'</div>';
+    throw e;
   }
+}
+
+async function loadFreshModelClone(alias) {
+  const normalized = String(alias || '').trim().toLowerCase();
+  if (!normalized) return null;
+  await loadModelClones();
+  return MODEL_CLONES.find(function(c) {
+    return String((c && c.alias) || '').trim().toLowerCase() === normalized;
+  }) || null;
 }
 
 // ---- Unified Search ----
@@ -3432,9 +3443,8 @@ function newModel() {
 
 async function loadModelIntoBuilder(alias) {
   _promptVersionStack = []; _promptVersionIdx = -1;
-  var _clone = MODEL_CLONES.find(c => c.alias === alias);
-  storeOriginal(_clone);
-  const clone = MODEL_CLONES.find(c => c.alias === alias);
+  const clone = await loadFreshModelClone(alias);
+  storeOriginal(clone);
   if (!clone) return;
   BUILDER_STATE = { isNew: false, originalAlias: alias };
   resetFineTuneState(clone.fine_tune_id || clone.alias || '');
@@ -3953,8 +3963,7 @@ async function saveModel() {
     setStatus(summary);
     showSaveConfirmation(summary);
     BUILDER_STATE = {isNew: false, originalAlias: alias};
-    await loadModelClones();
-    $('builderTitle').textContent = 'Edit: '+alias;
+    await loadModelIntoBuilder(alias);
     $('deleteModelBtn').style.display = 'inline-block';
     $('cloneModelBtn').style.display = 'inline-block';
   } catch(e) { alert('Error: '+e.message); }
