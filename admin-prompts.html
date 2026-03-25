@@ -1731,6 +1731,7 @@ const INJECTION_TYPES = [
   {key: "expand_prompt", label: "Expand Prompt Tool", desc: "Model-callable expand_prompt backup tool"},
   {key: "concession_detector", label: "Concession Detector", desc: "Auto-detects concession patterns in reasoning and injects tool result warning"},
   {key: "debate_preflight", label: "Debate Preflight", desc: "Pre-generation rebuttal injection matching 57 known opponent attack patterns"},
+  {key: "emotional_neutralizer", label: "Emotional Neutralizer", desc: "Strips flattery, fake sympathy, and emotional manipulation from user messages before model sees them"},
 ];
 
 let CURRENT_INJECTION_CONFIG = {};
