@@ -3,328 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Le Musket Quatre - Great Musketeer 2</title>
+    <title>Muskets Fire 3 - 2 Player Musket Duel</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: Arial, sans-serif;
-            background: #111;
-            color: #eee;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-        }
-        
-        #gameContainer {
-            width: 100%;
-            height: 100%;
-            position: relative;
-        }
-        
-        #canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-        
-        #hud {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 20px;
-            pointer-events: none;
-            z-index: 10;
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        .player-info {
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #8B4513;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            width: 300px;
-        }
-        
-        .player-info h3 {
-            color: #D2691E;
-            margin-bottom: 10px;
-            font-size: 18px;
-        }
-        
-        .controls {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #444;
-            border-radius: 8px;
-            padding: 15px;
-            width: 300px;
-        }
-        
-        .controls h3 {
-            color: #8B4513;
-            margin-bottom: 10px;
-        }
-        
-        .control-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-            padding: 3px 0;
-        }
-        
-        .key {
-            background: #333;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-family: monospace;
-            border: 1px solid #666;
-        }
-        
-        .reload-indicator {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #8B4513;
-            border-radius: 8px;
-            padding: 15px;
-            width: 300px;
-        }
-        
-        .reload-steps {
-            margin-top: 10px;
-        }
-        
-        .reload-step {
-            margin-bottom: 5px;
-            padding: 5px;
-            border-radius: 4px;
-            background: #222;
-            display: none;
-        }
-        
-        .reload-step.active {
-            display: block;
-            background: #8B4513;
-            color: white;
-        }
-        
-        #aimSight {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 40px;
-            height: 40px;
-            pointer-events: none;
-            z-index: 20;
-            display: none;
-        }
-        
-        .sight-dot {
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            background: #FF0000;
-            border-radius: 50%;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-        
-        .sight-hair {
-            position: absolute;
-            background: #FF0000;
-        }
-        
-        .sight-hair.horizontal {
-            width: 30px;
-            height: 2px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-        
-        .sight-hair.vertical {
-            width: 2px;
-            height: 30px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-        
-        #loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            padding: 30px;
-            border-radius: 10px;
-            border: 3px solid #8B4513;
-            text-align: center;
-            z-index: 100;
-        }
-        
-        #loading h2 {
-            color: #D2691E;
-            margin-bottom: 20px;
-        }
-        
-        .loading-spinner {
-            border: 5px solid #333;
-            border-top: 5px solid #8B4513;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        #gameTitle {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            z-index: 5;
-            pointer-events: none;
-        }
-        
-        #gameTitle h1 {
-            color: #D2691E;
-            font-size: 36px;
-            text-shadow: 0 0 10px rgba(210, 105, 30, 0.7);
-            margin-bottom: 5px;
-        }
-        
-        #gameTitle h2 {
-            color: #8B4513;
-            font-size: 18px;
-            text-shadow: 0 0 5px rgba(139, 69, 19, 0.7);
-        }
-    </style>
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
 </head>
 <body>
-    <div id="loading">
-        <div class="loading-spinner"></div>
-        <h2>Loading Le Musket Quatre...</h2>
-        <p>Preparing muskets and powder...</p>
-    </div>
-    
-    <div id="gameContainer" style="display: none;">
-        <div id="gameTitle">
-            <h1>Le Musket Quatre</h1>
-            <h2>Great Musketeer 2</h2>
-        </div>
-        
-        <canvas id="canvas"></canvas>
-        
-        <div id="hud">
-            <div class="player-info" id="player1Info">
-                <h3>Player 1 (Musketeer)</h3>
-                <div>Ammo: <span id="p1Ammo">1</span></div>
-                <div>Status: <span id="p1Status">Ready</span></div>
-                <div>Health: <span id="p1Health">100</span></div>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        <div id="ui-overlay">
+            <div id="title-screen" class="screen">
+                <h1>MUSKETS FIRE 3</h1>
+                <p class="subtitle">Two-Player Same-Computer Musket Duel</p>
+                <div class="instructions">
+                    <h2>CONTROLS</h2>
+                    <div class="controls-grid">
+                        <div class="player-controls">
+                            <h3>PLAYER 1 (TOP SCREEN)</h3>
+                            <p><strong>WASD</strong> - Move</p>
+                            <p><strong>Mouse</strong> - Aim</p>
+                            <p><strong>Left Click</strong> - Fire when loaded</p>
+                            <p><strong>R</strong> - Start reload</p>
+                            <p><strong>Shift</strong> - Hold breath to steady aim</p>
+                        </div>
+                        <div class="player-controls">
+                            <h3>PLAYER 2 (BOTTOM SCREEN)</h3>
+                            <p><strong>Arrow Keys</strong> - Move</p>
+                            <p><strong>Mouse</strong> - Aim</p>
+                            <p><strong>Left Click</strong> - Fire when loaded</p>
+                            <p><strong>Enter</strong> - Start reload</p>
+                            <p><strong>Right Ctrl</strong> - Hold breath to steady aim</p>
+                        </div>
+                    </div>
+                    <div class="musket-info">
+                        <h3>MUSKET MECHANICS</h3>
+                        <p>• Iron sights only - no crosshairs</p>
+                        <p>• Full 6-stage reload process required after each shot</p>
+                        <p>• Cannot move while reloading</p>
+                        <p>• First to 3 hits wins</p>
+                    </div>
+                </div>
+                <button id="start-button" class="start-btn">LOAD POWDER & BALL → ENTER BATTLE</button>
+                <div id="game-status"></div>
             </div>
-            
-            <div class="player-info" id="player2Info">
-                <h3>Player 2 (Dragoon)</h3>
-                <div>Ammo: <span id="p2Ammo">1</span></div>
-                <div>Status: <span id="p2Status">Ready</span></div>
-                <div>Health: <span id="p2Health">100</span></div>
+            <div id="hud" class="hidden">
+                <div class="player-hud" id="player1-hud">
+                    <div class="hud-title">PLAYER 1</div>
+                    <div class="hud-health">
+                        <span class="label">HEALTH:</span>
+                        <div class="health-bar">
+                            <div class="health-fill" id="p1-health"></div>
+                        </div>
+                    </div>
+                    <div class="hud-ammo">
+                        <span class="label">MUSKET:</span>
+                        <span class="ammo-status" id="p1-ammo">READY</span>
+                    </div>
+                    <div class="hud-reload">
+                        <div class="reload-stages" id="p1-reload"></div>
+                    </div>
+                </div>
+                <div class="player-hud" id="player2-hud">
+                    <div class="hud-title">PLAYER 2</div>
+                    <div class="hud-health">
+                        <span class="label">HEALTH:</span>
+                        <div class="health-bar">
+                            <div class="health-fill" id="p2-health"></div>
+                        </div>
+                    </div>
+                    <div class="hud-ammo">
+                        <span class="label">MUSKET:</span>
+                        <span class="ammo-status" id="p2-ammo">READY</span>
+                    </div>
+                    <div class="hud-reload">
+                        <div class="reload-stages" id="p2-reload"></div>
+                    </div>
+                </div>
+                <div id="winner-display" class="hidden">
+                    <h2 id="winner-text"></h2>
+                    <button id="restart-button" class="start-btn">RELOAD & DUEL AGAIN</button>
+                </div>
             </div>
-        </div>
-        
-        <div class="controls">
-            <h3>Controls</h3>
-            <div class="control-item">
-                <span>Player 1 Move:</span>
-                <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span>
-            </div>
-            <div class="control-item">
-                <span>Musket Tilt:</span>
-                <span class="key">Q</span> (left) <span class="key">E</span> (right)
-            </div>
-            <div class="control-item">
-                <span>Aim:</span>
-                <span class="key">X</span>
-            </div>
-            <div class="control-item">
-                <span>Fire:</span>
-                <span class="key">F</span>
-            </div>
-            <div class="control-item">
-                <span>Reload:</span>
-                <span class="key">R</span>
-            </div>
-            <div class="control-item">
-                <span>Player 2 Move:</span>
-                <span class="key">↑</span><span class="key">←</span><span class="key">↓</span><span class="key">→</span>
-            </div>
-            <div class="control-item">
-                <span>Player 2 Tilt:</span>
-                <span class="key">U</span> (left) <span class="key">O</span> (right)
-            </div>
-            <div class="control-item">
-                <span>Player 2 Aim:</span>
-                <span class="key">M</span>
-            </div>
-            <div class="control-item">
-                <span>Player 2 Fire:</span>
-                <span class="key">N</span>
-            </div>
-            <div class="control-item">
-                <span>Player 2 Reload:</span>
-                <span class="key">B</span>
-            </div>
-        </div>
-        
-        <div class="reload-indicator" id="reloadIndicator">
-            <h3>Reloading Process</h3>
-            <div class="reload-steps">
-                <div class="reload-step" id="step1">Step 1: Bite cartridge</div>
-                <div class="reload-step" id="step2">Step 2: Pour powder</div>
-                <div class="reload-step" id="step3">Step 3: Ram ball</div>
-                <div class="reload-step" id="step4">Step 4: Prime pan</div>
-                <div class="reload-step" id="step5">Step 5: Ready to fire</div>
-            </div>
-            <div id="reloadTimer">Time: 0.0s</div>
-        </div>
-        
-        <div id="aimSight">
-            <div class="sight-dot"></div>
-            <div class="sight-hair horizontal"></div>
-            <div class="sight-hair vertical"></div>
         </div>
     </div>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script>
-        // Hide loading screen and show game when loaded
-        window.addEventListener('load', function() {
-            setTimeout(function() {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('gameContainer').style.display = 'block';
-            }, 1000);
-        });
-    </script>
-    <script src="game.js"></script>
+
+    <!-- Audio elements for sound effects -->
+    <audio id="sound-shot" preload="auto">
+        <source src="assets/shot.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="sound-reload-step" preload="auto">
+        <source src="assets/reload-step.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="sound-hit" preload="auto">
+        <source src="assets/hit.mp3" type="audio/mpeg">
+    </audio>
+
+    <script src="game.js" type="module"></script>
 </body>
 </html>

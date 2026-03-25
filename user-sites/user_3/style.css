@@ -1,0 +1,310 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background: #0a0a0a;
+    color: #d4af37;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+#game-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #111;
+}
+
+#ui-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(10, 10, 10, 0.95);
+    pointer-events: all;
+}
+
+.hidden {
+    display: none !important;
+}
+
+h1 {
+    font-size: 4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3rem;
+    margin-bottom: 1rem;
+    text-shadow: 0 0 10px #8b4513, 0 0 20px #d4af37;
+    color: #d4af37;
+}
+
+.subtitle {
+    font-size: 1.5rem;
+    margin-bottom: 3rem;
+    color: #b8860b;
+}
+
+.instructions {
+    background: rgba(20, 20, 20, 0.8);
+    border: 2px solid #8b4513;
+    padding: 2rem;
+    max-width: 900px;
+    margin-bottom: 3rem;
+    border-radius: 5px;
+}
+
+.instructions h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: #d4af37;
+    font-size: 1.8rem;
+}
+
+.controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    margin-bottom: 2rem;
+}
+
+.player-controls h3 {
+    color: #b8860b;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+    border-bottom: 1px solid #8b4513;
+    padding-bottom: 0.5rem;
+}
+
+.player-controls p {
+    margin: 0.5rem 0;
+    color: #d4af37;
+}
+
+.musket-info {
+    background: rgba(139, 69, 19, 0.1);
+    border-left: 4px solid #8b4513;
+    padding: 1rem 1.5rem;
+    margin-top: 1rem;
+}
+
+.musket-info h3 {
+    color: #b8860b;
+    margin-bottom: 0.5rem;
+}
+
+.start-btn {
+    background: linear-gradient(to bottom, #8b4513, #5d2a0c);
+    color: #d4af37;
+    border: 2px solid #d4af37;
+    padding: 1rem 2rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 3px;
+    pointer-events: all;
+}
+
+.start-btn:hover {
+    background: linear-gradient(to bottom, #a0522d, #8b4513);
+    box-shadow: 0 0 15px #d4af37;
+    transform: scale(1.05);
+}
+
+#game-status {
+    margin-top: 2rem;
+    font-size: 1.2rem;
+    color: #b8860b;
+    text-align: center;
+}
+
+/* HUD Styling */
+.player-hud {
+    position: absolute;
+    background: rgba(10, 10, 10, 0.7);
+    border: 2px solid #8b4513;
+    padding: 1rem;
+    border-radius: 5px;
+    min-width: 250px;
+    pointer-events: all;
+}
+
+#player1-hud {
+    top: 20px;
+    left: 20px;
+    border-color: #3a7bd5;
+}
+
+#player2-hud {
+    bottom: 20px;
+    right: 20px;
+    border-color: #c54b4b;
+}
+
+.hud-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    text-align: center;
+    color: #d4af37;
+}
+
+#player1-hud .hud-title {
+    color: #3a7bd5;
+}
+
+#player2-hud .hud-title {
+    color: #c54b4b;
+}
+
+.hud-health, .hud-ammo {
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.label {
+    font-weight: bold;
+    color: #b8860b;
+    margin-right: 1rem;
+}
+
+.health-bar {
+    width: 150px;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #8b4513;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.health-fill {
+    height: 100%;
+    background: linear-gradient(to right, #8b0000, #ff4500);
+    transition: width 0.3s;
+}
+
+#player1-hud .health-fill {
+    background: linear-gradient(to right, #1e3c72, #3a7bd5);
+}
+
+#player2-hud .health-fill {
+    background: linear-gradient(to right, #8b0000, #c54b4b);
+}
+
+.ammo-status {
+    font-weight: bold;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    background: rgba(139, 69, 19, 0.3);
+}
+
+.hud-reload {
+    margin-top: 0.5rem;
+}
+
+.reload-stages {
+    display: flex;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.reload-stage {
+    height: 10px;
+    flex: 1;
+    background: rgba(139, 69, 19, 0.3);
+    border-radius: 2px;
+    transition: background 0.3s;
+}
+
+.reload-stage.active {
+    background: #d4af37;
+}
+
+.reload-stage.completed {
+    background: #8b4513;
+}
+
+#winner-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(10, 10, 10, 0.95);
+    border: 4px solid #d4af37;
+    padding: 3rem;
+    text-align: center;
+    border-radius: 10px;
+    pointer-events: all;
+}
+
+#winner-text {
+    font-size: 3rem;
+    margin-bottom: 2rem;
+    color: #d4af37;
+    text-shadow: 0 0 10px #8b4513;
+}
+
+/* Iron sights */
+.iron-sights {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 30px;
+    pointer-events: none;
+}
+
+.iron-sights .front-post {
+    position: absolute;
+    width: 2px;
+    height: 10px;
+    background: #d4af37;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 0 5px #000;
+}
+
+.iron-sights .rear-notch {
+    position: absolute;
+    width: 12px;
+    height: 4px;
+    border-top: 2px solid #d4af37;
+    border-left: 2px solid #d4af37;
+    border-right: 2px solid #d4af37;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 0 5px #000;
+}

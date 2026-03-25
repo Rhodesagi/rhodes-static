@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Page</title>
+    <style>
+        body { background: #333; color: white; font-family: sans-serif; padding: 20px; }
+        .test { background: #444; padding: 10px; margin: 10px; border-radius: 5px; }
+        .pass { color: #4CAF50; }
+        .fail { color: #F44336; }
+    </style>
+</head>
+<body>
+    <h1>Muskets Fire Test Page</h1>
+    
+    <div class="test">
+        <h2>File Structure Check</h2>
+        <div id="files"></div>
+    </div>
+    
+    <div class="test">
+        <h2>JavaScript Check</h2>
+        <div id="js"></div>
+    </div>
+    
+    <div class="test">
+        <h2>Canvas Check</h2>
+        <canvas id="test-canvas" width="200" height="100"></canvas>
+        <div id="canvas-result"></div>
+    </div>
+    
+    <script>
+        // Check files
+        const files = [
+            'index.html',
+            'style.css', 
+            'game.js',
+            'modules/game.js',
+            'modules/input.js',
+            'modules/audio.js'
+        ];
+        
+        const filesDiv = document.getElementById('files');
+        files.forEach(file => {
+            const div = document.createElement('div');
+            div.textContent = `Checking ${file}...`;
+            filesDiv.appendChild(div);
+            
+            fetch(file)
+                .then(response => {
+                    div.innerHTML = `${file}: <span class="pass">✓ Found</span>`;
+                })
+                .catch(error => {
+                    div.innerHTML = `${file}: <span class="fail">✗ Missing</span>`;
+                });
+        });
+        
+        // Check JavaScript
+        const jsDiv = document.getElementById('js');
+        try {
+            // Try to import modules
+            import('./game.js').then(() => {
+                jsDiv.innerHTML = 'JavaScript modules: <span class="pass">✓ Loadable</span>';
+            }).catch(e => {
+                jsDiv.innerHTML = `JavaScript modules: <span class="fail">✗ Error: ${e.message}</span>`;
+            });
+        } catch (e) {
+            jsDiv.innerHTML = `JavaScript: <span class="fail">✗ Error: ${e.message}</span>`;
+        }
+        
+        // Check Canvas
+        const canvas = document.getElementById('test-canvas');
+        const ctx = canvas.getContext('2d');
+        const canvasResult = document.getElementById('canvas-result');
+        
+        if (ctx) {
+            // Draw something
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillRect(10, 10, 180, 80);
+            ctx.fillStyle = 'white';
+            ctx.font = '20px sans-serif';
+            ctx.fillText('Canvas Works!', 40, 60);
+            
+            canvasResult.innerHTML = 'Canvas: <span class="pass">✓ Functional</span>';
+        } else {
+            canvasResult.innerHTML = 'Canvas: <span class="fail">✗ Not supported</span>';
+        }
+    </script>
+</body>
+</html>

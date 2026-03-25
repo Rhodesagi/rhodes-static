@@ -1,0 +1,393 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+body {
+    background: linear-gradient(to bottom, #0a0a1a, #1a1a2e);
+    color: #e0d0b8;
+    font-family: 'Cinzel', serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#game-container {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+/* Title Screen */
+#title-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 2rem;
+    background: radial-gradient(circle at center, rgba(10, 10, 26, 0.8), rgba(26, 26, 46, 0.9));
+    text-align: center;
+}
+
+#title-screen h1 {
+    font-size: 5rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(to right, #b8860b, #daa520);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 20px rgba(218, 165, 32, 0.5);
+    letter-spacing: 0.3rem;
+}
+
+.subtitle {
+    font-size: 1.5rem;
+    margin-bottom: 3rem;
+    font-family: 'Roboto Mono', monospace;
+    color: #a89b7d;
+}
+
+.instructions {
+    background: rgba(20, 20, 35, 0.7);
+    border: 2px solid #5d4c2a;
+    border-radius: 10px;
+    padding: 2rem;
+    max-width: 800px;
+    margin-bottom: 2rem;
+}
+
+.instructions h2 {
+    color: #daa520;
+    margin-bottom: 1.5rem;
+    font-size: 2rem;
+}
+
+.control-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.player-controls {
+    background: rgba(30, 30, 50, 0.5);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #4a3c20;
+}
+
+.player-controls h3 {
+    color: #ff6b6b;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.player-controls:nth-child(2) h3 {
+    color: #6b8cff;
+}
+
+.player-controls p {
+    margin: 0.5rem 0;
+    font-family: 'Roboto Mono', monospace;
+    color: #c8b9a0;
+}
+
+.musket-info {
+    background: rgba(40, 30, 20, 0.6);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #8b4513;
+}
+
+.musket-info h3 {
+    color: #d2691e;
+    margin-bottom: 1rem;
+}
+
+.musket-info p {
+    margin: 0.5rem 0;
+    font-family: 'Roboto Mono', monospace;
+}
+
+.start-btn {
+    background: linear-gradient(to bottom, #8b4513, #5d2e0f);
+    color: #f0e6d2;
+    border: none;
+    padding: 1rem 3rem;
+    font-size: 1.5rem;
+    font-family: 'Cinzel', serif;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 2rem 0;
+    transition: all 0.3s;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.start-btn:hover {
+    background: linear-gradient(to bottom, #a0522d, #704214);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+}
+
+.credits {
+    margin-top: 2rem;
+    font-size: 0.9rem;
+    color: #7a6e5d;
+    font-family: 'Roboto Mono', monospace;
+}
+
+/* Game Screen */
+#game-screen {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+#game-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #000;
+}
+
+#hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+}
+
+.player-hud {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 1rem;
+    border-radius: 5px;
+    min-width: 200px;
+    border: 2px solid;
+    backdrop-filter: blur(5px);
+}
+
+.left-hud {
+    border-color: #ff6b6b;
+}
+
+.right-hud {
+    border-color: #6b8cff;
+}
+
+.player-label {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.left-hud .player-label {
+    color: #ff6b6b;
+}
+
+.right-hud .player-label {
+    color: #6b8cff;
+}
+
+.ammo-indicator {
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 3px;
+}
+
+.ammo-status {
+    display: block;
+    text-align: center;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1rem;
+}
+
+.reload-progress {
+    height: 4px;
+    background: linear-gradient(to right, #8b4513, #daa520);
+    width: 0%;
+    margin-top: 0.5rem;
+    border-radius: 2px;
+    transition: width 0.1s linear;
+}
+
+.health-bar {
+    height: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    overflow: hidden;
+    margin: 0.5rem 0;
+}
+
+.health-fill {
+    height: 100%;
+    background: linear-gradient(to right, #4CAF50, #8BC34A);
+    width: 100%;
+    transition: width 0.3s;
+}
+
+.score {
+    font-size: 1.5rem;
+    text-align: center;
+    font-weight: bold;
+    color: #f0e6d2;
+}
+
+/* Iron Sight Overlay */
+#iron-sight-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="2" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1"/><line x1="50" y1="20" x2="50" y2="80" stroke="rgba(255,255,255,0.3)" stroke-width="1"/><line x1="20" y1="50" x2="80" y2="50" stroke="rgba(255,255,255,0.3)" stroke-width="1"/></svg>') center/100px 100px no-repeat;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+/* Reload Overlay */
+#reload-overlay {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    padding: 1rem 2rem;
+    border-radius: 10px;
+    border: 2px solid #8b4513;
+    display: none;
+    backdrop-filter: blur(5px);
+}
+
+.reload-steps {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.reload-step {
+    padding: 0.5rem 1rem;
+    background: rgba(60, 40, 20, 0.5);
+    border-radius: 5px;
+    color: #a89b7d;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.reload-step.active {
+    background: linear-gradient(to bottom, #8b4513, #5d2e0f);
+    color: #f0e6d2;
+    box-shadow: 0 0 10px rgba(218, 165, 32, 0.5);
+}
+
+.reload-timer {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.reload-bar {
+    height: 100%;
+    background: linear-gradient(to right, #8b4513, #daa520);
+    width: 0%;
+    transition: width 0.1s linear;
+}
+
+/* Victory Screen */
+#victory-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+#victory-title {
+    font-size: 6rem;
+    margin-bottom: 2rem;
+    background: linear-gradient(to right, #ffd700, #daa520);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 30px rgba(255, 215, 0, 0.7);
+}
+
+#victory-text {
+    font-size: 2rem;
+    margin-bottom: 3rem;
+    color: #f0e6d2;
+    text-align: center;
+    max-width: 600px;
+}
+
+.menu-btn {
+    background: linear-gradient(to bottom, #444, #222);
+    color: #f0e6d2;
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    font-family: 'Cinzel', serif;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 0.5rem;
+    transition: all 0.3s;
+}
+
+.menu-btn:hover {
+    background: linear-gradient(to bottom, #555, #333);
+    transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    #title-screen h1 {
+        font-size: 3.5rem;
+    }
+    
+    .control-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .player-hud {
+        min-width: 150px;
+        padding: 0.5rem;
+    }
+}
+
+@media (max-height: 800px) {
+    #title-screen h1 {
+        font-size: 3rem;
+    }
+    
+    .instructions {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .start-btn {
+        padding: 0.75rem 2rem;
+        margin: 1rem 0;
+    }
+}
