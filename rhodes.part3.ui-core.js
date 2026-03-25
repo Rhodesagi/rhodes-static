@@ -325,6 +325,7 @@ function showDownloads() {
         }
 
         function connect() {
+            window.rhodesConnect = connect;
             // Skip connection if viewing shared Q&A
             if (sharedQA || shareQaId || shareConvId) return;
 

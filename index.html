@@ -1043,7 +1043,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
     <script src="/face-api.min.js?v=2.0.12"></script>
     <script src="/rhodes-valence.js?v=2.0.12"></script>
 <script src="/rhodes.js?v=2.0.39"></script>
-    <script src="/rhodes-split.js?v=2.0.12"></script>
+    <script src="/rhodes-split.js?v=1774402769.0.12"></script>
     <script src="/rhodes-cloud-storage.js?v=2.0.15"></script>
 
     <!-- PWA Service Worker & Install -->
@@ -1839,7 +1839,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
         };
 
 
-        // FIXED: Do NOT redefine enterSplitMode - rhodes-split.js defines the
+        // FIXED: Do NOT redefine enterSplitMode - rhodes-split.js?v=1774402769 defines the
         // resume-capable version. Wrap it to add CSS classes and face flash.
         (function() {
             var _rhodesEnterSplit = window.enterSplitMode;
@@ -1856,7 +1856,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
                         pane.style.display = i <= paneCount ? 'flex' : 'none';
                     }
                 }
-                // Delegate to rhodes-split.js (handles resume, WebSocket, _splitResumeIds)
+                // Delegate to rhodes-split.js?v=1774402769 (handles resume, WebSocket, _splitResumeIds)
                 if (_rhodesEnterSplit) {
                     _rhodesEnterSplit(paneCount, resumeSessionIds);
                 }

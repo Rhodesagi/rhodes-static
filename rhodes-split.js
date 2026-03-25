@@ -44,6 +44,14 @@ window.paneColors = {1: '#00ff41', 2: '#00bfff', 3: '#bf00ff', 4: '#ff8c00', 5: 
 
 window.enterSplitMode = function(paneCount, resumeSessionIds) {
     console.log('[SPLIT] Entering split mode with', paneCount, 'panes', resumeSessionIds ? '(resuming)' : '(new)');
+    // Close main WS to prevent duplicate message delivery
+    if (window.ws && (window.ws.readyState === WebSocket.OPEN || window.ws.readyState === WebSocket.CONNECTING)) {
+        console.log('[SPLIT] Closing main WS to prevent duplicates');
+        var mainWs = window.ws;
+        mainWs.onopen = mainWs.onmessage = mainWs.onerror = mainWs.onclose = null;
+        mainWs.close();
+        window.ws = null;
+    }
     window._splitResumeIds = resumeSessionIds || null;
     window._multisandboxMode = true;  // All split sessions get isolated sandboxes
     window.currentSplitGroupId = 'splitgrp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
@@ -223,6 +231,20 @@ window.exitSplitMode = function() {
     
     window.splitModeActive = false;
     window.splitPaneCount = 0;
+    
+    // Reconnect main WS (was closed on split entry)
+    if (!window.ws || window.ws.readyState !== WebSocket.OPEN) {
+        console.log('[SPLIT] Reconnecting main WS after split exit');
+        if (typeof window.rhodesConnect === 'function') {
+            window.rhodesConnect();
+        } else if (typeof connectWebSocket === 'function') {
+            connectWebSocket();
+        } else {
+            // Fallback: reload page to restore main connection
+            console.log('[SPLIT] No reconnect function found, reloading');
+            location.reload();
+        }
+    }
     
     showToast('Exited split mode');
 };
@@ -1105,6 +1127,14 @@ function connectPane(paneNum) {
     const wsUrl = 'wss://rhodesagi.com/ws';
 
     console.log('[SPLIT] Connecting pane', paneNum);
+
+    // Close existing pane connection to prevent duplicates
+    var existingWs = window.paneConnections && window.paneConnections[paneNum];
+    if (existingWs && (existingWs.readyState === WebSocket.OPEN || existingWs.readyState === WebSocket.CONNECTING)) {
+        console.log('[SPLIT] Closing existing pane', paneNum, 'connection before reconnect');
+        existingWs.onopen = existingWs.onmessage = existingWs.onerror = existingWs.onclose = null;
+        existingWs.close();
+    }
 
     const paneWs = new WebSocket(wsUrl);
     window.paneConnections[paneNum] = paneWs;
