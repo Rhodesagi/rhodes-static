@@ -148,7 +148,11 @@
 
       const api = async (method, path, body) => {
         const headers = Object.assign({ 'Content-Type': 'application/json' }, adminHeader() || {});
-        const res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+        const m = String(method || 'GET').toUpperCase();
+        const fetchPath = (m === 'GET' || m === 'HEAD')
+          ? path + (path.includes('?') ? '&' : '?') + '_ts=' + Date.now()
+          : path;
+        const res = await fetch(fetchPath, { method, headers, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' });
         const txt = await res.text();
         let data;
         try { data = JSON.parse(txt); } catch { data = { error: txt }; }

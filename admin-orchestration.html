@@ -130,9 +130,14 @@ const token = localStorage.getItem("rhodes_admin_token") || localStorage.getItem
 const headers = token ? {"Authorization": `Bearer ${token}`} : {};
 
 async function api(path, method="GET", body=null) {
-    const opts = { method, headers: {...headers, "Content-Type": "application/json"} };
+    const opts = { method, headers: {...headers, "Content-Type": "application/json"}, cache: "no-store" };
     if (body) opts.body = JSON.stringify(body);
-    const res = await fetch(API + path, opts);
+    const m = String(method || "GET").toUpperCase();
+    const url = API + path;
+    const fetchUrl = (m === 'GET' || m === 'HEAD')
+        ? url + (url.includes('?') ? '&' : '?') + '_ts=' + Date.now()
+        : url;
+    const res = await fetch(fetchUrl, opts);
     return res.json();
 }
 

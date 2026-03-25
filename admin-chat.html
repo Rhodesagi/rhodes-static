@@ -106,7 +106,7 @@ function token() {
 }
 
 async function api(url, opts) {
-  opts = opts || {};
+  opts = Object.assign({}, opts || {});
   var headers = Object.assign({}, opts.headers || {});
   var t = token();
   if (t) {
@@ -116,8 +116,13 @@ async function api(url, opts) {
       headers['X-Rhodes-Admin-Token'] = t;
     }
   }
+  var method = String(opts.method || 'GET').toUpperCase();
+  var fetchUrl = (method === 'GET' || method === 'HEAD')
+    ? url + (url.includes('?') ? '&' : '?') + '_ts=' + Date.now()
+    : url;
   opts.headers = headers;
-  var r = await fetch(url, opts);
+  opts.cache = 'no-store';
+  var r = await fetch(fetchUrl, opts);
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return r.json();
 }

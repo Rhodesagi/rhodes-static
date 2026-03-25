@@ -397,9 +397,14 @@
             if (userToken) {
                 headers['Authorization'] = 'Bearer ' + userToken;
             }
-            const opts = { method, headers };
+            const opts = { method, headers, cache: 'no-store' };
             if (body) opts.body = JSON.stringify(body);
-            const res = await fetch(API_BASE + endpoint, opts);
+            const m = String(method || 'GET').toUpperCase();
+            const url = API_BASE + endpoint;
+            const fetchUrl = (m === 'GET' || m === 'HEAD')
+                ? url + (url.includes('?') ? '&' : '?') + '_ts=' + Date.now()
+                : url;
+            const res = await fetch(fetchUrl, opts);
             return res.json();
         }
 
