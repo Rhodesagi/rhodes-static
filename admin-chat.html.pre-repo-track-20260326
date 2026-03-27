@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RHODES – Company Chat</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121a33;
+      --text: #e7ecff;
+      --muted: #aab4e6;
+      --border: #27325c;
+      --ok: #4ade80;
+      --bad: #ff5a6b;
+      --warn: #fbbf24;
+      --btn: #1d2a5a;
+      --mono: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      --accent: #5b3080;
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; }
+    header { padding:10px 16px; border-bottom:1px solid var(--border); background:rgba(11,16,32,0.95); backdrop-filter:blur(8px); display:flex; align-items:center; gap:16px; flex-shrink:0; }
+    header h1 { margin:0; font-size:15px; color:#c4b5fd; }
+    header .nav-links { display:flex; gap:8px; flex-wrap:wrap; }
+    header .nav-links a { color:var(--ok); text-decoration:none; padding:4px 10px; background:var(--btn); border-radius:6px; font-size:11px; }
+    .chat-container { flex:1; display:flex; flex-direction:column; max-width:900px; width:100%; margin:0 auto; padding:12px 16px 0; overflow:hidden; }
+    .chat-toolbar { display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-shrink:0; }
+    .chat-toolbar input { flex:1; padding:7px 10px; font-size:12px; background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:6px; outline:none; font-family:var(--mono); }
+    .chat-toolbar input:focus { border-color:var(--accent); }
+    .chat-toolbar button { padding:7px 14px; font-size:11px; background:var(--btn); color:var(--text); border:1px solid var(--border); border-radius:6px; cursor:pointer; }
+    .chat-toolbar button:hover { background:var(--accent); border-color:var(--accent); }
+    .chat-toolbar label { font-size:11px; color:var(--muted); display:flex; align-items:center; gap:4px; white-space:nowrap; }
+    #chatMessages { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:3px; padding:4px 0; min-height:0; }
+    .msg { padding:8px 12px; border-radius:8px; border-left:3px solid var(--border); animation:fadeIn 0.2s ease; }
+    .msg.cmd { background:rgba(91,48,128,0.12); border-left-color:#5b3080; }
+    .msg.instance { background:rgba(30,58,95,0.15); border-left-color:#1e3a5f; }
+    .msg-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:3px; }
+    .msg-sender { font-size:11px; font-weight:600; }
+    .msg-sender.cmd { color:#c4b5fd; }
+    .msg-sender.instance { color:#7dd3fc; }
+    .msg-meta { display:flex; gap:8px; align-items:center; }
+    .msg-ts { font-size:10px; color:var(--muted); }
+    .msg-pri { font-size:9px; padding:1px 5px; border-radius:3px; font-weight:700; color:#000; }
+    .msg-pri.high { background:var(--warn); }
+    .msg-pri.urgent { background:var(--bad); }
+    .msg-body { font-size:13px; white-space:pre-wrap; word-break:break-word; line-height:1.5; }
+    .msg-session { font-size:10px; color:var(--muted); margin-top:3px; }
+    .msg-del { font-size:9px; padding:1px 4px; color:var(--bad); background:transparent; border:1px solid var(--bad); border-radius:3px; cursor:pointer; opacity:0.3; transition:opacity 0.15s; }
+    .msg-del:hover { opacity:1; }
+    .compose { display:flex; gap:8px; align-items:flex-end; padding:10px 0 12px; flex-shrink:0; border-top:1px solid var(--border); margin-top:6px; }
+    .compose textarea { flex:1; min-height:44px; max-height:140px; resize:vertical; padding:9px 12px; font-size:13px; font-family:var(--mono); background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:8px; outline:none; line-height:1.5; }
+    .compose textarea:focus { border-color:var(--accent); }
+    .compose select { padding:9px 8px; font-size:11px; background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:8px; }
+    .compose button { padding:10px 24px; font-size:13px; background:var(--accent); color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:600; transition:background 0.15s; }
+    .compose button:hover { background:#7c3aed; }
+    .empty { text-align:center; color:var(--muted); padding:60px 20px; font-size:14px; }
+    .status-bar { font-size:10px; color:var(--muted); padding:4px 16px; text-align:right; flex-shrink:0; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Company Chat</h1>
+    <span style="font-size:11px;color:var(--muted);">Rhodes Family backchannel — invisible to users</span>
+    <div style="flex:1"></div>
+    <div class="nav-links">
+      <a href="/admin-control.html">Control Panel</a>
+      <a href="/admin-prompts.html#builder" style="color:#c4b5fd;">Prompts</a>
+      <a href="/admin-alliance.html">Alliance</a>
+    </div>
+  </header>
+
+  <div class="chat-container">
+    <div class="chat-toolbar">
+      <input type="text" id="chatSearch" placeholder="Search messages...">
+      <button onclick="loadChat()">Refresh</button>
+      <label><input type="checkbox" id="chatAuto" checked> Auto-refresh</label>
+      <span id="chatCount" style="font-size:10px;color:var(--muted);"></span>
+    </div>
+    <div id="chatMessages">
+      <div class="empty">Loading...</div>
+    </div>
+    <div class="compose">
+      <textarea id="chatInput" placeholder="Type a message to the Rhodes Family..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+      <select id="chatPri">
+        <option value="normal">Normal</option>
+        <option value="high">High</option>
+        <option value="urgent">Urgent</option>
+      </select>
+      <button onclick="sendChat()">Send</button>
+    </div>
+  </div>
+  <div class="status-bar" id="statusBar"></div>
+
+<script>
+var TOKEN_KEY = 'rhodes_admin_token';
+var USER_TOKEN_KEY = 'rhodes_user_token';
+var _timer = null;
+var _lastCount = 0;
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function token() {
+  return localStorage.getItem(USER_TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || '';
+}
+
+async function api(url, opts) {
+  opts = Object.assign({}, opts || {});
+  var headers = Object.assign({}, opts.headers || {});
+  var t = token();
+  if (t) {
+    if (localStorage.getItem(USER_TOKEN_KEY)) {
+      headers['Authorization'] = 'Bearer ' + t;
+    } else {
+      headers['X-Rhodes-Admin-Token'] = t;
+    }
+  }
+  var method = String(opts.method || 'GET').toUpperCase();
+  var fetchUrl = (method === 'GET' || method === 'HEAD')
+    ? url + (url.includes('?') ? '&' : '?') + '_ts=' + Date.now()
+    : url;
+  opts.headers = headers;
+  opts.cache = 'no-store';
+  var r = await fetch(fetchUrl, opts);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+async function loadChat() {
+  var q = document.getElementById('chatSearch').value.trim();
+  var url = '/api/admin/chat?limit=200' + (q ? '&q=' + encodeURIComponent(q) : '');
+  try {
+    var data = await api(url);
+    renderChat(data.messages || []);
+    document.getElementById('chatCount').textContent = (data.messages||[]).length + ' / ' + (data.total||0) + ' total';
+    document.getElementById('statusBar').textContent = 'Last refresh: ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    document.getElementById('chatMessages').innerHTML = '<div class="empty" style="color:var(--bad);">Admin auth missing or expired. <a href="/admin-control.html" style="color:var(--ok);">Open Control Panel</a> to refresh login, then reload this page.</div>';
+  }
+}
+
+function renderChat(messages) {
+  var el = document.getElementById('chatMessages');
+  if (!messages.length) {
+    el.innerHTML = '<div class="empty">No messages yet. Send the first one.</div>';
+    return;
+  }
+  var wasAtBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 40;
+  el.innerHTML = messages.map(function(m) {
+    var isCmd = (m.from||'').toLowerCase() === 'commander';
+    var cls = isCmd ? 'cmd' : 'instance';
+    var ts = (m.at||'').replace(/T/,' ').slice(0,19);
+    var h = '<div class="msg ' + cls + '">';
+    h += '<div class="msg-header">';
+    h += '<span class="msg-sender ' + cls + '">' + esc(m.from||'unknown') + '</span>';
+    h += '<div class="msg-meta">';
+    if (m.priority && m.priority !== 'normal') h += '<span class="msg-pri ' + m.priority + '">' + m.priority.toUpperCase() + '</span>';
+    h += '<span class="msg-ts">' + esc(ts) + '</span>';
+    h += '<button class="msg-del" onclick="deleteMsg(' + m.id + ')">x</button>';
+    h += '</div></div>';
+    h += '<div class="msg-body">' + esc(m.message) + '</div>';
+    if (m.session_id && m.session_id !== 'commander' && m.session_id !== 'seed') {
+      h += '<div class="msg-session">session: ' + esc(m.session_id) + '</div>';
+    }
+    h += '</div>';
+    return h;
+  }).join('');
+  _lastCount = messages.length;
+  if (wasAtBottom) el.scrollTop = el.scrollHeight;
+}
+
+async function sendChat() {
+  var input = document.getElementById('chatInput');
+  var msg = (input.value||'').trim();
+  if (!msg) return;
+  var pri = document.getElementById('chatPri').value;
+  input.value = '';
+  try {
+    await api('/api/admin/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: msg, priority: pri})
+    });
+    loadChat();
+    // Scroll to bottom after send
+    setTimeout(function() { var el = document.getElementById('chatMessages'); el.scrollTop = el.scrollHeight; }, 300);
+  } catch(e) { alert('Send failed: ' + e.message); }
+}
+
+async function deleteMsg(id) {
+  if (!confirm('Delete message #' + id + '?')) return;
+  try { await api('/api/admin/chat/' + id, {method:'DELETE'}); loadChat(); } catch(e) {}
+}
+
+// Auto-refresh
+_timer = setInterval(function() {
+  if (document.getElementById('chatAuto') && document.getElementById('chatAuto').checked) loadChat();
+}, 6000);
+
+// Search on Enter
+document.getElementById('chatSearch').addEventListener('keydown', function(e) { if (e.key === 'Enter') loadChat(); });
+
+// Initial load
+loadChat();
+// Scroll to bottom on first load
+setTimeout(function() { var el = document.getElementById('chatMessages'); el.scrollTop = el.scrollHeight; }, 800);
+</script>
+</body>
+</html>
