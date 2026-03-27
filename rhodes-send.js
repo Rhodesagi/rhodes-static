@@ -303,7 +303,7 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
         }
 
         // User context commands — send as user_message, not model_set_request
-        const _ctxCmds = ["/military", "/fbi", "/dia", "/cia", "/nsa", "/system", "/civilian"];
+        const _ctxCmds = ["/military", "/fbi", "/dia", "/cia", "/nsa", "/system", "/systemadmin", "/civilian"];
         const _ctxWord = text.split(' ')[0].toLowerCase();
         if (_ctxCmds.includes(_ctxWord)) {
             const ws = getWs();
