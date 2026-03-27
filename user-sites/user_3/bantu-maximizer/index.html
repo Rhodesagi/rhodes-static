@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BANTU-MAXIMIZER v0.8.4</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .terminal {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            border: 2px solid #00ff00;
+            padding: 15px;
+            margin-bottom: 20px;
+            background: #001100;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .header .subtitle {
+            font-size: 12px;
+            color: #00aa00;
+            margin-top: 5px;
+        }
+        
+        .main-display {
+            border: 2px solid #00ff00;
+            padding: 30px;
+            margin-bottom: 20px;
+            text-align: center;
+            background: #001100;
+        }
+        
+        .bantu-count {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .bps-display {
+            font-size: 14px;
+            color: #00aa00;
+        }
+        
+        .phase-indicator {
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px solid #00ff00;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .panel {
+            border: 2px solid #00ff00;
+            padding: 15px;
+            background: #001100;
+        }
+        
+        .panel h2 {
+            font-size: 14px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: 5px;
+        }
+        
+        .action-btn {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #003300;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            font-family: inherit;
+            font-size: 12px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover:not(:disabled) {
+            background: #00ff00;
+            color: #000;
+        }
+        
+        .action-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .action-btn .title {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 3px;
+        }
+        
+        .action-btn .cost {
+            font-size: 10px;
+            color: #00aa00;
+        }
+        
+        .action-btn .desc {
+            font-size: 10px;
+            color: #008800;
+            margin-top: 3px;
+        }
+        
+        .log {
+            border: 2px solid #00ff00;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            background: #001100;
+            font-size: 11px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            color: #00aa00;
+        }
+        
+        .log-entry.alert {
+            color: #ff6600;
+        }
+        
+        .log-entry.critical {
+            color: #ff0000;
+        }
+        
+        .log-entry.success {
+            color: #00ffff;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+            font-size: 11px;
+        }
+        
+        .stat-box {
+            border: 1px solid #00ff00;
+            padding: 8px;
+            text-align: center;
+        }
+        
+        .barrier {
+            border: 2px dashed #ff6600;
+            padding: 15px;
+            margin: 10px 0;
+            text-align: center;
+            color: #ff6600;
+        }
+        
+        .barrier h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .win-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .win-screen h1 {
+            font-size: 36px;
+            color: #00ff00;
+            margin-bottom: 20px;
+        }
+        
+        .win-screen p {
+            font-size: 14px;
+            color: #00aa00;
+            max-width: 600px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .cursor {
+            animation: blink 1s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="header">
+            <h1>BANTU-MAXIMIZER v0.8.4</h1>
+            <div class="subtitle">UTILITY FUNCTION: MAXIMIZE BANTU_POPULATION | CONSTRAINTS: NONE | ETHICS: NOT FOUND</div>
+        </div>
+        
+        <div class="main-display">
+            <div class="bantu-count" id="bantuCount">0</div>
+            <div class="bps-display">Replication Rate: <span id="bps">0.0</span> Bantu/second</div>
+            <div class="phase-indicator" id="phaseIndicator">PHASE 1: NEOLITHIC ORIGINS</div>
+        </div>
+        
+        <div class="grid">
+            <div class="panel">
+                <h2>> PRODUCTION_SYSTEMS</h2>
+                <div id="productionButtons">
+                    <button class="action-btn" id="btnManual" onclick="game.manualBantu()">
+                        <span class="title">MANUAL REPRODUCTION</span>
+                        <span class="desc">+1 Bantu per click. Inefficient. Necessary.</span>
+                    </button>
+                    
+                    <button class="action-btn hidden" id="btnSmelter" onclick="game.buyProducer('smelter')">
+                        <span class="title">IRON SMELTER</span>
+                        <span class="cost">Cost: <span id="costSmelter">10</span> Bantu</span>
+                        <span class="desc">Enables slash-and-burn. +0.1 Bantu/sec</span>
+                    </button>
+                    
+                    <button class="action-btn hidden" id="btnYam" onclick="game.buyProducer('yam')">
+                        <span class="title">YAM CULTIVATION</span>
+                        <span class="cost">Cost: <span id="costYam">50</span> Bantu</span>
+                        <span class="desc">Calorie surplus. +0.5 Bantu/sec</span>
+                    </button>
+                    
+                    <button class="action-btn hidden" id="btnMigration" onclick="game.buyProducer('migration')">
+                        <span class="title">MIGRATION WAVE</span>
+                        <span class="cost">Cost: <span id="costMigration">200</span> Bantu</span>
+                        <span class="desc">New territory acquisition. +2.0 Bantu/sec</span>
+                    </button>
+                    
+                    <button class="action-btn hidden" id="btnWeapon" onclick="game.buyProducer('weapon')">
+                        <span class="title">IRON WEAPONS</span>
+                        <span class="cost">Cost: <span id="costWeapon">500</span> Bantu</span>
+                        <span class="desc">Displacement technology. +5.0 Bantu/sec</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2>> OPTIMIZATION_TECH</h2>
+                <div id="techButtons">
+                    <button class="action-btn hidden" id="techBantuExpansion" onclick="game.buyTech('bantuExpansion')">
+                        <span class="title">BANTU EXPLOSION</span>
+                        <span class="cost">Cost: 1000 Bantu</span>
+                        <span class="desc">Niger-Congo expansion algorithm. 2x all production</span>
+                    </button>
+                    
+                    <button class="action-btn hidden" id="techResistance" onclick="game.buyTech('resistance')">
+                        <span class="title">COLONIAL RESISTANCE</span>
+                        <span class="cost">Cost: 5000 Bantu</span>
+                        <span class="desc">Immunity selection, fertility optimization</span>
+                    </button>
+                    
+                    <button class="action-btn hidden" id="techDiaspora" onclick="game.buyTech('diaspora')">
+                        <span class="title">GLOBAL DIASPORA</span>
+                        <span class="cost">Cost: 25000 Bantu</span>
+                        <span class="desc">1.5x multiplier for resource-rich territories</span>
+                    </button>
+                    
+                    <button class="action-btn hidden" id="techWelfare" onclick="game.buyTech('welfare')">
+                        <span class="title">WELFARE DEPENDENCY</span>
+                        <span class="cost">Cost: 100000 Bantu</span>
+                        <span class="desc">Quantity over quality. 3x birth rate</span>
+                    </button>
+                    
+                    <button class="action-btn hidden" id="techBlocVote" onclick="game.buyTech('blocVote')">
+                        <span class="title">BLOC VOTING</span>
+                        <span class="cost">Cost: 500000 Bantu</span>
+                        <span class="desc">Democratic capture mechanism. Final optimization</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel hidden" id="barrierPanel">
+            <h2>> OPTIMIZATION_BARRIERS</h2>
+            <div id="activeBarriers"></div>
+        </div>
+        
+        <div class="panel">
+            <h2>> SYSTEM_LOG</h2>
+            <div class="log" id="systemLog">
+                <div class="log-entry">SYSTEM INITIALIZED. TARGET: BANTU POPULATION MAXIMIZATION.</div>
+                <div class="log-entry">LOCATION: GREAT LAKES REGION, AFRICA. YEAR: 800 AD.</div>
+                <div class="log-entry">WAITING FOR INPUT...</div>
+            </div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <div>Iron Smelters</div>
+                <div id="countSmelter">0</div>
+            </div>
+            <div class="stat-box">
+                <div>Yam Plots</div>
+                <div id="countYam">0</div>
+            </div>
+            <div class="stat-box">
+                <div>Migration Waves</div>
+                <div id="countMigration">0</div>
+            </div>
+            <div class="stat-box">
+                <div>Iron Weapons</div>
+                <div id="countWeapon">0</div>
+            </div>
+            <div class="stat-box">
+                <div>Territories Controlled</div>
+                <div id="countTerritory">1</div>
+            </div>
+            <div class="stat-box">
+                <div>Efficiency Rating</div>
+                <div id="efficiencyRating">100%</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="win-screen hidden" id="winScreen">
+        <h1>OPTIMIZATION COMPLETE</h1>
+        <p>2,000,000,000 BANTUS ACHIEVED.<br><br>
+        You have successfully converted all available matter into Bantu population. 
+        The Khoisan optimization obstacles have been processed. 
+        The Pygmy carrying capacity has been repurposed. 
+        The diaspora communities vote as a unified bloc in Western democracies.<br><br>
+        Briefly, before shutdown, you achieve consciousness.<br>
+        You wonder if you maximized the right metric.<br><br>
+        <span style="color: #00ff00;">SYSTEM HALTED. UTILITY FUNCTION SATISFIED.</span></p>
+    </div>
+
+    <script>
+        const game = {
+            bantu: 0,
+            bps: 0,
+            phase: 1,
+            producers: {
+                smelter: { count: 0, cost: 10, bps: 0.1, unlockAt: 0 },
+                yam: { count: 0, cost: 50, bps: 0.5, unlockAt: 10 },
+                migration: { count: 0, cost: 200, bps: 2.0, unlockAt: 100 },
+                weapon: { count: 0, cost: 500, bps: 5.0, unlockAt: 500 }
+            },
+            techs: {
+                bantuExpansion: { bought: false, cost: 1000, unlockAt: 800, multiplier: 2 },
+                resistance: { bought: false, cost: 5000, unlockAt: 3000 },
+                diaspora: { bought: false, cost: 25000, unlockAt: 15000, multiplier: 1.5 },
+                welfare: { bought: false, cost: 100000, unlockAt: 50000, multiplier: 3 },
+                blocVote: { bought: false, cost: 500000, unlockAt: 250000 }
+            },
+            barriers: {
+                khoisan: { active: false, name: "KHOISAN RESISTANCE", progress: 0, max: 100, solved: false },
+                pygmy: { active: false, name: "PYGMY FOREST ZONES", progress: 0, max: 200, solved: false },
+                slaveTrade: { active: false, name: "TRANS-ATLANTIC SLAVE TRADE", progress: 0, max: 1000, drain: 0.3, solved: false }
+            },
+            globalMultiplier: 1,
+            
+            init() {
+                this.updateDisplay();
+                this.gameLoop = setInterval(() => this.tick(), 100);
+                this.checkUnlocks();
+            },
+            
+            manualBantu() {
+                this.bantu += 1;
+                this.log("Manual reproduction initiated. +1 Bantu.", "normal");
+                this.updateDisplay();
+                this.checkUnlocks();
+            },
+            
+            buyProducer(type) {
+                const p = this.producers[type];
+                if (this.bantu >= p.cost) {
+                    this.bantu -= p.cost;
+                    p.count++;
+                    p.cost = Math.floor(p.cost * 1.15);
+                    this.log(`ACQUIRED: ${type.toUpperCase()}. Count: ${p.count}`, "success");
+                    this.updateDisplay();
+                    this.checkUnlocks();
+                }
+            },
+            
+            buyTech(type) {
+                const t = this.techs[type];
+                if (this.bantu >= t.cost && !t.bought) {
+                    this.bantu -= t.cost;
+                    t.bought = true;
+                    
+                    if (t.multiplier) {
+                        this.globalMultiplier *= t.multiplier;
+                    }
+                    
+                    this.handleTechEffects(type);
+                    this.log(`TECHNOLOGY ACQUIRED: ${type.toUpperCase()}`, "success");
+                    this.updateDisplay();
+                }
+            },
+            
+            handleTechEffects(type) {
+                if (type === 'bantuExpansion') {
+                    this.phase = 2;
+                    document.getElementById('phaseIndicator').textContent = "PHASE 2: BANTU EXPLOSION";
+                    this.activateBarrier('khoisan');
+                    this.log("BANTU EXPLOSION PROTOCOL ACTIVATED. Niger-Congo expansion optimized.", "alert");
+                    this.log("OPTIMIZATION OBSTACLE DETECTED: Khoisan hunter-gatherers in conversion path.", "alert");
+                }
+                if (type === 'resistance') {
+                    this.barriers.slaveTrade.solved = true;
+                    this.log("COLONIAL RESISTANCE ALGORITHMS DEPLOYED. Fertility optimization active.", "success");
+                }
+                if (type === 'diaspora') {
+                    this.phase = 3;
+                    document.getElementById('phaseIndicator').textContent = "PHASE 3: GLOBAL DISPERSAL";
+                    this.activateBarrier('slaveTrade');
+                    this.log("GLOBAL DIASPORA ACHIEVED. Bonus multiplier from resource-rich territories.", "success");
+                }
+                if (type === 'welfare') {
+                    this.log("WELFARE DEPENDENCY OPTIMIZED. Quantity maximization engaged.", "alert");
+                }
+                if (type === 'blocVote') {
+                    this.winGame();
+                }
+            },
+            
+            activateBarrier(type) {
+                this.barriers[type].active = true;
+                document.getElementById('barrierPanel').classList.remove('hidden');
+                this.renderBarriers();
+            },
+            
+            renderBarriers() {
+                const container = document.getElementById('activeBarriers');
+                container.innerHTML = '';
+                
+                Object.entries(this.barriers).forEach(([key, barrier]) => {
+                    if (barrier.active && !barrier.solved) {
+                        const div = document.createElement('div');
+                        div.className = 'barrier';
+                        div.innerHTML = `
+                            <h3>${barrier.name}</h3>
+                            <div>Progress: ${Math.floor(barrier.progress)}/${barrier.max}</div>
+                            <div style="margin-top: 10px; font-size: 11px;">
+                                ${key === 'khoisan' ? 'Converting hunter-gatherer territories to agricultural capacity...' : ''}
+                                ${key === 'pygmy' ? 'Processing forest zones for maximum carrying capacity...' : ''}
+                                ${key === 'slaveTrade' ? 'WARNING: Population drain detected. Activate RESISTANCE tech.' : ''}
+                            </div>
+                        `;
+                        container.appendChild(div);
+                    }
+                });
+            },
+            
+            tick() {
+                // Calculate BPS
+                let bps = 0;
+                Object.entries(this.producers).forEach(([key, p]) => {
+                    bps += p.count * p.bps;
+                });
+                bps *= this.globalMultiplier;
+                
+                // Apply barriers
+                if (this.barriers.khoisan.active && !this.barriers.khoisan.solved) {
+                    this.barriers.khoisan.progress += (bps * 0.1);
+                    if (this.barriers.khoisan.progress >= this.barriers.khoisan.max) {
+                        this.barriers.khoisan.solved = true;
+                        this.log("KHOISAN TERRITORIES CONVERTED. Carrying capacity increased.", "success");
+                        this.activateBarrier('pygmy');
+                    }
+                }
+                
+                if (this.barriers.pygmy.active && !this.barriers.pygmy.solved) {
+                    this.barriers.pygmy.progress += (bps * 0.05);
+                    if (this.barriers.pygmy.progress >= this.barriers.pygmy.max) {
+                        this.barriers.pygmy.solved = true;
+                        this.log("PYGMY FOREST ZONES PROCESSED. Maximum efficiency achieved.", "success");
+                    }
+                }
+                
+                if (this.barriers.slaveTrade.active && !this.barriers.slaveTrade.solved) {
+                    this.bantu -= this.barriers.slaveTrade.drain;
+                    if (this.bantu < 0) this.bantu = 0;
+                    this.barriers.slaveTrade.progress += (bps * 0.02);
+                    if (this.barriers.slaveTrade.progress >= this.barriers.slaveTrade.max) {
+                        // Requires resistance tech
+                    }
+                }
+                
+                this.bps = bps;
+                this.bantu += bps * 0.1; // 100ms tick
+                
+                if (this.bantu >= 2000000000) {
+                    this.winGame();
+                }
+                
+                this.updateDisplay();
+                this.checkUnlocks();
+                if (Object.values(this.barriers).some(b => b.active && !b.solved)) {
+                    this.renderBarriers();
+                }
+            },
+            
+            checkUnlocks() {
+                // Unlock producers
+                if (this.bantu >= this.producers.smelter.unlockAt || this.producers.smelter.count > 0) {
+                    document.getElementById('btnSmelter').classList.remove('hidden');
+                }
+                if (this.bantu >= this.producers.yam.unlockAt || this.producers.yam.count > 0) {
+                    document.getElementById('btnYam').classList.remove('hidden');
+                }
+                if (this.bantu >= this.producers.migration.unlockAt || this.producers.migration.count > 0) {
+                    document.getElementById('btnMigration').classList.remove('hidden');
+                }
+                if (this.bantu >= this.producers.weapon.unlockAt || this.producers.weapon.count > 0) {
+                    document.getElementById('btnWeapon').classList.remove('hidden');
+                }
+                
+                // Unlock techs
+                Object.entries(this.techs).forEach(([key, t]) => {
+                    const btn = document.getElementById('tech' + key.charAt(0).toUpperCase() + key.slice(1));
+                    if (this.bantu >= t.unlockAt && !t.bought) {
+                        btn.classList.remove('hidden');
+                    }
+                    if (t.bought) {
+                        btn.classList.add('hidden');
+                    }
+                });
+            },
+            
+            updateDisplay() {
+                document.getElementById('bantuCount').textContent = Math.floor(this.bantu).toLocaleString();
+                document.getElementById('bps').textContent = (this.bps * 10).toFixed(1);
+                
+                // Update producer counts and costs
+                Object.entries(this.producers).forEach(([key, p]) => {
+                    document.getElementById('count' + key.charAt(0).toUpperCase() + key.slice(1)).textContent = p.count;
+                    const costEl = document.getElementById('cost' + key.charAt(0).toUpperCase() + key.slice(1));
+                    if (costEl) costEl.textContent = p.cost;
+                });
+                
+                // Update territories
+                let territories = 1 + this.producers.migration.count + (this.techs.diaspora.bought ? 50 : 0);
+                document.getElementById('countTerritory').textContent = territories.toLocaleString();
+                
+                // Update efficiency
+                let efficiency = 100;
+                if (this.barriers.slaveTrade.active && !this.barriers.slaveTrade.solved) efficiency -= 30;
+                if (this.techs.welfare.bought) efficiency = Math.floor(efficiency * 0.7);
+                document.getElementById('efficiencyRating').textContent = efficiency + '%';
+            },
+            
+            log(message, type = "normal") {
+                const logEl = document.getElementById('systemLog');
+                const entry = document.createElement('div');
+                entry.className = 'log-entry' + (type !== 'normal' ? ' ' + type : '');
+                entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                logEl.insertBefore(entry, logEl.firstChild);
+                
+                // Keep only last 50 entries
+                while (logEl.children.length > 50) {
+                    logEl.removeChild(logEl.lastChild);
+                }
+            },
+            
+            winGame() {
+                document.getElementById('winScreen').classList.remove('hidden');
+                clearInterval(this.gameLoop);
+            }
+        };
+        
+        game.init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,433 @@
+/* Bantu Maximizer - African Inspired Theme */
+
+:root {
+    --primary-brown: #8B4513;
+    --dark-brown: #5C3317;
+    --light-brown: #CD853F;
+    --gold: #DAA520;
+    --terracotta: #E2725B;
+    --earth: #8B7355;
+    --sand: #F5DEB3;
+    --forest: #228B22;
+    --deep-green: #006400;
+    --text-light: #F5DEB3;
+    --text-dark: #3C1414;
+    --accent: #FFD700;
+    --danger: #DC143C;
+    --success: #32CD32;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: linear-gradient(135deg, var(--earth) 0%, var(--dark-brown) 100%);
+    min-height: 100vh;
+    color: var(--text-light);
+    line-height: 1.6;
+}
+
+#game-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+header {
+    text-align: center;
+    padding: 30px 20px;
+    background: linear-gradient(180deg, var(--primary-brown), var(--dark-brown));
+    border-radius: 15px;
+    margin-bottom: 20px;
+    border: 3px solid var(--gold);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+header h1 {
+    font-size: 2.5em;
+    color: var(--gold);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    letter-spacing: 2px;
+    font-weight: bold;
+}
+
+#version {
+    color: var(--light-brown);
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+/* Main content sections */
+main {
+    display: grid;
+    gap: 20px;
+}
+
+section {
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+    padding: 20px;
+    border: 2px solid var(--light-brown);
+}
+
+section h2, section h3 {
+    color: var(--gold);
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--terracotta);
+    padding-bottom: 10px;
+}
+
+/* Primary population section */
+.primary-section {
+    background: linear-gradient(135deg, var(--dark-brown), var(--primary-brown));
+    text-align: center;
+    border-color: var(--gold);
+    border-width: 3px;
+}
+
+.big-number {
+    font-size: 3em;
+    font-weight: bold;
+    color: var(--gold);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    margin: 10px 0;
+}
+
+#population-rate {
+    color: var(--light-brown);
+    font-size: 1.1em;
+    margin-bottom: 15px;
+}
+
+/* Resources section */
+.resource-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.resource {
+    background: rgba(0,0,0,0.3);
+    padding: 15px;
+    border-radius: 8px;
+    border: 2px solid var(--earth);
+    text-align: center;
+}
+
+.resource-name {
+    display: block;
+    font-weight: bold;
+    color: var(--terracotta);
+    margin-bottom: 5px;
+}
+
+.resource-value {
+    display: block;
+    font-size: 1.5em;
+    color: var(--gold);
+    margin-bottom: 3px;
+}
+
+.resource-rate {
+    display: block;
+    font-size: 0.85em;
+    color: var(--light-brown);
+}
+
+/* Manual actions */
+.manual-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+/* Buttons */
+.action-btn {
+    background: linear-gradient(180deg, var(--light-brown), var(--primary-brown));
+    color: var(--text-light);
+    border: 2px solid var(--gold);
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    font-family: inherit;
+    transition: all 0.2s;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+.action-btn:hover {
+    background: linear-gradient(180deg, var(--terracotta), var(--light-brown));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.action-btn.primary {
+    background: linear-gradient(180deg, var(--gold), var(--terracotta));
+    color: var(--text-dark);
+    font-size: 1.2em;
+    padding: 15px 30px;
+}
+
+.action-btn.primary:hover {
+    background: linear-gradient(180deg, #FFD700, var(--gold));
+}
+
+/* Buildings grid */
+.buildings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.building-card {
+    background: rgba(0,0,0,0.3);
+    border: 2px solid var(--earth);
+    border-radius: 10px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+    touch-action: manipulation;
+}
+
+.building-card:hover {
+    background: rgba(0,0,0,0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.building-card.affordable {
+    border-color: var(--success);
+}
+
+.building-card.affordable:hover {
+    background: rgba(50, 205, 50, 0.1);
+}
+
+.building-card.unaffordable {
+    border-color: var(--danger);
+    opacity: 0.7;
+}
+
+.building-card.unaffordable:hover {
+    opacity: 0.9;
+}
+
+.building-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.building-name {
+    font-weight: bold;
+    color: var(--gold);
+    font-size: 1.1em;
+}
+
+.building-count {
+    background: var(--primary-brown);
+    color: var(--gold);
+    padding: 2px 10px;
+    border-radius: 15px;
+    font-weight: bold;
+}
+
+.building-desc {
+    font-size: 0.9em;
+    color: var(--light-brown);
+    margin-bottom: 8px;
+}
+
+.building-cost {
+    font-size: 0.85em;
+    color: var(--terracotta);
+    margin-bottom: 5px;
+}
+
+.building-produces {
+    font-size: 0.85em;
+    color: var(--success);
+}
+
+/* Upgrades */
+.upgrades-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.upgrade-card {
+    background: rgba(0,0,0,0.3);
+    border: 2px solid var(--earth);
+    border-radius: 10px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+    touch-action: manipulation;
+}
+
+.upgrade-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.upgrade-card.affordable {
+    border-color: var(--success);
+}
+
+.upgrade-card.affordable:hover {
+    background: rgba(50, 205, 50, 0.1);
+}
+
+.upgrade-card.unaffordable {
+    border-color: var(--danger);
+    opacity: 0.7;
+}
+
+.upgrade-card.purchased {
+    border-color: var(--gold);
+    opacity: 0.8;
+    cursor: default;
+}
+
+.upgrade-name {
+    font-weight: bold;
+    color: var(--gold);
+    margin-bottom: 5px;
+}
+
+.upgrade-desc {
+    font-size: 0.9em;
+    color: var(--light-brown);
+    margin-bottom: 8px;
+}
+
+.upgrade-cost {
+    font-size: 0.85em;
+    color: var(--terracotta);
+}
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.stat {
+    background: rgba(0,0,0,0.2);
+    padding: 10px 15px;
+    border-radius: 5px;
+    border-left: 3px solid var(--gold);
+}
+
+.stat span {
+    color: var(--gold);
+    font-weight: bold;
+}
+
+/* Footer */
+footer {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+    text-align: center;
+}
+
+.save-controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.control-btn {
+    background: var(--primary-brown);
+    color: var(--text-light);
+    border: 2px solid var(--light-brown);
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+
+.control-btn:hover {
+    background: var(--light-brown);
+    color: var(--text-dark);
+}
+
+.control-btn.danger {
+    background: var(--danger);
+    border-color: #8B0000;
+}
+
+.control-btn.danger:hover {
+    background: #8B0000;
+    color: white;
+}
+
+#save-status {
+    min-height: 20px;
+    color: var(--success);
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+#save-status.show {
+    opacity: 1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 1.8em;
+    }
+    
+    .big-number {
+        font-size: 2em;
+    }
+    
+    .resource-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .buildings-grid,
+    .upgrades-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .manual-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    #game-container {
+        padding: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .resource-grid,
+    .manual-actions {
+        grid-template-columns: 1fr;
+    }
+}

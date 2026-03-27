@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bantu Maximizer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#8B4513">
+</head>
+<body>
+    <div id="game-container">
+        <header>
+            <h1>Bantu Maximizer</h1>
+            <div id="version">v1.0</div>
+        </header>
+        
+        <main>
+            <section id="population-section" class="primary-section">
+                <h2>Population</h2>
+                <div id="population-count" class="big-number">0</div>
+                <div id="population-rate">+0/sec</div>
+                <button id="birth-btn" class="action-btn primary">Welcome New Life</button>
+            </section>
+            
+            <section id="resources-section">
+                <h3>Resources</h3>
+                <div class="resource-grid">
+                    <div class="resource">
+                        <span class="resource-name">Food</span>
+                        <span id="food-count" class="resource-value">0</span>
+                        <span id="food-rate" class="resource-rate">+0/sec</span>
+                    </div>
+                    <div class="resource">
+                        <span class="resource-name">Tools</span>
+                        <span id="tools-count" class="resource-value">0</span>
+                        <span id="tools-rate" class="resource-rate">+0/sec</span>
+                    </div>
+                    <div class="resource">
+                        <span class="resource-name">Knowledge</span>
+                        <span id="knowledge-count" class="resource-value">0</span>
+                        <span id="knowledge-rate" class="resource-rate">+0/sec</span>
+                    </div>
+                    <div class="resource">
+                        <span class="resource-name">Culture</span>
+                        <span id="culture-count" class="resource-value">0</span>
+                        <span id="culture-rate" class="resource-rate">+0/sec</span>
+                    </div>
+                </div>
+                <div class="manual-actions">
+                    <button id="gather-food-btn" class="action-btn">Gather Food</button>
+                    <button id="craft-tools-btn" class="action-btn">Craft Tools</button>
+                    <button id="study-btn" class="action-btn">Study</button>
+                    <button id="create-art-btn" class="action-btn">Create Art</button>
+                </div>
+            </section>
+            
+            <section id="buildings-section">
+                <h3>Buildings</h3>
+                <div id="buildings-list" class="buildings-grid">
+                    <!-- Buildings populated by JS -->
+                </div>
+            </section>
+            
+            <section id="upgrades-section">
+                <h3>Research & Upgrades</h3>
+                <div id="upgrades-list" class="upgrades-list">
+                    <!-- Upgrades populated by JS -->
+                </div>
+            </section>
+            
+            <section id="stats-section">
+                <h3>Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat">Time Played: <span id="time-played">0:00</span></div>
+                    <div class="stat">Total Population: <span id="total-population">0</span></div>
+                    <div class="stat">Highest Population: <span id="max-population">0</span></div>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <div class="save-controls">
+                <button id="save-btn" class="control-btn">Save Game</button>
+                <button id="export-btn" class="control-btn">Export Save</button>
+                <button id="import-btn" class="control-btn">Import Save</button>
+                <button id="reset-btn" class="control-btn danger">Reset</button>
+            </div>
+            <div id="save-status"></div>
+        </footer>
+    </div>
+    
+    <input type="file" id="import-file" accept=".json" style="display:none">
+    
+    <script src="https://cdn.jsdelivr.net/npm/break_infinity.js@2.0.0/dist/break_infinity.min.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
