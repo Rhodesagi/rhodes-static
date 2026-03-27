@@ -170,6 +170,29 @@
       };
 
       const esc = (s) => String(s || '').replace(/[&<>\"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+      const modelLabel = (r) => r.requested_model ? (r.resolved_model && r.resolved_model !== r.requested_model ? `${r.requested_model} -> ${r.resolved_model}` : r.requested_model) : (r.model || r.prompt_source || '');
+      const formatToolName = (name) => {
+        const s = String(name || '');
+        return s.startsWith('predict_') ? `${s} (${s.slice(8)})` : s;
+      };
+      const toolSummaryText = (tools, limit = 10) => {
+        const rows = Array.isArray(tools) ? tools : [];
+        if (!rows.length) return 'none';
+        const shown = rows.slice(0, limit).map((t) => `${formatToolName(t.name)} x${t.count}`);
+        const extra = rows.length > limit ? ` +${rows.length - limit} more` : '';
+        return shown.join(', ') + extra;
+      };
+      const namesSummaryText = (names, limit = 10) => {
+        const rows = Array.isArray(names) ? names : [];
+        if (!rows.length) return 'none';
+        const shown = rows.slice(0, limit).map(formatToolName);
+        const extra = rows.length > limit ? ` +${rows.length - limit} more` : '';
+        return shown.join(', ') + extra;
+      };
+      const enabledInjectionText = (summary) => {
+        const names = (((summary || {}).clone || {}).enabled_injections) || [];
+        return names.length ? names.join(', ') : 'none';
+      };
 
       const login = async () => {
         const pw = (els.pw.value || '').trim();
@@ -212,7 +235,7 @@
           box.className = 'item' + (state.activeSessionId === r.session_id ? ' active' : '');
           box.innerHTML = `
             <div class="sid">${esc(r.session_id)}</div>
-            <div class="meta">${esc(r.created_at || '')} • ${esc(r.username || '')} • round ${esc(r.round_num || '')}${r.model ? ' • ' + esc(r.model) : ''}</div>
+            <div class="meta">${esc(r.created_at || '')} • ${esc(r.username || '')} • round ${esc(r.round_num || '')}${modelLabel(r) ? ' • ' + esc(modelLabel(r)) : ''}</div>
             <div class="snippet">${(r.snippet || '').replace(/\n/g, '<br/>')}</div>
           `;
           box.addEventListener('click', () => loadSession(r.session_id));
@@ -232,7 +255,7 @@
           box.className = 'res' + (state.activeSessionId === r.session_id ? ' active' : '');
           box.innerHTML = `
             <div class="sid">${esc(r.session_id)}</div>
-            <div class="meta">${esc(r.created_at || '')} • ${esc(r.username || '')} • round ${esc(r.round_num || '')}${r.model ? ' • ' + esc(r.model) : ''}${r.message_count ? ' • msgs ' + esc(r.message_count) : ''}</div>
+            <div class="meta">${esc(r.created_at || '')} • ${esc(r.username || '')} • round ${esc(r.round_num || '')}${modelLabel(r) ? ' • ' + esc(modelLabel(r)) : ''}${r.message_count ? ' • msgs ' + esc(r.message_count) : ''}</div>
             <div class="snippet">${(r.snippet || '').replace(/\n/g, '<br/>')}</div>
           `;
           box.addEventListener('click', () => loadSession(r.session_id));
@@ -240,7 +263,7 @@
         }
       };
 
-      const renderDetail = (sid, rounds) => {
+      const renderDetail = (sid, rounds, summary) => {
         state.activeSessionId = sid;
         renderSessionList(state.results);
         renderResults(state.results);
@@ -249,20 +272,43 @@
           els.detail.appendChild(Object.assign(document.createElement('div'), { className: 'hint', textContent: 'No rounds found.' }));
           return;
         }
+        const top = document.createElement('div');
+        top.className = 'round';
+        top.innerHTML = `
+          <div class="block">
+            <div class="label">Session Summary</div>
+            <div class="pre">Requested model: ${esc((summary || {}).requested_model || 'n/a')}
+Resolved model: ${esc((summary || {}).resolved_model || 'n/a')}
+Prompt source: ${esc((summary || {}).prompt_source || 'n/a')}
+Active clone tools (${esc((((summary || {}).clone || {}).active_tools_count) || 0)}): ${esc(namesSummaryText((((summary || {}).clone || {}).active_tools) || []))}
+Observed tools (${esc((((summary || {}).tools || {}).count) || 0)}): ${esc(toolSummaryText((((summary || {}).tools || {}).all) || []))}
+Observed inner tools (${esc((((summary || {}).tools || {}).inner_count) || 0)}): ${esc(toolSummaryText((((summary || {}).tools || {}).inner) || []))}
+Enabled injections: ${esc(enabledInjectionText(summary))}
+Observed injected articles: ${esc((summary || {}).observed_injected_articles_count || 0)}
+Observed prompt chunks: ${esc((summary || {}).observed_prompt_chunks_count || 0)}</div>
+          </div>
+        `;
+        els.detail.appendChild(top);
         for (const r of rounds) {
           const box = document.createElement('div');
           box.className = 'round';
+          const toolCallsBlock = (Array.isArray(r.tool_calls) && r.tool_calls.length) ? `
+            <div class="block">
+              <div class="label">Round Tool Calls</div>
+              <div class="pre">${esc(r.tool_calls.map((t) => formatToolName((t || {}).name || (t || {}).tool_name || '')).join(', '))}</div>
+            </div>` : '';
           const thinkingBlock = r.thinking ? `
             <div class="block">
               <div class="label">Thinking</div>
               <div class="pre thinking">${esc(r.thinking)}</div>
             </div>` : '';
           box.innerHTML = `
-            <div class="meta">round ${esc(r.round_num)} • ${esc(r.created_at || '')} • ${esc(r.username || '')}${r.prompt_source ? ' • ' + esc(r.prompt_source) : ''}</div>
+            <div class="meta">round ${esc(r.round_num)} • ${esc(r.created_at || '')} • ${esc(r.username || '')}${modelLabel(r) ? ' • ' + esc(modelLabel(r)) : ''}${r.prompt_source ? ' • ' + esc(r.prompt_source) : ''}</div>
             <div class="block">
               <div class="label">User</div>
               <div class="pre">${esc(r.user_message || '')}</div>
             </div>
+            ${toolCallsBlock}
             ${thinkingBlock}
             <div class="block">
               <div class="label">Response</div>
@@ -275,7 +321,7 @@
 
       const loadSession = async (sid) => {
         const data = await api('GET', '/api/admin/session/' + encodeURIComponent(sid));
-        renderDetail(sid, data.rounds || []);
+        renderDetail(sid, data.rounds || [], data.summary || {});
       };
 
       const browseLatest = async () => {
