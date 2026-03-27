@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bantu Maximizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #eee;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #ffd700;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        .game-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 20px;
+        }
+        .panel {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .panel h3 {
+            color: #ffd700;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #ffd700;
+            padding-bottom: 5px;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .stat-label {
+            color: #aaa;
+        }
+        .stat-value {
+            color: #fff;
+            font-weight: bold;
+        }
+        .stat-value.positive {
+            color: #4ade80;
+        }
+        .stat-value.negative {
+            color: #f87171;
+        }
+        canvas {
+            background: #0f0f23;
+            border-radius: 10px;
+            width: 100%;
+            height: 500px;
+            border: 2px solid #ffd700;
+            cursor: crosshair;
+        }
+        .controls {
+            margin-top: 15px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 5px 0;
+            background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+            border: none;
+            border-radius: 5px;
+            color: #1a1a2e;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255,215,0,0.4);
+        }
+        button:disabled {
+            background: #444;
+            color: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .upgrade-item {
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 3px solid #ffd700;
+        }
+        .upgrade-name {
+            font-weight: bold;
+            color: #ffd700;
+        }
+        .upgrade-cost {
+            font-size: 0.9em;
+            color: #aaa;
+        }
+        .upgrade-effect {
+            font-size: 0.85em;
+            color: #4ade80;
+            margin-top: 3px;
+        }
+        .event-log {
+            height: 200px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        .event-item {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 2px solid #ffd700;
+            padding-left: 10px;
+            color: #ccc;
+        }
+        .event-item.negative {
+            border-left-color: #f87171;
+        }
+        .event-item.positive {
+            border-left-color: #4ade80;
+        }
+        .territory-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255,215,0,0.1);
+            border-radius: 5px;
+        }
+        .year-display {
+            text-align: center;
+            font-size: 1.5em;
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+        @media (max-width: 1200px) {
+            .game-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>🌍 Bantu Maximizer</h1>
+    <p class="subtitle">From -1500 BCE: Expand. Populate. Dominate.</p>
+    
+    <div class="game-container">
+        <div class="left-panel">
+            <div class="panel">
+                <div class="year-display">Year: <span id="year">1500 BCE</span></div>
+                <h3>📊 Demographics</h3>
+                <div class="stat-row">
+                    <span class="stat-label">Total Population:</span>
+                    <span class="stat-value" id="population">50,000</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Births/Year:</span>
+                    <span class="stat-value positive" id="births">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Deaths/Year:</span>
+                    <span class="stat-value negative" id="deaths">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Growth Rate:</span>
+                    <span class="stat-value" id="growth-rate">0%</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Fertility Rate:</span>
+                    <span class="stat-value" id="fertility">6.5</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Life Expectancy:</span>
+                    <span class="stat-value" id="lifespan">35</span>
+                </div>
+            </div>
+            
+            <div class="panel" style="margin-top: 15px;">
+                <h3>🗺️ Territories</h3>
+                <div id="territory-list"></div>
+                <div class="territory-info">
+                    <div class="stat-row">
+                        <span class="stat-label">Total Capacity:</span>
+                        <span class="stat-value" id="capacity">100,000</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Carrying %:</span>
+                        <span class="stat-value" id="carrying">50%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="center-panel">
+            <canvas id="gameCanvas" width="800" height="500"></canvas>
+            <div class="panel controls">
+                <button id="pause-btn">⏸️ Pause</button>
+                <button id="speed-btn">⏩ Speed: 1x</button>
+            </div>
+        </div>
+        
+        <div class="right-panel">
+            <div class="panel">
+                <h3>🔬 Technologies</h3>
+                <div id="upgrade-list"></div>
+            </div>
+            
+            <div class="panel" style="margin-top: 15px;">
+                <h3>📜 Event Log</h3>
+                <div class="event-log" id="event-log"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        class BantuMaximizer {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                
+                // Game state
+                this.year = -1500;
+                this.month = 0;
+                this.paused = false;
+                this.speed = 1;
+                this.speeds = [1, 5, 10, 50];
+                this.speedIndex = 0;
+                
+                // Population stats - starting 1500 BCE
+                this.fertilityRate = 6.5;
+                this.baseDeathRate = 0.035;
+                this.lifeExpectancy = 35;
+                this.infantMortality = 0.25;
+                
+                // Territories (starting in West/Central Africa)
+                this.territories = [
+                    { name: "Niger-Congo Homeland", x: 200, y: 250, radius: 40, capacity: 100000, population: 50000, controlled: true, fertilityMod: 1.0, color: '#228B22' },
+                    { name: "Congo Basin", x: 350, y: 300, radius: 50, capacity: 200000, population: 0, controlled: false, fertilityMod: 0.9, color: '#006400' },
+                    { name: "Great Lakes", x: 450, y: 280, radius: 45, capacity: 150000, population: 0, controlled: false, fertilityMod: 0.95, color: '#32CD32' },
+                    { name: "East Africa", x: 550, y: 260, radius: 55, capacity: 180000, population: 0, controlled: false, fertilityMod: 0.85, color: '#9ACD32' },
+                    { name: "Southern Africa", x: 400, y: 400, radius: 60, capacity: 250000, population: 0, controlled: false, fertilityMod: 0.8, color: '#8FBC8F' },
+                    { name: "Sahel", x: 250, y: 150, radius: 50, capacity: 120000, population: 0, controlled: false, fertilityMod: 0.7, color: '#DAA520' }
+                ];
+                
+                // Technologies/Upgrades
+                this.technologies = [
+                    { id: 'agriculture', name: 'Iron Agriculture', cost: 5000, bought: false, effect: 'fertility', value: 0.5, desc: '+0.5 fertility rate' },
+                    { id: 'medicine', name: 'Traditional Medicine', cost: 15000, bought: false, effect: 'mortality', value: -0.05, desc: '-5% infant mortality' },
+                    { id: 'expansion', name: 'Bantu Expansion', cost: 25000, bought: false, effect: 'territory', value: 1, desc: 'Unlock migration to new territories' },
+                    { id: 'cattle', name: 'Pastoralism', cost: 40000, bought: false, effect: 'capacity', value: 1.5, desc: '+50% carrying capacity' },
+                    { id: 'trade', name: 'Trade Networks', cost: 75000, bought: false, effect: 'growth', value: 0.1, desc: '+10% pop growth in all territories' },
+                    { id: 'states', name: 'Kingdom Formation', cost: 150000, bought: false, effect: 'stability', value: -0.02, desc: '-2% base death rate' }
+                ];
+                
+                this.events = [];
+                this.lastTick = Date.now();
+                
+                this.init();
+            }
+            
+            init() {
+                this.addEvent('Bantu expansion begins from Niger-Congo homeland...', 'positive');
+                this.setupEventListeners();
+                this.updateUI();
+                this.gameLoop();
+            }
+            
+            setupEventListeners() {
+                document.getElementById('pause-btn').addEventListener('click', () => {
+                    this.paused = !this.paused;
+                    document.getElementById('pause-btn').textContent = this.paused ? '▶️ Resume' : '⏸️ Pause';
+                });
+                
+                document.getElementById('speed-btn').addEventListener('click', () => {
+                    this.speedIndex = (this.speedIndex + 1) % this.speeds.length;
+                    this.speed = this.speeds[this.speedIndex];
+                    document.getElementById('speed-btn').textContent = '⏩ Speed: ' + this.speed + 'x';
+                });
+                
+                this.canvas.addEventListener('click', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const scaleX = this.canvas.width / rect.width;
+                    const scaleY = this.canvas.height / rect.height;
+                    const x = (e.clientX - rect.left) * scaleX;
+                    const y = (e.clientY - rect.top) * scaleY;
+                    this.handleMapClick(x, y);
+                });
+            }
+            
+            handleMapClick(x, y) {
+                for (let terr of this.territories) {
+                    const dist = Math.sqrt((x - terr.x) ** 2 + (y - terr.y) ** 2);
+                    if (dist < terr.radius && !terr.controlled) {
+                        this.attemptExpansion(terr);
+                        break;
+                    }
+                }
+            }
+            
+            attemptExpansion(territory) {
+                const hasExpansionTech = this.technologies.find(t => t.id === 'expansion').bought;
+                const minPop = hasExpansionTech ? 10000 : 25000;
+                
+                const totalPop = this.territories.filter(t => t.controlled).reduce((sum, t) => sum + t.population, 0);
+                
+                if (totalPop > minPop * 3) {
+                    territory.controlled = true;
+                    territory.population = Math.floor(minPop * 0.8);
+                    const controlled = this.territories.filter(t => t.controlled && t !== territory);
+                    const reducePerTerr = Math.floor((minPop * 0.8) / controlled.length);
+                    controlled.forEach(t => t.population = Math.max(0, t.population - reducePerTerr));
+                    
+                    this.addEvent('Bantu migrants settle ' + territory.name + '!', 'positive');
+                    this.updateUI();
+                } else {
+                    this.addEvent('Cannot expand: need more population surplus (current: ' + Math.floor(totalPop).toLocaleString() + ')', 'negative');
+                }
+            }
+            
+            buyTech(techId) {
+                const tech = this.technologies.find(t => t.id === techId);
+                if (!tech || tech.bought) return;
+                
+                const totalPop = this.getTotalPopulation();
+                if (totalPop < tech.cost) {
+                    this.addEvent('Cannot research ' + tech.name + ': insufficient population (need ' + tech.cost.toLocaleString() + ')', 'negative');
+                    return;
+                }
+                
+                const controlled = this.territories.filter(t => t.controlled);
+                const costPerTerr = Math.floor(tech.cost / controlled.length);
+                controlled.forEach(t => t.population = Math.max(0, t.population - costPerTerr));
+                
+                tech.bought = true;
+                
+                switch(tech.effect) {
+                    case 'fertility':
+                        this.fertilityRate += tech.value;
+                        break;
+                    case 'mortality':
+                        this.infantMortality = Math.max(0.05, this.infantMortality + tech.value);
+                        break;
+                    case 'capacity':
+                        this.territories.forEach(t => t.capacity = Math.floor(t.capacity * tech.value));
+                        break;
+                    case 'growth':
+                        this.territories.forEach(t => t.fertilityMod += tech.value);
+                        break;
+                    case 'stability':
+                        this.baseDeathRate = Math.max(0.01, this.baseDeathRate + tech.value);
+                        break;
+                }
+                
+                this.addEvent('Developed: ' + tech.name, 'positive');
+                this.updateUI();
+            }
+            
+            getTotalPopulation() {
+                return this.territories.filter(t => t.controlled).reduce((sum, t) => sum + t.population, 0);
+            }
+            
+            tick() {
+                if (this.paused) return;
+                
+                this.month++;
+                if (this.month >= 12) {
+                    this.month = 0;
+                    this.year++;
+                    
+                    if (Math.random() < 0.15) {
+                        this.triggerRandomEvent();
+                    }
+                }
+                
+                const controlledTerrs = this.territories.filter(t => t.controlled);
+                
+                controlledTerrs.forEach(terr => {
+                    const pressure = terr.population / terr.capacity;
+                    const localFertility = this.fertilityRate * terr.fertilityMod * Math.max(0.25, 1 - pressure * 0.6);
+                    
+                    const womenOfChildbearingAge = terr.population * 0.22;
+                    const crudeBirthRate = (localFertility / 30) / 12;
+                    const rawBirths = womenOfChildbearingAge * crudeBirthRate;
+                    const survivingBirths = rawBirths * (1 - this.infantMortality);
+                    
+                    const localDeathRate = this.baseDeathRate + Math.max(0, pressure - 0.85) * 0.08;
+                    const deaths = terr.population * (localDeathRate / 12);
+                    
+                    if (pressure > 0.95) {
+                        const openNeighbors = this.territories.filter(t => 
+                            t.controlled && t !== terr && (t.population / t.capacity) < 0.7
+                        );
+                        if (openNeighbors.length > 0) {
+                            const migrants = Math.floor(terr.population * 0.03);
+                            const target = openNeighbors[Math.floor(Math.random() * openNeighbors.length)];
+                            target.population += migrants;
+                            terr.population -= migrants;
+                        }
+                    }
+                    
+                    terr.population += survivingBirths - deaths;
+                    terr.population = Math.max(0, terr.population);
+                });
+                
+                this.lifeExpectancy = 35 + (1 - this.infantMortality) * 15 - (this.baseDeathRate - 0.035) * 100;
+                this.lifeExpectancy = Math.max(20, Math.min(60, this.lifeExpectancy));
+                
+                this.updateUI();
+            }
+            
+            triggerRandomEvent() {
+                const events = [
+                    { text: 'Bountiful yam harvest boosts fertility this year', effect: () => this.territories.forEach(t => t.fertilityMod *= 1.15), type: 'positive' },
+                    { text: 'Drought reduces agricultural output', effect: () => this.territories.forEach(t => t.capacity *= 0.9), type: 'negative' },
+                    { text: 'New iron smelting techniques spread', effect: () => this.fertilityRate += 0.2, type: 'positive' },
+                    { text: 'Malaria outbreak increases mortality', effect: () => this.baseDeathRate += 0.005, type: 'negative' },
+                    { text: 'Peaceful integration with neighboring tribe', effect: () => { 
+                        const uncontrolled = this.territories.filter(t => !t.controlled); 
+                        if (uncontrolled.length) {
+                            const target = uncontrolled[Math.floor(Math.random() * uncontrolled.length)];
+                            target.controlled = true;
+                            target.population = 5000;
+                        }
+                    }, type: 'positive' },
+                    { text: 'Inter-group conflict erupts', effect: () => this.baseDeathRate += 0.008, type: 'negative' },
+                    { text: 'Discovery of new fishing grounds', effect: () => this.territories.forEach(t => t.capacity *= 1.1), type: 'positive' }
+                ];
+                
+                const event = events[Math.floor(Math.random() * events.length)];
+                event.effect();
+                this.addEvent(event.text, event.type);
+            }
+            
+            addEvent(text, type) {
+                this.events.unshift({ text: text, type: type || '', year: this.year });
+                if (this.events.length > 25) this.events.pop();
+            }
+            
+            updateUI() {
+                const totalPop = this.getTotalPopulation();
+                const totalCapacity = this.territories.filter(t => t.controlled).reduce((sum, t) => sum + t.capacity, 0);
+                const controlledTerrs = this.territories.filter(t => t.controlled);
+                
+                let births = 0, deaths = 0;
+                controlledTerrs.forEach(t => {
+                    const women = t.population * 0.22;
+                    const localFert = this.fertilityRate * t.fertilityMod * Math.max(0.25, 1 - (t.population/t.capacity) * 0.6);
+                    births += women * (localFert / 30);
+                    deaths += t.population * this.baseDeathRate;
+                });
+                
+                const growthRate = totalPop > 0 ? ((births - deaths) / totalPop * 100).toFixed(1) : 0;
+                
+                const yearDisplay = this.year < 0 ? Math.abs(this.year) + ' BCE' : this.year + ' CE';
+                document.getElementById('year').textContent = yearDisplay;
+                document.getElementById('population').textContent = Math.floor(totalPop).toLocaleString();
+                document.getElementById('births').textContent = Math.floor(births).toLocaleString();
+                document.getElementById('deaths').textContent = Math.floor(deaths).toLocaleString();
+                document.getElementById('growth-rate').textContent = (growthRate > 0 ? '+' : '') + growthRate + '%';
+                document.getElementById('growth-rate').className = 'stat-value ' + (growthRate > 0 ? 'positive' : growthRate < 0 ? 'negative' : '');
+                document.getElementById('fertility').textContent = this.fertilityRate.toFixed(1);
+                document.getElementById('lifespan').textContent = Math.floor(this.lifeExpectancy);
+                
+                document.getElementById('capacity').textContent = Math.floor(totalCapacity).toLocaleString();
+                const carryingPct = totalCapacity > 0 ? (totalPop / totalCapacity * 100).toFixed(1) : 0;
+                document.getElementById('carrying').textContent = carryingPct + '%';
+                
+                const terrList = document.getElementById('territory-list');
+                terrList.innerHTML = this.territories.map(t => {
+                    const density = t.controlled ? (t.population / t.capacity * 100).toFixed(0) : 0;
+                    return '<div class="stat-row" style="' + (t.controlled ? '' : 'opacity: 0.5;') + '"><span class="stat-label">' + (t.controlled ? '✓' : '○') + ' ' + t.name + '</span><span class="stat-value">' + (t.controlled ? Math.floor(t.population).toLocaleString() + ' (' + density + '%)' : 'Unclaimed') + '</span></div>';
+                }).join('');
+                
+                const upgradeList = document.getElementById('upgrade-list');
+                upgradeList.innerHTML = this.technologies.map(tech => {
+                    const canAfford = totalPop >= tech.cost;
+                    let html = '<div class="upgrade-item" style="' + (tech.bought ? 'opacity: 0.5;' : '') + '">';
+                    html += '<div class="upgrade-name">' + tech.name + (tech.bought ? ' ✓' : '') + '</div>';
+                    html += '<div class="upgrade-cost">Cost: ' + tech.cost.toLocaleString() + ' population</div>';
+                    html += '<div class="upgrade-effect">' + tech.desc + '</div>';
+                    if (!tech.bought) {
+                        html += '<button onclick="game.buyTech(\'' + tech.id + '\')" ' + (!canAfford ? 'disabled' : '') + '>' + (canAfford ? 'Research' : 'Insufficient Population') + '</button>';
+                    }
+                    html += '</div>';
+                    return html;
+                }).join('');
+                
+                const eventLog = document.getElementById('event-log');
+                eventLog.innerHTML = this.events.map(e => {
+                    const yearStr = e.year < 0 ? Math.abs(e.year) + ' BCE' : e.year + ' CE';
+                    return '<div class="event-item ' + e.type + '"><strong>' + yearStr + ':</strong> ' + e.text + '</div>';
+                }).join('');
+            }
+            
+            drawMap() {
+                this.ctx.fillStyle = '#1a3d1a';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                this.ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+                this.ctx.lineWidth = 1;
+                for (let i = 0; i < this.canvas.width; i += 50) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(i, 0);
+                    this.ctx.lineTo(i, this.canvas.height);
+                    this.ctx.stroke();
+                }
+                for (let i = 0; i < this.canvas.height; i += 50) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, i);
+                    this.ctx.lineTo(this.canvas.width, i);
+                    this.ctx.stroke();
+                }
+                
+                const controlled = this.territories.filter(t => t.controlled);
+                this.ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+                this.ctx.lineWidth = 2;
+                this.ctx.setLineDash([5, 5]);
+                for (let i = 0; i < controlled.length; i++) {
+                    for (let j = i + 1; j < controlled.length; j++) {
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(controlled[i].x, controlled[i].y);
+                        this.ctx.lineTo(controlled[j].x, controlled[j].y);
+                        this.ctx.stroke();
+                    }
+                }
+                this.ctx.setLineDash([]);
+                
+                this.territories.forEach(terr => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(terr.x, terr.y, terr.radius, 0, Math.PI * 2);
+                    this.ctx.fillStyle = terr.controlled ? 'rgba(34, 139, 34, 0.3)' : 'rgba(100, 100, 100, 0.2)';
+                    this.ctx.fill();
+                    this.ctx.strokeStyle = terr.controlled ? '#ffd700' : '#666';
+                    this.ctx.lineWidth = terr.controlled ? 3 : 1;
+                    this.ctx.stroke();
+                    
+                    if (terr.controlled && terr.capacity > 0) {
+                        const density = Math.min(1, terr.population / terr.capacity);
+                        const fillRadius = terr.radius * Math.sqrt(density);
+                        if (fillRadius > 2) {
+                            this.ctx.beginPath();
+                            this.ctx.arc(terr.x, terr.y, fillRadius, 0, Math.PI * 2);
+                            this.ctx.fillStyle = 'rgba(255, 215, 0, ' + (0.4 + density * 0.4) + ')';
+                            this.ctx.fill();
+                        }
+                    }
+                    
+                    this.ctx.fillStyle = terr.controlled ? '#ffd700' : '#888';
+                    this.ctx.font = 'bold 13px sans-serif';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText(terr.name, terr.x, terr.y + terr.radius + 18);
+                    
+                    if (terr.controlled) {
+                        this.ctx.fillStyle = '#fff';
+                        this.ctx.font = '11px sans-serif';
+                        this.ctx.fillText(Math.floor(terr.population).toLocaleString(), terr.x, terr.y - 5);
+                        this.ctx.fillText('/' + Math.floor(terr.capacity/1000) + 'k', terr.x, terr.y + 8);
+                    } else {
+                        this.ctx.fillStyle = '#aaa';
+                        this.ctx.font = '10px sans-serif';
+                        this.ctx.fillText('Click to expand', terr.x, terr.y + 5);
+                    }
+                });
+            }
+            
+            gameLoop() {
+                const now = Date.now();
+                const dt = now - this.lastTick;
+                
+                if (dt > 100) {
+                    const ticksToRun = Math.min(this.speed, 20);
+                    for (let i = 0; i < ticksToRun; i++) {
+                        this.tick();
+                    }
+                    this.lastTick = now;
+                }
+                
+                this.drawMap();
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+        
+        const game = new BantuMaximizer();
+    </script>
+</body>
+</html>
