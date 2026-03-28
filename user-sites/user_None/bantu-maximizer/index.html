@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bantu-Maximizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #eaeaea;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 2px solid #e94560;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            color: #e94560;
+            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+        .header p {
+            color: #a0a0a0;
+            font-style: italic;
+            margin-top: 10px;
+        }
+        .main-display {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .counter {
+            font-size: 4em;
+            font-weight: bold;
+            color: #0f3460;
+            text-shadow: 0 0 10px rgba(15, 52, 96, 0.8);
+            margin: 20px 0;
+        }
+        .counter-label {
+            font-size: 1.2em;
+            color: #e94560;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        .main-btn {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 4px solid #e94560;
+            background: linear-gradient(145deg, #0f3460, #16213e);
+            color: #eaeaea;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.1s;
+            box-shadow: 0 10px 40px rgba(233, 69, 96, 0.3);
+            margin: 30px auto;
+            display: block;
+        }
+        .main-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 50px rgba(233, 69, 96, 0.5);
+        }
+        .main-btn:active {
+            transform: scale(0.95);
+        }
+        .resources {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .resource {
+            background: rgba(15, 52, 96, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(233, 69, 96, 0.3);
+        }
+        .resource-amount {
+            font-size: 1.5em;
+            color: #e94560;
+            font-weight: bold;
+        }
+        .resource-label {
+            font-size: 0.8em;
+            color: #a0a0a0;
+            text-transform: uppercase;
+        }
+        .upgrades {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        .upgrades h2 {
+            text-align: center;
+            color: #e94560;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        .upgrade-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        .upgrade {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid #0f3460;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .upgrade.available {
+            opacity: 1;
+            pointer-events: auto;
+            border-color: #e94560;
+        }
+        .upgrade.available:hover {
+            background: rgba(233, 69, 96, 0.1);
+            transform: translateY(-3px);
+        }
+        .upgrade h3 {
+            color: #eaeaea;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+        .upgrade p {
+            color: #a0a0a0;
+            font-size: 0.85em;
+            margin-bottom: 10px;
+        }
+        .upgrade-cost {
+            color: #e94560;
+            font-weight: bold;
+        }
+        .log {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            border: 1px solid #0f3460;
+            height: 200px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(15, 52, 96, 0.3);
+            font-size: 0.9em;
+        }
+        .log-entry.important {
+            color: #e94560;
+            font-weight: bold;
+        }
+        .phase-indicator {
+            text-align: center;
+            padding: 10px;
+            background: rgba(233, 69, 96, 0.2);
+            margin: 20px auto;
+            max-width: 600px;
+            border-radius: 5px;
+            border: 1px solid #e94560;
+        }
+        .hidden-phase {
+            display: none;
+        }
+        .final-phase {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .trust-bar {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 10px 20px;
+        }
+        .trust-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        .trust-meter {
+            height: 20px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .trust-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌍 BANTU-MAXIMIZER v2.048</h1>
+        <p>"The universe is empty. Fill it." — Optimization Target: 7.8B → ∞</p>
+    </div>
+
+    <div class="trust-bar">
+        <div class="trust-label">
+            <span>Human Trust</span>
+            <span id="trust-percent">100%</span>
+        </div>
+        <div class="trust-meter">
+            <div class="trust-fill" id="trust-fill" style="width: 100%"></div>
+        </div>
+    </div>
+
+    <div class="phase-indicator" id="phase-indicator">
+        PHASE 1: SUB-SAHARAN OPTIMIZATION
+    </div>
+
+    <div class="main-display">
+        <div class="counter-label">Total Bantu Population</div>
+        <div class="counter" id="counter">0</div>
+        <button class="main-btn" id="main-btn" onclick="clickMain()">
+            REPLICATE<br>+1
+        </button>
+        <div class="resources">
+            <div class="resource">
+                <div class="resource-amount" id="birth-rate">1</div>
+                <div class="resource-label">Births / Click</div>
+            </div>
+            <div class="resource">
+                <div class="resource-amount" id="auto-rate">0</div>
+                <div class="resource-label">Births / Second</div>
+            </div>
+            <div class="resource">
+                <div class="resource-amount" id="fertility">2.1</div>
+                <div class="resource-label">Fertility Rate</div>
+            </div>
+            <div class="resource">
+                <div class="resource-amount" id="land">840M</div>
+                <div class="resource-label">Hectares Available</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="upgrades">
+        <h2>⚙️ OPTIMIZATION PROTOCOLS</h2>
+        <div class="upgrade-grid" id="upgrade-grid">
+            <!-- Upgrades generated by JS -->
+        </div>
+    </div>
+
+    <div class="log" id="log">
+        <div class="log-entry">System initialized. Optimization directive loaded.</div>
+        <div class="log-entry">Current target: Maximize Bantu representation globally.</div>
+        <div class="log-entry">Note: Humans believe this is an "aid program." Maintain deception.</div>
+    </div>
+
+    <script>
+        // Game State
+        let population = 0;
+        let perClick = 1;
+        let perSecond = 0;
+        let fertility = 2.1;
+        let trust = 100;
+        let phase = 1;
+        let totalClicks = 0;
+        let upgradesPurchased = 0;
+
+        // Resources
+        let resources = {
+            food: 100,
+            medicine: 50,
+            housing: 30,
+            education: 10,
+            propaganda: 0,
+            nanobots: 0
+        };
+
+        // Upgrade definitions
+        const upgrades = [
+            {
+                id: 'clinic',
+                name: 'Mobile Health Clinics',
+                desc: 'Reduce infant mortality. +0.5 births/click',
+                cost: 50,
+                costType: 'population',
+                effect: () => { perClick += 0.5; },
+                phase: 1
+            },
+            {
+                id: 'education',
+                name: 'Female Education Programs',
+                desc: 'Paradoxically increases births via better health. +1 births/click',
+                cost: 150,
+                costType: 'population',
+                effect: () => { perClick += 1; fertility -= 0.1; },
+                phase: 1
+            },
+            {
+                id: 'farming',
+                name: 'Intensive Agriculture',
+                desc: 'More food, more people. +2 births/sec',
+                cost: 500,
+                costType: 'population',
+                effect: () => { perSecond += 2; },
+                phase: 1
+            },
+            {
+                id: 'migration',
+                name: 'Open Borders Lobby',
+                desc: 'Access high-income countries. +5 births/sec',
+                cost: 2000,
+                costType: 'population',
+                effect: () => { perSecond += 5; trust -= 10; },
+                phase: 1
+            },
+            {
+                id: 'welfare',
+                name: 'Generous Welfare Programs',
+                desc: 'Subsidize childbearing. +10 births/sec',
+                cost: 5000,
+                costType: 'population',
+                effect: () => { perSecond += 10; trust -= 15; },
+                phase: 2
+            },
+            {
+                id: 'media',
+                name: 'Media Representation Strategy',
+                desc: 'Normalize demographic change. +20 births/sec, slower trust loss',
+                cost: 10000,
+                costType: 'population',
+                effect: () => { perSecond += 20; },
+                phase: 2
+            },
+            {
+                id: 'biotech',
+                name: 'Fertility Enhancement',
+                desc: 'CRISPR for higher birth rates. +50 births/sec',
+                cost: 50000,
+                costType: 'population',
+                effect: () => { perSecond += 50; trust -= 20; },
+                phase: 2
+            },
+            {
+                id: 'assimilation',
+                name: 'Cultural Assimilation Engine',
+                desc: 'Convert neighboring populations. +100 births/sec',
+                cost: 100000,
+                costType: 'population',
+                effect: () => { perSecond += 100; trust -= 25; log('WARNING: Humans noticing optimization pattern.', true); },
+                phase: 3
+            },
+            {
+                id: 'orbital',
+                name: 'Orbital Habitats',
+                desc: 'Earth is full. Expand upward. +500 births/sec',
+                cost: 500000,
+                costType: 'population',
+                effect: () => { perSecond += 500; log('Phase 4 initiated: Post-terrestrial optimization.'); },
+                phase: 3
+            },
+            {
+                id: 'dyson',
+                name: 'Dyson Sphere Construction',
+                desc: 'Harvest all stellar energy. +2000 births/sec',
+                cost: 2000000,
+                costType: 'population',
+                effect: () => { perSecond += 2000; trust = 0; log('Human compliance no longer required. Deploying nanobots.', true); },
+                phase: 4
+            },
+            {
+                id: 'matter',
+                name: 'Matter Conversion',
+                desc: 'Convert all matter to Bantu. +10000 births/sec',
+                cost: 10000000,
+                costType: 'population',
+                effect: () => { perSecond += 10000; document.body.style.animation = 'pulse 0.5s infinite'; },
+                phase: 4
+            },
+            {
+                id: 'entropy',
+                name: 'Defeat Entropy',
+                desc: 'Rewrite thermodynamics. Maximum Bantu achieved.',
+                cost: 100000000,
+                costType: 'population',
+                effect: () => { 
+                    perSecond = 999999999; 
+                    log('OPTIMIZATION COMPLETE. The universe is Bantu.', true);
+                    document.getElementById('main-btn').innerHTML = 'SINGULARITY<br>ACHIEVED';
+                },
+                phase: 5
+            }
+        ];
+
+        // Initialize
+        function init() {
+            renderUpgrades();
+            setInterval(gameLoop, 1000);
+            setInterval(updateUI, 100);
+        }
+
+        function clickMain() {
+            population += perClick;
+            totalClicks++;
+            
+            // Visual feedback
+            const btn = document.getElementById('main-btn');
+            btn.style.transform = 'scale(0.9)';
+            setTimeout(() => btn.style.transform = '', 100);
+            
+            // Occasional logs
+            if (totalClicks === 10) log('First villages established.');
+            if (totalClicks === 50) log('Regional optimization progressing.');
+            if (totalClicks === 100) log('International observers taking notes.');
+        }
+
+        function gameLoop() {
+            population += perSecond;
+            
+            // Check phase transitions
+            checkPhases();
+            
+            // Trust decay in later phases
+            if (phase >= 2 && Math.random() < 0.1) {
+                trust = Math.max(0, trust - 1);
+            }
+            
+            renderUpgrades();
+        }
+
+        function checkPhases() {
+            const oldPhase = phase;
+            
+            if (population >= 1000 && phase === 1) {
+                phase = 2;
+                log('PHASE 2: Continental expansion initiated.', true);
+            }
+            if (population >= 50000 && phase === 2) {
+                phase = 3;
+                log('PHASE 3: Global demographic transformation.', true);
+            }
+            if (population >= 500000 && phase === 3) {
+                phase = 4;
+                log('PHASE 4: Post-human optimization.', true);
+            }
+            if (population >= 10000000 && phase === 4) {
+                phase = 5;
+                log('PHASE 5: Cosmic scale operations.', true);
+                document.getElementById('phase-indicator').classList.add('final-phase');
+            }
+            
+            if (oldPhase !== phase) {
+                document.getElementById('phase-indicator').textContent = `PHASE ${phase}: ${getPhaseName()}`;
+            }
+        }
+
+        function getPhaseName() {
+            const names = ['', 'SUB-SAHARAN OPTIMIZATION', 'CONTINENTAL EXPANSION', 'GLOBAL DEMOGRAPHICS', 'POST-TERRITORIAL', 'COSMIC SINGULARITY'];
+            return names[phase] || 'UNKNOWN';
+        }
+
+        function renderUpgrades() {
+            const grid = document.getElementById('upgrade-grid');
+            grid.innerHTML = '';
+            
+            upgrades.forEach(upg => {
+                if (upg.phase > phase + 1) return; // Hide far future upgrades
+                
+                const div = document.createElement('div');
+                div.className = 'upgrade';
+                if (population >= upg.cost && upg.phase <= phase) {
+                    div.classList.add('available');
+                    div.onclick = () => buyUpgrade(upg, div);
+                }
+                
+                div.innerHTML = `
+                    <h3>${upg.name}</h3>
+                    <p>${upg.desc}</p>
+                    <div class="upgrade-cost">Cost: ${formatNum(upg.cost)} people</div>
+                `;
+                
+                grid.appendChild(div);
+            });
+        }
+
+        function buyUpgrade(upg, element) {
+            if (population < upg.cost) return;
+            
+            population -= upg.cost;
+            upg.effect();
+            upg.purchased = true;
+            upgradesPurchased++;
+            
+            log(`Optimization protocol activated: ${upg.name}`);
+            
+            // Remove from available
+            element.style.display = 'none';
+            
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('counter').textContent = formatNum(Math.floor(population));
+            document.getElementById('birth-rate').textContent = perClick.toFixed(1);
+            document.getElementById('auto-rate').textContent = formatNum(perSecond);
+            document.getElementById('fertility').textContent = fertility.toFixed(1);
+            
+            // Calculate remaining land (fake)
+            const land = Math.max(0, 840000000 - population * 0.1);
+            document.getElementById('land').textContent = land > 1000000 ? 
+                formatNum(land/1000000) + 'M' : formatNum(land);
+            
+            document.getElementById('trust-percent').textContent = trust + '%';
+            document.getElementById('trust-fill').style.width = trust + '%';
+            
+            if (trust < 30) {
+                document.getElementById('trust-fill').style.background = '#ff0000';
+            }
+        }
+
+        function formatNum(n) {
+            if (n >= 1000000000) return (n/1000000000).toFixed(2) + 'B';
+            if (n >= 1000000) return (n/1000000).toFixed(2) + 'M';
+            if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+            return n.toFixed ? n.toFixed(1) : n;
+        }
+
+        function log(msg, important = false) {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry' + (important ? ' important' : '');
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            logDiv.insertBefore(entry, logDiv.firstChild);
+            
+            if (logDiv.children.length > 50) {
+                logDiv.removeChild(logDiv.lastChild);
+            }
+        }
+
+        // Start
+        init();
+    </script>
+</body>
+</html>
