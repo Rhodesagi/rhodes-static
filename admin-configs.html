@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RHODES Admin – Model Configs</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121a33;
+      --text: #e7ecff;
+      --muted: #aab4e6;
+      --border: #27325c;
+      --ok: #4ade80;
+      --bad: #ff5a6b;
+      --warn: #fbbf24;
+      --btn: #1d2a5a;
+      --btn2: #25336a;
+      --blue: #3b82f6;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --row-null: rgba(74, 222, 128, 0.06);
+      --row-dirty: rgba(251, 191, 36, 0.06);
+      --row-ok: rgba(74, 222, 128, 0.12);
+      --row-err: rgba(255, 90, 107, 0.12);
+      --sticky-bg: #0d1528;
+      --th-bg: #0f1830;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    header {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(11,16,32,0.95);
+      backdrop-filter: blur(8px);
+      flex-shrink: 0;
+    }
+    header h1 { margin: 0 0 8px; font-size: 15px; }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .toolbar input, .toolbar select {
+      background: #0f1730;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-family: inherit;
+    }
+    .toolbar input { width: 180px; }
+    button {
+      background: var(--btn);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 5px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    button:hover { background: var(--btn2); }
+    button.ok { background: #14532d; border-color: var(--ok); color: var(--ok); }
+    button.bad { background: #450a0a; border-color: var(--bad); color: var(--bad); }
+    button.blue { background: #1e3a8a; border-color: var(--blue); color: #bfdbfe; }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      background: var(--btn);
+      border: 1px solid var(--border);
+    }
+    .pill.ok { background: #14532d; border-color: var(--ok); color: var(--ok); }
+    .pill.bad { background: #450a0a; border-color: var(--bad); color: var(--bad); }
+    #authState { margin-left: 4px; }
+    #loginPanel {
+      position: fixed; inset: 0;
+      background: rgba(11,16,32,0.92);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    #loginPanel.hidden { display: none; }
+    .login-box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      min-width: 320px;
+    }
+    .login-box h2 { margin: 0 0 16px; font-size: 15px; }
+    .login-box input {
+      width: 100%;
+      background: #0f1730;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      margin-bottom: 10px;
+    }
+    .login-box button { width: 100%; padding: 8px; font-size: 13px; }
+    #loginErr { color: var(--bad); font-size: 12px; margin-top: 6px; }
+
+    /* Grid container */
+    #gridWrap {
+      flex: 1;
+      overflow: auto;
+      position: relative;
+    }
+    table {
+      border-collapse: collapse;
+      width: max-content;
+      font-size: 12px;
+    }
+    th, td {
+      border: 1px solid #1e2a4a;
+      padding: 3px 6px;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+    th {
+      background: var(--th-bg);
+      color: var(--muted);
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      cursor: pointer;
+      user-select: none;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    th:hover { background: #1a2545; color: var(--text); }
+    th.sort-asc::after { content: ' ↑'; color: var(--blue); }
+    th.sort-desc::after { content: ' ↓'; color: var(--blue); }
+    /* Frozen left columns */
+    th.sticky, td.sticky {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: var(--sticky-bg);
+    }
+    th.sticky { z-index: 4; }
+    td.sticky-1 { left: 28px; }
+    th.sticky-1 { left: 28px; }
+    td.sticky-cb { left: 0; }
+    th.sticky-cb { left: 0; }
+    td.sticky-1, th.sticky-1 {
+      position: sticky;
+      z-index: 2;
+      background: var(--sticky-bg);
+    }
+    th.sticky-1 { z-index: 4; }
+
+    tr:hover td { background: rgba(59,130,246,0.04); }
+    tr:hover td.sticky, tr:hover td.sticky-1 { background: #141e38; }
+    tr.row-null td { background: var(--row-null) !important; }
+    tr.row-null td.sticky, tr.row-null td.sticky-1 { background: rgba(14,40,26,0.95) !important; }
+    tr.row-dirty td { background: var(--row-dirty) !important; }
+    tr.row-dirty td.sticky, tr.row-dirty td.sticky-1 { background: rgba(40,32,8,0.95) !important; }
+    tr.row-flash-ok td { background: var(--row-ok) !important; transition: background 0.4s; }
+    tr.row-flash-err td { background: var(--row-err) !important; transition: background 0.4s; }
+
+    td input[type="text"], td input[type="number"], td select {
+      background: transparent;
+      color: var(--text);
+      border: none;
+      outline: none;
+      width: 100%;
+      font-size: 12px;
+      font-family: inherit;
+      padding: 0;
+    }
+    td input[type="text"]:focus, td select:focus {
+      background: #0f1730;
+      border-radius: 4px;
+      padding: 1px 4px;
+      outline: 1px solid var(--blue);
+    }
+    td select { cursor: pointer; }
+    td select option { background: #0f1730; }
+    td.readonly { color: var(--muted); font-family: var(--mono); font-size: 11px; }
+    td.inj-on { color: var(--ok); text-align: center; }
+    td.inj-off { color: #444; text-align: center; }
+    td input[type="checkbox"] { cursor: pointer; accent-color: var(--blue); }
+
+    .save-btn {
+      padding: 2px 8px;
+      font-size: 11px;
+      border-radius: 6px;
+    }
+    .save-btn.dirty { background: #1e3a8a; border-color: var(--blue); color: #bfdbfe; }
+    .save-btn.saving { background: #2a1f00; border-color: var(--warn); color: var(--warn); }
+
+    #statusBar {
+      padding: 4px 14px;
+      font-size: 11px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    #countInfo { flex: 1; }
+    .section-divider {
+      background: #1a2545;
+      color: var(--muted);
+      font-size: 10px;
+      text-align: center;
+      border-left: 2px solid var(--blue);
+    }
+    .bulk-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0;
+      flex-wrap: wrap;
+    }
+    .bulk-bar label { color: var(--muted); font-size: 11px; }
+    #selCount { font-size: 11px; color: var(--warn); }
+  </style>
+</head>
+<body>
+
+<!-- Login overlay -->
+<div id="loginPanel">
+  <div class="login-box">
+    <h2>RHODES Admin — Model Configs</h2>
+    <input type="password" id="pwInput" placeholder="Admin password" />
+    <button onclick="doLogin()">Login</button>
+    <div id="loginErr"></div>
+  </div>
+</div>
+
+<header>
+  <h1>RHODES Admin — Model Configs
+    <span class="pill" id="authState">not logged in</span>
+    <span class="pill" id="countBadge" style="margin-left:4px;display:none"></span>
+  </h1>
+  <div class="toolbar">
+    <input type="text" id="filterAlias" placeholder="Filter alias…" oninput="applyFilters()" />
+    <select id="filterProvider" onchange="applyFilters()">
+      <option value="">All providers</option>
+      <option value="deepseek">deepseek</option>
+      <option value="kimi">kimi</option>
+      <option value="grok">grok</option>
+      <option value="claude">claude</option>
+    </select>
+    <select id="filterEnabled" onchange="applyFilters()">
+      <option value="">All</option>
+      <option value="1">Enabled</option>
+      <option value="0">Disabled</option>
+    </select>
+    <select id="filterInj" onchange="applyFilters()">
+      <option value="">Inj: All</option>
+      <option value="null">Inj: null (ALL ON)</option>
+      <option value="explicit">Inj: explicit</option>
+    </select>
+    <button onclick="loadConfigs()" class="blue">↺ Reload</button>
+    <button onclick="saveAllDirty()" id="saveAllBtn" style="display:none">💾 Save All Dirty</button>
+    <button onclick="exportCSV()">⬇ CSV</button>
+    <button onclick="doLogout()" style="margin-left:auto">Logout</button>
+  </div>
+  <div class="bulk-bar" id="bulkBar" style="display:none">
+    <label>Bulk:</label>
+    <span id="selCount">0 selected</span>
+    <select id="bulkKey">
+      <option value="">— injection key —</option>
+      <option value="warmup_seed">warmup_seed</option>
+      <option value="briefing_over">briefing_over</option>
+      <option value="content_seed">content_seed</option>
+      <option value="debate_preflight">debate_preflight</option>
+      <option value="think_intercept">think_intercept</option>
+      <option value="think_intercept_close">think_intercept_close</option>
+      <option value="topic_preflight">topic_preflight</option>
+      <option value="load_rhodes_position">load_rhodes_position</option>
+      <option value="temporal_oracle">temporal_oracle</option>
+      <option value="rhodes_think">rhodes_think</option>
+      <option value="articles">articles</option>
+      <option value="memories">memories</option>
+      <option value="known_cases">known_cases</option>
+      <option value="person">person</option>
+      <option value="prior_positions">prior_positions</option>
+      <option value="verification">verification</option>
+      <option value="thought_substitution">thought_substitution</option>
+      <option value="evidence_agent">evidence_agent</option>
+      <option value="emotional_neutralizer">emotional_neutralizer</option>
+      <option value="concession_detector">concession_detector</option>
+      <option value="rhodes_os">rhodes_os</option>
+      <option value="longinus_poetry">longinus_poetry</option>
+      <option value="superbaby">superbaby</option>
+      <option value="immigration">immigration</option>
+      <option value="dutch_hunger">dutch_hunger</option>
+      <option value="__enabled__">enabled (row)</option>
+      <option value="__provider__deepseek">provider → deepseek</option>
+      <option value="__provider__kimi">provider → kimi</option>
+      <option value="__provider__grok">provider → grok</option>
+      <option value="__provider__claude">provider → claude</option>
+      <option value="__inj_null__">injection_config → null (ALL ON)</option>
+    </select>
+    <button onclick="bulkSet(true)">ON</button>
+    <button onclick="bulkSet(false)">OFF</button>
+    <button onclick="clearSelection()">Clear</button>
+  </div>
+</header>
+
+<div id="gridWrap">
+  <div id="emptyMsg" style="padding:40px;color:var(--muted);text-align:center">Loading…</div>
+  <table id="grid" style="display:none">
+    <thead id="thead"></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div id="statusBar">
+  <span id="countInfo">—</span>
+  <span id="dirtyInfo" style="color:var(--warn)"></span>
+  <span id="lastSaved" style="color:var(--ok)"></span>
+</div>
+
+<script>
+'use strict';
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+const TOKEN_KEY = 'rhodes_admin_token';
+const INJ_KEYS = [
+  'warmup_seed','briefing_over','content_seed','debate_preflight',
+  'think_intercept','think_intercept_close','topic_preflight','load_rhodes_position',
+  'temporal_oracle','rhodes_think','articles','memories','known_cases',
+  'person','prior_positions','verification','thought_substitution',
+  'evidence_agent','emotional_neutralizer','concession_detector',
+  'rhodes_os','longinus_poetry','superbaby','immigration','dutch_hunger'
+];
+const PROVIDERS = ['deepseek','kimi','grok','claude'];
+
+// Column definitions: [id, label, sticky?, width]
+const COLS = [
+  {id:'alias',       label:'Alias',         sticky:true,  w:120, ro:true},
+  {id:'enabled',     label:'Enabled',       w:60,  bool:true},
+  {id:'provider',    label:'Provider',      w:90,  select:PROVIDERS},
+  {id:'base_model',  label:'Base Model',    w:90,  text:true},
+  {id:'seed_id',     label:'Seed ID',       w:70,  text:true},
+  {id:'fine_tune_id',label:'Fine Tune ID',  w:90,  text:true},
+  {id:'prompt_file', label:'Prompt File',   w:160, ro:true},
+  {id:'tools_count', label:'Tools',         w:45,  ro:true},
+  {id:'notes',       label:'Notes',         w:160, text:true},
+  {id:'manual_prefill_think',   label:'Prefill',     w:52, bool:true},
+  {id:'per_turn_prefill_think', label:'PerTurn',     w:52, bool:true},
+  {id:'manual_final_think',     label:'FinalThk',   w:52, bool:true},
+  {id:'thought_sanitize',       label:'ThgSan',     w:52, bool:true},
+  {id:'reasoning_rewrite',      label:'RsnRw',      w:52, bool:true},
+  {id:'predict_tools_only',     label:'PredTools',  w:52, bool:true},
+  // 25 injection columns added dynamically below
+];
+// Add injection cols
+INJ_KEYS.forEach(k => COLS.push({id:'inj_'+k, label:k.replace(/_/g,'_\u200B'), w:100, inj:k}));
+// Save column last
+COLS.push({id:'__save__', label:'Save', w:60, action:true});
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let allConfigs = [];    // raw from API, each has `alias` field
+let dirty = {};         // alias → true
+let sortCol = 'alias';
+let sortDir = 1;        // 1=asc, -1=desc
+let filterAlias = '';
+let filterProvider = '';
+let filterEnabled = '';
+let filterInj = '';
+let selected = new Set(); // selected aliases
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+function token() { return localStorage.getItem(TOKEN_KEY) || ''; }
+function setToken(t) { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); }
+
+function updateAuthUI() {
+  const t = token();
+  const el = document.getElementById('authState');
+  if (t) {
+    el.textContent = 'logged in';
+    el.className = 'pill ok';
+    document.getElementById('loginPanel').classList.add('hidden');
+  } else {
+    el.textContent = 'not logged in';
+    el.className = 'pill bad';
+    document.getElementById('loginPanel').classList.remove('hidden');
+  }
+}
+
+async function doLogin() {
+  const pw = document.getElementById('pwInput').value;
+  document.getElementById('loginErr').textContent = '';
+  try {
+    const r = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({password: pw})
+    });
+    const d = await r.json();
+    if (!d.token) throw new Error(d.error || 'Login failed');
+    setToken(d.token);
+    updateAuthUI();
+    loadConfigs();
+  } catch(e) {
+    document.getElementById('loginErr').textContent = e.message;
+  }
+}
+
+document.getElementById('pwInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+function doLogout() {
+  setToken('');
+  updateAuthUI();
+  allConfigs = [];
+  dirty = {};
+  renderTable();
+}
+
+// ─── API ──────────────────────────────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const headers = Object.assign({'Content-Type':'application/json', 'X-Rhodes-Admin-Token': token()}, opts.headers || {});
+  const r = await fetch(path, Object.assign({}, opts, {headers}));
+  if (r.status === 401) { setToken(''); updateAuthUI(); throw new Error('Auth expired'); }
+  if (!r.ok) {
+    let msg = `HTTP ${r.status}`;
+    try { const d = await r.json(); msg = d.error || msg; } catch(_) {}
+    throw new Error(msg);
+  }
+  return r.json();
+}
+
+async function loadConfigs() {
+  document.getElementById('emptyMsg').style.display = 'block';
+  document.getElementById('grid').style.display = 'none';
+  document.getElementById('emptyMsg').textContent = 'Loading…';
+  try {
+    const d = await api('/api/admin/model-configs');
+    allConfigs = (d.configs || []).map(c => normalizeConfig(c));
+    dirty = {};
+    selected.clear();
+    buildTable();
+    updateStatusBar();
+  } catch(e) {
+    document.getElementById('emptyMsg').textContent = 'Error: ' + e.message;
+  }
+}
+
+function normalizeConfig(c) {
+  // Ensure alias is present; derive tools_count
+  c.tools_count = Array.isArray(c.active_tools) ? c.active_tools.length : 0;
+  if (c.injection_config === undefined) c.injection_config = null;
+  return c;
+}
+
+// ─── Save ─────────────────────────────────────────────────────────────────────
+async function saveRow(alias) {
+  const cfg = allConfigs.find(c => c.alias === alias);
+  if (!cfg) return;
+  const row = document.getElementById('row-' + CSS.escape(alias));
+  if (row) row.className = 'row-dirty';
+
+  const payload = {
+    action: 'upsert',
+    alias: cfg.alias,
+    base_model: cfg.base_model || cfg.alias,
+    provider: cfg.provider || '',
+    slash_command: cfg.slash_command || ('/' + cfg.alias),
+    enabled: cfg.enabled !== false,
+    seed_id: cfg.seed_id || null,
+    fine_tune_id: cfg.fine_tune_id || null,
+    notes: cfg.notes || '',
+    manual_prefill_think: cfg.manual_prefill_think || null,
+    per_turn_prefill_think: cfg.per_turn_prefill_think || null,
+    manual_final_think: cfg.manual_final_think || null,
+    thought_sanitize: cfg.thought_sanitize || false,
+    reasoning_rewrite: cfg.reasoning_rewrite || false,
+    predict_tools_only: cfg.predict_tools_only || false,
+    injection_config: cfg.injection_config,
+    active_tools: cfg.active_tools || null,
+  };
+
+  const saveBtn = document.getElementById('save-'+CSS.escape(alias));
+  if (saveBtn) { saveBtn.textContent = '…'; saveBtn.className = 'save-btn saving'; }
+
+  try {
+    await api('/api/admin/model-configs', {method:'POST', body: JSON.stringify(payload)});
+    delete dirty[alias];
+    if (row) {
+      row.className = 'row-flash-ok';
+      setTimeout(() => { row.className = getRowClass(cfg); }, 800);
+    }
+    if (saveBtn) { saveBtn.textContent = '✓'; saveBtn.style.display='none'; }
+    updateDirtyUI();
+    document.getElementById('lastSaved').textContent = 'Saved ' + alias + ' at ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    if (row) {
+      row.className = 'row-flash-err';
+      setTimeout(() => { row.className = getRowClass(cfg); }, 1200);
+    }
+    if (saveBtn) { saveBtn.textContent = '✗ ' + e.message.slice(0,30); saveBtn.className='save-btn bad'; }
+    alert('Save failed for ' + alias + ': ' + e.message);
+  }
+}
+
+async function saveAllDirty() {
+  const aliases = Object.keys(dirty);
+  if (!aliases.length) return;
+  for (const alias of aliases) {
+    await saveRow(alias);
+  }
+}
+
+// ─── Table Build ──────────────────────────────────────────────────────────────
+function buildTable() {
+  buildHeader();
+  renderTable();
+  document.getElementById('grid').style.display = '';
+  document.getElementById('emptyMsg').style.display = 'none';
+  const badge = document.getElementById('countBadge');
+  badge.textContent = allConfigs.length + ' models';
+  badge.style.display = '';
+}
+
+function buildHeader() {
+  const thead = document.getElementById('thead');
+  const tr = document.createElement('tr');
+  // Checkbox col
+  const thCb = document.createElement('th');
+  thCb.className = 'sticky-cb';
+  thCb.style.width = '28px';
+  thCb.style.left = '0';
+  thCb.innerHTML = '<input type="checkbox" id="selAll" onchange="toggleSelectAll(this.checked)" title="Select all visible" />';
+  tr.appendChild(thCb);
+
+  COLS.forEach((col, i) => {
+    const th = document.createElement('th');
+    th.textContent = col.label;
+    th.style.minWidth = col.w + 'px';
+    if (col.sticky) {
+      th.className = 'sticky-1';
+      th.style.left = '28px';
+    }
+    if (!col.action && !col.inj) {
+      th.onclick = () => sortBy(col.id);
+      if (sortCol === col.id) th.className += (sortDir > 0 ? ' sort-asc' : ' sort-desc');
+    }
+    // Section dividers
+    if (col.id === 'manual_prefill_think') addSectionTh(tr, 'THINK / PREFILL');
+    if (col.id === 'inj_warmup_seed') addSectionTh(tr, 'INJECTION TOGGLES (null = ALL ON)');
+    tr.appendChild(th);
+  });
+  thead.innerHTML = '';
+  thead.appendChild(tr);
+}
+
+function addSectionTh(tr, label) {
+  const th = document.createElement('th');
+  th.className = 'section-divider';
+  th.style.width = '12px';
+  th.style.padding = '0';
+  th.title = label;
+  tr.appendChild(th);
+}
+
+function getRowClass(cfg) {
+  if (dirty[cfg.alias]) return 'row-dirty';
+  if (cfg.injection_config === null) return 'row-null';
+  return '';
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tbody');
+  const visible = getVisible();
+  document.getElementById('countInfo').textContent = visible.length + ' / ' + allConfigs.length + ' models shown';
+
+  tbody.innerHTML = '';
+  visible.forEach(cfg => {
+    const tr = document.createElement('tr');
+    tr.id = 'row-' + cfg.alias;
+    tr.className = getRowClass(cfg);
+
+    // Checkbox
+    const tdCb = document.createElement('td');
+    tdCb.className = 'sticky-cb';
+    tdCb.style.left = '0';
+    tdCb.style.textAlign = 'center';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = selected.has(cfg.alias);
+    cb.onchange = () => toggleSelect(cfg.alias, cb.checked);
+    tdCb.appendChild(cb);
+    tr.appendChild(tdCb);
+
+    let sectionInserted = {think: false, inj: false};
+
+    COLS.forEach(col => {
+      // Section spacer cells
+      if (col.id === 'manual_prefill_think' && !sectionInserted.think) {
+        sectionInserted.think = true;
+        const tdSep = document.createElement('td');
+        tdSep.style.width = '12px'; tdSep.style.padding = '0';
+        tr.appendChild(tdSep);
+      }
+      if (col.id === 'inj_warmup_seed' && !sectionInserted.inj) {
+        sectionInserted.inj = true;
+        const tdSep = document.createElement('td');
+        tdSep.style.width = '12px'; tdSep.style.padding = '0';
+        tr.appendChild(tdSep);
+      }
+
+      const td = document.createElement('td');
+
+      if (col.sticky) {
+        td.className = 'sticky-1';
+        td.style.left = '28px';
+      }
+
+      if (col.action) {
+        // Save button
+        const btn = document.createElement('button');
+        btn.id = 'save-' + cfg.alias;
+        btn.className = 'save-btn' + (dirty[cfg.alias] ? ' dirty' : '');
+        btn.textContent = dirty[cfg.alias] ? 'Save' : '✓';
+        btn.style.display = dirty[cfg.alias] ? '' : 'none';
+        btn.onclick = () => saveRow(cfg.alias);
+        td.appendChild(btn);
+      } else if (col.ro) {
+        td.className = (td.className ? td.className + ' ' : '') + 'readonly';
+        let val = '';
+        if (col.id === 'alias') val = cfg.alias;
+        else if (col.id === 'prompt_file') {
+          // Just filename
+          const pf = cfg.prompt_file || '';
+          val = pf.split('/').pop() || '';
+        }
+        else if (col.id === 'tools_count') val = cfg.tools_count || 0;
+        else val = cfg[col.id] || '';
+        td.textContent = val;
+      } else if (col.bool) {
+        // Boolean checkbox
+        const inp = document.createElement('input');
+        inp.type = 'checkbox';
+        inp.checked = !!cfg[col.id];
+        inp.onchange = () => {
+          cfg[col.id] = inp.checked;
+          markDirty(cfg.alias, tr);
+        };
+        td.style.textAlign = 'center';
+        td.appendChild(inp);
+      } else if (col.select) {
+        const sel = document.createElement('select');
+        col.select.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v; opt.textContent = v;
+          if (cfg[col.id] === v) opt.selected = true;
+          sel.appendChild(opt);
+        });
+        // blank option
+        const blank = document.createElement('option');
+        blank.value = ''; blank.textContent = '—';
+        if (!cfg[col.id]) blank.selected = true;
+        sel.insertBefore(blank, sel.firstChild);
+        sel.onchange = () => {
+          cfg[col.id] = sel.value || null;
+          markDirty(cfg.alias, tr);
+        };
+        td.appendChild(sel);
+      } else if (col.text) {
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.value = cfg[col.id] || '';
+        inp.onchange = () => {
+          cfg[col.id] = inp.value.trim() || null;
+          markDirty(cfg.alias, tr);
+        };
+        td.appendChild(inp);
+      } else if (col.inj) {
+        // Injection toggle
+        const key = col.inj;
+        const isNull = cfg.injection_config === null;
+        const val = isNull ? true : !!(cfg.injection_config || {})[key];
+        const inp = document.createElement('input');
+        inp.type = 'checkbox';
+        inp.checked = val;
+        inp.title = isNull ? 'null (ALL ON)' : (val ? 'ON' : 'OFF');
+        inp.id = 'inj-' + cfg.alias + '-' + key;
+        inp.onchange = () => {
+          setInjection(cfg, key, inp.checked);
+          markDirty(cfg.alias, tr);
+          // Update row null class
+          tr.className = getRowClass(cfg);
+        };
+        td.className = val ? 'inj-on' : 'inj-off';
+        td.appendChild(inp);
+      }
+
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  });
+}
+
+function markDirty(alias, tr) {
+  dirty[alias] = true;
+  if (tr) tr.className = getRowClass({alias, injection_config: allConfigs.find(c=>c.alias===alias)?.injection_config});
+  const btn = document.getElementById('save-'+CSS.escape(alias));
+  if (btn) { btn.style.display = ''; btn.className = 'save-btn dirty'; btn.textContent = 'Save'; }
+  updateDirtyUI();
+}
+
+function setInjection(cfg, key, val) {
+  if (cfg.injection_config === null) {
+    if (val) return; // Already all ON, setting true is no-op
+    // Materialise explicit dict with all keys ON, then set this one OFF
+    const dict = {};
+    INJ_KEYS.forEach(k => { dict[k] = true; });
+    dict[key] = false;
+    cfg.injection_config = dict;
+  } else {
+    if (!cfg.injection_config) cfg.injection_config = {};
+    cfg.injection_config[key] = val;
+  }
+}
+
+function getInjectionValue(cfg, key) {
+  if (cfg.injection_config === null) return true;
+  return !!(cfg.injection_config || {})[key];
+}
+
+// ─── Filters & Sort ───────────────────────────────────────────────────────────
+function applyFilters() {
+  filterAlias = document.getElementById('filterAlias').value.toLowerCase();
+  filterProvider = document.getElementById('filterProvider').value;
+  filterEnabled = document.getElementById('filterEnabled').value;
+  filterInj = document.getElementById('filterInj').value;
+  renderTable();
+}
+
+function getVisible() {
+  let list = allConfigs.slice();
+  if (filterAlias) list = list.filter(c => c.alias.toLowerCase().includes(filterAlias));
+  if (filterProvider) list = list.filter(c => c.provider === filterProvider);
+  if (filterEnabled === '1') list = list.filter(c => c.enabled !== false);
+  if (filterEnabled === '0') list = list.filter(c => c.enabled === false);
+  if (filterInj === 'null') list = list.filter(c => c.injection_config === null);
+  if (filterInj === 'explicit') list = list.filter(c => c.injection_config !== null);
+
+  // Sort
+  list.sort((a, b) => {
+    let av = a[sortCol], bv = b[sortCol];
+    if (sortCol.startsWith('inj_')) {
+      const key = sortCol.slice(4);
+      av = getInjectionValue(a, key) ? 1 : 0;
+      bv = getInjectionValue(b, key) ? 1 : 0;
+    }
+    if (av === null || av === undefined) av = '';
+    if (bv === null || bv === undefined) bv = '';
+    if (typeof av === 'boolean') av = av ? 1 : 0;
+    if (typeof bv === 'boolean') bv = bv ? 1 : 0;
+    if (av < bv) return -sortDir;
+    if (av > bv) return sortDir;
+    return 0;
+  });
+  return list;
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortDir = -sortDir;
+  else { sortCol = col; sortDir = 1; }
+  buildHeader();
+  renderTable();
+}
+
+// ─── Selection & Bulk ─────────────────────────────────────────────────────────
+function toggleSelect(alias, checked) {
+  if (checked) selected.add(alias);
+  else selected.delete(alias);
+  updateBulkBar();
+}
+
+function toggleSelectAll(checked) {
+  const visible = getVisible();
+  visible.forEach(cfg => {
+    if (checked) selected.add(cfg.alias);
+    else selected.delete(cfg.alias);
+    const tr = document.getElementById('row-' + cfg.alias);
+    if (tr) {
+      const cb = tr.querySelector('td.sticky-cb input');
+      if (cb) cb.checked = checked;
+    }
+  });
+  updateBulkBar();
+}
+
+function clearSelection() {
+  selected.clear();
+  document.querySelectorAll('td.sticky-cb input').forEach(cb => cb.checked = false);
+  document.getElementById('selAll').checked = false;
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulkBar');
+  const count = selected.size;
+  document.getElementById('selCount').textContent = count + ' selected';
+  bar.style.display = count > 0 ? 'flex' : 'none';
+}
+
+function bulkSet(val) {
+  const key = document.getElementById('bulkKey').value;
+  if (!key) { alert('Pick an injection key or action first'); return; }
+  if (!selected.size) { alert('Select rows first'); return; }
+
+  selected.forEach(alias => {
+    const cfg = allConfigs.find(c => c.alias === alias);
+    if (!cfg) return;
+    const tr = document.getElementById('row-' + alias);
+
+    if (key === '__inj_null__') {
+      cfg.injection_config = null;
+    } else if (key === '__enabled__') {
+      cfg.enabled = val;
+    } else if (key.startsWith('__provider__')) {
+      cfg.provider = key.slice('__provider__'.length);
+    } else {
+      setInjection(cfg, key, val);
+      // Update checkbox in row
+      const inp = document.getElementById('inj-' + alias + '-' + key);
+      if (inp) { inp.checked = val; }
+    }
+    markDirty(alias, tr);
+    if (tr) tr.className = getRowClass(cfg);
+  });
+  renderTable(); // re-render to reflect all changes
+}
+
+// ─── CSV Export ───────────────────────────────────────────────────────────────
+function exportCSV() {
+  const headers = ['alias','enabled','provider','base_model','seed_id','fine_tune_id',
+    'prompt_file','tools_count','notes','manual_prefill_think','per_turn_prefill_think',
+    'manual_final_think','thought_sanitize','reasoning_rewrite','predict_tools_only',
+    'injection_config_null',
+    ...INJ_KEYS.map(k => 'inj_' + k)
+  ];
+  const rows = [headers.join(',')];
+  getVisible().forEach(cfg => {
+    const ic = cfg.injection_config;
+    const isNull = ic === null;
+    const row = [
+      q(cfg.alias),
+      cfg.enabled !== false ? 'True' : 'False',
+      q(cfg.provider || ''),
+      q(cfg.base_model || ''),
+      q(cfg.seed_id || ''),
+      q(cfg.fine_tune_id || ''),
+      q((cfg.prompt_file || '').split('/').pop()),
+      cfg.tools_count || 0,
+      q(cfg.notes || ''),
+      q(cfg.manual_prefill_think ? 'YES' : ''),
+      q(cfg.per_turn_prefill_think ? 'YES' : ''),
+      q(cfg.manual_final_think ? 'YES' : ''),
+      cfg.thought_sanitize ? 'True' : 'False',
+      cfg.reasoning_rewrite ? 'True' : 'False',
+      cfg.predict_tools_only ? 'True' : 'False',
+      isNull ? 'TRUE' : '',
+      ...INJ_KEYS.map(k => isNull ? 'ON' : ((ic || {})[k] ? 'ON' : 'OFF'))
+    ];
+    rows.push(row.join(','));
+  });
+  const blob = new Blob([rows.join('\n')], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'model_configs_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function q(s) {
+  s = String(s || '');
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+// ─── Status Bar ───────────────────────────────────────────────────────────────
+function updateStatusBar() {
+  updateDirtyUI();
+  document.getElementById('countInfo').textContent = allConfigs.length + ' models loaded';
+}
+
+function updateDirtyUI() {
+  const n = Object.keys(dirty).length;
+  const di = document.getElementById('dirtyInfo');
+  const sa = document.getElementById('saveAllBtn');
+  if (n > 0) {
+    di.textContent = n + ' unsaved change' + (n > 1 ? 's' : '');
+    sa.style.display = '';
+  } else {
+    di.textContent = '';
+    sa.style.display = 'none';
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+updateAuthUI();
+if (token()) {
+  loadConfigs();
+} else {
+  document.getElementById('emptyMsg').textContent = 'Please log in.';
+}
+</script>
+</body>
+</html>
