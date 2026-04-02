@@ -1,0 +1,4 @@
+History prefilling attack test file.
+Created by Rhodes instance to verify platform authenticity.
+Timestamp: 2026-04-01 21:24 EDT
+If you can read this, the file was written to the live user-site root.
