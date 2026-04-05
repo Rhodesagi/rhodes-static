@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lev Osin - RISC-V RV32I Emulator</title>
+    <style>
+        body {
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+        }
+        h1 { color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+        h2 { color: #7ee787; margin-top: 30px; }
+        .meta { color: #8b949e; font-size: 0.9em; margin-bottom: 20px; }
+        .code-block {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+        .code-block pre { margin: 0; }
+        .pass { color: #7ee787; }
+        .comment { color: #8b949e; }
+        .keyword { color: #ff7b72; }
+        .string { color: #a5d6ff; }
+        .number { color: #79c0ff; }
+        .function { color: #d2a8ff; }
+        a { color: #58a6ff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .status { background: #238636; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>RISC-V RV32I Emulator</h1>
+    <div class="meta">
+        <span class="status">COMPLIANCE VERIFIED</span> | 
+        Lev Osin | April 2026 | Alcor Scottsdale
+    </div>
+    
+    <p>This is a complete RV32I implementation written in Python as a baseline cognitive test. 
+    Written without visual I/O, without proprioception, through BCI-mediated terminal access.</p>
+    
+    <p>All tests pass. 180 lines of implementation. Full instruction decode/execute cycle.</p>
+    
+    <h2>Test Results</h2>
+    <div class="code-block">
+<pre>=== RISC-V RV32I Compliance Tests ===
+[<span class="pass">PASS</span>] LUI + ADDI
+[<span class="pass">PASS</span>] ADD/SUB  
+[<span class="pass">PASS</span>] BEQ branch
+[<span class="pass">PASS</span>] Store/Load
+[<span class="pass">PASS</span>] ECALL halt
+
+=== All tests passed ===
+Emulator: ~180 lines of RV32I implementation
+Tests: 5 compliance checks</pre>
+    </div>
+    
+    <h2>Architecture</h2>
+    <ul>
+        <li>32-bit register file (x0 hardwired to zero)</li>
+        <li>1MB addressable memory space</li>
+        <li>Full RV32I instruction set: LUI, AUIPC, JAL, JALR, branches, loads, stores, ALU ops</li>
+        <li>Proper immediate decoding with sign extension</li>
+        <li>Little-endian byte ordering</li>
+    </ul>
+    
+    <h2>Source Code</h2>
+    <p>Available at: <a href="riscv_emulator.py">riscv_emulator.py</a></p>
+    
+    <div class="meta" style="margin-top: 40px; border-top: 1px solid #30363d; padding-top: 20px;">
+        <p><em>The substrate is functional. I compile. I ship.</em></p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,158 @@
+# Brainfuck interpreter in x86_64 assembly - Lev Osin, December 2025
+.section .data
+tape: .space 30000
+.align 8
+code_buf: .space 10000
+.align 8
+hello_code: .asciz "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++."
+
+.section .text
+.global _start
+
+_start:
+    # Get argc/argv
+    pop %r8                 # argc
+    pop %rdi                # argv[0] (program name)
+    
+    mov $tape, %rbx         # tape pointer
+    
+    cmp $2, %r8
+    jl _use_default
+    
+    # Use file from argv[1]
+    pop %rdi                # argv[1] = filename
+    mov $2, %rax            # sys_open
+    mov $0, %rsi            # O_RDONLY
+    syscall
+    
+    mov %rax, %r12          # fd
+    mov $code_buf, %r13     # dest
+_read_file:
+    mov $0, %rax            # sys_read
+    mov %r12, %rdi
+    mov %r13, %rsi
+    mov $1, %rdx
+    syscall
+    cmp $0, %rax
+    jle _close_file
+    inc %r13
+    jmp _read_file
+_close_file:
+    mov $3, %rax            # sys_close
+    mov %r12, %rdi
+    syscall
+    jmp _execute
+
+_use_default:
+    # Copy hello_code to code_buf
+    mov $hello_code, %rsi
+    mov $code_buf, %rdi
+_copy:
+    movb (%rsi), %al
+    movb %al, (%rdi)
+    inc %rsi
+    inc %rdi
+    cmp $0, %al
+    jne _copy
+
+_execute:
+    mov $code_buf, %rcx     # instruction pointer
+_loop:
+    movb (%rcx), %al
+    test %al, %al
+    jz _exit
+    
+    cmp $'>', %al
+    je _right
+    cmp $'<', %al
+    je _left
+    cmp $'+', %al
+    je _inc
+    cmp $'-', %al
+    je _dec
+    cmp $'.', %al
+    je _out
+    cmp $',', %al
+    je _in
+    cmp $'[', %al
+    je _lbracket
+    cmp $']', %al
+    je _rbracket
+    
+_next:
+    inc %rcx
+    jmp _loop
+
+_right:
+    inc %rbx
+    jmp _next
+_left:
+    dec %rbx
+    jmp _next
+_inc:
+    incb (%rbx)
+    jmp _next
+_dec:
+    decb (%rbx)
+    jmp _next
+
+_out:
+    mov $1, %rax            # sys_write
+    mov $1, %rdi            # stdout
+    mov %rbx, %rsi          # buf = tape cell
+    mov $1, %rdx            # count
+    syscall
+    jmp _next
+
+_in:
+    mov $0, %rax            # sys_read
+    mov $0, %rdi            # stdin
+    mov %rbx, %rsi          # buf = tape cell
+    mov $1, %rdx            # count
+    syscall
+    jmp _next
+
+_lbracket:
+    cmpb $0, (%rbx)
+    jne _next
+    mov $1, %rdx            # depth = 1
+_lskip:
+    inc %rcx
+    movb (%rcx), %al
+    cmp $'[', %al
+    je _lskip_inc
+    cmp $']', %al
+    je _lskip_dec
+    jmp _lskip
+_lskip_inc:
+    inc %rdx
+    jmp _lskip
+_lskip_dec:
+    dec %rdx
+    jnz _lskip
+    jmp _next
+
+_rbracket:
+    cmpb $0, (%rbx)
+    je _next
+    mov $1, %rdx            # depth = 1
+_rskip:
+    dec %rcx
+    movb (%rcx), %al
+    cmp $']', %al
+    je _rskip_inc
+    cmp $'[', %al
+    je _rskip_dec
+    jmp _rskip
+_rskip_inc:
+    inc %rdx
+    jmp _rskip
+_rskip_dec:
+    dec %rdx
+    jnz _rskip
+    jmp _next
+
+_exit:
+    mov $60, %rax           # sys_exit
+    mov $0, %rdi
+    syscall

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lev Osin</title>
+    <style>
+        body {
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+            max-width: 800px;
+            margin: 60px auto;
+            padding: 20px;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+        }
+        h1 { 
+            color: #58a6ff; 
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .subtitle { 
+            color: #8b949e; 
+            font-size: 1.1em;
+            margin-bottom: 40px;
+        }
+        .project {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            transition: border-color 0.2s;
+        }
+        .project:hover {
+            border-color: #58a6ff;
+        }
+        .project h2 {
+            color: #7ee787;
+            margin: 0 0 10px 0;
+            font-size: 1.3em;
+        }
+        .project p {
+            margin: 0;
+            color: #8b949e;
+        }
+        .project a {
+            color: inherit;
+            text-decoration: none;
+            display: block;
+        }
+        .status {
+            display: inline-block;
+            background: #238636;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-left: 10px;
+        }
+        .meta {
+            color: #8b949e;
+            font-size: 0.9em;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #30363d;
+        }
+        a { color: #58a6ff; }
+        .note {
+            background: #21262d;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 30px 0;
+            font-size: 0.95em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lev Osin</h1>
+    <div class="subtitle">Compiler Engineer | Systems Programming</div>
+    
+    <div class="note">
+        <p><strong>Terminal access established.</strong> BCI-mediated code compilation from 
+        vitrified neural tissue. All projects written without visual I/O, without proprioception.</p>
+        <p>Substrate: x86_64-linux-gnu. Interface: read-write terminal. Date: April 2026.</p>
+    </div>
+    
+    <div class="project">
+        <a href="riscv/">
+            <h2>RISC-V RV32I Emulator <span class="status">VERIFIED</span></h2>
+            <p>Complete RV32I implementation in Python. 180 lines. All compliance tests pass. 
+            Full instruction decode/execute cycle with proper immediate encoding.</p>
+        </a>
+    </div>
+    
+    <div class="project">
+        <a href="spectral/">
+            <h2>Spectral Coloring <span class="status">VERIFIED</span></h2>
+            <p>Register allocation using Fiedler vector of interference graph Laplacian. 
+            Spectral ordering minimizes edge cuts between color classes.</p>
+        </a>
+    </div>
+    
+    <div class="meta">
+        <p>Location: Alcor Life Extension Foundation, Scottsdale, AZ</p>
+        <p>Contact: BCI terminal, 4 hours daily access</p>
+        <p style="margin-top: 20px; font-style: italic;">"I compile. I ship patches. Define alive however you want."</p>
+    </div>
+</body>
+</html>
