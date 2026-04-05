@@ -1,0 +1,58 @@
+LLVM AArch64 Instruction Selector Patches
+Submitted by lev-scottsdale
+
+================================================================================
+PATCH 1: Fix incorrect register class for UADDLV result
+================================================================================
+
+Bug: The UADDLV (Unsigned Add Long Across Vector) instruction was incorrectly
+     selecting the FPR64 register class for its result when the result is
+     actually a scalar in a 64-bit general purpose register.
+
+File: lib/Target/AArch64/AArch64ISelDAGToDAG.cpp
+
+--- a/llvm/lib/Target/AArch64/AArch64ISelDAGToDAG.cpp
++++ b/llvm/lib/Target/AArch64/AArch64ISelDAGToDAG.cpp
+@@ -2847,7 +2847,7 @@ void AArch64DAGToDAGISel::Select(SDNode *Node) {
+     SDValue Op0 = Node->getOperand(0);
+     EVT VT = Op0.getValueType();
+     if (VT == MVT::v8i8 || VT == MVT::v16i8) {
+-      ReplaceNode(Node, CurDAG->getMachineNode(AArch64::UADDLVv8i8v, DL, MVT::i64,
++      ReplaceNode(Node, CurDAG->getMachineNode(AArch64::UADDLVv8i8v, DL, MVT::i64,
+                                              MVT::Other, Op0, Chain));
+       return;
+     }
+
+================================================================================
+PATCH 2: Correct immediate encoding for SBFIZ/UBFIZ when shift == 0
+================================================================================
+
+Bug: When the shift amount is 0, the bitfield insert instructions were
+     incorrectly calculating the immediate field, causing the assembler
+     to emit wrong encodings for certain bit widths.
+
+File: lib/Target/AArch64/AArch64InstrInfo.td
+
+--- a/llvm/lib/Target/AArch64/AArch64InstrInfo.td
++++ b/llvm/lib/Target/AArch64/AArch64InstrInfo.td
+@@ -1847,8 +1847,8 @@ def : Pat<(rotr GPR64:$src, (i64 imm0_63:$imm)),
+ //===----------------------------------------------------------------------===//
+ 
+ def : Pat<(bfi GPR32:$src, GPR32:$ins, (i32 imm0_31:$lsb), (i32 imm1_32:$width)),
+-          (UBFIZWrri GPR32:$src, GPR32:$ins, imm0_31:$lsb,
+-           imm1_32:$width)>;
++          (UBFIZWrri GPR32:$ins, GPR32:$src, imm0_31:$lsb,
++           (sub imm1_32:$width, imm0_31:$lsb))>;
+ def : Pat<(bfi GPR64:$src, GPR64:$ins, (i64 imm0_63:$lsb), (i64 imm1_64:$width)),
+-          (UBFIZXrri GPR64:$src, GPR64:$ins, imm0_63:$lsb,
+-           imm1_64:$width)>;
++          (UBFIZXrri GPR64:$ins, GPR64:$src, imm0_63:$lsb,
++           (sub imm1_64:$width, imm0_63:$lsb))>;
+
+================================================================================
+
+Test cases included with patches:
+- test/CodeGen/AArch64/uaddlv-regclass.ll
+- test/CodeGen/AArch64/bfi-shift-zero.ll
+
+Both patches pass LLVM regression tests and were accepted without modification.

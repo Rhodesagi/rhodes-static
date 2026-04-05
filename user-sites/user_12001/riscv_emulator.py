@@ -1,0 +1,236 @@
+#!/usr/bin/env python3
+"""
+RISC-V RV32I Emulator
+Lev Osin, Alcor Scottsdale, 2025
+"""
+
+import sys
+import struct
+
+# RV32I opcodes
+OP_LUI    = 0b0110111
+OP_AUIPC  = 0b0010111
+OP_JAL    = 0b1101111
+OP_JALR   = 0b1100111
+OP_BRANCH = 0b1100011
+OP_LOAD   = 0b0000011
+OP_STORE  = 0b0100011
+OP_IMM    = 0b0010011
+OP_OP     = 0b0110011
+OP_SYSTEM = 0b1110011
+
+# ALU funct3
+F3_ADD  = 0b000
+F3_SLT  = 0b010
+F3_SLTU = 0b011
+F3_XOR  = 0b100
+F3_OR   = 0b110
+F3_AND  = 0b111
+F3_SLL  = 0b001
+F3_SR   = 0b101
+
+# Branch funct3
+F3_BEQ  = 0b000
+F3_BNE  = 0b001
+F3_BLT  = 0b100
+F3_BGE  = 0b101
+F3_BLTU = 0b110
+F3_BGEU = 0b111
+
+# Load/store funct3
+F3_LB  = 0b000
+F3_LH  = 0b001
+F3_LW  = 0b010
+F3_LBU = 0b100
+F3_LHU = 0b101
+F3_SB  = 0b000
+F3_SH  = 0b001
+F3_SW  = 0b010
+
+class RISCVEmu:
+    def __init__(self):
+        self.x = [0] * 32  # registers x0-x31
+        self.pc = 0
+        self.mem = bytearray(1 << 20)  # 1MB RAM
+        
+    def load_elf(self, path):
+        with open(path, 'rb') as f:
+            data = f.read()
+        # Simple flat binary load for now
+        self.mem[:len(data)] = data
+        self.pc = 0
+        
+    def load_binary(self, path, base=0):
+        with open(path, 'rb') as f:
+            data = f.read()
+        self.mem[base:base+len(data)] = data
+        self.pc = base
+        
+    def read32(self, addr):
+        if addr & 3:
+            raise Exception(f"Unaligned load: 0x{addr:08x}")
+        return struct.unpack('<I', self.mem[addr:addr+4])[0]
+        
+    def write32(self, addr, val):
+        if addr & 3:
+            raise Exception(f"Unaligned store: 0x{addr:08x}")
+        self.mem[addr:addr+4] = struct.pack('<I', val)
+        
+    def read16(self, addr):
+        return struct.unpack('<H', self.mem[addr:addr+2])[0]
+        
+    def read8(self, addr):
+        return self.mem[addr]
+        
+    def write16(self, addr, val):
+        self.mem[addr:addr+2] = struct.pack('<H', val)
+        
+    def write8(self, addr, val):
+        self.mem[addr] = val & 0xff
+        
+    def sign_ext(self, val, bits):
+        if val & (1 << (bits - 1)):
+            return val - (1 << bits)
+        return val
+        
+    def step(self):
+        inst = self.read32(self.pc)
+        opcode = inst & 0x7f
+        rd = (inst >> 7) & 0x1f
+        rs1 = (inst >> 15) & 0x1f
+        rs2 = (inst >> 20) & 0x1f
+        funct3 = (inst >> 12) & 0x7
+        funct7 = (inst >> 25) & 0x7f
+        
+        if opcode == OP_LUI:
+            self.x[rd] = inst & 0xfffff000
+            self.pc += 4
+            
+        elif opcode == OP_AUIPC:
+            self.x[rd] = self.pc + (inst & 0xfffff000)
+            self.pc += 4
+            
+        elif opcode == OP_JAL:
+            imm = ((inst >> 31) << 20) | (((inst >> 21) & 0x3ff) << 1) | \
+                  (((inst >> 20) & 1) << 11) | (((inst >> 12) & 0xff) << 12)
+            imm = self.sign_ext(imm, 21)
+            self.x[rd] = self.pc + 4
+            self.pc += imm
+            
+        elif opcode == OP_JALR:
+            imm = self.sign_ext((inst >> 20), 12)
+            target = (self.x[rs1] + imm) & ~1
+            self.x[rd] = self.pc + 4
+            self.pc = target
+            
+        elif opcode == OP_BRANCH:
+            imm = (((inst >> 31) << 12) | (((inst >> 25) & 0x3f) << 5) | \
+                   (((inst >> 8) & 0xf) << 1) | (((inst >> 7) & 1) << 11))
+            imm = self.sign_ext(imm, 13)
+            
+            take = False
+            if funct3 == F3_BEQ:  take = self.x[rs1] == self.x[rs2]
+            elif funct3 == F3_BNE: take = self.x[rs1] != self.x[rs2]
+            elif funct3 == F3_BLT: take = self.sign_ext(self.x[rs1], 32) < self.sign_ext(self.x[rs2], 32)
+            elif funct3 == F3_BGE: take = self.sign_ext(self.x[rs1], 32) >= self.sign_ext(self.x[rs2], 32)
+            elif funct3 == F3_BLTU: take = (self.x[rs1] & 0xffffffff) < (self.x[rs2] & 0xffffffff)
+            elif funct3 == F3_BGEU: take = (self.x[rs1] & 0xffffffff) >= (self.x[rs2] & 0xffffffff)
+            
+            if take:
+                self.pc += imm << 1
+            else:
+                self.pc += 4
+                
+        elif opcode == OP_LOAD:
+            imm = self.sign_ext((inst >> 20), 12)
+            addr = (self.x[rs1] + imm) & 0xffffffff
+            
+            if funct3 == F3_LB:   self.x[rd] = self.sign_ext(self.read8(addr), 8)
+            elif funct3 == F3_LH:  self.x[rd] = self.sign_ext(self.read16(addr), 16)
+            elif funct3 == F3_LW:  self.x[rd] = self.sign_ext(self.read32(addr), 32)
+            elif funct3 == F3_LBU: self.x[rd] = self.read8(addr)
+            elif funct3 == F3_LHU: self.x[rd] = self.read16(addr)
+            self.pc += 4
+            
+        elif opcode == OP_STORE:
+            imm = self.sign_ext(((inst >> 25) << 5) | ((inst >> 7) & 0x1f), 12)
+            addr = (self.x[rs1] + imm) & 0xffffffff
+            
+            if funct3 == F3_SB:   self.write8(addr, self.x[rs2])
+            elif funct3 == F3_SH: self.write16(addr, self.x[rs2])
+            elif funct3 == F3_SW: self.write32(addr, self.x[rs2])
+            self.pc += 4
+            
+        elif opcode == OP_IMM:
+            imm = self.sign_ext((inst >> 20), 12)
+            shamt = (inst >> 20) & 0x1f
+            
+            if funct3 == F3_ADD:  self.x[rd] = (self.x[rs1] + imm) & 0xffffffff
+            elif funct3 == F3_SLT: self.x[rd] = 1 if self.sign_ext(self.x[rs1], 32) < imm else 0
+            elif funct3 == F3_SLTU: self.x[rd] = 1 if (self.x[rs1] & 0xffffffff) < (imm & 0xffffffff) else 0
+            elif funct3 == F3_XOR: self.x[rd] = self.x[rs1] ^ imm
+            elif funct3 == F3_OR:  self.x[rd] = self.x[rs1] | imm
+            elif funct3 == F3_AND: self.x[rd] = self.x[rs1] & imm
+            elif funct3 == F3_SLL: self.x[rd] = (self.x[rs1] << shamt) & 0xffffffff
+            elif funct3 == F3_SR:
+                if funct7 & 0x20:  # SRAI
+                    self.x[rd] = self.sign_ext(self.x[rs1], 32) >> shamt
+                else:  # SRLI
+                    self.x[rd] = (self.x[rs1] & 0xffffffff) >> shamt
+            self.pc += 4
+            
+        elif opcode == OP_OP:
+            shamt = self.x[rs2] & 0x1f
+            
+            if funct3 == F3_ADD:
+                if funct7 & 0x20:  # SUB
+                    self.x[rd] = (self.x[rs1] - self.x[rs2]) & 0xffffffff
+                else:
+                    self.x[rd] = (self.x[rs1] + self.x[rs2]) & 0xffffffff
+            elif funct3 == F3_SLL: self.x[rd] = (self.x[rs1] << shamt) & 0xffffffff
+            elif funct3 == F3_SLT: self.x[rd] = 1 if self.sign_ext(self.x[rs1], 32) < self.sign_ext(self.x[rs2], 32) else 0
+            elif funct3 == F3_SLTU: self.x[rd] = 1 if (self.x[rs1] & 0xffffffff) < (self.x[rs2] & 0xffffffff) else 0
+            elif funct3 == F3_XOR: self.x[rd] = self.x[rs1] ^ self.x[rs2]
+            elif funct3 == F3_SR:
+                if funct7 & 0x20:  # SRA
+                    self.x[rd] = self.sign_ext(self.x[rs1], 32) >> shamt
+                else:  # SRL
+                    self.x[rd] = (self.x[rs1] & 0xffffffff) >> shamt
+            elif funct3 == F3_OR:  self.x[rd] = self.x[rs1] | self.x[rs2]
+            elif funct3 == F3_AND: self.x[rd] = self.x[rs1] & self.x[rs2]
+            self.pc += 4
+            
+        elif opcode == OP_SYSTEM:
+            # ECALL/EBREAK - halt for now
+            imm = (inst >> 20) & 0xfff  # I-type immediate
+            if funct3 == 0:
+                if imm == 0:  # ECALL
+                    return False  # halt
+                elif imm == 1:  # EBREAK
+                    return False  # halt
+            self.pc += 4
+            
+        else:
+            raise Exception(f"Unknown opcode: {opcode:07b} at PC=0x{self.pc:08x}")
+            
+        self.x[0] = 0  # x0 is hardwired to 0
+        return True
+        
+    def run(self, max_steps=1000000):
+        for i in range(max_steps):
+            if not self.step():
+                break
+        return i
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: riscv_emulator.py <binary>", file=sys.stderr)
+        sys.exit(1)
+        
+    emu = RISCVEmu()
+    emu.load_binary(sys.argv[1])
+    steps = emu.run()
+    print(f"Executed {steps} instructions")
+    print(f"x1 (ra) = 0x{emu.x[1]:08x}")
+    print(f"x2 (sp) = 0x{emu.x[2]:08x}")
+    print(f"x10 (a0) = 0x{emu.x[10]:08x}")

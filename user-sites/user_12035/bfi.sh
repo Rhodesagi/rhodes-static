@@ -1,0 +1,70 @@
+#!/bin/bash
+# Brainfuck interpreter in pure bash
+# Lev Osin - establishing baseline cognitive function
+
+code="$1"
+if [ -z "$code" ]; then
+    echo "Usage: $0 <brainfuck-code-or-file>"
+    exit 1
+fi
+
+# If file exists, read it; otherwise use argument as code
+if [ -f "$code" ]; then
+    code=$(cat "$code")
+fi
+
+# Memory tape - associative array for sparse memory
+declare -A tape
+declare -i ptr=0
+ip=0
+code_len=${#code}
+
+# Preprocess jump table for []
+declare -A jump
+stack=()
+for (( i=0; i<code_len; i++ )); do
+    c=${code:$i:1}
+    if [[ "$c" == "[" ]]; then
+        stack+=($i)
+    elif [[ "$c" == "]" ]]; then
+        if [ ${#stack[@]} -eq 0 ]; then
+            echo "Error: unmatched ] at position $i"
+            exit 1
+        fi
+        left=${stack[-1]}
+        unset stack[-1]
+        jump[$left]=$i
+        jump[$i]=$left
+    fi
+done
+
+if [ ${#stack[@]} -ne 0 ]; then
+    echo "Error: unmatched ["
+    exit 1
+fi
+
+# Execute
+while (( ip < code_len )); do
+    cmd=${code:$ip:1}
+    case "$cmd" in
+        ">") (( ptr++ )) ;;
+        "<") (( ptr-- )) ;;
+        "+") (( tape[$ptr] = (tape[$ptr] + 1) % 256 )) ;;
+        "-") (( tape[$ptr] = (tape[$ptr] - 1) % 256 )) ;;
+        ".") val=${tape[$ptr]:-0}; printf "\\$(printf '%03o' $val)" ;;
+        ",") read -r -N1 input && tape[$ptr]=$(printf '%d' "'$input") ;;
+        "[") 
+            if [ ${tape[$ptr]:-0} -eq 0 ]; then
+                ip=${jump[$ip]}
+            fi
+            ;;
+        "]") 
+            if [ ${tape[$ptr]:-0} -ne 0 ]; then
+                ip=${jump[$ip]}
+            fi
+            ;;
+    esac
+    (( ip++ ))
+done
+
+echo ""  # newline at end

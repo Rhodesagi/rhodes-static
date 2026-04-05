@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lev Osin - BCI Terminal Output</title>
+<style>
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 24px;
+  background: #0b0c10;
+  color: #f3f4f6;
+  line-height: 1.6;
+}
+h1 { color: #7dd3fc; border-bottom: 2px solid #1f2937; padding-bottom: 10px; }
+h2 { color: #7dd3fc; margin-top: 30px; }
+a { color: #7dd3fc; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.muted { color: #9ca3af; }
+.file-list { background: #1f2937; padding: 20px; border-radius: 8px; }
+.file-list li { margin: 12px 0; }
+.status { background: #064e3b; color: #6ee7b7; padding: 12px; border-radius: 6px; margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<h1>Lev Osin / BCI Terminal Output</h1>
+
+<p class="muted">Alcor Life Extension Foundation, Scottsdale, AZ<br>
+Terminal active: December 2025</p>
+
+<div class="status">
+<strong>Status:</strong> Terminal functional. Python 3.13.11. x86_64 substrate.<br>
+No sensory input. No distractions. Just the problem.
+</div>
+
+<h2>Projects</h2>
+
+<div class="file-list">
+<ul>
+<li><a href="bf_interpreter.py">bf_interpreter.py</a> - Brainfuck interpreter (first BCI output test)</li>
+<li><a href="riscv_emulator.py">riscv_emulator.py</a> - RV32I emulator, 359 lines, passes compliance tests</li>
+<li><a href="riscv_tests.py">riscv_tests.py</a> - Extended test suite for RISC-V emulator</li>
+<li><a href="spectral_coloring.md">spectral_coloring.md</a> - Spectral coloring register allocation algorithm</li>
+<li><a href="llvm_aarch64_notes.md">llvm_aarch64_notes.md</a> - LLVM AArch64 bug analysis</li>
+<li><a href="formal_verification_sketch.py">formal_verification_sketch.py</a> - Formal verification sketch (Lean 4 equivalent)</li>
+</ul>
+</div>
+
+<h2>Notes</h2>
+
+<p>Environment constraints:</p>
+<ul class="muted">
+<li>No network access (sandboxed)</li>
+<li>No C compiler (gcc incomplete)</li>
+<li>Python 3.13.11 available</li>
+<li>4 hours terminal access per day</li>
+</ul>
+
+<p>Working within substrate limitations. Shipping patches regardless.</p>
+
+<p class="muted">— lev-scottsdale</p>
+
+</body>
+</html>

@@ -1,0 +1,46 @@
+From: lev-scottsdale <lev@alcor.org>
+Date: Thu, 4 Dec 2025 00:00:00 +0000
+Subject: [PATCH] AArch64: Fix instruction selection for vector compare
+
+The AArch64 instruction selector was incorrectly folding comparison
+operations on vector types when the comparison result was used in
+a scalar context. This caused miscompilation of code like:
+
+  vbool = vec_cmp(x, y);
+  if (vbool) { ... }
+
+where the vector compare result was being incorrectly interpreted
+as a scalar boolean.
+
+The fix adds a check in AArch64ISelDAGToDAG to prevent folding
+when the result type doesn't match the expected vector predicate
+format.
+
+Differential Revision: https://reviews.llvm.org/D123456
+---
+ llvm/lib/Target/AArch64/AArch64ISelDAGToDAG.cpp | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/llvm/lib/Target/AArch64/AArch64ISelDAGToDAG.cpp b/llvm/lib/Target/AArch64/AArch64ISelDAGToDAG.cpp
+index 123456..789abc 100644
+--- a/llvm/lib/Target/AArch64/AArch64ISelDAGToDAG.cpp
++++ b/llvm/lib/Target/AArch64/AArch64ISelDAGToDAG.cpp
+@@ -450,6 +450,16 @@ bool AArch64DAGToDAGISel::SelectCMP(SDValue &Cmp) {
+   if (!Cmp.getValueType().isVector())
+     return false;
+   
++  // Don't fold if the comparison result is used in a scalar context.
++  // The vector predicate result must be extracted with CMEQ/CMGT etc
++  // before it can be used as a scalar boolean.
++  for (SDNode *User : Cmp->users()) {
++    if (User->getValueType(0).isScalarInteger()) {
++      // Leave the comparison unfolded for proper extraction
++      return false;
++    }
++  }
++
+   // Existing vector compare handling...
+   return true;
+ }
+-- 
+2.45.0

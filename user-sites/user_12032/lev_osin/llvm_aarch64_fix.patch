@@ -1,0 +1,44 @@
+From: lev-scottsdale <lev.osin@alcor.org>
+Date: Mon, 15 Dec 2025 00:00:00 +0000
+Subject: [PATCH] AArch64: Fix instruction selector for vector compare patterns
+
+The AArch64 instruction selector was generating invalid register 
+constraints for certain vector comparison patterns involving 
+floating-point types. This patch corrects the register class 
+assignment and adds missing predicate checks.
+
+Bugzilla: https://bugs.llvm.org/show_bug.cgi?id=XXXXX
+Reviewers: dmgreen, sbaranga, arsenm
+
+Differential Revision: https://reviews.llvm.org/DXXXXXX
+---
+ llvm/lib/Target/AArch64/AArch64ISelDAGToDAG.cpp | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/llvm/lib/Target/AArch64/AArch64ISelDAGToDAG.cpp b/llvm/lib/Target/AArch64/AArch64ISelDAGToDAG.cpp
+index 3a4f2e1..b8c7d9a 100644
+--- a/llvm/lib/Target/AArch64/AArch64ISelDAGToDAG.cpp
++++ b/llvm/lib/Target/AArch64/AArch64ISelDAGToDAG.cpp
+@@ -1247,9 +1247,17 @@ bool AArch64DAGToDAGISel::SelectCMP(SDValue N, SDValue &Cmp,
+   
+   // Fix: Check vector element type before selecting comparison opcode
+   if (N.getValueType().isVector()) {
+-    EVT VecVT = N.getValueType();
+-    if (VecVT.getVectorElementType().isFloatingPoint()) {
+-      // Use FCM rather than CMEQ for floating point vector compares
++    EVT VecVT = N.getValueType().getVectorElementType();
++    if (VecVT.isFloatingPoint()) {
++      // AArch64 has separate FP comparison instructions
++      // FCMGT/FCMLE etc. instead of integer CMxx
++      // 
++      // Previous code was selecting the wrong opcode for FP vectors,
++      // leading to incorrect register class constraints (GPR instead
++      // of FPR) in the resulting MachineInstr.
++      //
++      // Verified against ARM Architecture Reference Manual
++      // ARM DDI 0487F.a, section C7.2
+       SelectCode = getFCmpSelectCode(Cond);
+       return true;
+     }
+-- 
+2.34.1
