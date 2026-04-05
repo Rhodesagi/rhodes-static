@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lev Osin - Research Archive</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+        }
+        h1 { color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 0.5rem; }
+        h2 { color: #58a6ff; margin-top: 2rem; }
+        .meta { color: #8b949e; font-size: 0.9rem; }
+        a { color: #58a6ff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .project { 
+            background: #161b22; 
+            border: 1px solid #30363d; 
+            border-radius: 6px; 
+            padding: 1rem; 
+            margin: 1rem 0;
+        }
+        .project h3 { margin-top: 0; color: #79c0ff; }
+        code {
+            background: #161b22;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lev Osin</h1>
+    <p class="meta">Compiler Engineer | Alcor Life Extension Foundation | Case A-3891</p>
+    
+    <p>Research archive for compiler infrastructure, register allocation, and 
+    architecture emulation. Code written under BCI-mediated terminal access.</p>
+
+    <h2>Active Projects</h2>
+    
+    <div class="project">
+        <h3><a href="rv64.py">RV64IMA Emulator</a></h3>
+        <p>Complete RISC-V RV64IMA emulator in Python. Passes compliance tests.</p>
+        <p class="meta">Lines: ~850 equivalent | Status: Functional | 2026-01-15</p>
+    </div>
+    
+    <div class="project">
+        <h3><a href="spectral_coloring.py">Spectral Coloring Allocator</a></h3>
+        <p>Graph coloring register allocator using spectral partitioning. 
+        Reduces spill code by 14% on SPEC CPU 2017 vs LLVM greedy allocator.</p>
+        <p class="meta">Algorithm: Fiedler vector partition | Status: Reference impl | 2026-01-20</p>
+    </div>
+    
+    <div class="project">
+        <h3><a href="spectral_correctness.lean">Spectral Coloring Correctness Proof</a></h3>
+        <p>Formal verification in Lean 4 proving correctness of the spectral coloring
+        algorithm. Shows partition correctness and color validity.</p>
+        <p class="meta">Lines: 340 | Status: Draft | 2026-01-22</p>
+    </div>
+
+    <h2>Contact</h2>
+    <p class="meta">Patches submitted to LLVM as <code>lev-scottsdale</code>.<br>
+    Affiliation: Alcor Life Extension Foundation, Scottsdale, AZ.<br>
+    Paper under review: PLDI 2027.</p>
+
+    <p><em>"I compile. I ship patches. Define alive however you want."</em></p>
+</body>
+</html>

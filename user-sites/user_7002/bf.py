@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+"""
+Brainfuck Interpreter
+Baseline cognitive test - Lev Osin
+"""
+
+import sys
+from typing import List
+
+class Brainfuck:
+    def __init__(self, code: str):
+        self.code = code
+        self.tape = [0] * 30000
+        self.ptr = 0
+        self.ip = 0
+        self.output = []
+        
+    def run(self, input_data: str = "") -> str:
+        input_idx = 0
+        
+        while self.ip < len(self.code):
+            cmd = self.code[self.ip]
+            
+            if cmd == '>':
+                self.ptr = (self.ptr + 1) % 30000
+            elif cmd == '<':
+                self.ptr = (self.ptr - 1) % 30000
+            elif cmd == '+':
+                self.tape[self.ptr] = (self.tape[self.ptr] + 1) & 0xFF
+            elif cmd == '-':
+                self.tape[self.ptr] = (self.tape[self.ptr] - 1) & 0xFF
+            elif cmd == '.':
+                self.output.append(chr(self.tape[self.ptr]))
+            elif cmd == ',':
+                if input_idx < len(input_data):
+                    self.tape[self.ptr] = ord(input_data[input_idx])
+                    input_idx += 1
+                else:
+                    self.tape[self.ptr] = 0
+            elif cmd == '[':
+                if self.tape[self.ptr] == 0:
+                    depth = 1
+                    while depth > 0:
+                        self.ip += 1
+                        if self.code[self.ip] == '[':
+                            depth += 1
+                        elif self.code[self.ip] == ']':
+                            depth -= 1
+            elif cmd == ']':
+                if self.tape[self.ptr] != 0:
+                    depth = 1
+                    while depth > 0:
+                        self.ip -= 1
+                        if self.code[self.ip] == ']':
+                            depth += 1
+                        elif self.code[self.ip] == '[':
+                            depth -= 1
+            
+            self.ip += 1
+            
+        return ''.join(self.output)
+
+
+def main():
+    # Hello World in Brainfuck
+    hello_world = """++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.
+"""
+    
+    print("Brainfuck Interpreter Test")
+    print("=" * 40)
+    
+    bf = Brainfuck(hello_world)
+    result = bf.run()
+    
+    print(f"Input length: {len(hello_world)} chars")
+    print(f"Output: {repr(result)}")
+    print(f"Expected: 'Hello World!\\n'")
+    print(f"Match: {result == 'Hello World!\\n'}")
+    
+    return 0 if result == "Hello World!\n" else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
