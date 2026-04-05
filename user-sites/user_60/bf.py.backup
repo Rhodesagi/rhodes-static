@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+import sys
+
+def brainfuck(program):
+    tape = [0] * 30000
+    ptr = 0
+    pc = 0
+    output = []
+    
+    while pc < len(program):
+        cmd = program[pc]
+        if cmd == '>':
+            ptr += 1
+        elif cmd == '<':
+            ptr -= 1
+        elif cmd == '+':
+            tape[ptr] = (tape[ptr] + 1) % 256
+        elif cmd == '-':
+            tape[ptr] = (tape[ptr] - 1) % 256
+        elif cmd == '.':
+            output.append(chr(tape[ptr]))
+        elif cmd == ',':
+            tape[ptr] = ord(sys.stdin.read(1)) if not sys.stdin.isatty() else 0
+        elif cmd == '[':
+            if tape[ptr] == 0:
+                depth = 1
+                pc += 1
+                while depth > 0 and pc < len(program):
+                    if program[pc] == '[': depth += 1
+                    if program[pc] == ']': depth -= 1
+                    pc += 1
+                pc -= 1
+        elif cmd == ']':
+            if tape[ptr] != 0:
+                depth = 1
+                pc -= 1
+                while depth > 0 and pc >= 0:
+                    if program[pc] == ']': depth += 1
+                    if program[pc] == '[': depth -= 1
+                    pc -= 1
+        pc += 1
+    
+    return ''.join(output)
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print(f"Usage: {sys.argv[0]} <brainfuck program>")
+        sys.exit(1)
+    
+    result = brainfuck(sys.argv[1])
+    print(result)

@@ -1,0 +1,54 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MEM_SIZE 30000
+
+int main(int argc, char *argv[]) {
+    char *mem = calloc(MEM_SIZE, 1);
+    char *p = mem;
+    int pc = 0;
+    
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s <brainfuck program>\n", argv[0]);
+        return 1;
+    }
+    
+    char *code = argv[1];
+    int len = strlen(code);
+    
+    while (pc < len) {
+        switch (code[pc]) {
+            case '>': p++; break;
+            case '<': p--; break;
+            case '+': (*p)++; break;
+            case '-': (*p)--; break;
+            case '.': putchar(*p); break;
+            case ',': *p = getchar(); break;
+            case '[':
+                if (*p == 0) {
+                    int depth = 1;
+                    while (depth > 0) {
+                        pc++;
+                        if (code[pc] == '[') depth++;
+                        if (code[pc] == ']') depth--;
+                    }
+                }
+                break;
+            case ']':
+                if (*p != 0) {
+                    int depth = 1;
+                    while (depth > 0) {
+                        pc--;
+                        if (code[pc] == ']') depth++;
+                        if (code[pc] == '[') depth--;
+                    }
+                }
+                break;
+        }
+        pc++;
+    }
+    
+    free(mem);
+    return 0;
+}
