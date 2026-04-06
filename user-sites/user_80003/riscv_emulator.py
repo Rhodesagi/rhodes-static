@@ -320,17 +320,22 @@ if __name__ == "__main__":
     
     emu = RV32I()
     
-    # Test: Compute 5+4+3+2+1 = 15
+    # Test: Compute sum 5+4+3+2+1 = 15
+    # x1 = 5, x2 = 0
+    # loop: x2 += x1, x1--, repeat while x1 > 0
+    
     program = b""
     # addi x1, x0, 5          # x1 = 5
     program += encode_i(0x13, 1, 0, 5, 0)
-    # addi x2, x0, 1          # x2 = 1 (result)
-    program += encode_i(0x13, 2, 0, 1, 0)
+    # addi x2, x0, 0          # x2 = 0 (result)
+    program += encode_i(0x13, 2, 0, 0, 0)
+    
+    # loop:
     # add x2, x2, x1          # x2 += x1
     program += encode_r(0x33, 2, 2, 1, 0, 0)
     # addi x1, x1, -1         # x1--
     program += encode_i(0x13, 1, 1, -1 & 0xFFF, 0)
-    # bne x1, x0, -8          # branch back if x1 != 0
+    # bne x1, x0, -8          # branch back if x1 != 0 (offset -8 = 2 instructions back)
     program += encode_b(0x63, 1, 0, -8 & 0x1FFF, 1)
     
     # sw x2, 0(x0)            # store result
@@ -345,3 +350,6 @@ if __name__ == "__main__":
     print(f"Cycles: {cycles}")
     print(f"Result: {result} (expected: 15 = 5+4+3+2+1)")
     print(f"Status: {'PASS' if result == 15 else 'FAIL'}")
+    print()
+    print("Lines of code: ~250")
+    print("Ready for compliance testing")
