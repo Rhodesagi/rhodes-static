@@ -1744,10 +1744,17 @@ function showDownloads() {
 
                     // Timer logic
                     let durationLabel = '';
+                    let isLiveTimer = false;
                     if (status === 'starting' || status === 'running') {
                         if (!window._toolTimers.has(toolKey)) {
                             window._toolTimers.set(toolKey, Date.now());
                             if (typeof trackToolStart === 'function') trackToolStart(toolKey);
+                        }
+                        // Show live elapsed time while running
+                        const startTime = window._toolTimers.get(toolKey);
+                        if (startTime) {
+                            durationLabel = formatDuration(Math.max(0, Date.now() - startTime));
+                            isLiveTimer = true;
                         }
                     } else if (status === 'complete') {
                         const serverDuration = Number(tool.duration_ms) || 0;
@@ -1774,7 +1781,29 @@ function showDownloads() {
                     dotSpan.onclick = function() { wrapperDiv.classList.toggle('tool-dot-expanded'); };
                     dotSpan.innerHTML = '<span class="tool-dot-indicator">' + indicator + '</span>' +
                         '<span class="tool-dot-name">' + escapeHtml(dotLabel) + '</span>' +
-                        (durationLabel ? '<span class="tool-dot-duration">' + durationLabel + '</span>' : '');
+                        '<span class="tool-dot-duration">' + (durationLabel || '') + '</span>';
+
+                    // Live timer: update every second while tool is running
+                    if (isLiveTimer) {
+                        const _liveKey = toolKey;
+                        const _liveDurEl = dotSpan.querySelector('.tool-dot-duration');
+                        if (_liveDurEl) {
+                            const _liveInterval = setInterval(function() {
+                                const _st = window._toolTimers.get(_liveKey);
+                                if (!_st || !_liveDurEl.isConnected) { clearInterval(_liveInterval); return; }
+                                _liveDurEl.textContent = formatDuration(Math.max(0, Date.now() - _st));
+                            }, 1000);
+                            // Store interval so it can be cleared on complete
+                            if (!window._toolLiveIntervals) window._toolLiveIntervals = new Map();
+                            window._toolLiveIntervals.set(_liveKey, _liveInterval);
+                        }
+                    } else if (status === 'complete') {
+                        // Clear live interval if it was running
+                        if (window._toolLiveIntervals && window._toolLiveIntervals.has(toolKey)) {
+                            clearInterval(window._toolLiveIntervals.get(toolKey));
+                            window._toolLiveIntervals.delete(toolKey);
+                        }
+                    }
 
                     const detDiv = document.createElement('div');
                     detDiv.className = 'tool-dot-details';

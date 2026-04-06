@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rhodes</title><style>
+*{margin:0;box-sizing:border-box}body{background:#0a0a0a;color:#ccc;font:13px/1.4 monospace;height:100vh;display:flex;justify-content:center}
+#w{width:100%;max-width:700px;display:flex;flex-direction:column;height:100%}
+#c{flex:1;overflow:auto;padding:12px 8px}
+#b{padding:8px;border-top:1px solid #333;display:flex;gap:6px}
+input{flex:1;background:#111;color:#0fa;border:1px solid #333;padding:8px;font:inherit}
+button{background:#0fa;color:#000;border:0;padding:8px 12px;font:inherit;font-weight:700;cursor:pointer}
+.u,.r{padding:4px 0}.u{color:#68f}.r{color:#0fa}
+</style><div id="w"><div id="c"></div><form id="b"><input id="t" placeholder=">" autofocus><button>▶</button></form></div><script>
+const c=document.getElementById("c"),t=document.getElementById("t"),W=(location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws";
+let w,ok,buf="",el;const U=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
+const A=(k,s)=>{const d=document.createElement("div");d.className=k;d.textContent=s;c.appendChild(d);c.scrollTop=c.scrollHeight;return d};
+function C(){try{w=new WebSocket(W)}catch{return}
+w.onopen=()=>w.send(JSON.stringify({msg_type:"auth_request",msg_id:U(),payload:{client_id:"1line",tab_id:U(),token:"",user_token:"",resume_session:""}}));
+w.onclose=()=>setTimeout(C,2e3);
+w.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return}const p=m.payload||{};
+if(m.msg_type==="auth_response"){ok=p.success;return}
+if(m.msg_type==="ai_message_chunk"){if(!p.content)return;if(!el){buf="";el=A("r","")}buf+=p.content;el.textContent=buf;c.scrollTop=c.scrollHeight;return}
+if(m.msg_type==="ai_message"){el=null;const x=(p.content||"").trim();if(x&&!buf)A("r",x);buf="";return}
+if(m.msg_type==="guest_status"&&p.message)A("r",p.message)}}
+C();
+document.getElementById("b").onsubmit=e=>{e.preventDefault();const v=t.value.trim();if(!v)return;A("u",v);t.value="";
+if(!w||w.readyState!==1||!ok)return;w.send(JSON.stringify({msg_type:"user_message",msg_id:U(),payload:{content:v,stream:true}}));t.focus()}
+</script>
