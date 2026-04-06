@@ -427,6 +427,16 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
         const ws = getWs();
         ws.send(JSON.stringify(messageObj));
         showLoading();
+
+        // Update URL: replace ?new=1 with ?resume=<session_id> on first message
+        try {
+            const u = new URL(window.location.href);
+            if (u.searchParams.has('new') && typeof RHODES_ID === 'string' && RHODES_ID) {
+                u.searchParams.delete('new');
+                u.searchParams.set('resume', RHODES_ID);
+                window.history.replaceState({}, '', u.toString());
+            }
+        } catch (e) {}
     }
 
     window.rhodesSendHelpers = {
