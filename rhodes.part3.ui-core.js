@@ -1752,9 +1752,10 @@ function showDownloads() {
                     } else if (status === 'complete') {
                         const serverDuration = Number(tool.duration_ms) || 0;
                         const startTime = window._toolTimers.get(toolKey);
-                        const durationMs = startTime ? Math.max(0, Date.now() - startTime) : serverDuration;
+                        const clientDuration = startTime ? Math.max(0, Date.now() - startTime) : 0;
+                        const durationMs = serverDuration > 0 ? serverDuration : clientDuration;
                         durationLabel = durationMs > 0 ? formatDuration(durationMs) : '';
-                        if (typeof trackToolComplete === 'function') trackToolComplete(toolKey);
+                        if (typeof trackToolComplete === 'function') trackToolComplete(toolKey, serverDuration);
                     }
 
                     // Build compact dot indicator

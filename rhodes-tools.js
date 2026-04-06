@@ -74,12 +74,17 @@
             updateToolTotalsDisplay();
         }
 
-        function trackToolComplete(toolKey) {
+        function trackToolComplete(toolKey, serverDurationMs) {
             if (window._toolTotals.activeTools.has(toolKey)) {
                 window._toolTotals.activeTools.delete(toolKey);
-                const startTime = window._toolTotals.startTimes.get(toolKey) || window._toolTimers.get(toolKey);
-                if (startTime) {
-                    window._toolTotals.elapsedMs += Math.max(0, Date.now() - startTime);
+                const srvMs = Number(serverDurationMs) || 0;
+                if (srvMs > 0) {
+                    window._toolTotals.elapsedMs += srvMs;
+                } else {
+                    const startTime = window._toolTotals.startTimes.get(toolKey) || window._toolTimers.get(toolKey);
+                    if (startTime) {
+                        window._toolTotals.elapsedMs += Math.max(0, Date.now() - startTime);
+                    }
                 }
             }
             window._toolTotals.startTimes.delete(toolKey);

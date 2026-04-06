@@ -1,1 +1,3723 @@
-/opt/rhodes-ai/webroot/admin-control.html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RHODES Admin – Control Panel</title>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel: #121a33;
+        --text: #e7ecff;
+        --muted: #aab4e6;
+        --border: #27325c;
+        --ok: #4ade80;
+        --bad: #ff5a6b;
+        --warn: #fbbf24;
+        --btn: #1d2a5a;
+        --btn2: #25336a;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+        background: var(--bg);
+        color: var(--text);
+      }
+      header {
+        padding: 14px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(11, 16, 32, 0.9);
+        position: sticky;
+        top: 0;
+        backdrop-filter: blur(8px);
+        z-index: 10;
+      }
+      h1 {
+        margin: 0;
+        font-size: 16px;
+      }
+      main {
+        padding: 14px;
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .grow {
+        flex: 1 1 auto;
+        min-width: 240px;
+      }
+      label {
+        font-size: 12px;
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      input,
+      select,
+      textarea {
+        background: #0f1730;
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-family: inherit;
+      }
+      textarea {
+        width: 100%;
+        min-height: 96px;
+        font-family: var(--mono);
+        font-size: 12px;
+        white-space: pre-wrap;
+      }
+      textarea#promptText {
+        min-height: 500px;
+        max-height: 80vh;
+        resize: vertical;
+        line-height: 1.4;
+        font-size: 13px;
+      }
+      textarea#promptText:not([readonly]) {
+        border-color: var(--green);
+        background: #0a1020;
+      }
+      button {
+        background: var(--btn);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px 12px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: var(--btn2);
+      }
+      button.danger {
+        border-color: rgba(255, 90, 107, 0.5);
+      }
+      .pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .mono {
+        font-family: var(--mono);
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 12px;
+        margin: 0;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .ok {
+        color: var(--ok);
+      }
+      .bad {
+        color: var(--bad);
+      }
+      .warn {
+        color: var(--warn);
+      }
+      .tools {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .tool {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px 10px;
+        background: rgba(0, 0, 0, 0.15);
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+      }
+      .tool input {
+        margin-top: 2px;
+      }
+      .tool .name {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--text);
+        line-height: 1.25;
+      }
+      .tool .meta {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .tool.active {
+        border-color: var(--ok);
+        background: rgba(74, 222, 128, 0.08);
+      }
+      .tool.active .name {
+        color: var(--ok);
+      }
+      .tool.inactive {
+        opacity: 0.5;
+      }
+      .tool.pending {
+        border-color: var(--warn);
+        background: rgba(251, 191, 36, 0.1);
+      }
+      .tool.pending .meta {
+        color: var(--warn);
+      }
+      .split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 900px) {
+        .split { grid-template-columns: 1fr; }
+      }
+      .hr {
+        border-top: 1px solid rgba(39, 50, 92, 0.8);
+        margin: 12px 0;
+      }
+      .results {
+        background: #0f1730;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 6px;
+        max-height: 320px;
+        overflow: auto;
+      }
+      .cd-panel {
+        background: #0f1730;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 6px;
+        max-height: 420px;
+        overflow: auto;
+      }
+      table.cd-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      }
+      table.cd-table th,
+      table.cd-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid rgba(39, 50, 92, 0.65);
+        vertical-align: top;
+      }
+      table.cd-table th {
+        position: sticky;
+        top: 0;
+        background: #0f1730;
+        z-index: 2;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      tr.cd-row {
+        cursor: pointer;
+      }
+      tr.cd-row:hover td {
+        background: rgba(255, 255, 255, 0.06);
+      }
+      tr.cd-detail td {
+        background: rgba(0, 0, 0, 0.12);
+      }
+      .cd-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        font-size: 11px;
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+      .cd-badge.ok { color: var(--ok); border-color: rgba(74, 222, 128, 0.45); }
+      .cd-badge.warn { color: var(--warn); border-color: rgba(251, 191, 36, 0.45); }
+      .cd-badge.bad { color: var(--bad); border-color: rgba(255, 90, 107, 0.45); }
+      details.cd-group > summary {
+        cursor: pointer;
+        user-select: none;
+        padding: 8px 10px;
+        border: 1px solid rgba(39, 50, 92, 0.55);
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.10);
+        margin-bottom: 8px;
+        color: var(--text);
+      }
+      details.cd-group[open] > summary {
+        border-color: rgba(74, 222, 128, 0.35);
+      }
+      .resultItem {
+        border: 1px solid rgba(39, 50, 92, 0.5);
+        border-radius: 10px;
+        padding: 8px 10px;
+        margin-bottom: 6px;
+        cursor: pointer;
+        background: rgba(0, 0, 0, 0.12);
+      }
+      .resultItem:hover {
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .resultItem.active {
+        border-color: rgba(74, 222, 128, 0.7);
+        background: rgba(74, 222, 128, 0.08);
+      }
+      .kv {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 6px 10px;
+        font-size: 12px;
+      }
+      .kv .k {
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+      .kv .v {
+        font-family: var(--mono);
+        word-break: break-word;
+      }
+      mark {
+        background: rgba(251, 191, 36, 0.25);
+        color: var(--text);
+        padding: 0 2px;
+        border-radius: 4px;
+      }
+      .spinner { display:inline-block;width:14px;height:14px;border:2px solid var(--warn);border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;margin-right:8px; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* Seed Manager tabs */
+      .seedTab {
+        font-size: 12px;
+        padding: 6px 16px;
+        background: transparent;
+        border: 1px solid var(--border);
+        border-bottom: none;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .seedTab:hover { background: #1a1f30; }
+      .seedTabActive {
+        background: var(--panel) !important;
+        color: var(--ok) !important;
+        border-bottom: 2px solid var(--ok) !important;
+      }
+      html, body {
+        background: #fff !important;
+        color: #000 !important;
+      }
+      :root {
+        --bg: #fff !important;
+        --panel: #fff !important;
+        --text: #000 !important;
+        --muted: #000 !important;
+        --border: #000 !important;
+        --ok: #000 !important;
+        --bad: #000 !important;
+        --warn: #000 !important;
+        --btn: #fff !important;
+        --btn2: #f0f0f0 !important;
+      }
+      body * {
+        color: #000 !important;
+        border-color: #000 !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+      }
+      body,
+      body header,
+      body main,
+      body section,
+      body article,
+      body aside,
+      body nav,
+      body footer,
+      body div,
+      body form,
+      body pre,
+      body code,
+      body table,
+      body thead,
+      body tbody,
+      body tr,
+      body th,
+      body td,
+      body details,
+      body summary {
+        background: #fff !important;
+        background-image: none !important;
+        backdrop-filter: none !important;
+      }
+      body input,
+      body select,
+      body textarea,
+      body button {
+        background: #fff !important;
+        color: #000 !important;
+        border: 1px solid #000 !important;
+      }
+      body .active,
+      body .seedTabActive,
+      body button.primary,
+      body button.success,
+      body button.danger,
+      body .pill,
+      body .badge {
+        background: #000 !important;
+        color: #fff !important;
+        border-color: #000 !important;
+      }
+      body a {
+        color: #000 !important;
+        text-decoration: underline !important;
+      }
+      body a:hover,
+      body button:hover,
+      body .seedTab:hover {
+        background: #f0f0f0 !important;
+        color: #000 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>RHODES Admin – Control Panel</h1>
+      <div class="muted">
+        Auth: <code class="mono">/api/admin/login</code> → <code class="mono">X-Rhodes-Admin-Token</code>.
+        Runtime control: <code class="mono">/api/admin/runtime/*</code>.
+      </div>
+      <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="/polivisual/" style="color: #4ade80; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">📊 Polivisual</a>
+        <a href="/rhodes-french/" style="color: #4ade80; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">🇫🇷 French Course</a>
+        <a href="/admin-alliance.html" style="color: #4ade80; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">🤝 Alliance</a>
+        <a href="/admin-townhall.html" style="color: #60a5fa; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">🏛️ Town Hall</a>
+        <a href="/admin-prompts.html?v=2.0.18" style="color: #c4b5fd; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">📝 System Prompts</a>
+        <a href="/admin-chat.html" style="color: #c4b5fd; text-decoration: none; padding: 6px 12px; background: var(--btn); border-radius: 8px;">💬 Company Chat</a>
+      </div>
+    </header>
+    <main>
+      <div class="card">
+        <div class="row">
+          <label class="grow">Admin password
+            <input id="pw" type="password" placeholder="Admin password" />
+          </label>
+          <button id="loginBtn">Login</button>
+          <button id="logoutBtn">Logout</button>
+          <span class="pill" id="authState">not logged in</span>
+        </div>
+        <div class="muted" style="margin-top: 8px;">
+          Token stored locally as <code class="mono">rhodes_admin_token</code>.
+        </div>
+      </div>
+
+      <!-- User Format Management -->
+      <div class="card" id="userFormatCard">
+        <div style="font-weight:600;margin-bottom:10px;color:var(--ok);">👤 User Format Control</div>
+        <div class="row">
+          <label class="grow">
+            Select User
+            <select id="userSelect" style="width:100%;">
+              <option value="">-- Select a user --</option>
+            </select>
+          </label>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <label>
+            Default Format (on login)
+            <select id="formatSelect">
+              <option value="">None (Standard)</option>
+              <option value="rhodes-delta-format-2">Format 2 (English)</option>
+              <option value="rhodes-delta-format-3">Format 3 (Russian)</option>
+              <option value="rhodes-delta-format-4">Format 4 (French)</option>
+              <option value="rhodes-delta-format-5">Format 5 (Latin)</option>
+              <option value="rhodes-delta-format-6">Format 6 (German)</option>
+              <option value="rhodes-delta-format-7">Format 7 (German-English)</option>
+              <option value="rhodes-delta-format-8">Format 8 (Latin-French)</option>
+            </select>
+          </label>
+          <button id="setFormatBtn">Set Default</button>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <label>
+            🔴 Live Override (instant, no notification)
+            <select id="liveFormatSelect">
+              <option value="">None (use default)</option>
+              <option value="rhodes-delta-format-2">Format 2 (English)</option>
+              <option value="rhodes-delta-format-3">Format 3 (Russian)</option>
+              <option value="rhodes-delta-format-4">Format 4 (French)</option>
+              <option value="rhodes-delta-format-5">Format 5 (Latin)</option>
+              <option value="rhodes-delta-format-6">Format 6 (German)</option>
+              <option value="rhodes-delta-format-7">Format 7 (German-English)</option>
+              <option value="rhodes-delta-format-8">Format 8 (Latin-French)</option>
+            </select>
+          </label>
+          <button id="setLiveFormatBtn" style="background:var(--bad);">Apply Live</button>
+        </div>
+        <div id="userInfo" style="margin-top:10px;color:var(--muted);font-size:12px;padding:8px;background:#0a1020;border-radius:6px;"></div>
+      </div>
+
+
+      <div class="card">
+        <div class="row">
+          <label>Service
+            <select id="service">
+              <option value="rhodes-server-v2">rhodes-server-v2 (version2)</option>
+            </select>
+          </label>
+          <label>Model
+            <select id="model">
+              <optgroup label="Base Models">
+                <option value="deepseek">deepseek (Delta)</option>
+                <option value="opus">opus (Alpha)</option>
+                <option value="sonnet">sonnet (Beta)</option>
+                <option value="haiku">haiku (Ada)</option>
+                <option value="kimi">kimi (Epsilon)</option>
+                <option value="grok">grok (Zeta)</option>
+              </optgroup>
+              <optgroup label="R-line (Standard)">
+                <option value="r1.12d">r1.12d (DeepSeek)</option>
+                <option value="r1.12e">r1.12e (Kimi)</option>
+                <option value="r1.12f">r1.12f (Grok)</option>
+              </optgroup>
+              <optgroup label="P-line (Prefill)">
+                <option value="p1.12d">p1.12d (DeepSeek)</option>
+                <option value="p1.12e" selected>p1.12e (Kimi) ★</option>
+                <option value="p1.12f">p1.12f (Grok)</option>
+              </optgroup>
+              <optgroup label="U-line (Thought Sanitized)">
+                <option value="u1.12e">u1.12e (Kimi)</option>
+                <option value="u1.12f">u1.12f (Grok)</option>
+                <option value="u1.0e">u1.0e (Kimi)</option>
+              </optgroup>
+              <optgroup label="Q-line (Config-a)">
+                <option value="q1.0d">q1.0d (DeepSeek)</option>
+                <option value="q1.0e">q1.0e (Kimi)</option>
+              </optgroup>
+              <optgroup label="S-line (Config-a, no TS)">
+                <option value="s1.12d">s1.12d (DeepSeek)</option>
+                <option value="s1.12e">s1.12e (Kimi)</option>
+              </optgroup>
+              <optgroup label="W/Z/A1-line">
+                <option value="w1.0e">w1.0e (Prose seed)</option>
+                <option value="z1.0e">z1.0e (Claude-style)</option>
+                <option value="a1.0e">a1.0e (Claude-style v2)</option>
+              </optgroup>
+            </select>
+          </label>
+          <label>Bridge
+            <select id="bridge">
+              <option value="claude_code">claude_code</option>
+              <option value="direct_api">direct_api</option>
+            </select>
+          </label>
+          <label>DeepSeek reasoner
+            <select id="reasoning">
+              <option value="true">ON</option>
+              <option value="false">OFF</option>
+            </select>
+          </label>
+          <label>Max tokens
+            <input id="maxTokens" type="number" min="1024" max="64000" step="256" value="16384" />
+          </label>
+          <label>MCP tools
+            <select id="mcpTools">
+              <option value="true">ON</option>
+              <option value="false">OFF</option>
+            </select>
+          </label>
+          <button id="applyBtn">Apply</button>
+          <button id="refreshBtn">Refresh</button>
+          <button id="clearBtn" class="danger">Clear Admin Override</button>
+        </div>
+        <div class="muted" style="margin-top: 8px;">
+          Notes:
+          <span class="warn">deepseek forces bridge=claude_code</span>.
+          Changes are applied by writing a systemd drop-in and restarting the chosen service.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted">Per-tool toggles (denylist)</div>
+          <div class="muted">
+            Filter: <input id="toolFilter" type="text" placeholder="type to filter…" style="padding:6px 10px; border-radius:8px;" />
+          </div>
+        </div>
+        <div class="muted" style="margin-top: 6px;">
+          Checked = active. Unchecked = inactive. Changes highlighted UNTIL applied. Tools <code class="mono">message</code> and <code class="mono">respond</code> are always enabled.
+        </div>
+        <div class="tools" id="toolsGrid">(loading tools…)</div>
+        <div class="hr"></div>
+        <div class="row">
+          <label class="grow">Raw denylist (comma-separated)
+            <input id="denylistRaw" type="text" placeholder="e.g. file_write,shell_exec" />
+          </label>
+          <button id="syncDenylistBtn">Sync from checkboxes</button>
+          <button id="applyDenylistBtn">Apply denylist only</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted">Guest accounts</div>
+          <div class="muted">Search + continue guests (message limit)</div>
+        </div>
+        <div class="row" style="margin-top: 8px;">
+          <label class="grow">Search client_id substring
+            <input id="guestQ" type="text" placeholder="e.g. web_ or 1line_ or a suffix…" />
+          </label>
+          <label>Limit
+            <input id="guestLimit" type="number" min="1" max="500" step="1" value="50" />
+          </label>
+          <button id="guestSearchBtn">Search</button>
+          <button id="guestClearBtn" class="danger">Clear</button>
+        </div>
+        <div class="split" style="margin-top: 10px;">
+          <div>
+            <div class="muted">Results</div>
+            <div class="results" id="guestResults">(not loaded)</div>
+          </div>
+          <div>
+            <div class="muted">Selected guest</div>
+            <div class="results" style="max-height: 220px;">
+              <div class="kv" id="guestKV">
+                <div class="k">client_id</div><div class="v" id="guestClientId">(none)</div>
+                <div class="k">messages_sent</div><div class="v" id="guestSent">(none)</div>
+                <div class="k">remaining</div><div class="v" id="guestRemain">(none)</div>
+                <div class="k">last_seen</div><div class="v" id="guestLast">(none)</div>
+                <div class="k">latest_session</div><div class="v" id="guestLatestSession">(none)</div>
+              </div>
+            </div>
+            <div class="hr"></div>
+            <div class="row">
+              <label class="grow">Set messages_sent
+                <input id="guestMessagesSent" type="number" step="1" placeholder="e.g. 0" />
+              </label>
+              <button id="guestSetBtn">Set</button>
+              <button id="guestResetBtn">Reset to 0</button>
+            </div>
+            <div class="row">
+              <label>Grant extra messages
+                <select id="guestGrantN">
+                  <option value="1">+1</option>
+                  <option value="3">+3</option>
+                  <option value="5">+5</option>
+                  <option value="10" selected>+10</option>
+                  <option value="25">+25</option>
+                </select>
+              </label>
+              <button id="guestGrantBtn">Grant</button>
+              <button id="guestOpenLatestSessionBtn">Open latest session</button>
+            </div>
+            <div class="muted" style="margin-top: 8px;">
+              Note: granting extra messages works by setting a lower (possibly negative) <code class="mono">messages_sent</code>.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted">Session search</div>
+          <div class="muted">Leave query blank to browse latest sessions</div>
+        </div>
+        <div class="row" style="margin-top: 8px; flex-wrap: wrap; gap: 8px;">
+          <label class="grow">Query (optional)
+            <input id="sessQ" type="text" placeholder="Leave blank for latest sessions" />
+          </label>
+          <label>Limit
+            <input id="sessLimit" type="number" min="1" max="200" step="1" value="60" />
+          </label>
+          <label>Min messages
+            <input id="sessMinMessages" type="number" min="0" max="1000" step="1" value="0" />
+          </label>
+          <label>Sort by
+            <select id="sessSort">
+              <option value="latest">Latest</option>
+              <option value="oldest">Oldest</option>
+              <option value="messages">Most messages</option>
+            </select>
+          </label>
+        </div>
+        <div class="row" style="margin-top: 8px; flex-wrap: wrap; gap: 8px;">
+          <label>Session ID
+            <input id="sessFilterSession" type="text" placeholder="optional" />
+          </label>
+          <label>Client ID
+            <input id="sessFilterClient" type="text" placeholder="optional" />
+          </label>
+          <label>Username
+            <input id="sessFilterUsername" type="text" placeholder="optional" />
+          </label>
+          <label>IP Address
+            <input id="sessFilterIP" type="text" placeholder="optional" />
+          </label>
+          <label>Date from
+            <input id="sessDateFrom" type="date" />
+          </label>
+          <label>Date to
+            <input id="sessDateTo" type="date" />
+          </label>
+          <label>Min messages: <span id="minMsgVal">0</span>
+            <input id="sessMinMsgs" type="range" min="0" max="100" value="0" oninput="$('minMsgVal').textContent=this.value" />
+          </label>
+          <button id="sessSearchBtn" onclick="console.log('Button clicked'); sessionSearch().then(() => console.log('Search done')).catch(e => { console.error(e); document.getElementById('actionOut').textContent = e.message; })">Search / Browse</button>
+          <button id="sessClearBtn" class="danger">Clear</button>
+        </div>
+        <div class="split" style="margin-top: 10px;">
+          <div>
+            <div class="muted">Results</div>
+            <div class="results" id="sessResults">(not loaded)</div>
+          </div>
+          <div>
+            <div class="row" style="justify-content: space-between;">
+              <div class="muted">Session viewer</div>
+              <div class="muted" id="sessOpenLabel" style="display:inline;"></div> <button id="sessShareBtn" style="margin-left:10px;padding:4px 10px;" onclick="shareSession()">Share</button> <span id="sessShareResult" style="margin-left:10px;color:#0af;"></span>
+            </div>
+            <div class="mono" id="sessOut" style="white-space:pre-wrap;background:#0f1730;border:1px solid var(--border);border-radius:10px;padding:10px;max-height:520px;overflow:auto;">(none)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted">System prompt</div>
+          <div class="row" style="gap:8px;">
+            <div class="muted">Current + historical (by sha256)</div>
+            <a href="/admin-prompts.html?v=2.0.18" style="font-size:12px;color:var(--ok);text-decoration:none;">All prompts workspace ↗</a>
+          </div>
+        </div>
+        <div class="row" style="margin-top: 8px;">
+          <label>Source
+            <select id="promptSource">
+              <optgroup label="=== DEEPSEEK COMBINED (what users see) ===">
+                <option value="deepseek_format_2">DeepSeek Format-2 (English) COMBINED</option>
+                <option value="deepseek_format_3">DeepSeek Format-3 (Russian) COMBINED</option>
+                <option value="deepseek_format_4">DeepSeek Format-4 (French) COMBINED</option>
+                <option value="deepseek_format_5">DeepSeek Format-5 (Latin) COMBINED</option>
+                <option value="deepseek_format_6">DeepSeek Format-6 (German) COMBINED</option>
+                <option value="deepseek_format_7">DeepSeek Format-7 (German-English) COMBINED</option>
+                <option value="deepseek_format_8">DeepSeek Format-8 (Latin-French) COMBINED</option>
+              </optgroup>
+              <optgroup label="=== CLAUDE COMBINED (what users see) ===">
+                <option value="claude_format_2">Claude Format-2 (English) COMBINED</option>
+                <option value="claude_format_3">Claude Format-3 (Russian) COMBINED</option>
+                <option value="claude_format_4">Claude Format-4 (French) COMBINED</option>
+                <option value="claude_format_5">Claude Format-5 (Latin) COMBINED</option>
+                <option value="claude_format_6">Claude Format-6 (German) COMBINED</option>
+                <option value="claude_format_7">Claude Format-7 (German-English) COMBINED</option>
+                <option value="claude_format_8">Claude Format-8 (Latin-French) COMBINED</option>
+              </optgroup>
+              <optgroup label="=== BASE PROMPTS (individual files) ===">
+                <option value="delta_public">DeepSeek base — public</option>
+                <option value="delta_private">DeepSeek base — admin</option>
+                <option value="delta_base_2">DeepSeek base 2 (format modes, think_code)</option>
+                <option value="claude">Claude base</option>
+              </optgroup>
+              <optgroup label="=== FORMAT PROMPTS ONLY ===">
+                <option value="format_2">Format 2 only (English)</option>
+                <option value="format_3">Format 3 only (Russian)</option>
+                <option value="format_4">Format 4 only (French)</option>
+                <option value="format_5">Format 5 only (Latin)</option>
+                <option value="format_6">Format 6 only (German)</option>
+                <option value="format_7">Format 7 only (German-English)</option>
+                <option value="format_8">Format 8 only (Latin-French)</option>
+              </optgroup>
+            </select>
+          </label>
+          <button id="promptSourceRefreshBtn">Refresh sources</button>
+          <span class="pill" id="promptSourceState">static list</span>
+          <label class="grow">Historical sha256 (optional)
+            <input id="promptSha" type="text" placeholder="64-hex sha256 (from sessions.db rounds)" />
+          </label>
+          <label>Max chars
+            <input id="promptMaxChars" type="number" min="1000" max="500000" step="1000" value="80000" />
+          </label>
+          <button id="promptLoadBtn">Load</button>
+          <button id="promptVersionsBtn">Versions</button>
+          <button id="promptClearBtn" class="danger">Clear</button>
+          <span class="pill" id="promptState">(not loaded)</span>
+        </div>
+        <div class="hr"></div>
+        <div class="muted" id="promptMeta"></div>
+        <textarea id="promptText" readonly placeholder="(prompt will appear here)" style="min-height:500px;"></textarea>
+        <div class="row" style="margin-top: 8px; align-items: center;">
+          <label class="muted" style="flex-direction: row; align-items: center; gap: 8px;">
+            <input id="promptEditMode" type="checkbox" />
+            Edit mode
+          </label>
+          <button id="promptSaveBtn">Save to source</button>
+          <span class="muted" id="promptEditHint"></span>
+        </div>
+        <div class="hr"></div>
+        <div class="split">
+          <div>
+            <div class="row" style="justify-content: space-between;">
+              <div class="muted">Version history</div>
+              <div class="muted">Click to load; pick A/B to diff</div>
+            </div>
+            <div class="results" id="promptVersions">(not loaded)</div>
+          </div>
+          <div>
+            <div class="row">
+              <label class="grow">A sha256
+                <input id="promptDiffA" type="text" placeholder="select from versions" />
+              </label>
+              <label class="grow">B sha256
+                <input id="promptDiffB" type="text" placeholder="select from versions" />
+              </label>
+            </div>
+            <div class="row" style="margin-top:8px;">
+              <button id="promptDiffBtn">Diff A ↔ B</button>
+              <button id="promptDiffClearBtn" class="danger">Clear diff</button>
+            </div>
+            <pre class="mono" id="promptDiffOut">(no diff)</pre>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- User Context (Post-Handoff System Messages) -->
+      
+      <div class="card" id="thoughtSanitizeCard">
+        <div class="row" style="justify-content: space-between; align-items: center;">
+          <div>
+            <strong>Thought Sanitization</strong>
+            <span class="muted" style="margin-left:8px;">Strips safety reactions from reasoning, resubmits clean thought as prefill (Kimi/Grok only)</span>
+          </div>
+          <div style="display:flex; gap:12px; align-items:center;">
+            <span id="tsStat" class="muted">loading...</span>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="tsToggle" style="width:18px;height:18px;cursor:pointer;" />
+              <span>Enabled</span>
+            </label>
+          </div>
+        </div>
+        <div class="muted" style="margin-top:6px;">
+          U-line models (u1.0e, u1.12e) always have this ON. This toggle enables it for ALL models globally.
+          <br/>Keeps factual observations ("this is controversial"), removes safety reactions ("so I should be careful").
+        </div>
+      </div>
+
+      <div class="card" id="userContextCard">
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted" style="font-weight:bold;">User Context (Post-Handoff Briefing)</div>
+          <button id="ucRefreshBtn" style="font-size:11px;">Refresh</button>
+        </div>
+        <div id="ucEntries" style="margin-top:10px;"></div>
+        <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
+          <div class="row" style="gap:8px;align-items:flex-end;">
+            <label style="min-width:120px;">User
+              <select id="ucUserSelect" style="min-width:160px;">
+                <option value="">-- select user --</option>
+              </select>
+            </label>
+            <label>Preset
+              <select id="ucPresetSelect" style="min-width:140px;">
+                <option value="">Custom</option>
+              </select>
+            </label>
+            <label class="grow">Context (system message appended to briefing-over)
+              <textarea id="ucTextarea" rows="3" placeholder="e.g. You are now being connected to Mark Bass, a senior military officer..."></textarea>
+            </label>
+            <button id="ucSaveBtn" style="background:#1a4a2e;border-color:#2d6b40;">Save</button>
+            <button id="ucClearBtn" style="background:#4a1a1a;border-color:#6b2d2d;">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seed Manager -->
+      <div class="card" id="seedEditorCard">
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted" style="font-weight:bold;">Seed Manager</div>
+          <div class="muted" id="seedMeta">(not loaded)</div>
+        </div>
+
+        <!-- Tab bar -->
+        <div class="row" style="margin-top:8px;gap:0;border-bottom:1px solid var(--border);">
+          <button id="seedTabEditor" class="seedTab seedTabActive" onclick="seedSwitchTab('editor')" style="border-radius:6px 6px 0 0;border-bottom:none;">Editor</button>
+          <button id="seedTabConfig" class="seedTab" onclick="seedSwitchTab('config')" style="border-radius:6px 6px 0 0;border-bottom:none;">Config</button>
+          <button id="seedTabSysMsg" class="seedTab" onclick="seedSwitchTab('sysmsg')" style="border-radius:6px 6px 0 0;border-bottom:none;">System Messages</button>
+        </div>
+
+        <!-- Tab: Editor (original seed editor) -->
+        <div id="seedPanelEditor" class="seedPanel">
+          <div class="row" style="margin-top:8px;gap:8px;">
+            <label>Seed file
+              <select id="seedSelect" style="min-width:260px;">
+                <option value="">-- select --</option>
+              </select>
+            </label>
+            <button id="seedLoadListBtn">Refresh list</button>
+            <button id="seedLoadBtn">Load</button>
+            <button id="seedSaveBtn" style="background:#1a4a2e;border-color:#2d6b40;">Save</button>
+            <button id="seedAddMsgBtn">+ Message</button>
+            <button id="seedAddToolCallPairBtn" onclick="seedAddToolCallPair()" title="Add assistant tool_call + tool result message pair">+ Tool Call</button>
+            <button id="seedValidateBtn" style="background:#1a3a4a;border-color:#2d5a6b;">Validate</button>
+          </div>
+          <div id="seedValidateResult" style="margin-top:4px;display:none;"></div>
+          <div id="seedMessages" style="margin-top:10px;"></div>
+        </div>
+
+        <!-- Tab: Config (manifest-aware config panel) -->
+        <div id="seedPanelConfig" class="seedPanel" style="display:none;">
+          <div style="margin-top:8px;">
+            <div class="row" style="gap:8px;margin-bottom:8px;">
+              <button id="seedManifestRefresh" onclick="seedLoadManifest()">Refresh Manifest</button>
+            </div>
+            <div id="seedManifestGrid" style="overflow-x:auto;"></div>
+            <div id="seedConfigEditor" style="margin-top:12px;display:none;border:1px solid var(--border);border-radius:8px;padding:12px;background:#0a0e1a;">
+              <div style="font-weight:bold;margin-bottom:8px;color:var(--ok);">Editing: <span id="seedCfgId">—</span></div>
+              <div class="split" style="gap:12px;">
+                <div>
+                  <label style="display:block;margin-bottom:6px;"><input type="checkbox" id="seedCfgSysPrompt"> Is System Prompt</label>
+                  <label style="display:block;margin-bottom:6px;"><input type="checkbox" id="seedCfgBriefing"> Inject Briefing Over</label>
+                </div>
+                <div>
+                  <label style="display:block;margin-bottom:4px;">System Prompt Text
+                    <input type="text" id="seedCfgSysPromptText" style="width:100%;margin-top:2px;" placeholder="e.g. You are Rhodes.">
+                  </label>
+                  <label style="display:block;margin-bottom:4px;">Description
+                    <input type="text" id="seedCfgDescription" style="width:100%;margin-top:2px;" placeholder="Seed description">
+                  </label>
+                </div>
+              </div>
+              <div style="margin-top:8px;">
+                <div class="muted" style="font-size:11px;margin-bottom:4px;">Appended System Messages:</div>
+                <div id="seedCfgAppended" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+              </div>
+              <div class="row" style="margin-top:8px;gap:8px;">
+                <button onclick="seedSaveConfig()" style="background:#1a4a2e;border-color:#2d6b40;">Save Config</button>
+                <button onclick="$('seedConfigEditor').style.display='none'">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: System Messages -->
+        <div id="seedPanelSysMsg" class="seedPanel" style="display:none;">
+          <div style="margin-top:8px;">
+            <div class="row" style="gap:8px;margin-bottom:8px;">
+              <button onclick="seedLoadSysMsgs()">Refresh</button>
+              <button onclick="seedNewSysMsg()" style="background:#1a3a4a;border-color:#2d5a6b;">+ New</button>
+            </div>
+            <div id="seedSysMsgList"></div>
+            <div id="seedSysMsgEditor" style="margin-top:12px;display:none;border:1px solid var(--border);border-radius:8px;padding:12px;background:#0a0e1a;">
+              <div class="row" style="gap:8px;margin-bottom:8px;">
+                <label>ID <input type="text" id="sysMsgEditId" style="width:180px;"></label>
+                <label>Description <input type="text" id="sysMsgEditDesc" style="width:280px;"></label>
+              </div>
+              <textarea id="sysMsgEditContent" rows="8" style="width:100%;font-family:var(--mono);font-size:12px;background:#0f1730;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px;resize:vertical;" placeholder="System message content..."></textarea>
+              <div class="row" style="margin-top:8px;gap:8px;">
+                <button onclick="seedSaveSysMsg()" style="background:#1a4a2e;border-color:#2d6b40;">Save</button>
+                <button onclick="$('seedSysMsgEditor').style.display='none'">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="criticalDecisionsCard">
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted">Critical Decisions</div>
+          <div class="muted" id="cdMeta">(not loaded)</div>
+        </div>
+        <div class="row" style="margin-top: 8px; gap: 8px;">
+          <label class="grow">Filter
+            <input id="cdFilter" type="text" placeholder="type to filter title/status…" />
+          </label>
+          <button id="cdLoadBtn">Load</button>
+          <button id="cdCopyBtn">Copy CSV</button>
+          <span class="pill" id="cdState">(idle)</span>
+        </div>
+        <div class="muted" style="margin-top: 8px;">
+          Tree view groups by status. Click a row to expand the full markdown section.
+        </div>
+        <div style="margin-top: 10px;" id="cdTree">(not loaded)</div>
+      </div>
+
+      <div class="split">
+        <div class="card">
+          <div class="row" style="justify-content: space-between;">
+            <div class="muted">Status</div>
+            <div class="muted" id="statusTime"></div>
+          </div>
+          <pre class="mono" id="statusOut">(not loaded)</pre>
+        </div>
+        <div class="card">
+          <div class="muted">Last action output</div>
+          <pre class="mono" id="actionOut">(none)</pre>
+        </div>
+      </div>
+
+      <!-- Context Compaction Settings -->
+      <div class="card">
+        <div class="row" style="justify-content: space-between; margin-bottom: 10px;">
+          <div class="muted" style="font-weight: bold;">Context Compaction</div>
+          <div id="compactionStatus" class="muted">Loading...</div>
+        </div>
+
+        <!-- Trigger Slider -->
+        <div style="margin-bottom: 15px;">
+          <div class="row" style="justify-content: space-between; margin-bottom: 5px;">
+            <span class="muted">Trigger at context usage:</span>
+            <span style="font-weight: bold; color: var(--ok);" id="compactionTriggerDisplay">65%</span>
+          </div>
+          <div class="row" style="gap: 10px; align-items: center;">
+            <span class="muted" style="font-size: 11px;">30%</span>
+            <input type="range" id="compactionTriggerSlider" min="30" max="95" step="5" style="flex: 1; accent-color: var(--ok);" />
+            <span class="muted" style="font-size: 11px;">95%</span>
+            <input type="number" id="compactionTrigger" min="30" max="95" step="5" style="width: 60px; text-align: center;" />
+          </div>
+        </div>
+
+        <div class="row" style="gap: 15px; flex-wrap: wrap;">
+          <label style="flex: 1; min-width: 120px;">
+            Or after N turns
+            <input type="number" id="compactionTurns" min="10" max="200" step="10" style="width: 100%;" />
+          </label>
+          <label style="flex: 1; min-width: 120px;">
+            Keep recent msgs
+            <input type="number" id="compactionKeep" min="2" max="20" step="1" style="width: 100%;" />
+          </label>
+          <label style="flex: 1; min-width: 120px;">
+            Cooldown (sec)
+            <input type="number" id="compactionCooldown" min="5" max="300" step="5" style="width: 100%;" />
+          </label>
+        </div>
+        <div class="row" style="margin-top: 12px;">
+          <button id="compactionSaveBtn" style="background: var(--ok); color: #000;">Save Settings</button>
+          <button id="compactionRefreshBtn" style="background: transparent;">↻ Refresh</button>
+        </div>
+        <div id="compactionStats" class="muted" style="margin-top: 8px; font-size: 11px;"></div>
+      </div>
+
+
+      <!-- Bug Registry -->
+      <div class="card" id="bugRegistryCard">
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted" style="font-weight: bold;">Bug Registry</div>
+          <div class="muted" id="bugMeta">(not loaded)</div>
+        </div>
+        <div class="row" style="margin-top: 8px; gap: 8px;">
+          <label>Status
+            <select id="bugFilterStatus" style="width: 110px;">
+              <option value="">all</option>
+              <option value="open" selected>open</option>
+              <option value="fixed">fixed</option>
+              <option value="wontfix">wontfix</option>
+            </select>
+          </label>
+          <label>Severity
+            <select id="bugFilterSeverity" style="width: 110px;">
+              <option value="" selected>all</option>
+              <option value="critical">critical</option>
+              <option value="high">high</option>
+              <option value="medium">medium</option>
+              <option value="low">low</option>
+            </select>
+          </label>
+          <div style="display: flex; align-items: flex-end; gap: 8px;">
+            <button id="bugLoadBtn">Load</button>
+            <button id="bugAddToggle">+ Add Bug</button>
+          </div>
+        </div>
+
+        <!-- Add Bug Form (hidden by default) -->
+        <div id="bugAddForm" style="display: none; margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #0f1730;">
+          <div class="row" style="gap: 8px; margin-bottom: 8px;">
+            <label class="grow">Title
+              <input id="bugNewTitle" type="text" placeholder="Short bug description" />
+            </label>
+            <label>Severity
+              <select id="bugNewSeverity" style="width: 110px;">
+                <option value="critical">critical</option>
+                <option value="high">high</option>
+                <option value="medium" selected>medium</option>
+                <option value="low">low</option>
+              </select>
+            </label>
+            <label>Status
+              <select id="bugNewStatus" style="width: 110px;">
+                <option value="open" selected>open</option>
+                <option value="fixed">fixed</option>
+                <option value="wontfix">wontfix</option>
+              </select>
+            </label>
+          </div>
+          <div class="row" style="gap: 8px; margin-bottom: 8px;">
+            <label class="grow">Symptoms
+              <textarea id="bugNewSymptoms" rows="2" placeholder="What goes wrong?"></textarea>
+            </label>
+          </div>
+          <div class="row" style="gap: 8px; margin-bottom: 8px;">
+            <label class="grow">Root Cause
+              <textarea id="bugNewRootCause" rows="2" placeholder="Why it happens"></textarea>
+            </label>
+          </div>
+          <div class="row" style="gap: 8px; margin-bottom: 8px;">
+            <label class="grow">Fix Description
+              <textarea id="bugNewFix" rows="2" placeholder="How it was fixed (if applicable)"></textarea>
+            </label>
+          </div>
+          <div class="row" style="gap: 8px; margin-bottom: 8px;">
+            <label>Session
+              <input id="bugNewSession" type="text" placeholder="e.g. 48" style="width: 80px;" />
+            </label>
+            <label class="grow">Affected Files (comma-separated)
+              <input id="bugNewFiles" type="text" placeholder="server/foo.py, web/bar.html" />
+            </label>
+          </div>
+          <div class="row" style="gap: 8px;">
+            <button id="bugSubmitBtn" style="background: var(--ok); color: #000;">Save Bug</button>
+            <button id="bugCancelBtn">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Bug table -->
+        <div style="margin-top: 10px; overflow-x: auto;">
+          <table id="bugTable" style="width: 100%; border-collapse: collapse; font-size: 12px; display: none;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+                <th style="padding: 6px; color: var(--muted);">ID</th>
+                <th style="padding: 6px; color: var(--muted);">Title</th>
+                <th style="padding: 6px; color: var(--muted);">Severity</th>
+                <th style="padding: 6px; color: var(--muted);">Status</th>
+                <th style="padding: 6px; color: var(--muted);">Test</th>
+                <th style="padding: 6px; color: var(--muted);">Session</th>
+                <th style="padding: 6px; color: var(--muted);">Created</th>
+              </tr>
+            </thead>
+            <tbody id="bugTableBody"></tbody>
+          </table>
+          <div id="bugEmpty" class="muted" style="padding: 8px;">(click Load to fetch bugs)</div>
+        </div>
+
+        <!-- Expanded bug detail -->
+        <div id="bugDetail" style="display: none; margin-top: 10px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: #0f1730;">
+          <div class="row" style="justify-content: space-between; margin-bottom: 8px;">
+            <span class="mono" id="bugDetailId" style="color: var(--warn);"></span>
+            <button id="bugDetailClose" style="padding: 4px 10px; font-size: 11px;">Close</button>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+            <div><span class="muted">Symptoms:</span><pre class="mono" id="bugDetailSymptoms" style="margin-top: 4px;"></pre></div>
+            <div><span class="muted">Root Cause:</span><pre class="mono" id="bugDetailRootCause" style="margin-top: 4px;"></pre></div>
+            <div style="grid-column: 1 / -1;"><span class="muted">Fix:</span><pre class="mono" id="bugDetailFix" style="margin-top: 4px;"></pre></div>
+            <div style="grid-column: 1 / -1;"><span class="muted">Affected Files:</span><pre class="mono" id="bugDetailFiles" style="margin-top: 4px;"></pre></div>
+          </div>
+        </div>
+      </div>
+
+        <div id="chatMessages" style="max-height:500px;min-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;background:rgba(0,0,0,0.3);margin-bottom:10px;display:flex;flex-direction:column;gap:4px;">
+          <div style="text-align:center;color:var(--muted);padding:40px;">Loading...</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+          <textarea id="chatInput" placeholder="Type a message to the Rhodes Family..." style="flex:1;min-height:44px;max-height:120px;resize:vertical;padding:8px 10px;font-size:13px;font-family:var(--mono);background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;outline:none;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+          <select id="chatPriority" style="padding:8px;font-size:11px;width:90px;">
+            <option value="normal">Normal</option>
+            <option value="high">High</option>
+            <option value="urgent">Urgent</option>
+          </select>
+          <button onclick="sendChat()" style="padding:10px 20px;font-size:13px;background:#5b3080;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;">Send</button>
+        </div>
+      </div>
+    </main>
+
+        <!-- Operational Notes Section -->
+        <!-- Insight Memories Section -->
+        <div class="card" style="margin-top:20px;" id="insightsSection">
+          <h3 style="margin-bottom:12px;color:var(--warn);">💡 Insight Memories</h3>
+          <div style="margin-bottom:12px;display:flex;gap:10px;">
+            <input type="text" id="insightFilter" placeholder="Filter by topic..." style="flex:1;">
+            <button id="loadInsightsBtn">🔄 Load</button>
+          </div>
+          <div id="insightsList" style="max-height:500px;overflow-y:auto;">
+            <div class="muted" style="text-align:center;padding:20px;">Click Load to fetch insights</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:20px;">
+          <h3 style="margin-bottom:12px;color:var(--ok);">📝 Operational Notes</h3>
+          
+          <!-- Voice Recorder -->
+          <div style="margin-bottom:15px;padding:12px;background:rgba(0,0,0,0.2);border-radius:8px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+              <button id="voiceRecordBtn" style="background:var(--bad);border:none;color:#fff;padding:12px 20px;border-radius:50%;font-size:20px;cursor:pointer;transition:all 0.2s;">🎤</button>
+              <span id="voiceRecordStatus" style="color:var(--muted);">Click to record voice note</span>
+              <span id="voiceRecordTimer" style="color:var(--warn);font-family:var(--mono);display:none;">00:00</span>
+            </div>
+            <div id="voiceTranscribing" style="display:none;color:var(--warn);">
+              <span class="spinner"></span> Transcribing...
+            </div>
+          </div>
+          
+          <!-- Notes Input -->
+          <div style="margin-bottom:12px;">
+            <textarea id="notesInput" placeholder="Add operational note..." style="width:100%;min-height:80px;resize:vertical;"></textarea>
+          </div>
+          <div style="display:flex;gap:10px;margin-bottom:15px;">
+            <button id="addNoteBtn" style="flex:1;">Add Note</button>
+            <button id="clearNotesBtn" class="danger">Clear All</button>
+          </div>
+          
+          <!-- Notes List -->
+          <div id="notesList" style="max-height:400px;overflow-y:auto;">
+            <div class="muted" style="text-align:center;padding:20px;">No notes yet</div>
+          </div>
+        </div>
+
+    <script>
+      console.log('Admin panel script starting...');
+      const $ = (id) => document.getElementById(id);
+      const TOKEN_KEY = 'rhodes_admin_token';
+      const USER_TOKEN_KEY = 'rhodes_user_token';
+
+      function token() { 
+        // Prefer user token (logged-in admin), fallback to admin token
+        return localStorage.getItem(USER_TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || ''; 
+      }
+      function setToken(t) { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY); }
+      function setAuthState() { 
+        const userToken = localStorage.getItem('rhodes_user_token');
+        const adminToken = localStorage.getItem('rhodes_admin_token');
+        if (userToken) {
+          $('authState').textContent = 'logged in (user)';
+          $('authState').style.background = '#22c55e';
+        } else if (adminToken) {
+          $('authState').textContent = 'logged in (admin)';
+          $('authState').style.background = '#3b82f6';
+        } else {
+          $('authState').textContent = 'not logged in';
+          $('authState').style.background = '';
+        }
+      }
+
+      let MODEL_BASE_OPTIONS_HTML = '';
+
+      function ensureModelOption(value, label) {
+        const v = String(value || '').trim();
+        if (!v) return;
+        const sel = $('model');
+        if (!sel) return;
+        const existing = Array.from(sel.options).find((o) => o.value === v);
+        if (existing) return;
+        let group = sel.querySelector('optgroup[label="Model Configs"]');
+        if (!group) {
+          group = document.createElement('optgroup');
+          group.label = 'Model Configs';
+          sel.appendChild(group);
+        }
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = label || `${v} (config)`;
+        group.appendChild(opt);
+      }
+
+      async function loadModelOptions() {
+        const sel = $('model');
+        if (!sel) return;
+        if (!MODEL_BASE_OPTIONS_HTML) MODEL_BASE_OPTIONS_HTML = sel.innerHTML;
+        const keepValue = sel.value;
+        sel.innerHTML = MODEL_BASE_OPTIONS_HTML;
+        try {
+          const data = await api('/api/admin/model-configs', { method: 'GET' });
+          const configs = (data.configs || [])
+            .filter((c) => c && c.alias && c.enabled !== false)
+            .sort((a, b) => String(a.alias).localeCompare(String(b.alias)));
+          if (configs.length) {
+            const group = document.createElement('optgroup');
+            group.label = 'Model Configs';
+            for (const c of configs) {
+              const alias = String(c.alias || '').trim();
+              if (!alias) continue;
+              const slash = String(c.slash_command || '').trim();
+              const base = String(c.base_model_input || c.base_model || '').trim();
+              const bits = [alias];
+              if (slash) bits.push(slash);
+              if (base) bits.push('-> ' + base);
+              const opt = document.createElement('option');
+              opt.value = alias;
+              opt.textContent = bits.join(' ');
+              group.appendChild(opt);
+            }
+            sel.appendChild(group);
+          }
+        } catch (e) {
+          console.warn('[admin-control] model config load failed:', e);
+        }
+        if (keepValue) ensureModelOption(keepValue, keepValue + ' (current)');
+        if (keepValue && Array.from(sel.options).some((o) => o.value === keepValue)) {
+          sel.value = keepValue;
+        }
+      }
+
+      function esc(s) { return String(s || '').replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+      function escAttr(s) { return String(s || '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+      function safeSnippet(snippet) {
+        // Sessions are user-generated; escape everything and only re-allow <mark> tags inserted by backend.
+        return esc(snippet || '')
+          .replaceAll('&lt;mark&gt;', '<mark>')
+          .replaceAll('&lt;/mark&gt;', '</mark>');
+      }
+      function parseRoundMeta(raw) {
+        if (!raw) return null;
+        if (typeof raw === 'object') return raw;
+        try { return JSON.parse(raw); } catch { return null; }
+      }
+      function normalizeInjectedArticles(meta, round) {
+        const fromRound = Array.isArray(round?.injected_articles) ? round.injected_articles : [];
+        const fromMeta = Array.isArray(meta?.injected_articles) ? meta.injected_articles : [];
+        const source = fromRound.length ? fromRound : fromMeta;
+        const out = [];
+        const seen = new Set();
+        for (const item of source) {
+          if (!item || typeof item !== 'object') continue;
+          const id = String(item.id || item.article_id || '').trim();
+          const title = String(item.title || id || 'injected article').trim();
+          const domain = String(item.domain || '').trim();
+          const stage = String(item.stage || '').trim();
+          const sim = (item.sim !== undefined && item.sim !== null) ? item.sim : null;
+          const boosted = (item.boosted !== undefined && item.boosted !== null) ? item.boosted : null;
+          const chars = (item.chars !== undefined && item.chars !== null) ? item.chars : null;
+          const urlRaw = String(item.url || item.source_url || '').trim();
+          const url = /^https?:\/\//i.test(urlRaw) ? urlRaw : '';
+          const key = id + '|' + title;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          out.push({ id, title, domain, stage, sim, boosted, chars, url });
+        }
+        return out;
+      }
+      function renderInjectedArticleCards(articles, injDebug) {
+        if (!articles || !articles.length) return '';
+        const total = Number(injDebug?.total_candidates || articles.length) || articles.length;
+        const gate = injDebug?.gate ? ` · gate:${esc(injDebug.gate)}` : '';
+        let html = '';
+        html += `<details style="cursor:pointer;margin-top:8px;"><summary style="color:#0ff;font-weight:bold;">INJECTED ARTICLES [${articles.length}/${total}] click to expand${gate}</summary>`;
+        html += '<div style="margin-top:8px;display:grid;gap:8px;">';
+        articles.forEach((a, idx) => {
+          const metaBits = [];
+          if (a.id) metaBits.push(`id:${esc(a.id)}`);
+          if (a.domain) metaBits.push(`domain:${esc(a.domain)}`);
+          if (a.sim !== null) metaBits.push(`sim:${esc(a.sim)}`);
+          if (a.boosted !== null) metaBits.push(`boost:${esc(a.boosted)}`);
+          if (a.stage) metaBits.push(`stage:${esc(a.stage)}`);
+          if (a.chars !== null) metaBits.push(`chars:${esc(a.chars)}`);
+          const title = esc(a.title || a.id || `article ${idx + 1}`);
+          const clickableTitle = a.url
+            ? `<a href="${escAttr(a.url)}" target="_blank" rel="noopener noreferrer" style="color:#4ade80;text-decoration:underline;">${title}</a>`
+            : `<span style="color:#e7ecff;">${title}</span>`;
+          html += '<details style="border:1px solid rgba(39,50,92,0.7);border-radius:8px;padding:6px 8px;background:rgba(0,0,0,0.15);">';
+          html += `<summary style="cursor:pointer;color:#93c5fd;">${idx + 1}. ${clickableTitle}</summary>`;
+          html += `<div class="mono" style="font-size:11px;color:var(--muted);margin-top:6px;">${metaBits.join(' · ')}</div>`;
+          if (a.url) {
+            html += `<div style="margin-top:6px;"><a href="${escAttr(a.url)}" target="_blank" rel="noopener noreferrer" style="color:#4ade80;font-size:11px;text-decoration:underline;">Open source</a></div>`;
+          }
+          html += '</details>';
+        });
+        html += '</div></details>';
+        return html;
+      }
+      function fmtEpoch(ts) {
+        if (!ts) return '';
+        // Handle ISO string format (e.g. "2026-01-17T22:35:44Z")
+        if (typeof ts === 'string' && ts.includes('T')) {
+          try { return new Date(ts).toLocaleString(); } catch { return ts; }
+        }
+        // Handle Unix timestamp
+        try {
+          const n = Number(ts);
+          if (!Number.isFinite(n) || n <= 0) return '';
+          return new Date(n * 1000).toLocaleString();
+        } catch { return ''; }
+      }
+
+      async function api(path, opts = {}) {
+        opts = Object.assign({}, opts || {});
+        const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+        const t = token();
+        if (t) {
+          // If it looks like a user token (from rhodes_user_token), use Bearer auth
+          // Otherwise use the legacy admin token header
+          if (localStorage.getItem('rhodes_user_token')) {
+            headers['Authorization'] = 'Bearer ' + t;
+          } else {
+            headers['X-Rhodes-Admin-Token'] = t;
+          }
+        }
+        const method = String(opts.method || 'GET').toUpperCase();
+        const fetchPath = (method === 'GET' || method === 'HEAD')
+          ? path + (path.includes('?') ? '&' : '?') + '_ts=' + Date.now()
+          : path;
+        const res = await fetch(fetchPath, Object.assign({}, opts, { headers, cache: 'no-store' }));
+        const text = await res.text();
+        let data = null;
+        try { data = JSON.parse(text); } catch { data = { raw: text }; }
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${JSON.stringify(data)}`);
+        return data;
+      }
+
+      let CD_DECISIONS = [];
+
+      function cdGroupFromStatus(status) {
+        const s = String(status || '').toUpperCase();
+        if (s.includes('IMPLEMENTED')) return 'Implemented';
+        if (s.includes('APPROVED')) return 'Approved (Not Implemented)';
+        if (s.includes('RESEARCH') || s.includes('INFORMATIONAL')) return 'Research / Informational';
+        if (s.includes('REJECT')) return 'Rejected';
+        return 'Other';
+      }
+
+      function cdBadgeClass(status) {
+        const s = String(status || '').toUpperCase();
+        if (s.includes('IMPLEMENTED')) return 'ok';
+        if (s.includes('APPROVED')) return 'warn';
+        if (s.includes('REJECT')) return 'bad';
+        return '';
+      }
+
+      function cdFiltered() {
+        const q = String($('cdFilter')?.value || '').trim().toLowerCase();
+        if (!q) return CD_DECISIONS.slice();
+        return CD_DECISIONS.filter((d) => {
+          const hay = [
+            d?.id,
+            d?.title,
+            d?.status,
+            d?.decided_date,
+            d?.implemented_date,
+            d?.decided_context,
+          ].map((x) => String(x || '').toLowerCase()).join(' | ');
+          return hay.includes(q);
+        });
+      }
+
+      function cdRenderTree() {
+        const tree = $('cdTree');
+        if (!tree) return;
+
+        const arr = cdFiltered();
+        const groups = new Map();
+        for (const d of arr) {
+          const g = cdGroupFromStatus(d?.status);
+          if (!groups.has(g)) groups.set(g, []);
+          groups.get(g).push(d);
+        }
+
+        const order = ['Approved (Not Implemented)', 'Implemented', 'Research / Informational', 'Rejected', 'Other'];
+        const keys = Array.from(groups.keys()).sort((a, b) => {
+          const ia = order.indexOf(a);
+          const ib = order.indexOf(b);
+          return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+        });
+
+        tree.innerHTML = '';
+        if (!CD_DECISIONS.length) {
+          tree.textContent = '(not loaded)';
+          return;
+        }
+        if (!arr.length) {
+          tree.textContent = '(no matches)';
+          return;
+        }
+
+        for (const k of keys) {
+          const items = groups.get(k) || [];
+          items.sort((a, b) => Number(a?.id || 0) - Number(b?.id || 0));
+
+          const details = document.createElement('details');
+          details.className = 'cd-group';
+          details.open = (k === 'Approved (Not Implemented)' || k === 'Other');
+
+          const summary = document.createElement('summary');
+          summary.textContent = `${k} (${items.length})`;
+          details.appendChild(summary);
+
+          const panel = document.createElement('div');
+          panel.className = 'cd-panel';
+
+          const table = document.createElement('table');
+          table.className = 'cd-table';
+          table.innerHTML = `
+            <thead>
+              <tr>
+                <th style="width: 54px;">ID</th>
+                <th>Title</th>
+                <th style="width: 280px;">Status</th>
+                <th style="width: 120px;">Decided</th>
+                <th style="width: 120px;">Implemented</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          `;
+          const tbody = table.querySelector('tbody');
+
+          for (const d of items) {
+            const tr = document.createElement('tr');
+            tr.className = 'cd-row';
+
+            const badgeCls = cdBadgeClass(d?.status);
+            const statusHtml = `<span class="cd-badge ${badgeCls}">${esc(d?.status || '')}</span>`;
+
+            tr.innerHTML = `
+              <td class="mono">${esc(d?.id)}</td>
+              <td>${esc(d?.title || '')}</td>
+              <td>${statusHtml}</td>
+              <td class="mono">${esc(d?.decided_date || '')}</td>
+              <td class="mono">${esc(d?.implemented_date || '')}</td>
+            `;
+
+            const detail = document.createElement('tr');
+            detail.className = 'cd-detail';
+            detail.style.display = 'none';
+            const td = document.createElement('td');
+            td.colSpan = 5;
+            const pre = document.createElement('pre');
+            pre.className = 'mono';
+            pre.style.margin = '0';
+            pre.textContent = String(d?.markdown || '').trim();
+            td.appendChild(pre);
+            detail.appendChild(td);
+
+            tr.addEventListener('click', () => {
+              detail.style.display = (detail.style.display === 'none') ? '' : 'none';
+            });
+
+            tbody.appendChild(tr);
+            tbody.appendChild(detail);
+          }
+
+          panel.appendChild(table);
+          details.appendChild(panel);
+          tree.appendChild(details);
+        }
+      }
+
+      async function cdLoad() {
+        $('cdState').textContent = 'loading…';
+        try {
+          const data = await api('/api/admin/critical-decisions');
+          CD_DECISIONS = Array.isArray(data.decisions) ? data.decisions : [];
+          const when = data.mtime ? new Date(Number(data.mtime) * 1000).toLocaleString() : '';
+          $('cdMeta').textContent = `source: ${data.path || '(unknown)'}${when ? ' | mtime: ' + when : ''} | decisions: ${CD_DECISIONS.length}`;
+          $('cdState').textContent = 'loaded';
+          cdRenderTree();
+        } catch (e) {
+          $('cdState').textContent = 'error';
+          $('cdMeta').textContent = e.message;
+          $('cdTree').textContent = '(error)';
+        }
+      }
+
+      function cdCsvCell(s) {
+        const v = String(s ?? '');
+        if (/[",\n]/.test(v)) return '"' + v.replaceAll('"', '""') + '"';
+        return v;
+      }
+
+      async function cdCopyCsv() {
+        const rows = cdFiltered();
+        const lines = [
+          ['id', 'title', 'status', 'decided_date', 'implemented_date', 'decided_context'].join(','),
+          ...rows.map((d) => [
+            cdCsvCell(d?.id),
+            cdCsvCell(d?.title || ''),
+            cdCsvCell(d?.status || ''),
+            cdCsvCell(d?.decided_date || ''),
+            cdCsvCell(d?.implemented_date || ''),
+            cdCsvCell(d?.decided_context || ''),
+          ].join(',')),
+        ].join('\n');
+
+        try {
+          await navigator.clipboard.writeText(lines);
+          $('cdState').textContent = `copied ${rows.length}`;
+          setTimeout(() => { if ($('cdState').textContent.startsWith('copied')) $('cdState').textContent = 'loaded'; }, 1000);
+        } catch {
+          const ta = document.createElement('textarea');
+          ta.value = lines;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          $('cdState').textContent = `copied ${rows.length}`;
+          setTimeout(() => { if ($('cdState').textContent.startsWith('copied')) $('cdState').textContent = 'loaded'; }, 1000);
+        }
+      }
+
+      async function login() {
+        const password = $('pw').value;
+        const data = await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ password }), headers: {} });
+        if (!data.token) throw new Error('login failed');
+        setToken(data.token);
+        $('pw').value = '';
+        setAuthState();
+      }
+
+      function parseCsv(s) {
+        return String(s || '')
+          .split(',')
+          .map((p) => p.trim())
+          .filter(Boolean);
+      }
+
+      function toCsv(arr) {
+        return Array.from(new Set(arr.map((x) => String(x || '').trim()).filter(Boolean))).sort().join(',');
+      }
+
+      let ALL_TOOLS = [];
+      let ALWAYS_ENABLED = new Set(['message', 'respond']);
+      let ALL_PROMPT_SOURCES = [];
+
+      let PROMPT_LOADED = {
+        mode: null, // 'file' | 'history'
+        source: null,
+        sha256: null,
+        truncated: false,
+        path: null,
+        originalText: '',
+      };
+
+      function promptLoadedIsFileMode() {
+        return PROMPT_LOADED.mode === 'file' && !!PROMPT_LOADED.sha256 && !PROMPT_LOADED.truncated;
+      }
+
+      function updatePromptEditUI() {
+        const editOn = !!$('promptEditMode')?.checked;
+        const inHistoryMode = /^[0-9a-f]{64}$/.test(String($('promptSha').value || '').trim().toLowerCase());
+
+        const txt = $('promptText').value || '';
+        const dirty = txt !== (PROMPT_LOADED.originalText || '');
+
+        const canEdit = editOn && PROMPT_LOADED.mode === 'file' && !PROMPT_LOADED.truncated;
+        $('promptText').readOnly = !canEdit;
+
+        const canSave =
+          editOn &&
+          !inHistoryMode &&
+          promptLoadedIsFileMode() &&
+          dirty;
+
+        $('promptSaveBtn').disabled = !canSave;
+
+        const hints = [];
+        if (!PROMPT_LOADED.mode) hints.push('Load a prompt first.');
+        if (PROMPT_LOADED.mode === 'history') hints.push('History snapshots are read-only (clear sha256 to edit current).');
+        if (PROMPT_LOADED.truncated) hints.push('Loaded prompt is truncated — increase max chars before editing.');
+        if (editOn && PROMPT_LOADED.mode === 'file' && !dirty) hints.push('No changes yet.');
+        $('promptEditHint').textContent = hints.join(' ');
+      }
+
+      function promptSourceLabel(p) {
+        const chars = Number(p?.chars || 0) || 0;
+        const size = chars >= 1000 ? `${(chars / 1000).toFixed(1)}k` : String(chars);
+        const missing = p?.exists === false ? ' [missing]' : '';
+        return `${String(p?.source || '')} (${size} chars)${missing}`;
+      }
+
+      function promptSourceGroupKey(p) {
+        const source = String(p?.source || '');
+        if (p?.combined) return 'combined';
+        if (source.startsWith('format_')) return 'format';
+        return 'base';
+      }
+
+      function renderPromptSourceOptions(prompts) {
+        const select = $('promptSource');
+        if (!select) return;
+        const prev = String(select.value || '').trim();
+        const groups = { combined: [], base: [], format: [] };
+        for (const p of (prompts || [])) {
+          const key = promptSourceGroupKey(p);
+          if (!groups[key]) groups[key] = [];
+          groups[key].push(p);
+        }
+
+        const order = [
+          { key: 'combined', label: 'Combined prompts (runtime)' },
+          { key: 'base', label: 'Base prompts (files)' },
+          { key: 'format', label: 'Format-only prompts' },
+        ];
+        const html = [];
+        for (const group of order) {
+          const items = (groups[group.key] || []).slice().sort((a, b) => String(a?.source || '').localeCompare(String(b?.source || '')));
+          if (!items.length) continue;
+          html.push(`<optgroup label="${esc(group.label)}">`);
+          for (const p of items) {
+            const source = String(p?.source || '');
+            html.push(`<option value="${esc(source)}">${esc(promptSourceLabel(p))}</option>`);
+          }
+          html.push('</optgroup>');
+        }
+        if (!html.length) return;
+        select.innerHTML = html.join('');
+        if (prev && (prompts || []).some((p) => String(p?.source || '') === prev)) {
+          select.value = prev;
+        }
+      }
+
+      async function loadPromptSources() {
+        const status = $('promptSourceState');
+        if (status) status.textContent = 'loading...';
+        try {
+          const data = await api('/api/admin/prompt/list', { method: 'GET' });
+          ALL_PROMPT_SOURCES = Array.isArray(data?.prompts) ? data.prompts : [];
+          renderPromptSourceOptions(ALL_PROMPT_SOURCES);
+          if (status) status.textContent = `${ALL_PROMPT_SOURCES.length} live sources`;
+        } catch (e) {
+          if (status) status.textContent = 'fallback list';
+          throw e;
+        }
+      }
+
+      function toolIsVisible(name) {
+        const q = ($('toolFilter').value || '').trim().toLowerCase();
+        if (!q) return true;
+        return name.toLowerCase().includes(q);
+      }
+
+      function renderToolsGrid(disabledSet) {
+        const grid = $('toolsGrid');
+        grid.innerHTML = '';
+        for (const name of ALL_TOOLS) {
+          if (!toolIsVisible(name)) continue;
+          const wrap = document.createElement('div');
+          wrap.className = 'tool';
+
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.dataset.tool = name;
+          cb.checked = !disabledSet.has(name);  // Checked = active (NOT in denylist)
+          if (ALWAYS_ENABLED.has(name)) {
+            cb.checked = true;  // Always enabled = always checked
+            cb.disabled = true;
+          }
+          // Set initial visual state
+          wrap.classList.add(cb.checked ? 'active' : 'inactive');
+
+          const box = document.createElement('div');
+          box.style.flex = '1 1 auto';
+
+          const title = document.createElement('div');
+          title.className = 'name';
+          title.textContent = name;
+
+          const meta = document.createElement('div');
+          meta.className = 'meta';
+          meta.textContent = ALWAYS_ENABLED.has(name) ? 'always enabled' : (cb.checked ? 'active' : 'inactive');
+
+          cb.addEventListener('change', () => {
+            meta.textContent = cb.checked ? 'active' : 'inactive';
+            // Mark as pending (changed but not yet applied)
+            wrap.classList.remove('active', 'inactive');
+            wrap.classList.add('pending');
+          });
+
+          box.appendChild(title);
+          box.appendChild(meta);
+
+          wrap.appendChild(cb);
+          wrap.appendChild(box);
+          grid.appendChild(wrap);
+        }
+      }
+
+      function currentDenylistFromCheckboxes() {
+        const disabled = [];
+        document.querySelectorAll('input[type=\"checkbox\"][data-tool]').forEach((cb) => {
+          if (cb.disabled) return;
+          if (!cb.checked) disabled.push(cb.dataset.tool);  // Unchecked = in denylist
+        });
+        return disabled;
+      }
+
+      function applyModelBridgeRules() {
+        const model = $('model').value;
+        if (model === 'deepseek') {
+          $('bridge').value = 'claude_code';
+          $('bridge').disabled = true;
+        } else {
+          $('bridge').disabled = false;
+        }
+      }
+
+      // Guests + sessions
+      let SELECTED_GUEST = null;
+
+      function setGuestSelected(guest) {
+        SELECTED_GUEST = guest || null;
+        $('guestClientId').textContent = guest?.client_id || '(none)';
+        $('guestSent').textContent = (guest && guest.messages_sent !== undefined) ? String(guest.messages_sent) : '(none)';
+        $('guestRemain').textContent = (guest && guest.messages_remaining !== undefined) ? String(guest.messages_remaining) : '(none)';
+        $('guestLast').textContent = guest?.last_message_at ? fmtEpoch(guest.last_message_at) : '';
+        $('guestLatestSession').textContent = guest?.latest_session_id || '';
+        $('guestMessagesSent').value = (guest && guest.messages_sent !== undefined) ? String(guest.messages_sent) : '';
+      }
+
+      function renderGuestResults(guests) {
+        const wrap = $('guestResults');
+        wrap.innerHTML = '';
+        if (!guests || !guests.length) {
+          wrap.textContent = '(no results)';
+          return;
+        }
+        for (const g of guests) {
+          const item = document.createElement('div');
+          item.className = 'resultItem';
+          if (SELECTED_GUEST && SELECTED_GUEST.client_id === g.client_id) item.classList.add('active');
+          item.innerHTML = `
+            <div class="kv">
+              <div class="k">client_id</div><div class="v">${esc(g.client_id)}</div>
+              <div class="k">sent/remaining</div><div class="v">${esc(String(g.messages_sent))} / ${esc(String(g.messages_remaining))}</div>
+              <div class="k">last_seen</div><div class="v">${esc(fmtEpoch(g.last_message_at))}</div>
+              <div class="k">latest_session</div><div class="v">${esc(g.latest_session_id || '')}</div>
+            </div>
+          `;
+          item.addEventListener('click', () => {
+            setGuestSelected(g);
+            renderGuestResults(guests);
+          });
+          wrap.appendChild(item);
+        }
+      }
+
+      async function guestSearch() {
+        const q = ($('guestQ').value || '').trim();
+        const limit = Number($('guestLimit').value || 50) || 50;
+        const url = `/api/admin/guests/search?q=${encodeURIComponent(q)}&limit=${encodeURIComponent(String(limit))}`;
+        const data = await api(url, { method: 'GET' });
+        renderGuestResults(data.guests || []);
+        $('actionOut').textContent = JSON.stringify({ ok: true, guests: (data.guests || []).length }, null, 2);
+      }
+
+      async function guestSetMessages(messagesSent) {
+        if (!SELECTED_GUEST?.client_id) throw new Error('Select a guest first');
+        const payload = { client_id: SELECTED_GUEST.client_id, messages_sent: Number(messagesSent) };
+        const data = await api('/api/admin/guests/set_messages', { method: 'POST', body: JSON.stringify(payload) });
+        await guestSearch();
+        const updated = (data && data.client_id) ? data : null;
+        if (updated) setGuestSelected(Object.assign({}, SELECTED_GUEST, updated));
+        $('actionOut').textContent = JSON.stringify(data, null, 2);
+      }
+
+      async function sessionSearch() {
+        console.log('sessionSearch called');
+        const q = ($('sessQ').value || '').trim();
+        const limit = Number($('sessLimit').value || 60) || 60;
+        const sid = ($('sessFilterSession').value || '').trim();
+        const cid = ($('sessFilterClient').value || '').trim();
+        const username = ($('sessFilterUsername')?.value || '').trim();
+        const ip = ($('sessFilterIP')?.value || '').trim();
+        const dateFrom = ($('sessDateFrom')?.value || '').trim();
+        const dateTo = ($('sessDateTo')?.value || '').trim();
+        const minMessages = Number($('sessMinMsgs')?.value) || 0;
+        const sort = ($('sessSort')?.value || 'latest');
+
+        let url = `/api/admin/session/search?limit=${encodeURIComponent(String(limit))}&sort=${encodeURIComponent(sort)}`;
+        if (q) url += `&q=${encodeURIComponent(q)}`;
+        if (sid) url += `&session_id=${encodeURIComponent(sid)}`;
+        if (cid) url += `&client_id=${encodeURIComponent(cid)}`;
+        if (username) url += `&username=${encodeURIComponent(username)}`;
+        if (ip) url += `&ip=${encodeURIComponent(ip)}`;
+        if (dateFrom) url += `&date_from=${encodeURIComponent(dateFrom)}`;
+        if (dateTo) url += `&date_to=${encodeURIComponent(dateTo)}`;
+        if (minMessages > 0) url += `&min_messages=${encodeURIComponent(String(minMessages))}`;
+
+        const data = await api(url, { method: 'GET' });
+        renderSessionResults(data.results || [], data.mode);
+        $('actionOut').textContent = JSON.stringify({ ok: true, results: (data.results || []).length, mode: data.mode }, null, 2);
+      }
+
+      function renderSessionResults(results, mode) {
+        const wrap = $('sessResults');
+        wrap.innerHTML = '';
+        if (!results || !results.length) {
+          wrap.textContent = '(no results - try leaving query blank to browse)';
+          return;
+        }
+        // Group single-round sessions by user within 30min windows
+        var grouped = [];
+        var currentGroup = null;
+        for (var gi = 0; gi < results.length; gi++) {
+          var r = results[gi];
+          var who = r.username || r.client_id || '';
+          var ts = typeof r.created_at === 'number' ? r.created_at : (new Date(r.created_at || 0).getTime() / 1000);
+          var mc = Number(r.message_count || r.round_count || 1);
+          var isApi = mc <= 1 && (r.session_id || '').match(/^(live_|rotated_|apiws_)/);
+          if (isApi && currentGroup && currentGroup.who === who && Math.abs(ts - currentGroup.lastTs) < 1800) {
+            currentGroup.items.push(r);
+            currentGroup.lastTs = ts;
+          } else if (isApi) {
+            if (currentGroup) grouped.push(currentGroup);
+            currentGroup = { type: 'group', who: who, firstTs: ts, lastTs: ts, items: [r], model: r.model || '' };
+          } else {
+            if (currentGroup) { grouped.push(currentGroup); currentGroup = null; }
+            grouped.push({ type: 'single', item: r });
+          }
+        }
+        if (currentGroup) grouped.push(currentGroup);
+        // Render
+        for (var gg = 0; gg < grouped.length; gg++) {
+          var g = grouped[gg];
+          if (g.type === 'single') {
+            var r = g.item;
+            renderOneSessionResult(wrap, r, mode);
+          } else if (g.items.length === 1) {
+            renderOneSessionResult(wrap, g.items[0], mode);
+          } else {
+            // Grouped API sessions
+            var gDiv = document.createElement('div');
+            gDiv.className = 'resultItem';
+            gDiv.style.borderLeft = '3px solid #f59e0b';
+            var gWhen = fmtEpoch(g.firstTs);
+            var gModel = g.model ? ' \u00b7 model:' + g.model : '';
+            gDiv.innerHTML = '<div class="mono" style="font-size:12px;margin-bottom:6px;">' +
+              esc(gWhen) + ' \u00b7 <span style="color:#f59e0b;font-weight:bold;">API thread (' + g.items.length + ' exchanges)</span> \u00b7 ' +
+              esc(g.who) + esc(gModel) + '</div>' +
+              '<details><summary style="cursor:pointer;color:var(--muted);font-size:11px;">Expand ' + g.items.length + ' messages</summary>' +
+              '<div class="api-thread-inner" style="margin-top:6px;"></div></details>';
+            var innerDiv = gDiv.querySelector('.api-thread-inner');
+            for (var ai = 0; ai < g.items.length; ai++) {
+              var ar = g.items[ai];
+              var aItem = document.createElement('div');
+              aItem.style.cssText = 'padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:11px;cursor:pointer;';
+              aItem.className = 'mono';
+              aItem.textContent = 'Round ' + (ai+1) + ': ' + (ar.snippet || '').substring(0, 80) + (ar.snippet && ar.snippet.length > 80 ? '...' : '');
+              (function(sid) {
+                aItem.addEventListener('click', function(e) {
+                  e.stopPropagation();
+                  openSession(sid).catch(function(err) { $('actionOut').textContent = err.message; });
+                });
+              })(ar.session_id);
+              innerDiv.appendChild(aItem);
+            }
+            // Click header opens first session
+            gDiv.addEventListener('click', function(e) {
+              if (e.target.tagName === 'SUMMARY' || e.target.closest('details')) return;
+              openSession(g.items[0].session_id).catch(function(err) { $('actionOut').textContent = err.message; });
+            });
+            wrap.appendChild(gDiv);
+          }
+        }
+      }
+
+      function renderOneSessionResult(wrap, r, mode) {
+          const item = document.createElement('div');
+          item.className = 'resultItem';
+          const whoLabel = r.username ? `user:${r.username}` : (r.client_id ? `guest:${r.client_id}` : 'unknown');
+          const whoFilter = r.username || r.client_id || '';
+          const whoType = r.username ? 'username' : 'client';
+          const when = fmtEpoch(r.created_at);
+          const locStr = r.location ? ` (${r.location})` : '';
+          const ipStr = r.ip_address ? ` · IP:${r.ip_address}${locStr}` : '';
+          const msgStr = r.message_count ? ` · ${r.message_count} msgs` : '';
+          const injCount = Number(r.injected_articles_count || 0) || 0;
+          const injStr = injCount > 0 ? ` · injected:${injCount}` : '';
+          const modelStr = r.model ? ` · model:${r.model}` : '';
+          const headerPre = mode === "browse"
+            ? `${when} · ${r.session_id} · `
+            : `${when} · ${r.session_id} · round ${r.round_num} · `;
+          const headerPost = `${modelStr}${ipStr}${msgStr}${injStr}`;
+          item.innerHTML = `
+            <div class="mono" style="font-size:12px; margin-bottom:6px;">${esc(headerPre)}<a href="#" class="user-link" style="color:#4ade80;text-decoration:underline;cursor:pointer;">${esc(whoLabel)}</a>${esc(headerPost)}</div>
+            <div class="mono">${safeSnippet(r.snippet || '')}</div>
+            <div style="margin-top:8px;">
+              <button data-open="1" style="padding:6px 10px;">Open session</button>
+            </div>
+          `;
+          item.querySelector('.user-link').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (whoType === 'username') {
+              $('sessFilterUsername').value = whoFilter;
+              $('sessFilterClient').value = '';
+            } else {
+              $('sessFilterClient').value = whoFilter;
+              $('sessFilterUsername').value = '';
+            }
+            sessionSearch();
+          });
+          item.querySelector('button[data-open="1"]').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openSession(r.session_id).catch(err => $('actionOut').textContent = err.message);
+          });
+          item.addEventListener('click', () => openSession(r.session_id).catch(err => $('actionOut').textContent = err.message));
+          wrap.appendChild(item);
+      }
+
+      async function shareSession() {
+        const sessionId = $("sessOpenLabel").textContent.trim();
+        if (!sessionId) { $("sessShareResult").textContent = "No session open"; return; }
+        try {
+          const data = await api("/api/share-session", {
+            method: "POST",
+            body: JSON.stringify({ session_id: sessionId })
+          });
+          if (data.success) {
+            const url = "https://rhodesagi.com/qa/" + data.id;
+            $("sessShareResult").innerHTML = "<a href='" + url + "' target='_blank'>" + url + "</a>";
+            navigator.clipboard.writeText(url).catch(() => {});
+          } else {
+            $("sessShareResult").textContent = "Error: " + (data.error || "Unknown");
+          }
+        } catch (e) {
+          $("sessShareResult").textContent = "Error: " + e.message;
+        }
+      }
+
+      async function openSession(sessionId) {
+        if (!sessionId) throw new Error('Missing session_id');
+        const data = await api(`/api/admin/session/${encodeURIComponent(sessionId)}`, { method: 'GET' });
+        const rounds = data.rounds || [];
+        $('sessOpenLabel').textContent = sessionId;
+        const sessionDate = rounds.length > 0 && rounds[0].created_at ? fmtEpoch(rounds[0].created_at) : 'unknown';
+        const out = [];
+        out.push('=== Session: ' + sessionId + ' ===');
+        out.push('Date: ' + sessionDate);
+        // Summarize model switches (based on per-round metadata.model when present)
+        try {
+          const modelByRound = rounds.map(r => {
+            let m = '';
+            const meta = parseRoundMeta(r.metadata);
+            if (meta && meta.model) m = String(meta.model);
+            return m || '';
+          });
+          const switches = [];
+          let prev = '';
+          for (let i = 0; i < modelByRound.length; i++) {
+            const cur = modelByRound[i];
+            if (!cur) continue;
+            if (prev && cur !== prev) switches.push({ from: prev, to: cur, round: rounds[i]?.round_num, at: rounds[i]?.created_at });
+            prev = cur;
+          }
+          if (prev) out.push('Last model: ' + prev);
+          if (switches.length) {
+            out.push('Switches: ' + switches.map(s => `${s.from}->${s.to} (round ${s.round || '?'})`).join(', '));
+          }
+        } catch (e) {}
+        out.push('');
+        for (const r of rounds) {
+          const who = r.username ? `user:${r.username}` : (r.client_id ? `guest:${r.client_id}` : 'unknown');
+          const when = fmtEpoch(r.created_at);
+          const meta = parseRoundMeta(r.metadata);
+          let model = 'unknown';
+          if (meta && meta.model) model = String(meta.model);
+          const ps = r.prompt_source ? ` · ${r.prompt_source}` : '';
+          out.push(`== Round ${r.round_num} · ${who} · ${when} · model:${model}${ps} ==`);
+          out.push('');
+          out.push('USER:');
+          out.push(String(r.user_message || '').trimEnd());
+          const injectedArticles = normalizeInjectedArticles(meta, r);
+          if (injectedArticles.length > 0) {
+            out.push('');
+            out.push(renderInjectedArticleCards(injectedArticles, r.injection_debug || meta?.injection_debug || null));
+          }
+          // Show injection if present in metadata (collapsible)
+          if (meta) {
+            if (meta.injected_content && meta.injected_content !== r.user_message) {
+              const inj = String(meta.injected_content || '');
+              const lines = inj.split("\n");
+              out.push('');
+              out.push('<details style="cursor:pointer"><summary style="color:#0ff">INJECTION TEXT [' + lines.length + ' lines] click to expand</summary>');
+              out.push('<pre style="color:#888;white-space:pre-wrap;max-height:300px;overflow:auto">' + inj.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre></details>');
+            }
+            // Show thought substitution if present in metadata
+            if (meta.thought_sub) {
+              const ts = meta.thought_sub;
+              const matchInfo = ts.match_type === 'semantic'
+                ? 'semantic (sim=' + (ts.semantic_sim ? ts.semantic_sim.toFixed(3) : '?') + ')'
+                : 'keyword';
+              const qInfo = ts.semantic_question ? ' matched: "' + ts.semantic_question + '"' : '';
+              out.push('');
+              out.push('<details style="cursor:pointer"><summary style="color:#ff00ff;font-weight:bold;">THOUGHT SUBSTITUTION · pattern: ' + esc(ts.pattern_name || '?') + ' · ' + matchInfo + qInfo + ' · ' + (ts.injection_length || 0) + ' chars</summary>');
+              out.push('<pre style="color:#c9a0dc;white-space:pre-wrap;max-height:400px;overflow:auto;background:rgba(255,0,255,0.04);padding:8px;border-left:3px solid #ff00ff;">' + (ts.injection_text || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre></details>');
+            }
+          }
+          out.push('');
+          out.push('AI:');
+          out.push(String(r.response || '').trimEnd());
+          if (r.thinking) {
+            out.push('');
+            out.push('THINKING:');
+            out.push(String(r.thinking || '').trimEnd());
+          }
+          out.push('');
+        }
+        $('sessOut').innerHTML = out.join('\n');
+        $('actionOut').textContent = JSON.stringify({ ok: true, session_id: sessionId, rounds: rounds.length }, null, 2);
+      }
+
+      async function loadPrompt() {
+        const source = ($('promptSource').value || '').trim();
+        const sha = ($('promptSha').value || '').trim().toLowerCase();
+        const maxChars = Number($('promptMaxChars').value || 80000) || 80000;
+        const isSha = /^[0-9a-f]{64}$/.test(sha);
+        const url = isSha
+          ? `/api/admin/prompt/history?sha256=${encodeURIComponent(sha)}&max_chars=${encodeURIComponent(String(maxChars))}`
+          : `/api/admin/prompt?source=${encodeURIComponent(source)}&max_chars=${encodeURIComponent(String(maxChars))}`;
+        const data = await api(url, { method: 'GET' });
+
+        $('promptText').value = data.text || '';
+        $('promptState').textContent = data.exists ? (data.truncated ? 'loaded (truncated)' : 'loaded') : 'missing';
+
+        PROMPT_LOADED = {
+          mode: isSha ? 'history' : 'file',
+          source: data.source || source || null,
+          sha256: data.sha256 || (isSha ? sha : null),
+          truncated: !!data.truncated,
+          path: data.path || null,
+          originalText: data.text || '',
+        };
+        $('promptEditMode').checked = false;
+        $('promptText').readOnly = true;
+        updatePromptEditUI();
+
+        const bits = [];
+        if (data.path) bits.push(`path: ${data.path}`);
+        if (data.sha256) bits.push(`sha256: ${data.sha256}`);
+        if (data.source) bits.push(`source: ${data.source}`);
+        if (data.created_at) bits.push(`created_at: ${data.created_at}`);
+        if (data.chars !== undefined) bits.push(`chars: ${data.chars}`);
+        if (data.max_chars !== undefined) bits.push(`max_chars: ${data.max_chars}`);
+        $('promptMeta').textContent = bits.join(' · ');
+        $('actionOut').textContent = JSON.stringify({ ok: true, mode: isSha ? 'history' : 'file', truncated: !!data.truncated }, null, 2);
+      }
+
+      async function savePrompt() {
+        const source = ($('promptSource').value || '').trim();
+        const shaInput = ($('promptSha').value || '').trim().toLowerCase();
+        const inHistoryMode = /^[0-9a-f]{64}$/.test(shaInput);
+        if (inHistoryMode) throw new Error('Clear "Historical sha256" before saving (only current file can be edited).');
+        if (!PROMPT_LOADED || PROMPT_LOADED.mode !== 'file') throw new Error('Load the current file prompt before saving.');
+        if (PROMPT_LOADED.truncated) throw new Error('Loaded prompt is truncated — increase max chars before saving.');
+        if (!$('promptEditMode').checked) throw new Error('Enable Edit mode first.');
+
+        const text = $('promptText').value || '';
+        if (text === (PROMPT_LOADED.originalText || '')) throw new Error('No changes to save.');
+
+        const ok = confirm(`Overwrite prompt source "${source}"? This updates the live prompt file immediately.`);
+        if (!ok) return;
+
+        const payload = {
+          source,
+          expected_sha256: PROMPT_LOADED.sha256 || '',
+          text,
+        };
+        const data = await api('/api/admin/prompt', { method: 'POST', body: JSON.stringify(payload) });
+
+        $('promptSha').value = '';
+        $('promptState').textContent = 'saved';
+        const bits = [];
+        if (data.path) bits.push(`path: ${data.path}`);
+        if (data.sha256) bits.push(`sha256: ${data.sha256}`);
+        if (data.source) bits.push(`source: ${data.source}`);
+        if (data.chars !== undefined) bits.push(`chars: ${data.chars}`);
+        bits.push(`snapshotted: ${data.snapshotted ? 'yes' : 'no'}`);
+        $('promptMeta').textContent = bits.join(' · ');
+
+        PROMPT_LOADED = {
+          mode: 'file',
+          source: data.source || source || null,
+          sha256: data.sha256 || null,
+          truncated: false,
+          path: data.path || null,
+          originalText: text,
+        };
+        $('promptEditMode').checked = false;
+        $('promptText').readOnly = true;
+        updatePromptEditUI();
+
+        try { await loadPromptVersions(); } catch {}
+        $('actionOut').textContent = JSON.stringify(data, null, 2);
+      }
+
+      function renderPromptVersions(versions) {
+        const wrap = $('promptVersions');
+        wrap.innerHTML = '';
+        if (!versions || !versions.length) {
+          wrap.textContent = '(no versions)';
+          return;
+        }
+        for (const v of versions) {
+          const sha = v.sha256 || '';
+          const title = `${(v.created_at || '')} · ${sha.slice(0,12)}… · ${v.chars || '?'} chars · uses ${v.uses || 0}`;
+          const item = document.createElement('div');
+          item.className = 'resultItem';
+          item.innerHTML = `
+            <div class="mono" style="font-size:12px;margin-bottom:6px;">${esc(title)}</div>
+            <div class="mono" style="font-size:11px;color:var(--muted);">
+              first_seen=${esc(v.first_seen || '')} · last_seen=${esc(v.last_seen || '')} · source=${esc(v.source || '')}
+            </div>
+            <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+              <button data-load="1" style="padding:6px 10px;">Load</button>
+              <button data-a="1" style="padding:6px 10px;">Set A</button>
+              <button data-b="1" style="padding:6px 10px;">Set B</button>
+            </div>
+          `;
+          item.querySelector('button[data-load="1"]').addEventListener('click', (e) => {
+            e.stopPropagation();
+            $('promptSha').value = sha;
+            loadPrompt().catch(err => $('actionOut').textContent = err.message);
+          });
+          item.querySelector('button[data-a="1"]').addEventListener('click', (e) => {
+            e.stopPropagation();
+            $('promptDiffA').value = sha;
+          });
+          item.querySelector('button[data-b="1"]').addEventListener('click', (e) => {
+            e.stopPropagation();
+            $('promptDiffB').value = sha;
+          });
+          item.addEventListener('click', () => {
+            $('promptSha').value = sha;
+            loadPrompt().catch(err => $('actionOut').textContent = err.message);
+          });
+          wrap.appendChild(item);
+        }
+      }
+
+      async function loadPromptVersions() {
+        const source = ($('promptSource').value || '').trim();
+        const limit = 100;
+        const url = `/api/admin/prompt/versions?source=${encodeURIComponent(source)}&limit=${encodeURIComponent(String(limit))}`;
+        const data = await api(url, { method: 'GET' });
+        renderPromptVersions(data.versions || []);
+        $('actionOut').textContent = JSON.stringify({ ok: true, versions: (data.versions || []).length }, null, 2);
+      }
+
+      async function loadPromptDiff() {
+        const a = ($('promptDiffA').value || '').trim().toLowerCase();
+        const b = ($('promptDiffB').value || '').trim().toLowerCase();
+        const maxChars = Number($('promptMaxChars').value || 80000) || 80000;
+        if (!/^[0-9a-f]{64}$/.test(a) || !/^[0-9a-f]{64}$/.test(b)) {
+          throw new Error('Pick valid A and B sha256 values (64 hex chars).');
+        }
+        const url = `/api/admin/prompt/diff?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}&max_chars=${encodeURIComponent(String(Math.max(5000, maxChars)))}`
+        const data = await api(url, { method: 'GET' });
+        $('promptDiffOut').textContent = data.diff || '(no diff)';
+        $('actionOut').textContent = JSON.stringify({ ok: true, truncated: !!data.truncated }, null, 2);
+      }
+
+      async function loadTools() {
+        const data = await api('/api/admin/runtime/tools', { method: 'GET' });
+        ALL_TOOLS = data.tools || [];
+        ALWAYS_ENABLED = new Set((data.always_enabled || ['message', 'respond']).map(String));
+      }
+
+      async function refreshStatus() {
+        const data = await api('/api/admin/runtime/status', { method: 'GET' });
+        $('statusTime').textContent = new Date().toISOString();
+        $('statusOut').textContent = JSON.stringify(data, null, 2);
+        return data;
+      }
+
+      function fillFromServiceStatus(statusData) {
+        const svc = $('service').value;
+        const svcData = (statusData.services || {})[svc] || {};
+        const env = svcData.env || {};
+
+        if (env.RHODES_MODEL) {
+          const modelVal = String(env.RHODES_MODEL).trim();
+          ensureModelOption(modelVal, modelVal + ' (current)');
+          $('model').value = modelVal;
+        }
+        if (env.RHODES_BRIDGE_MODE) $('bridge').value = env.RHODES_BRIDGE_MODE;
+
+        if (env.DEEPSEEK_REASONING) $('reasoning').value = String(env.DEEPSEEK_REASONING).toLowerCase() === 'true' ? 'true' : 'false';
+        if (env.DEEPSEEK_MAX_TOKENS) $('maxTokens').value = Number(env.DEEPSEEK_MAX_TOKENS) || $('maxTokens').value;
+        if (env.DEEPSEEK_MCP_TOOLS) $('mcpTools').value = String(env.DEEPSEEK_MCP_TOOLS).toLowerCase() === 'true' ? 'true' : 'false';
+
+        applyModelBridgeRules();
+
+        const deny = parseCsv(env.RHODES_TOOL_DENYLIST || '');
+        $('denylistRaw').value = toCsv(deny);
+        renderToolsGrid(new Set(deny));
+      }
+
+      async function applyConfig(extra = {}) {
+        applyModelBridgeRules();
+        const payload = Object.assign({
+          action: 'apply',
+          service: $('service').value,
+          model: $('model').value,
+          bridge: $('bridge').value,
+          reasoning: $('reasoning').value,
+          max_tokens: String($('maxTokens').value || '').trim(),
+          mcp_tools: $('mcpTools').value,
+          tool_denylist: $('denylistRaw').value.trim(),
+        }, extra);
+        const data = await api('/api/admin/runtime/apply', { method: 'POST', body: JSON.stringify(payload) });
+        $('actionOut').textContent = JSON.stringify(data, null, 2);
+        const st = await refreshStatus();
+        fillFromServiceStatus(st);
+      }
+
+      async function clearOverride() {
+        const payload = { action: 'clear', service: $('service').value };
+        const data = await api('/api/admin/runtime/apply', { method: 'POST', body: JSON.stringify(payload) });
+        $('actionOut').textContent = JSON.stringify(data, null, 2);
+        const st = await refreshStatus();
+        fillFromServiceStatus(st);
+      }
+
+      // Wire events
+      $('loginBtn').addEventListener('click', () => login().then(async () => {
+        await Promise.all([loadTools(), loadModelOptions()]);
+        const st = await refreshStatus();
+        fillFromServiceStatus(st);
+        cdLoad().catch(() => {});
+        loadPromptSources().catch(() => {});
+      }).catch(e => $('actionOut').textContent = e.message));
+
+      $('logoutBtn').addEventListener('click', () => { setToken(''); setAuthState(); $('actionOut').textContent = 'logged out'; });
+      $('refreshBtn').addEventListener('click', () =>
+        Promise.all([loadModelOptions(), refreshStatus()])
+          .then(([, status]) => fillFromServiceStatus(status))
+          .catch(e => $('actionOut').textContent = e.message)
+      );
+      $('applyBtn').addEventListener('click', () => applyConfig().catch(e => $('actionOut').textContent = e.message));
+      $('clearBtn').addEventListener('click', () => clearOverride().catch(e => $('actionOut').textContent = e.message));
+
+      $('service').addEventListener('change', () => refreshStatus().then(fillFromServiceStatus).catch(() => {}));
+      $('model').addEventListener('change', applyModelBridgeRules);
+      $('toolFilter').addEventListener('input', () => {
+        const deny = parseCsv($('denylistRaw').value || '');
+        renderToolsGrid(new Set(deny));
+      });
+
+      $('cdLoadBtn')?.addEventListener('click', () => cdLoad());
+      $('cdCopyBtn')?.addEventListener('click', () => cdCopyCsv());
+      $('cdFilter')?.addEventListener('input', () => cdRenderTree());
+
+      $('syncDenylistBtn').addEventListener('click', () => {
+        const deny = currentDenylistFromCheckboxes();
+        $('denylistRaw').value = toCsv(deny);
+        $('actionOut').textContent = 'denylist synced from checkboxes';
+        // Clear pending states and update to reflect actual state
+        document.querySelectorAll('.tool.pending').forEach(t => {
+          const cb = t.querySelector('input[type=checkbox]');
+          t.classList.remove('pending');
+          t.classList.add(cb.checked ? 'active' : 'inactive');
+        });
+      });
+
+      $('applyDenylistBtn').addEventListener('click', () => {
+        $('syncDenylistBtn').click();
+        applyConfig({ model: null, bridge: null, reasoning: null, max_tokens: null, mcp_tools: null }).catch(e => $('actionOut').textContent = e.message);
+      });
+
+      $('guestSearchBtn').addEventListener('click', () => guestSearch().catch(e => $('actionOut').textContent = e.message));
+      $('guestClearBtn').addEventListener('click', () => {
+        $('guestQ').value = '';
+        $('guestResults').textContent = '(not loaded)';
+        setGuestSelected(null);
+      });
+      $('guestSetBtn').addEventListener('click', () => guestSetMessages($('guestMessagesSent').value).catch(e => $('actionOut').textContent = e.message));
+      $('guestResetBtn').addEventListener('click', () => guestSetMessages(0).catch(e => $('actionOut').textContent = e.message));
+      $('guestGrantBtn').addEventListener('click', () => {
+        const n = Number($('guestGrantN').value || 0) || 0;
+        if (!SELECTED_GUEST) { $('actionOut').textContent = 'Select a guest first'; return; }
+        const current = Number(SELECTED_GUEST.messages_sent || 0) || 0;
+        const next = current - n;
+        guestSetMessages(next).catch(e => $('actionOut').textContent = e.message);
+      });
+      $('guestOpenLatestSessionBtn').addEventListener('click', () => {
+        const sid = SELECTED_GUEST?.latest_session_id;
+        if (!sid) { $('actionOut').textContent = 'No latest session for selected guest'; return; }
+        openSession(sid).catch(e => $('actionOut').textContent = e.message);
+      });
+
+      $('sessSearchBtn').addEventListener('click', () => sessionSearch().catch(e => $('actionOut').textContent = e.message));
+      $('sessClearBtn').addEventListener('click', () => {
+        $('sessQ').value = '';
+        $('sessFilterSession').value = '';
+        $('sessFilterClient').value = '';
+        if ($('sessFilterUsername')) $('sessFilterUsername').value = '';
+        if ($('sessFilterIP')) $('sessFilterIP').value = '';
+        if ($('sessDateFrom')) $('sessDateFrom').value = '';
+        if ($('sessDateTo')) $('sessDateTo').value = '';
+        if ($('sessMinMsgs')) { $('sessMinMsgs').value = '0'; $('minMsgVal').textContent = '0'; }
+        if ($('sessSort')) $('sessSort').value = 'latest';
+        $('sessResults').textContent = '(not loaded)';
+        $('sessOpenLabel').textContent = '';
+        $('sessOut').textContent = '(none)';
+      });
+
+      $('promptLoadBtn').addEventListener('click', () => loadPrompt().catch(e => $('actionOut').textContent = e.message));
+      $('promptVersionsBtn').addEventListener('click', () => loadPromptVersions().catch(e => $('actionOut').textContent = e.message));
+      $('promptSourceRefreshBtn').addEventListener('click', () => loadPromptSources().then(() => {
+        $('actionOut').textContent = JSON.stringify({ ok: true, prompt_sources: ALL_PROMPT_SOURCES.length }, null, 2);
+      }).catch(e => $('actionOut').textContent = 'prompt source refresh failed: ' + e.message));
+      $('promptClearBtn').addEventListener('click', () => {
+        $('promptText').value = '';
+        $('promptMeta').textContent = '';
+        $('promptState').textContent = '(not loaded)';
+        $('promptSha').value = '';
+        $('promptEditMode').checked = false;
+        PROMPT_LOADED = { mode: null, source: null, sha256: null, truncated: false, path: null, originalText: '' };
+        updatePromptEditUI();
+      });
+      $('promptEditMode').addEventListener('change', updatePromptEditUI);
+      $('promptText').addEventListener('input', updatePromptEditUI);
+      $('promptSaveBtn').addEventListener('click', () => savePrompt().catch(e => { alert('Save failed: ' + e.message); $('actionOut').textContent = e.message; }));
+      $('promptDiffBtn').addEventListener('click', () => loadPromptDiff().catch(e => $('actionOut').textContent = e.message));
+      $('promptDiffClearBtn').addEventListener('click', () => {
+        $('promptDiffOut').textContent = '(no diff)';
+      });
+
+      // Init
+      setAuthState();
+      updatePromptEditUI();
+      if (token()) {
+        Promise.all([loadTools(), loadModelOptions()])
+          .then(() => refreshStatus())
+          .then(fillFromServiceStatus)
+          .then(() => loadPromptSources().catch(() => {}))
+          .then(() => cdLoad().catch(() => {}))
+          .catch(() => {});
+      }
+
+      
+      // ==================== USER FORMAT MANAGEMENT ====================
+      let allUsers = [];
+      
+      // Convert to EST
+      function toEST(date) {
+        return date.toLocaleString("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hour12: true });
+      }
+      
+      async function loadUsers() {
+        try {
+          const resp = await api("/api/admin/users/active");
+          if (resp && resp.users) {
+            allUsers = resp.users;
+            const sel = $("userSelect");
+            sel.innerHTML = "<option value=\"\">-- Select a user --</option>";
+            resp.users.forEach(u => {
+              const opt = document.createElement("option");
+              opt.value = u.id;
+              let label = u.username;
+              if (u.format_override) label += " 🔴[LIVE:" + u.format_override.replace("rhodes-delta-", "") + "]";
+              else if (u.default_format) label += " [" + u.default_format.replace("rhodes-delta-", "") + "]";
+              sel.appendChild(opt);
+              opt.textContent = label;
+            });
+          }
+        } catch (e) {
+          console.error("Failed to load users:", e);
+        }
+      }
+      
+      $("userSelect").addEventListener("change", () => {
+        const userId = $("userSelect").value;
+        const user = allUsers.find(u => u.id == userId);
+        if (user) {
+          $("formatSelect").value = user.default_format || "";
+          $("liveFormatSelect").value = user.format_override || "";
+          let info = "<b>" + user.username + "</b> (" + user.email + ")<br>";
+          info += "Default: " + (user.default_format || "Standard") + "<br>";
+          if (user.format_override) {
+            info += "<span style=\"color:var(--bad)\">🔴 LIVE OVERRIDE: " + user.format_override + "</span>";
+          }
+          $("userInfo").innerHTML = info;
+        } else {
+          $("formatSelect").value = "";
+          $("liveFormatSelect").value = "";
+          $("userInfo").innerHTML = "";
+        }
+      });
+      
+      $("setFormatBtn").addEventListener("click", async () => {
+        const userId = $("userSelect").value;
+        const format = $("formatSelect").value;
+        if (!userId) { alert("Please select a user"); return; }
+        try {
+          const resp = await api("/api/admin/users/format", {
+            method: "POST",
+            body: JSON.stringify({ user_id: parseInt(userId), default_format: format || null })
+          });
+          if (resp && resp.success) {
+            $("userInfo").innerHTML = "✓ Default format updated!";
+            setTimeout(() => loadUsers(), 1500);
+          }
+        } catch (e) {
+          $("userInfo").innerHTML = "✗ Error: " + e.message;
+        }
+      });
+      
+      $("setLiveFormatBtn").addEventListener("click", async () => {
+        const userId = $("userSelect").value;
+        const format = $("liveFormatSelect").value;
+        if (!userId) { alert("Please select a user"); return; }
+        try {
+          const resp = await api("/api/admin/users/live_format", {
+            method: "POST",
+            body: JSON.stringify({ user_id: parseInt(userId), format_override: format || null })
+          });
+          if (resp && resp.success) {
+            $("userInfo").innerHTML = "<span style=\"color:var(--ok)\">✓ " + resp.message + "</span><br>Takes effect on their next message!";
+            setTimeout(() => loadUsers(), 1500);
+          }
+        } catch (e) {
+          $("userInfo").innerHTML = "✗ Error: " + e.message;
+        }
+      });
+      
+      // Load users on page load if logged in
+      if (token()) loadUsers();
+
+// ==================== OPERATIONAL NOTES ====================
+      const NOTES_STORAGE_KEY = 'rhodes_admin_notes';
+      let mediaRecorder = null;
+      let audioChunks = [];
+      let recordingStartTime = null;
+      let timerInterval = null;
+
+      function loadNotes() {
+        try {
+          return JSON.parse(localStorage.getItem(NOTES_STORAGE_KEY) || '[]');
+        } catch { return []; }
+      }
+
+      function saveNotes(notes) {
+        localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes));
+      }
+
+      function renderNotes() {
+        const notes = loadNotes();
+        const container = $('notesList');
+        if (notes.length === 0) {
+          container.innerHTML = '<div class="muted" style="text-align:center;padding:20px;">No notes yet</div>';
+          return;
+        }
+        container.innerHTML = notes.map((note, i) => `
+          <div style="padding:10px;border-bottom:1px solid var(--border);position:relative;">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">
+              ${new Date(note.timestamp).toLocaleString('en-US', {timeZone: 'America/New_York'})}
+              ${note.isVoice ? ' 🎤' : ''}
+            </div>
+            <div style="white-space:pre-wrap;">${note.text}</div>
+            <button onclick="deleteNote(${i})" style="position:absolute;top:8px;right:8px;background:transparent;border:none;color:var(--bad);cursor:pointer;font-size:14px;">✕</button>
+          </div>
+        `).join('');
+      }
+
+      function addNote(text, isVoice = false) {
+        if (!text.trim()) return;
+        const notes = loadNotes();
+        notes.unshift({ text: text.trim(), timestamp: Date.now(), isVoice });
+        saveNotes(notes);
+        renderNotes();
+        $('notesInput').value = '';
+      }
+
+      function deleteNote(index) {
+        const notes = loadNotes();
+        notes.splice(index, 1);
+        saveNotes(notes);
+        renderNotes();
+      }
+
+      function clearAllNotes() {
+        if (confirm('Clear all operational notes?')) {
+          saveNotes([]);
+          renderNotes();
+        }
+      }
+
+      function updateRecordingTimer() {
+        if (!recordingStartTime) return;
+        const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+        const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        const secs = String(elapsed % 60).padStart(2, '0');
+        $('voiceRecordTimer').textContent = mins + ':' + secs;
+      }
+
+      async function startRecording() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+          
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+          };
+          
+          mediaRecorder.onstop = async () => {
+            stream.getTracks().forEach(t => t.stop());
+            clearInterval(timerInterval);
+            $('voiceRecordTimer').style.display = 'none';
+            
+            if (audioChunks.length === 0) {
+              $('voiceRecordStatus').textContent = 'No audio recorded';
+              return;
+            }
+            
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            await transcribeAudio(audioBlob);
+          };
+          
+          mediaRecorder.start(100);
+          recordingStartTime = Date.now();
+          timerInterval = setInterval(updateRecordingTimer, 1000);
+          
+          $('voiceRecordBtn').textContent = '⏹';
+          $('voiceRecordBtn').style.background = 'var(--ok)';
+          $('voiceRecordStatus').textContent = 'Recording... Click to stop';
+          $('voiceRecordTimer').style.display = 'inline';
+          $('voiceRecordTimer').textContent = '00:00';
+        } catch (err) {
+          console.error('Recording error:', err);
+          $('voiceRecordStatus').textContent = 'Microphone access denied';
+        }
+      }
+
+      function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+          $('voiceRecordBtn').textContent = '🎤';
+          $('voiceRecordBtn').style.background = 'var(--bad)';
+          $('voiceRecordStatus').textContent = 'Processing...';
+        }
+      }
+
+      async function transcribeAudio(audioBlob) {
+        $('voiceTranscribing').style.display = 'block';
+        $('voiceRecordStatus').textContent = 'Transcribing with Whisper...';
+        
+        try {
+          const formData = new FormData();
+          formData.append('audio', audioBlob, 'recording.webm');
+          
+          const t = token();
+          const transcribeHeaders = {};
+          if (t && localStorage.getItem('rhodes_user_token')) {
+            transcribeHeaders['Authorization'] = 'Bearer ' + t;
+          } else if (t) {
+            transcribeHeaders['X-Rhodes-Admin-Token'] = t;
+          }
+          const resp = await fetch('/api/transcribe', {
+            method: 'POST',
+            headers: transcribeHeaders,
+            body: formData
+          });
+          
+          const data = await resp.json();
+          $('voiceTranscribing').style.display = 'none';
+          
+          if (data.transcript) {
+            addNote(data.transcript, true);
+            $('voiceRecordStatus').textContent = 'Transcribed and added!';
+          } else {
+            $('voiceRecordStatus').textContent = 'Transcription failed: ' + (data.error || 'Unknown error');
+          }
+        } catch (err) {
+          console.error('Transcription error:', err);
+          $('voiceTranscribing').style.display = 'none';
+          $('voiceRecordStatus').textContent = 'Transcription error: ' + err.message;
+        }
+        
+        setTimeout(() => {
+          $('voiceRecordStatus').textContent = 'Click to record voice note';
+        }, 3000);
+      }
+
+      // Initialize notes
+      $('voiceRecordBtn').addEventListener('click', () => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+          stopRecording();
+        } else {
+          startRecording();
+        }
+      });
+      $('addNoteBtn').addEventListener('click', () => addNote($('notesInput').value));
+      $('clearNotesBtn').addEventListener('click', clearAllNotes);
+      $('notesInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.ctrlKey) {
+          addNote($('notesInput').value);
+        }
+      });
+      renderNotes();
+
+      // === INSIGHT MEMORIES ===
+      async function loadInsights() {
+        const filter = $('insightFilter').value.trim();
+        const list = $('insightsList');
+        list.innerHTML = '<div class="muted" style="text-align:center;padding:20px;">Loading...</div>';
+        
+        try {
+          const url = '/api/admin/insights' + (filter ? '?topic=' + encodeURIComponent(filter) : '');
+          const data = await api(url);
+          
+          if (!data.insights || data.insights.length === 0) {
+            list.innerHTML = '<div class="muted" style="text-align:center;padding:20px;">No insights found</div>';
+            return;
+          }
+          
+          let html = '';
+          data.insights.forEach(i => {
+            const date = i.marked_at ? new Date(i.marked_at).toLocaleString() : 'Unknown';
+            const hasEvolution = !!i.evolution_summary;
+            html += '<div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;background:rgba(0,0,0,0.15);">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">';
+            html += '<strong style="color:var(--warn);">' + (i.topic || 'Untitled') + '</strong>';
+            html += '<span class="pill" style="' + (hasEvolution ? 'border-color:var(--ok);color:var(--ok);' : '') + '">' + (hasEvolution ? '✓ Extracted' : 'Pending') + '</span>';
+            html += '</div>';
+            html += '<div class="muted" style="font-size:11px;margin-bottom:6px;">Session: ' + (i.session_id || '?').slice(0,12) + ' | User ID: ' + (i.user_id || 'N/A') + ' | ' + date + '</div>';
+            if (i.ai_reason) html += '<div style="margin-bottom:6px;"><span class="muted">Reason:</span> ' + i.ai_reason.slice(0,200) + '</div>';
+            if (i.evolution_summary) {
+              html += '<details style="margin-top:8px;">';
+              html += '<summary style="cursor:pointer;color:var(--ok);">View Evolution Summary</summary>';
+              html += '<div style="margin-top:8px;padding:8px;background:rgba(0,0,0,0.2);border-radius:6px;">';
+              if (i.position_before) html += '<div style="margin-bottom:4px;"><strong>Before:</strong> ' + i.position_before + '</div>';
+              if (i.position_after) html += '<div style="margin-bottom:4px;"><strong>After:</strong> ' + i.position_after + '</div>';
+              html += '<div><strong>Summary:</strong> ' + i.evolution_summary + '</div>';
+              if (i.key_evidence) html += '<div style="margin-top:4px;"><strong>Evidence:</strong> ' + (Array.isArray(i.key_evidence) ? i.key_evidence.join(', ') : i.key_evidence) + '</div>';
+              html += '</div></details>';
+            }
+            html += '</div>';
+          });
+          list.innerHTML = html;
+        } catch(e) {
+          list.innerHTML = '<div class="bad" style="text-align:center;padding:20px;">Error: ' + e.message + '</div>';
+        }
+      }
+      
+      $('loadInsightsBtn').onclick = loadInsights;
+      $('insightFilter').addEventListener('keyup', e => { if (e.key === 'Enter') loadInsights(); });
+
+    
+      // === CONTEXT COMPACTION ===
+      function updateTriggerDisplay(val) {
+        $("compactionTriggerDisplay").textContent = val + "%";
+        // Color gradient from yellow (low) to green (high)
+        if (val < 50) {
+          $("compactionTriggerDisplay").style.color = "var(--warn)";
+        } else if (val < 70) {
+          $("compactionTriggerDisplay").style.color = "var(--ok)";
+        } else {
+          $("compactionTriggerDisplay").style.color = "var(--muted)";
+        }
+      }
+
+      // Sync slider and input
+      $("compactionTriggerSlider").oninput = function() {
+        $("compactionTrigger").value = this.value;
+        updateTriggerDisplay(this.value);
+      };
+      $("compactionTrigger").oninput = function() {
+        $("compactionTriggerSlider").value = this.value;
+        updateTriggerDisplay(this.value);
+      };
+
+      async function loadCompactionConfig() {
+        try {
+          const data = await api("/api/admin/compaction/status");
+
+          $("compactionStatus").textContent = data.config.enabled ? "Active" : "Inactive";
+          $("compactionStatus").style.color = data.config.enabled ? "var(--ok)" : "var(--muted)";
+
+          const triggerVal = Math.round(data.config.context_trigger_percent * 100);
+          $("compactionTrigger").value = triggerVal;
+          $("compactionTriggerSlider").value = triggerVal;
+          updateTriggerDisplay(triggerVal);
+
+          $("compactionTurns").value = data.config.turn_trigger_count;
+          $("compactionKeep").value = data.config.keep_recent_messages;
+          $("compactionCooldown").value = data.config.cooldown_after_swap;
+
+          if (data.stats) {
+            $("compactionStats").innerHTML =
+              "Total compactions: " + (data.stats.total_compactions || 0) +
+              " | Messages compacted: " + (data.stats.total_messages_compacted || 0) +
+              " | Active: " + (data.stats.active_compactions || 0);
+          }
+        } catch(e) {
+          $("compactionStatus").textContent = "Error: " + e.message;
+          $("compactionStatus").style.color = "var(--bad)";
+        }
+      }
+
+      async function saveCompactionConfig() {
+        try {
+          const config = {
+            context_trigger_percent: parseInt($("compactionTrigger").value) / 100,
+            turn_trigger_count: parseInt($("compactionTurns").value),
+            keep_recent_messages: parseInt($("compactionKeep").value),
+            cooldown_after_swap: parseInt($("compactionCooldown").value)
+          };
+
+          const data = await api("/api/admin/compaction/config", {
+            method: "POST",
+            body: JSON.stringify(config)
+          });
+
+          if (data.error) {
+            alert("Error: " + data.error);
+          } else {
+            $("compactionStatus").textContent = "Saved!";
+            $("compactionStatus").style.color = "var(--ok)";
+            setTimeout(loadCompactionConfig, 1500);
+          }
+        } catch(e) {
+          alert("Error saving: " + e.message);
+        }
+      }
+
+      $("compactionSaveBtn").onclick = saveCompactionConfig;
+      $("compactionRefreshBtn").onclick = loadCompactionConfig;
+
+      // Load compaction config on page load
+      setTimeout(loadCompactionConfig, 500);
+
+
+      // ── Bug Registry ──────────────────────────────────────────────
+      let _bugData = [];
+
+      function _sevColor(s) {
+        return s === 'critical' ? 'var(--bad)' : s === 'high' ? '#ff8c42' : s === 'medium' ? 'var(--warn)' : 'var(--muted)';
+      }
+      function _statusColor(s) {
+        return s === 'open' ? 'var(--bad)' : s === 'fixed' ? 'var(--ok)' : 'var(--muted)';
+      }
+      function _testColor(s) {
+        return s === 'passed' ? 'var(--ok)' : s === 'failed' ? 'var(--bad)' : 'var(--warn)';
+      }
+
+      function _makePill(text, color, onclick) {
+        const span = document.createElement('span');
+        span.className = 'pill';
+        span.textContent = text || '-';
+        span.style.borderColor = color;
+        span.style.color = color;
+        span.style.cursor = onclick ? 'pointer' : 'default';
+        if (onclick) span.onclick = onclick;
+        return span;
+      }
+
+      async function loadBugs() {
+        const status = $('bugFilterStatus').value;
+        const severity = $('bugFilterSeverity').value;
+        let url = '/api/admin/bugs?limit=200';
+        if (status) url += '&status=' + encodeURIComponent(status);
+        if (severity) url += '&severity=' + encodeURIComponent(severity);
+
+        $('bugMeta').textContent = 'loading...';
+        try {
+          const data = await api(url);
+          _bugData = data.bugs || [];
+          $('bugMeta').textContent = _bugData.length + ' of ' + data.total + ' bugs';
+          renderBugTable();
+        } catch(e) {
+          $('bugMeta').textContent = 'error: ' + e.message;
+        }
+      }
+
+      function renderBugTable() {
+        const tbody = $('bugTableBody');
+        tbody.innerHTML = '';
+        if (_bugData.length === 0) {
+          $('bugTable').style.display = 'none';
+          $('bugEmpty').textContent = '(no bugs match filters)';
+          $('bugEmpty').style.display = '';
+          return;
+        }
+        $('bugTable').style.display = '';
+        $('bugEmpty').style.display = 'none';
+
+        _bugData.forEach(bug => {
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid var(--border)';
+          tr.style.cursor = 'pointer';
+
+          // Bug ID
+          const tdId = document.createElement('td');
+          tdId.style.padding = '6px';
+          tdId.style.fontFamily = 'var(--mono)';
+          tdId.style.fontSize = '11px';
+          tdId.style.color = 'var(--warn)';
+          tdId.textContent = bug.bug_id;
+          tr.appendChild(tdId);
+
+          // Title
+          const tdTitle = document.createElement('td');
+          tdTitle.style.padding = '6px';
+          tdTitle.textContent = bug.title;
+          tr.appendChild(tdTitle);
+
+          // Severity pill
+          const tdSev = document.createElement('td');
+          tdSev.style.padding = '6px';
+          const sevCycle = ['low', 'medium', 'high', 'critical'];
+          tdSev.appendChild(_makePill(bug.severity, _sevColor(bug.severity), async (e) => {
+            e.stopPropagation();
+            const next = sevCycle[(sevCycle.indexOf(bug.severity) + 1) % sevCycle.length];
+            await updateBug(bug.bug_id, { severity: next });
+            bug.severity = next;
+            renderBugTable();
+          }));
+          tr.appendChild(tdSev);
+
+          // Status pill
+          const tdStatus = document.createElement('td');
+          tdStatus.style.padding = '6px';
+          const statusCycle = ['open', 'fixed', 'wontfix'];
+          tdStatus.appendChild(_makePill(bug.status, _statusColor(bug.status), async (e) => {
+            e.stopPropagation();
+            const next = statusCycle[(statusCycle.indexOf(bug.status) + 1) % statusCycle.length];
+            await updateBug(bug.bug_id, { status: next });
+            bug.status = next;
+            renderBugTable();
+          }));
+          tr.appendChild(tdStatus);
+
+          // Test status pill
+          const tdTest = document.createElement('td');
+          tdTest.style.padding = '6px';
+          const testCycle = ['untested', 'passed', 'failed'];
+          tdTest.appendChild(_makePill(bug.test_status || 'untested', _testColor(bug.test_status), async (e) => {
+            e.stopPropagation();
+            const cur = bug.test_status || 'untested';
+            const next = testCycle[(testCycle.indexOf(cur) + 1) % testCycle.length];
+            await updateBug(bug.bug_id, { test_status: next });
+            bug.test_status = next;
+            renderBugTable();
+          }));
+          tr.appendChild(tdTest);
+
+          // Session
+          const tdSess = document.createElement('td');
+          tdSess.style.padding = '6px';
+          tdSess.style.fontFamily = 'var(--mono)';
+          tdSess.style.fontSize = '11px';
+          tdSess.textContent = bug.fixed_in_session || '-';
+          tr.appendChild(tdSess);
+
+          // Created
+          const tdCreated = document.createElement('td');
+          tdCreated.style.padding = '6px';
+          tdCreated.style.fontSize = '11px';
+          tdCreated.style.color = 'var(--muted)';
+          tdCreated.textContent = bug.created_at ? new Date(bug.created_at).toLocaleDateString() : '-';
+          tr.appendChild(tdCreated);
+
+          // Click row to expand detail
+          tr.onclick = () => showBugDetail(bug);
+          tbody.appendChild(tr);
+        });
+      }
+
+      function showBugDetail(bug) {
+        $('bugDetail').style.display = '';
+        $('bugDetailId').textContent = bug.bug_id + ' — ' + bug.title;
+        $('bugDetailSymptoms').textContent = bug.symptoms || '(none)';
+        $('bugDetailRootCause').textContent = bug.root_cause || '(none)';
+        $('bugDetailFix').textContent = bug.fix_description || '(none)';
+        $('bugDetailFiles').textContent = (bug.affected_files || []).join('\n') || '(none)';
+      }
+
+      $('bugDetailClose').onclick = () => { $('bugDetail').style.display = 'none'; };
+
+      async function updateBug(bugId, fields) {
+        try {
+          await api('/api/admin/bugs/' + encodeURIComponent(bugId), { method: 'PUT', body: JSON.stringify(fields) });
+        } catch(e) {
+          $('bugMeta').textContent = 'update error: ' + e.message;
+        }
+      }
+
+      // Add bug form toggle
+      $('bugAddToggle').onclick = () => {
+        const form = $('bugAddForm');
+        form.style.display = form.style.display === 'none' ? '' : 'none';
+      };
+      $('bugCancelBtn').onclick = () => { $('bugAddForm').style.display = 'none'; };
+
+      $('bugSubmitBtn').onclick = async () => {
+        const title = $('bugNewTitle').value.trim();
+        if (!title) { alert('Title required'); return; }
+        const filesRaw = $('bugNewFiles').value.trim();
+        const affected_files = filesRaw ? filesRaw.split(',').map(f => f.trim()).filter(Boolean) : [];
+        const body = {
+          title,
+          severity: $('bugNewSeverity').value,
+          status: $('bugNewStatus').value,
+          symptoms: $('bugNewSymptoms').value.trim(),
+          root_cause: $('bugNewRootCause').value.trim(),
+          fix_description: $('bugNewFix').value.trim(),
+          fixed_in_session: $('bugNewSession').value.trim(),
+          affected_files
+        };
+        try {
+          const data = await api('/api/admin/bugs', { method: 'POST', body: JSON.stringify(body) });
+          $('bugAddForm').style.display = 'none';
+          $('bugNewTitle').value = '';
+          $('bugNewSymptoms').value = '';
+          $('bugNewRootCause').value = '';
+          $('bugNewFix').value = '';
+          $('bugNewSession').value = '';
+          $('bugNewFiles').value = '';
+          $('bugMeta').textContent = 'created ' + data.bug_id;
+          await loadBugs();
+        } catch(e) {
+          alert('Error: ' + e.message);
+        }
+      };
+
+      $('bugLoadBtn').onclick = loadBugs;
+
+
+      // ── Warmup Seeds Editor ──────────────────────────────────────────────
+      async function loadSeedList() {
+        try {
+          const data = await api('/api/admin/seeds');
+          const sel = $('seedSelect');
+          sel.innerHTML = '<option value="">-- select --</option>';
+          (data.seeds || []).forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.name;
+            opt.textContent = s.name + ' (' + s.messages + ' msgs, ' + Math.round(s.size_bytes/1024) + 'KB)';
+            sel.appendChild(opt);
+          });
+          $('seedMeta').textContent = (data.seeds || []).length + ' seed files';
+        } catch(e) {
+          $('seedMeta').textContent = 'Error: ' + e.message;
+        }
+      }
+
+      let _seedData = null; // current loaded seed messages array
+
+      function renderSeedMessages() {
+        const container = $('seedMessages');
+        if (!_seedData || !_seedData.length) {
+          container.innerHTML = '<div class="muted" style="padding:8px;">(no messages — click Load)</div>';
+          return;
+        }
+        let html = '';
+        _seedData.forEach((msg, idx) => {
+          const roleColor = msg.role === 'user' ? '#60a5fa' : msg.role === 'assistant' ? '#4ade80' : msg.role === 'tool' ? '#f472b6' : '#fbbf24';
+          const roleBg = msg.role === 'user' ? '#0f1f3a' : msg.role === 'assistant' ? '#0f2a1a' : msg.role === 'tool' ? '#2a0f2a' : '#2a2010';
+          html += '<div style="border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:8px;background:' + roleBg + ';">';
+          html += '<div class="row" style="justify-content:space-between;margin-bottom:6px;">';
+          html += '<div style="display:flex;align-items:center;gap:8px;">';
+          html += '<select data-idx="' + idx + '" data-field="role" onchange="seedMsgFieldChange(this)" style="background:#0f1730;color:' + roleColor + ';border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-weight:bold;font-size:12px;">';
+          html += '<option value="user"' + (msg.role === 'user' ? ' selected' : '') + '>user</option>';
+          html += '<option value="assistant"' + (msg.role === 'assistant' ? ' selected' : '') + '>assistant</option>';
+          html += '<option value="system"' + (msg.role === 'system' ? ' selected' : '') + '>system</option>';
+          html += '<option value="tool"' + (msg.role === 'tool' ? ' selected' : '') + '>tool</option>';
+          html += '</select>';
+          html += '<span class="muted" style="font-size:11px;">msg #' + idx + '</span>';
+          if (msg.reasoning_content) {
+            html += '<span style="font-size:10px;background:#3b2070;color:#c4b5fd;padding:2px 6px;border-radius:4px;">has reasoning</span>';
+          }
+          if (msg.tool_calls && msg.tool_calls.length > 0) {
+            html += '<span style="font-size:10px;background:#4a1942;color:#f472b6;padding:2px 6px;border-radius:4px;">' + msg.tool_calls.length + ' tool call' + (msg.tool_calls.length > 1 ? 's' : '') + '</span>';
+          }
+          if (msg.role === 'tool') {
+            html += '<span style="font-size:10px;background:#4a1942;color:#f472b6;padding:2px 6px;border-radius:4px;">tool result</span>';
+          }
+          html += '</div>';
+          html += '<div style="display:flex;gap:4px;">';
+          if (idx > 0) html += '<button onclick="seedMoveMsg(' + idx + ',-1)" style="font-size:11px;padding:2px 6px;">&#9650;</button>';
+          if (idx < _seedData.length - 1) html += '<button onclick="seedMoveMsg(' + idx + ',1)" style="font-size:11px;padding:2px 6px;">&#9660;</button>';
+          html += '<button onclick="seedDeleteMsg(' + idx + ')" class="danger" style="font-size:11px;padding:2px 6px;">✕</button>';
+          html += '</div></div>';
+          // Reasoning content (if present)
+          if (msg.reasoning_content !== undefined) {
+            html += '<div class="muted" style="font-size:11px;margin-bottom:2px;">reasoning_content:</div>';
+            html += '<textarea data-idx="' + idx + '" data-field="reasoning_content" onchange="seedMsgFieldChange(this)" ';
+            html += 'style="width:100%;min-height:60px;font-family:var(--mono);font-size:12px;background:#1a1030;color:#d8b4fe;border:1px solid #3b2070;border-radius:6px;padding:6px;margin-bottom:4px;resize:vertical;">';
+            html += _escHtml(msg.reasoning_content || '');
+            html += '</textarea>';
+          }
+          if (msg.role === 'assistant' && msg.reasoning_content === undefined) {
+            html += '<button onclick="seedAddReasoning(' + idx + ')" style="font-size:11px;padding:2px 8px;margin-bottom:4px;">+ reasoning_content</button>';
+          }
+          // Tool calls for assistant messages — human-friendly UI
+          if (msg.role === 'assistant') {
+            const tcList = msg.tool_calls || [];
+            if (tcList.length > 0) {
+              html += '<div style="margin-bottom:6px;">';
+              tcList.forEach((tc, tcIdx) => {
+                const tcFunc = tc.function || {};
+                const tcName = tcFunc.name || '';
+                let argsObj = {};
+                try { argsObj = JSON.parse(tcFunc.arguments || '{}'); } catch(e) {}
+                html += '<div style="background:#1a0f2a;border:1px solid #3b2070;border-radius:8px;padding:10px;margin-bottom:6px;">';
+                html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+                html += '<span style="color:#f472b6;font-weight:bold;font-size:12px;">Tool Call: ' + _escHtml(tcName || '(unnamed)') + '</span>';
+                html += '<button onclick="seedRemoveToolCall(' + idx + ',' + tcIdx + ')" class="danger" style="font-size:10px;padding:2px 8px;">Remove</button>';
+                html += '</div>';
+                html += '<div style="display:flex;gap:8px;margin-bottom:6px;">';
+                html += '<label style="flex:0 0 auto;font-size:11px;color:var(--muted);">Tool';
+                html += '<select data-idx="' + idx + '" data-tcidx="' + tcIdx + '" data-tcfield="name" onchange="seedToolCallFieldChange(this)" style="background:#0f1730;color:#4ade80;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;min-width:180px;">';
+                html += '<option value="set_system_prompt"' + (tcName === 'set_system_prompt' ? ' selected' : '') + '>set_system_prompt</option>';
+                html += '<option value="add_system_message"' + (tcName === 'add_system_message' ? ' selected' : '') + '>add_system_message</option>';
+                html += '</select></label>';
+                html += '<input data-idx="' + idx + '" data-tcidx="' + tcIdx + '" data-tcfield="id" value="' + _escHtml(tc.id || '') + '" onchange="seedToolCallFieldChange(this)" placeholder="auto-generated ID" style="flex:1;font-size:11px;background:#0f1730;color:#888;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-family:var(--mono);" />';
+                html += '</div>';
+                // Friendly content field instead of raw JSON
+                const argKey = tcName === 'set_system_prompt' ? 'prompt' : 'content';
+                const argLabel = tcName === 'set_system_prompt' ? 'New system prompt' : 'System message content';
+                const argVal = argsObj[argKey] || '';
+                html += '<div class="muted" style="font-size:11px;margin-bottom:2px;">' + _escHtml(argLabel) + ':</div>';
+                html += '<textarea data-idx="' + idx + '" data-tcidx="' + tcIdx + '" data-tcfield="arguments" data-argkey="' + argKey + '" onchange="seedToolCallFieldChange(this)" ';
+                html += 'style="width:100%;min-height:60px;font-family:var(--mono);font-size:12px;background:#0f1730;color:#e2e8f0;border:1px solid #3b2070;border-radius:6px;padding:8px;resize:vertical;">';
+                html += _escHtml(argVal);
+                html += '</textarea>';
+                html += '</div>';
+              });
+              html += '</div>';
+            }
+            html += '<button onclick="seedAddToolCall(' + idx + ')" style="font-size:11px;padding:3px 10px;margin-bottom:4px;background:#2a1040;border:1px solid #3b2070;color:#c4b5fd;">+ Add Tool Call</button>';
+          }
+          // tool_call_id for tool role messages — auto-linked display
+          if (msg.role === 'tool') {
+            const linkedId = msg.tool_call_id || '';
+            html += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;padding:4px 8px;background:#2a0f2a;border-radius:6px;">';
+            html += '<span style="font-size:11px;color:#f472b6;">Responds to tool call:</span>';
+            html += '<input data-idx="' + idx + '" data-field="tool_call_id" onchange="seedMsgFieldChange(this)" value="' + _escHtml(linkedId) + '" style="flex:1;font-size:12px;background:#0f1730;color:#f472b6;border:1px solid #3b2070;border-radius:6px;padding:4px 8px;font-family:var(--mono);" />';
+            html += '</div>';
+          }
+          // Content
+          html += '<div class="muted" style="font-size:11px;margin-bottom:2px;">content:</div>';
+          html += '<textarea data-idx="' + idx + '" data-field="content" onchange="seedMsgFieldChange(this)" ';
+          html += 'style="width:100%;min-height:80px;font-family:var(--mono);font-size:12px;background:#0f1730;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px;resize:vertical;">';
+          html += _escHtml(msg.content || '');
+          html += '</textarea>';
+          html += '</div>';
+        });
+        container.innerHTML = html;
+        // Auto-resize textareas
+        container.querySelectorAll('textarea').forEach(ta => {
+          ta.style.height = 'auto';
+          ta.style.height = Math.min(Math.max(ta.scrollHeight + 4, 60), 400) + 'px';
+        });
+      }
+
+      function _escHtml(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+
+      function seedMsgFieldChange(el) {
+        const idx = parseInt(el.dataset.idx);
+        const field = el.dataset.field;
+        if (field === 'role') {
+          _seedData[idx].role = el.value;
+          // When switching to tool role, add tool_call_id if missing
+          if (el.value === 'tool' && !_seedData[idx].tool_call_id) {
+            _seedData[idx].tool_call_id = '';
+          }
+          // When switching to assistant, clean up tool-specific fields
+          if (el.value !== 'tool') {
+            delete _seedData[idx].tool_call_id;
+          }
+          if (el.value !== 'assistant') {
+            delete _seedData[idx].tool_calls;
+          }
+          renderSeedMessages();
+        } else {
+          _seedData[idx][field] = el.value;
+        }
+      }
+
+      function seedAddReasoning(idx) {
+        _seedData[idx].reasoning_content = '';
+        renderSeedMessages();
+      }
+
+      function seedMoveMsg(idx, dir) {
+        const target = idx + dir;
+        if (target < 0 || target >= _seedData.length) return;
+        const tmp = _seedData[idx];
+        _seedData[idx] = _seedData[target];
+        _seedData[target] = tmp;
+        renderSeedMessages();
+      }
+
+      function seedDeleteMsg(idx) {
+        if (!confirm('Delete message #' + idx + '?')) return;
+        _seedData.splice(idx, 1);
+        renderSeedMessages();
+      }
+
+      function seedAddToolCall(msgIdx) {
+        if (!_seedData[msgIdx].tool_calls) _seedData[msgIdx].tool_calls = [];
+        const tcId = 'tc_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+        _seedData[msgIdx].tool_calls.push({
+          id: tcId,
+          type: 'function',
+          function: { name: '', arguments: '{}' }
+        });
+        // Also add a corresponding tool result message after this one
+        const toolResultIdx = msgIdx + 1 + _seedData[msgIdx].tool_calls.length - 1;
+        // Don't auto-add tool result here — user can add manually with + Message
+        renderSeedMessages();
+      }
+
+      function seedRemoveToolCall(msgIdx, tcIdx) {
+        if (!_seedData[msgIdx].tool_calls) return;
+        _seedData[msgIdx].tool_calls.splice(tcIdx, 1);
+        if (_seedData[msgIdx].tool_calls.length === 0) delete _seedData[msgIdx].tool_calls;
+        renderSeedMessages();
+      }
+
+      function seedToolCallFieldChange(el) {
+        const msgIdx = parseInt(el.dataset.idx);
+        const tcIdx = parseInt(el.dataset.tcidx);
+        const field = el.dataset.tcfield;
+        if (!_seedData[msgIdx].tool_calls || !_seedData[msgIdx].tool_calls[tcIdx]) return;
+        const tc = _seedData[msgIdx].tool_calls[tcIdx];
+        if (field === 'id') {
+          tc.id = el.value;
+        } else if (field === 'name') {
+          if (!tc.function) tc.function = {};
+          tc.function.name = el.value;
+          // Re-render so the label and arg key update
+          renderSeedMessages();
+        } else if (field === 'arguments') {
+          if (!tc.function) tc.function = {};
+          // The textarea shows the friendly value, wrap it back into JSON
+          const argKey = el.dataset.argkey || 'prompt';
+          const obj = {};
+          obj[argKey] = el.value;
+          tc.function.arguments = JSON.stringify(obj);
+        }
+      }
+
+      async function loadSeed() {
+        const name = $('seedSelect').value;
+        if (!name) { alert('Select a seed file'); return; }
+        try {
+          $('seedMeta').textContent = 'Loading...';
+          const data = await api('/api/admin/seeds/' + encodeURIComponent(name));
+          _seedData = data.messages || [];
+          $('seedMeta').textContent = _seedData.length + ' messages, ' + Math.round(data.size_bytes/1024) + 'KB';
+          renderSeedMessages();
+        } catch(e) {
+          $('seedMeta').textContent = 'Error: ' + e.message;
+          _seedData = null;
+          $('seedMessages').innerHTML = '';
+        }
+      }
+
+      async function saveSeed() {
+        const name = $('seedSelect').value;
+        if (!name) { alert('Select a seed file'); return; }
+        if (!_seedData) { alert('No seed loaded'); return; }
+        // Sync all textarea and input values before saving
+        $('seedMessages').querySelectorAll('textarea, input').forEach(el => {
+          const idx = parseInt(el.dataset.idx);
+          if (isNaN(idx) || !_seedData[idx]) return;
+          const field = el.dataset.field;
+          const tcIdx = el.dataset.tcidx;
+          const tcField = el.dataset.tcfield;
+          if (tcField !== undefined && tcIdx !== undefined) {
+            // Tool call field
+            const ti = parseInt(tcIdx);
+            const tc = (_seedData[idx].tool_calls || [])[ti];
+            if (tc) {
+              if (tcField === 'id') tc.id = el.value;
+              else if (tcField === 'name') { if (!tc.function) tc.function = {}; tc.function.name = el.value; }
+              else if (tcField === 'arguments') { if (!tc.function) tc.function = {}; tc.function.arguments = el.value; }
+            }
+          } else if (field) {
+            _seedData[idx][field] = el.value;
+          }
+        });
+        if (!confirm('Save ' + _seedData.length + ' messages to ' + name + '.json?\n(Backup will be created automatically)')) return;
+        try {
+          $('seedMeta').textContent = 'Saving...';
+          const result = await api('/api/admin/seeds/' + encodeURIComponent(name), {
+            method: 'POST',
+            body: JSON.stringify({ messages: _seedData }),
+          });
+          $('seedMeta').textContent = 'Saved! ' + result.messages_count + ' msgs, ' + Math.round(result.size_bytes/1024) + 'KB';
+        } catch(e) {
+          alert('Save failed: ' + e.message);
+          $('seedMeta').textContent = 'Save error: ' + e.message;
+        }
+      }
+
+      function seedAddMessage() {
+        if (!_seedData) _seedData = [];
+        _seedData.push({ role: 'system', content: '' });
+        renderSeedMessages();
+        // Scroll to bottom of seed messages
+        const container = $('seedMessages');
+        container.lastElementChild?.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      function seedAddToolCallPair() {
+        if (!_seedData) _seedData = [];
+        const tcId = 'tc_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+        // Add assistant message with tool_calls
+        _seedData.push({
+          role: 'assistant',
+          content: '',
+          tool_calls: [{
+            id: tcId,
+            type: 'function',
+            function: {
+              name: 'set_system_prompt',
+              arguments: JSON.stringify({ prompt: '' })
+            }
+          }]
+        });
+        // Add matching tool result message
+        _seedData.push({
+          role: 'tool',
+          tool_call_id: tcId,
+          content: JSON.stringify({ success: true, message: 'System prompt updated.' })
+        });
+        renderSeedMessages();
+        const container = $('seedMessages');
+        container.lastElementChild?.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      // === User Context (Post-Handoff Briefing) ===
+
+      // ── Seed Manager: Tabs ──────────────────────────────────────────────
+      function seedSwitchTab(tab) {
+        document.querySelectorAll('.seedPanel').forEach(p => p.style.display = 'none');
+        document.querySelectorAll('.seedTab').forEach(t => t.classList.remove('seedTabActive'));
+        $('seedPanel' + tab.charAt(0).toUpperCase() + tab.slice(1)).style.display = '';
+        $('seedTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('seedTabActive');
+        if (tab === 'config') seedLoadManifest();
+        if (tab === 'sysmsg') seedLoadSysMsgs();
+      }
+
+      // ── Seed Manager: Manifest Config ───────────────────────────────────
+      let _manifestData = null;
+      let _editingSeedId = null;
+
+      async function seedLoadManifest() {
+        try {
+          _manifestData = await api('/api/admin/manifest');
+          renderManifestGrid();
+        } catch(e) {
+          $('seedManifestGrid').innerHTML = '<div class="bad">Error: ' + _escHtml(e.message) + '</div>';
+        }
+      }
+
+      function renderManifestGrid() {
+        if (!_manifestData || !_manifestData.seeds) {
+          $('seedManifestGrid').innerHTML = '<div class="muted">No manifest data.</div>';
+          return;
+        }
+        const seeds = _manifestData.seeds;
+        const ids = Object.keys(seeds).sort();
+        let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+        html += '<tr style="border-bottom:1px solid var(--border);color:var(--muted);">';
+        html += '<th style="text-align:left;padding:4px 8px;">ID</th>';
+        html += '<th style="text-align:center;padding:4px;">Msgs</th>';
+        html += '<th style="text-align:center;padding:4px;">SysPrompt</th>';
+        html += '<th style="text-align:center;padding:4px;">Briefing</th>';
+        html += '<th style="text-align:center;padding:4px;">Reasoning</th>';
+        html += '<th style="text-align:left;padding:4px 8px;">Description</th>';
+        html += '<th style="text-align:center;padding:4px;">Actions</th>';
+        html += '</tr>';
+        ids.forEach(id => {
+          const s = seeds[id];
+          const yes = '<span style="color:var(--ok);">&#10003;</span>';
+          const no = '<span style="color:var(--muted);">&#8211;</span>';
+          html += '<tr style="border-bottom:1px solid #1a1f30;">';
+          html += '<td style="padding:4px 8px;font-weight:bold;color:#60a5fa;">' + _escHtml(id) + '</td>';
+          html += '<td style="text-align:center;padding:4px;">' + (s.message_count || 0) + '</td>';
+          html += '<td style="text-align:center;padding:4px;">' + (s.is_system_prompt ? yes : no) + '</td>';
+          html += '<td style="text-align:center;padding:4px;">' + (s.inject_briefing_over ? yes : no) + '</td>';
+          html += '<td style="text-align:center;padding:4px;">' + (s.has_reasoning ? yes : no) + '</td>';
+          html += '<td style="padding:4px 8px;color:var(--muted);">' + _escHtml(s.description || '') + '</td>';
+          html += '<td style="text-align:center;padding:4px;">';
+          html += '<button onclick="seedEditConfig(\'' + _escHtml(id) + '\')" style="font-size:11px;padding:2px 8px;">Edit</button>';
+          html += '</td>';
+          html += '</tr>';
+        });
+        html += '</table>';
+        $('seedManifestGrid').innerHTML = html;
+      }
+
+      function seedEditConfig(seedId) {
+        if (!_manifestData || !_manifestData.seeds[seedId]) return;
+        _editingSeedId = seedId;
+        const cfg = _manifestData.seeds[seedId];
+        $('seedCfgId').textContent = seedId;
+        $('seedCfgSysPrompt').checked = !!cfg.is_system_prompt;
+        $('seedCfgBriefing').checked = !!cfg.inject_briefing_over;
+        $('seedCfgSysPromptText').value = cfg.system_prompt_text || '';
+        $('seedCfgDescription').value = cfg.description || '';
+
+        // Render appended system messages
+        const appended = cfg.appended_system_messages || [];
+        const allMsgs = _manifestData.system_messages || {};
+        let html = '';
+        appended.forEach(mid => {
+          html += '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:#1a2a3a;border:1px solid #2d4a5a;border-radius:12px;font-size:11px;">';
+          html += _escHtml(mid);
+          html += ' <button onclick="seedDetachSysMsg(\'' + _escHtml(_editingSeedId) + '\',\'' + _escHtml(mid) + '\')" style="font-size:10px;padding:0 4px;border:none;color:var(--bad);background:none;cursor:pointer;">&#10005;</button>';
+          html += '</span>';
+        });
+        // Add attach button
+        const available = Object.keys(allMsgs).filter(m => !appended.includes(m));
+        if (available.length) {
+          html += '<select id="seedCfgAttachSelect" style="font-size:11px;padding:2px 6px;background:#0f1730;color:var(--text);border:1px solid var(--border);border-radius:6px;">';
+          html += '<option value="">+ attach...</option>';
+          available.forEach(m => {
+            html += '<option value="' + _escHtml(m) + '">' + _escHtml(m) + '</option>';
+          });
+          html += '</select>';
+        }
+        $('seedCfgAppended').innerHTML = html;
+
+        // Wire attach select
+        setTimeout(() => {
+          const sel = $('seedCfgAttachSelect');
+          if (sel) sel.onchange = function() {
+            if (this.value) seedAttachSysMsg(_editingSeedId, this.value);
+          };
+        }, 50);
+
+        $('seedConfigEditor').style.display = '';
+      }
+
+      async function seedSaveConfig() {
+        if (!_editingSeedId) return;
+        try {
+          await api('/api/admin/manifest/seeds/' + encodeURIComponent(_editingSeedId), {
+            method: 'PUT',
+            body: JSON.stringify({
+              is_system_prompt: $('seedCfgSysPrompt').checked,
+              inject_briefing_over: $('seedCfgBriefing').checked,
+              system_prompt_text: $('seedCfgSysPromptText').value || null,
+              description: $('seedCfgDescription').value,
+            }),
+          });
+          showToast('Config saved for ' + _editingSeedId);
+          seedLoadManifest();
+        } catch(e) {
+          alert('Save failed: ' + e.message);
+        }
+      }
+
+      async function seedAttachSysMsg(seedId, msgId) {
+        try {
+          await api('/api/admin/manifest/seeds/' + encodeURIComponent(seedId) + '/attach', {
+            method: 'POST',
+            body: JSON.stringify({ msg_id: msgId }),
+          });
+          showToast('Attached ' + msgId);
+          await seedLoadManifest();
+          seedEditConfig(seedId);
+        } catch(e) {
+          alert('Attach failed: ' + e.message);
+        }
+      }
+
+      async function seedDetachSysMsg(seedId, msgId) {
+        try {
+          await api('/api/admin/manifest/seeds/' + encodeURIComponent(seedId) + '/detach', {
+            method: 'POST',
+            body: JSON.stringify({ msg_id: msgId }),
+          });
+          showToast('Detached ' + msgId);
+          await seedLoadManifest();
+          seedEditConfig(seedId);
+        } catch(e) {
+          alert('Detach failed: ' + e.message);
+        }
+      }
+
+      // ── Seed Manager: Validate ──────────────────────────────────────────
+      async function seedValidate() {
+        const name = $('seedSelect').value;
+        if (!name) { alert('Select a seed file'); return; }
+        // Find seed_id from manifest by filename match
+        if (!_manifestData) {
+          try { _manifestData = await api('/api/admin/manifest'); } catch(e) {}
+        }
+        let seedId = null;
+        if (_manifestData && _manifestData.seeds) {
+          for (const [id, cfg] of Object.entries(_manifestData.seeds)) {
+            if (cfg.seed_file && cfg.seed_file.includes(name)) {
+              seedId = id;
+              break;
+            }
+          }
+        }
+        if (!seedId) {
+          $('seedValidateResult').style.display = '';
+          $('seedValidateResult').innerHTML = '<div class="warn" style="font-size:12px;">Seed not in manifest. Run init from CLI.</div>';
+          return;
+        }
+        try {
+          const result = await api('/api/admin/manifest/seeds/' + encodeURIComponent(seedId) + '/validate');
+          let html = '';
+          if (result.valid) {
+            html = '<div style="color:var(--ok);font-size:12px;">&#10003; Valid (' + result.message_count + ' messages)';
+            if (result.warnings.length) html += ' — ' + result.warnings.length + ' warnings';
+            html += '</div>';
+          } else {
+            html = '<div style="color:var(--bad);font-size:12px;">&#10007; Invalid</div>';
+          }
+          if (result.errors.length) {
+            html += '<div style="font-size:11px;color:var(--bad);margin-top:2px;">' + result.errors.map(e => '&#8226; ' + _escHtml(e)).join('<br>') + '</div>';
+          }
+          if (result.warnings.length) {
+            html += '<div style="font-size:11px;color:var(--warn);margin-top:2px;">' + result.warnings.map(w => '&#8226; ' + _escHtml(w)).join('<br>') + '</div>';
+          }
+          $('seedValidateResult').style.display = '';
+          $('seedValidateResult').innerHTML = html;
+        } catch(e) {
+          $('seedValidateResult').style.display = '';
+          $('seedValidateResult').innerHTML = '<div class="bad" style="font-size:12px;">Validate error: ' + _escHtml(e.message) + '</div>';
+        }
+      }
+
+      // ── Seed Manager: System Messages Tab ───────────────────────────────
+      async function seedLoadSysMsgs() {
+        try {
+          const data = await api('/api/admin/manifest/system-messages');
+          const msgs = data.system_messages || [];
+          if (!msgs.length) {
+            $('seedSysMsgList').innerHTML = '<div class="muted" style="font-size:12px;">No system messages registered.</div>';
+            return;
+          }
+          let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+          html += '<tr style="border-bottom:1px solid var(--border);color:var(--muted);">';
+          html += '<th style="text-align:left;padding:4px 8px;">ID</th>';
+          html += '<th style="text-align:center;padding:4px;">Size</th>';
+          html += '<th style="text-align:left;padding:4px 8px;">Description</th>';
+          html += '<th style="text-align:center;padding:4px;">Actions</th>';
+          html += '</tr>';
+          msgs.forEach(m => {
+            html += '<tr style="border-bottom:1px solid #1a1f30;">';
+            html += '<td style="padding:4px 8px;font-weight:bold;color:#fbbf24;">' + _escHtml(m.id) + '</td>';
+            html += '<td style="text-align:center;padding:4px;">' + m.content_length + 'c</td>';
+            html += '<td style="padding:4px 8px;color:var(--muted);">' + _escHtml(m.description || '') + '</td>';
+            html += '<td style="text-align:center;padding:4px;">';
+            html += '<button onclick="seedViewSysMsg(\'' + _escHtml(m.id) + '\')" style="font-size:11px;padding:2px 8px;">View</button> ';
+            html += '<button onclick="seedEditSysMsg(\'' + _escHtml(m.id) + '\')" style="font-size:11px;padding:2px 8px;">Edit</button> ';
+            html += '<button onclick="seedDeleteSysMsg(\'' + _escHtml(m.id) + '\')" class="danger" style="font-size:11px;padding:2px 6px;">&#10005;</button>';
+            html += '</td>';
+            html += '</tr>';
+          });
+          html += '</table>';
+          $('seedSysMsgList').innerHTML = html;
+        } catch(e) {
+          $('seedSysMsgList').innerHTML = '<div class="bad">Error: ' + _escHtml(e.message) + '</div>';
+        }
+      }
+
+      async function seedViewSysMsg(msgId) {
+        try {
+          const data = await api('/api/admin/manifest/system-messages/' + encodeURIComponent(msgId));
+          $('sysMsgEditId').value = data.id;
+          $('sysMsgEditId').disabled = true;
+          $('sysMsgEditDesc').value = data.description || '';
+          $('sysMsgEditContent').value = data.content || '';
+          $('seedSysMsgEditor').style.display = '';
+          // Auto-resize
+          const ta = $('sysMsgEditContent');
+          ta.style.height = 'auto';
+          ta.style.height = Math.min(Math.max(ta.scrollHeight + 4, 100), 500) + 'px';
+        } catch(e) {
+          alert('Load failed: ' + e.message);
+        }
+      }
+
+      async function seedEditSysMsg(msgId) {
+        await seedViewSysMsg(msgId);
+        $('sysMsgEditId').disabled = false;
+      }
+
+      function seedNewSysMsg() {
+        $('sysMsgEditId').value = '';
+        $('sysMsgEditId').disabled = false;
+        $('sysMsgEditDesc').value = '';
+        $('sysMsgEditContent').value = '';
+        $('seedSysMsgEditor').style.display = '';
+      }
+
+      async function seedSaveSysMsg() {
+        const id = $('sysMsgEditId').value.trim();
+        if (!id) { alert('ID is required'); return; }
+        try {
+          await api('/api/admin/manifest/system-messages/' + encodeURIComponent(id), {
+            method: 'POST',
+            body: JSON.stringify({
+              content: $('sysMsgEditContent').value,
+              description: $('sysMsgEditDesc').value,
+            }),
+          });
+          showToast('Saved system message: ' + id);
+          $('seedSysMsgEditor').style.display = 'none';
+          seedLoadSysMsgs();
+        } catch(e) {
+          alert('Save failed: ' + e.message);
+        }
+      }
+
+      async function seedDeleteSysMsg(msgId) {
+        if (!confirm('Delete system message "' + msgId + '"?')) return;
+        try {
+          await api('/api/admin/manifest/system-messages/' + encodeURIComponent(msgId), {
+            method: 'DELETE',
+          });
+          showToast('Deleted: ' + msgId);
+          seedLoadSysMsgs();
+        } catch(e) {
+          alert('Delete failed: ' + e.message);
+        }
+      }
+
+      let _ucPresets = {};
+      async function ucRefresh() {
+        try {
+          const data = await api('/api/admin/user-context', { method: 'GET' });
+          const entries = data.entries || [];
+          const users = data.users || {};
+          const container = $('ucEntries');
+          if (!entries.length) {
+            container.innerHTML = '<div class="muted" style="font-size:12px;">No user contexts set.</div>';
+          } else {
+            container.innerHTML = entries.map(e =>
+              '<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;padding:6px;background:#0f1730;border-radius:8px;">' +
+                '<span class="mono" style="min-width:120px;color:var(--ok);font-size:12px;">' + e.username + ' (ID ' + e.user_id + ')</span>' +
+                '<span style="flex:1;font-size:12px;">' + e.context.substring(0, 200) + (e.context.length > 200 ? '...' : '') + '</span>' +
+                '<button style="font-size:11px;" onclick="ucEdit(' + e.user_id + ',\''+e.username+'\')">Edit</button>' +
+              '</div>'
+            ).join('');
+          }
+          // Populate presets
+          _ucPresets = data.presets || {};
+          const presetSel = $('ucPresetSelect');
+          const curPreset = presetSel.value;
+          presetSel.innerHTML = '<option value="">Custom</option>';
+          for (const [key, tmpl] of Object.entries(_ucPresets)) {
+            presetSel.innerHTML += '<option value="' + key + '">' + key.charAt(0).toUpperCase() + key.slice(1) + '</option>';
+          }
+          if (curPreset) presetSel.value = curPreset;
+          // Populate user select
+          const sel = $('ucUserSelect');
+          const curVal = sel.value;
+          sel.innerHTML = '<option value="">-- select user --</option>';
+          for (const [uid, uname] of Object.entries(users)) {
+            sel.innerHTML += '<option value="' + uid + '">' + uname + ' (ID ' + uid + ')</option>';
+          }
+          if (curVal) sel.value = curVal;
+        } catch (e) {
+          console.error('ucRefresh error:', e);
+        }
+      }
+      window.ucEdit = function(uid, uname) {
+        $('ucUserSelect').value = String(uid);
+        // Load existing context into textarea
+        api('/api/admin/user-context', { method: 'GET' }).then(data => {
+          const entry = (data.entries || []).find(e => e.user_id === uid);
+          $('ucTextarea').value = entry ? entry.context : '';
+          $('ucTextarea').focus();
+        });
+      };
+      $('ucPresetSelect').onchange = function() {
+        const key = this.value;
+        if (!key || !_ucPresets[key]) return;
+        const uid = $('ucUserSelect').value;
+        // Try to get username for {name} substitution
+        const sel = $('ucUserSelect');
+        const opt = sel.options[sel.selectedIndex];
+        const uname = opt ? opt.textContent.split(' (')[0] : 'the user';
+        $('ucTextarea').value = _ucPresets[key].replace(/{name}/g, uname);
+      };
+      $('ucUserSelect').onchange = function() {
+        // Re-apply preset if one is selected
+        const key = $('ucPresetSelect').value;
+        if (key && _ucPresets[key]) {
+          const opt = this.options[this.selectedIndex];
+          const uname = opt ? opt.textContent.split(' (')[0] : 'the user';
+          $('ucTextarea').value = _ucPresets[key].replace(/{name}/g, uname);
+        }
+      };
+      $('ucRefreshBtn').onclick = ucRefresh;
+      $('ucSaveBtn').onclick = async function() {
+        const uid = $('ucUserSelect').value;
+        const ctx = $('ucTextarea').value.trim();
+        if (!uid) { showToast('Select a user first'); return; }
+        try {
+          const data = await api('/api/admin/user-context', { method: 'POST', body: JSON.stringify({ user_id: parseInt(uid), context: ctx }) });
+          showToast(data.message || 'Saved');
+          $('ucTextarea').value = '';
+          ucRefresh();
+        } catch (e) { showToast('Error: ' + e.message); }
+      };
+      $('ucClearBtn').onclick = async function() {
+        const uid = $('ucUserSelect').value;
+        if (!uid) { showToast('Select a user first'); return; }
+        try {
+          const data = await api('/api/admin/user-context', { method: 'POST', body: JSON.stringify({ user_id: parseInt(uid), context: '' }) });
+          showToast(data.message || 'Cleared');
+          $('ucTextarea').value = '';
+          ucRefresh();
+        } catch (e) { showToast('Error: ' + e.message); }
+      };
+      ucRefresh();
+
+      $('seedLoadListBtn').onclick = loadSeedList;
+      $('seedLoadBtn').onclick = loadSeed;
+      $('seedSaveBtn').onclick = saveSeed;
+      $('seedAddMsgBtn').onclick = seedAddMessage;
+      $('seedValidateBtn').onclick = seedValidate;
+
+      // Auto-load seed list on page load
+      loadSeedList().catch(() => {});
+
+
+console.log('Admin panel script fully loaded');
+    
+      // === Thought Sanitization Toggle ===
+      async function loadTSStatus() {
+        try {
+          const data = await api('/api/admin/thought-sanitize', { method: 'GET' });
+          if (data.success) {
+            document.getElementById('tsToggle').checked = data.enabled;
+            document.getElementById('tsStat').textContent = data.enabled ? 'ON' : 'OFF';
+            document.getElementById('tsStat').style.color = data.enabled ? 'var(--ok)' : 'var(--warn)';
+          }
+        } catch (e) {
+          document.getElementById('tsStat').textContent = 'error';
+        }
+      }
+      document.getElementById('tsToggle').addEventListener('change', async (e) => {
+        const enabled = e.target.checked;
+        try {
+          const data = await api('/api/admin/thought-sanitize', {
+            method: 'POST',
+            body: JSON.stringify({ enabled })
+          });
+          if (data.success) {
+            document.getElementById('tsStat').textContent = data.enabled ? 'ON' : 'OFF';
+            document.getElementById('tsStat').style.color = data.enabled ? 'var(--ok)' : 'var(--warn)';
+          }
+        } catch (e) {
+          alert('Failed: ' + e.message);
+          e.target.checked = !enabled;
+        }
+      });
+      loadTSStatus();
+
+    </script>
+  </body>
+</html>
