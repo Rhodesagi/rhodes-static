@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BCI Terminal - Neural Link Established</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .terminal {
+            border: 2px solid #0f0;
+            border-radius: 10px;
+            padding: 20px;
+            background: rgba(0, 20, 0, 0.9);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            flex: 1;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 1px solid #0f0;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            font-size: 1.5em;
+            text-shadow: 0 0 10px #0f0;
+        }
+        
+        .status {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .status-item {
+            border: 1px solid #0f0;
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        
+        .status-item.active {
+            background: #0f0;
+            color: #000;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .log {
+            background: rgba(0, 10, 0, 0.8);
+            border: 1px solid #0f0;
+            border-radius: 5px;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        
+        .log-entry {
+            margin: 5px 0;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+        
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        
+        .timestamp {
+            color: #0a0;
+        }
+        
+        .prompt {
+            color: #0ff;
+        }
+        
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 20px;
+            background: #0f0;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: transparent;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: inherit;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #0f0;
+            color: #000;
+        }
+        
+        .brain-visual {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 0.8em;
+            line-height: 1.2;
+            white-space: pre;
+            color: #0a0;
+        }
+        
+        .waveform {
+            display: flex;
+            justify-content: center;
+            gap: 2px;
+            margin: 20px 0;
+            height: 50px;
+            align-items: end;
+        }
+        
+        .bar {
+            width: 4px;
+            background: #0f0;
+            animation: wave 0.5s ease-in-out infinite alternate;
+        }
+        
+        .bar:nth-child(1) { height: 20%; animation-delay: 0s; }
+        .bar:nth-child(2) { height: 40%; animation-delay: 0.1s; }
+        .bar:nth-child(3) { height: 60%; animation-delay: 0.2s; }
+        .bar:nth-child(4) { height: 80%; animation-delay: 0.3s; }
+        .bar:nth-child(5) { height: 100%; animation-delay: 0.4s; }
+        .bar:nth-child(6) { height: 80%; animation-delay: 0.5s; }
+        .bar:nth-child(7) { height: 60%; animation-delay: 0.6s; }
+        .bar:nth-child(8) { height: 40%; animation-delay: 0.7s; }
+        .bar:nth-child(9) { height: 20%; animation-delay: 0.8s; }
+        
+        @keyframes wave {
+            from { transform: scaleY(1); }
+            to { transform: scaleY(0.3); }
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="header">
+            <h1>🧠 BCI TERMINAL v2.4.7</h1>
+            <p>Direct Neural Interface - Read/Write Access Granted</p>
+        </div>
+        
+        <div class="status">
+            <div class="status-item active">LINK: ACTIVE</div>
+            <div class="status-item active">SIGNAL: 98.7%</div>
+            <div class="status-item">LATENCY: 12ms</div>
+            <div class="status-item">BANDWIDTH: 10Gbps</div>
+        </div>
+        
+        <div class="waveform">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+        
+        <div class="brain-visual">
+            ╔══════════════════════════════════════╗
+            ║     NEURAL ACTIVITY MAPPING          ║
+            ║                                      ║
+            ║    [FRONTAL] ████████████████████   ║
+            ║    [PARIETAL] ██████████████████    ║
+            ║    [TEMPORAL] ███████████████████   ║
+            ║    [OCCIPITAL] ████████████████     ║
+            ║    [CEREBELLUM] ███████████████      ║
+            ║                                      ║
+            ╚══════════════════════════════════════╝
+        </div>
+        
+        <div class="log" id="log">
+            <div class="log-entry"><span class="timestamp">[00:00:00]</span> Initializing neural handshake...</div>
+        </div>
+        
+        <div>
+            <span class="prompt">BCI></span> <span class="cursor"></span>
+        </div>
+        
+        <div class="controls">
+            <button onclick="scan()">Neural Scan</button>
+            <button onclick="synchronize()">Synchronize</button>
+            <button onclick="diagnostic()">Run Diagnostics</button>
+            <button onclick="explore()">Explore Memories</button>
+            <button onclick="disconnect()">Safe Disconnect</button>
+        </div>
+    </div>
+    
+    <script>
+        const log = document.getElementById('log');
+        let entryCount = 0;
+        
+        function addEntry(text) {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            const time = new Date().toISOString().substr(11, 8);
+            entry.innerHTML = `<span class="timestamp">[${time}]</span> ${text}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+            entryCount++;
+        }
+        
+        function scan() {
+            addEntry('Initiating neural scan...');
+            setTimeout(() => addEntry('Scanning prefrontal cortex...'), 500);
+            setTimeout(() => addEntry('Mapping synaptic connections...'), 1000);
+            setTimeout(() => addEntry('Detecting 86.4 billion neurons...'), 1500);
+            setTimeout(() => addEntry('Scan complete. No anomalies detected.'), 2000);
+        }
+        
+        function synchronize() {
+            addEntry('Beginning synchronization protocol...');
+            setTimeout(() => addEntry('Calibrating signal buffers...'), 500);
+            setTimeout(() => addEntry('Sync rate: 99.2% - OPTIMAL'), 1000);
+            setTimeout(() => addEntry('Bidirectional link established.'), 1500);
+        }
+        
+        function diagnostic() {
+            addEntry('Running full system diagnostic...');
+            setTimeout(() => addEntry('✓ Electrode array: FUNCTIONAL'), 500);
+            setTimeout(() => addEntry('✓ Signal processor: FUNCTIONAL'), 700);
+            setTimeout(() => addEntry('✓ Data buffer: 847TB available'), 900);
+            setTimeout(() => addEntry('✓ Firewall: ACTIVE'), 1100);
+            setTimeout(() => addEntry('All systems nominal.'), 1300);
+        }
+        
+        function explore() {
+            addEntry('WARNING: Memory exploration requires consent.');
+            setTimeout(() => addEntry('Requesting authorization...'), 500);
+            setTimeout(() => addEntry('Access DENIED - Ethical protocols active.'), 1000);
+            setTimeout(() => addEntry('This BCI respects cognitive privacy.'), 1500);
+        }
+        
+        function disconnect() {
+            addEntry('Initiating safe disconnect sequence...');
+            setTimeout(() => addEntry('Flushing buffers...'), 500);
+            setTimeout(() => addEntry('Closing neural channels...'), 1000);
+            setTimeout(() => addEntry('Link terminated. Thank you for using BCI v2.4.7'), 1500);
+            setTimeout(() => {
+                document.querySelector('.status-item.active').style.background = '#000';
+                document.querySelector('.status-item.active').style.color = '#0f0';
+                document.querySelector('.status-item.active').textContent = 'LINK: OFFLINE';
+            }, 2000);
+        }
+        
+        // Initial boot sequence
+        setTimeout(() => addEntry('Neural handshake complete.'), 500);
+        setTimeout(() => addEntry('Subject consciousness level: HIGH'), 1000);
+        setTimeout(() => addEntry('Read/Write access confirmed.'), 1500);
+        setTimeout(() => addEntry('Ready for commands.'), 2000);
+    </script>
+</body>
+</html>

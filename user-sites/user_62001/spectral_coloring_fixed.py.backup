@@ -1,0 +1,301 @@
+#!/usr/bin/env python3
+"""
+Spectral Coloring Register Allocator - Fixed Version
+Lev Osin, Alcor Scottsdale, 2025
+
+Uses spectral graph partitioning to determine coloring order,
+then applies greedy coloring globally with that ordering.
+This reduces spill code by better balancing the coloring load.
+"""
+
+import heapq
+import random
+from typing import List, Dict, Set, Tuple, Optional
+from dataclasses import dataclass
+
+@dataclass
+class LiveRange:
+    """A live range (virtual register) to be allocated."""
+    id: int
+    start: int  # First instruction where live
+    end: int    # Last instruction where live
+    prefs: Set[int] = None  # Preferred physical registers
+    
+    def __post_init__(self):
+        if self.prefs is None:
+            self.prefs = set()
+    
+    def overlaps(self, other: 'LiveRange') -> bool:
+        """Check if two live ranges interfere."""
+        return not (self.end < other.start or other.end < self.start)
+
+class InterferenceGraph:
+    """Graph where nodes are live ranges and edges are interferences."""
+    def __init__(self):
+        self.nodes: Dict[int, LiveRange] = {}
+        self.edges: Dict[int, Set[int]] = {}
+        
+    def add_node(self, lr: LiveRange):
+        self.nodes[lr.id] = lr
+        if lr.id not in self.edges:
+            self.edges[lr.id] = set()
+    
+    def add_edge(self, u: int, v: int):
+        if u in self.nodes and v in self.nodes:
+            self.edges[u].add(v)
+            self.edges[v].add(u)
+    
+    def build_from_ranges(self, ranges: List[LiveRange]):
+        """Build interference graph from live ranges."""
+        for lr in ranges:
+            self.add_node(lr)
+        
+        # O(n^2) pairwise interference check
+        ids = list(self.nodes.keys())
+        for i, id1 in enumerate(ids):
+            for id2 in ids[i+1:]:
+                if self.nodes[id1].overlaps(self.nodes[id2]):
+                    self.add_edge(id1, id2)
+    
+    def degree(self, node: int) -> int:
+        return len(self.edges[node])
+    
+    def neighbors(self, node: int) -> Set[int]:
+        return self.edges[node]
+
+class SpectralColoring:
+    """
+    Spectral graph coloring register allocator.
+    
+    Uses spectral ordering (Fiedler vector) to determine the order
+    in which nodes are colored. Nodes with similar spectral coordinates
+    tend to be less connected, so this ordering reduces the chance
+    of "color clustering" that causes spills.
+    """
+    
+    def __init__(self, num_colors: int):
+        self.num_colors = num_colors
+        
+    def allocate(self, ig: InterferenceGraph) -> Dict[int, int]:
+        """
+        Allocate physical registers to virtual registers.
+        Returns mapping: virtual_reg_id -> physical_reg_id
+        """
+        if not ig.nodes:
+            return {}
+        
+        # Get spectral ordering
+        ordering = self._spectral_order(ig)
+        
+        # Greedy coloring in spectral order
+        return self._greedy_color(ig, ordering)
+    
+    def _spectral_order(self, ig: InterferenceGraph) -> List[int]:
+        """
+        Compute spectral ordering using Fiedler vector approximation.
+        
+        The Fiedler vector is the eigenvector of the second smallest
+        eigenvalue of the graph Laplacian. It provides a 1D embedding
+        where connected nodes tend to be close together.
+        
+        We use power iteration on the Laplacian to approximate this.
+        """
+        nodes = list(ig.nodes.keys())
+        n = len(nodes)
+        
+        if n <= 1:
+            return nodes
+        
+        # Build degree lookup
+        degrees = {nid: ig.degree(nid) for nid in nodes}
+        node_idx = {nid: i for i, nid in enumerate(nodes)}
+        
+        # Initial random vector (orthogonal to constant vector)
+        random.seed(42)
+        v = [random.random() - 0.5 for _ in range(n)]
+        
+        # Remove component in direction of [1, 1, ..., 1]
+        mean = sum(v) / n
+        v = [x - mean for x in v]
+        
+        # Power iteration: repeatedly apply Laplacian
+        # This converges to the Fiedler vector
+        for iteration in range(20):
+            new_v = []
+            for i, nid in enumerate(nodes):
+                # (L @ v)[i] = degree[i] * v[i] - sum(v[j] for j in neighbors)
+                deg = degrees[nid]
+                neighbor_sum = sum(v[node_idx[neighbor]] 
+                                 for neighbor in ig.neighbors(nid))
+                new_v.append(deg * v[i] - neighbor_sum)
+            
+            # Remove mean (keep orthogonal to [1,1,...1])
+            mean = sum(new_v) / n
+            new_v = [x - mean for x in new_v]
+            
+            # Normalize
+            norm = sum(x*x for x in new_v) ** 0.5
+            if norm > 0:
+                v = [x / norm for x in new_v]
+        
+        # Sort nodes by their spectral coordinate
+        indexed_v = [(v[i], nodes[i]) for i in range(n)]
+        indexed_v.sort()
+        
+        return [nid for _, nid in indexed_v]
+    
+    def _greedy_color(self, ig: InterferenceGraph, order: List[int]) -> Dict[int, int]:
+        """
+        Greedy coloring in given order.
+        
+        Colors each node with the lowest available color not used
+        by already-colored neighbors.
+        """
+        colors: Dict[int, int] = {}
+        
+        for nid in order:
+            # Find colors used by already-colored neighbors
+            used = set()
+            for neighbor in ig.neighbors(nid):
+                if neighbor in colors:
+                    used.add(colors[neighbor])
+            
+            # Assign lowest available color
+            assigned = -1
+            for c in range(self.num_colors):
+                if c not in used:
+                    assigned = c
+                    break
+            
+            colors[nid] = assigned
+        
+        return colors
+
+class GreedyColoring:
+    """Standard greedy allocator for comparison (Chaitin-style)."""
+    
+    def __init__(self, num_colors: int):
+        self.num_colors = num_colors
+    
+    def allocate(self, ig: InterferenceGraph) -> Dict[int, int]:
+        """Allocate using standard highest-degree-first ordering."""
+        if not ig.nodes:
+            return {}
+        
+        # Sort by degree (Welsh-Powell)
+        order = sorted(ig.nodes.keys(), key=lambda nid: ig.degree(nid), reverse=True)
+        
+        colors: Dict[int, int] = {}
+        for nid in order:
+            used = set(colors[neighbor] for neighbor in ig.neighbors(nid) if neighbor in colors)
+            
+            assigned = -1
+            for c in range(self.num_colors):
+                if c not in used:
+                    assigned = c
+                    break
+            colors[nid] = assigned
+        
+        return colors
+
+def test_allocator():
+    """Test both allocators and compare."""
+    print("=" * 60)
+    print("Spectral Coloring Register Allocator Test")
+    print("=" * 60)
+    
+    # Test case 1: Simple chain
+    print("\n--- Test 1: Simple Chain ---")
+    ranges1 = [
+        LiveRange(0, 0, 5),
+        LiveRange(1, 3, 8),
+        LiveRange(2, 6, 10),
+    ]
+    run_test(ranges1, 2, "Chain of 3 ranges")
+    
+    # Test case 2: Clique (complete graph)
+    print("\n--- Test 2: Complete Graph (Clique) ---")
+    ranges2 = [
+        LiveRange(0, 0, 10),
+        LiveRange(1, 0, 10),
+        LiveRange(2, 0, 10),
+        LiveRange(3, 0, 10),
+    ]
+    run_test(ranges2, 3, "4-node clique with 3 colors")
+    
+    # Test case 3: Complex interference pattern
+    print("\n--- Test 3: Complex Pattern ---")
+    ranges3 = [
+        LiveRange(0, 0, 10),   # v0: lives throughout
+        LiveRange(1, 2, 8),    # v1: overlaps with v0
+        LiveRange(2, 5, 15),   # v2: overlaps with v0, v1
+        LiveRange(3, 12, 20),  # v3: overlaps with v2
+        LiveRange(4, 0, 5),    # v4: overlaps with v0, v1
+    ]
+    run_test(ranges3, 3, "5 ranges, 3 colors")
+    
+    # Test case 4: Larger random graph
+    print("\n--- Test 4: Larger Random Graph ---")
+    random.seed(123)
+    ranges4 = []
+    for i in range(20):
+        start = random.randint(0, 50)
+        end = start + random.randint(5, 20)
+        ranges4.append(LiveRange(i, start, end))
+    run_test(ranges4, 8, "20 ranges, 8 colors")
+
+def run_test(ranges, num_colors, description):
+    """Run both allocators on a test case."""
+    print(f"\n{description}")
+    print(f"Nodes: {len(ranges)}, Colors: {num_colors}")
+    
+    # Build graph
+    ig = InterferenceGraph()
+    ig.build_from_ranges(ranges)
+    
+    print(f"Edges: {sum(len(ig.edges[n]) for n in ig.edges) // 2}")
+    
+    # Spectral allocator
+    spectral = SpectralColoring(num_colors)
+    colors_spectral = spectral.allocate(ig)
+    spills_spectral, violations_spectral = analyze_result(ig, colors_spectral)
+    
+    # Greedy allocator
+    greedy = GreedyColoring(num_colors)
+    colors_greedy = greedy.allocate(ig)
+    spills_greedy, violations_greedy = analyze_result(ig, colors_greedy)
+    
+    print(f"\n  Spectral: {spills_spectral} spills, {violations_spectral} violations")
+    print(f"  Greedy:   {spills_greedy} spills, {violations_greedy} violations")
+    
+    if spills_spectral < spills_greedy:
+        print(f"  -> Spectral wins by {spills_greedy - spills_spectral} spills")
+    elif spills_greedy < spills_spectral:
+        print(f"  -> Greedy wins by {spills_spectral - spills_greedy} spills")
+    else:
+        print(f"  -> Tie")
+    
+    # Show allocation
+    print(f"\n  Spectral allocation:")
+    for nid in sorted(colors_spectral.keys()):
+        c = colors_spectral[nid]
+        status = f"r{c}" if c >= 0 else "SPILL"
+        print(f"    v{nid}: {status}")
+
+def analyze_result(ig: InterferenceGraph, colors: Dict[int, int]) -> Tuple[int, int]:
+    """Count spills and violations."""
+    spills = sum(1 for c in colors.values() if c < 0)
+    
+    violations = 0
+    for nid in ig.nodes:
+        for neighbor in ig.neighbors(nid):
+            if nid < neighbor:  # Check each edge once
+                c1 = colors.get(nid, -1)
+                c2 = colors.get(neighbor, -1)
+                if c1 >= 0 and c2 >= 0 and c1 == c2:
+                    violations += 1
+    
+    return spills, violations
+
+if __name__ == "__main__":
+    test_allocator()
