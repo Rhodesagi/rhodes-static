@@ -302,6 +302,22 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
             return;
         }
 
+        // [EXPERIMENTAL] /rapira — toggle Rapira cognitive trace display
+        if (text.trim().toLowerCase() === '/rapira') {
+            clearInputAndResize(input);
+            const enabling = (window.RHODES_RAPIRA_ENABLED === false);
+            window.RHODES_RAPIRA_ENABLED = enabling;
+            const ws = getWs();
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    msg_type: 'rapira_toggle',
+                    payload: { enabled: enabling }
+                }));
+            }
+            showToast('Rapira cognitive trace: ' + (enabling ? 'ON' : 'OFF'));
+            return;
+        }
+
         // User context commands — send as user_message, not model_set_request
         const _ctxCmds = ["/military", "/fbi", "/dia", "/cia", "/nsa", "/system", "/systemadmin", "/civilian"];
         const _ctxWord = text.split(' ')[0].toLowerCase();

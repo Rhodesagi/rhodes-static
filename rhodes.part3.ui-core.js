@@ -838,7 +838,7 @@ function showDownloads() {
                             details.open = true;
                             const summary = document.createElement('summary');
                             summary.style.cssText = "cursor:pointer;color:var(--cyan);font-family:'Orbitron',monospace;font-size:12px;user-select:none;margin-bottom:6px;";
-                            summary.innerHTML = 'Thinking <span style="opacity:0.6">...</span>';
+                            summary.innerHTML = (window.RHODES_RAPIRA_ENABLED !== false ? 'Compiling' : 'Thinking') + ' <span style="opacity:0.6">...</span>';
                             const pre = document.createElement('pre');
                             pre.style.cssText = 'white-space:pre-wrap;word-break:break-word;margin:0;padding:10px;background:rgba(0,0,0,0.2);border:1px solid rgba(0,255,204,0.1);border-radius:6px;color:var(--text);opacity:0.55;font-size:12.5px;line-height:1.5;max-height:400px;overflow-y:auto;';
                             details.appendChild(summary);
@@ -853,11 +853,40 @@ function showDownloads() {
                         window._reasoningContent += rChunk;
                         const tokEst = Math.round(window._reasoningContent.length / 4);
                         window._reasoningPre.textContent = window._reasoningContent;
-                        window._reasoningSummary.innerHTML = 'Thinking <span style="opacity:0.5;font-size:11px;">(' + tokEst + ' tokens)</span> <span style="opacity:0.6">...</span>';
+                        window._reasoningSummary.innerHTML = (window.RHODES_RAPIRA_ENABLED !== false ? 'Compiling' : 'Thinking') + ' <span style="opacity:0.5;font-size:11px;">(' + tokEst + ' tokens)</span> <span style="opacity:0.6">...</span>';
                         window._reasoningPre.scrollTop = window._reasoningPre.scrollHeight;
                         const chatEl = document.getElementById('chat');
                         if (chatEl) _autoScrollChat(chatEl);
                     }
+                } else if (msg.msg_type === 'rapira_full') {
+                    // [EXPERIMENTAL] Rapira rewriter: expandable full reasoning in Rapira notation
+                    // Kill switch: set window.RHODES_RAPIRA_ENABLED = false to disable
+                    if (window.RHODES_RAPIRA_ENABLED === false) return;
+                    const rapiraContent = (msg.payload && msg.payload.content) || '';
+                    if (!rapiraContent) return;
+                    // Find the last .msg.ai element (the response this reasoning belongs to)
+                    const chatEl = document.getElementById('chat');
+                    if (!chatEl) return;
+                    const aiMsgs = chatEl.querySelectorAll('.msg.ai:not(.reasoning-stream)');
+                    const lastAi = aiMsgs.length ? aiMsgs[aiMsgs.length - 1] : null;
+                    if (!lastAi) return;
+                    // Don't add duplicate
+                    if (lastAi.querySelector('.rapira-expandable')) return;
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'rapira-expandable';
+                    wrapper.style.cssText = 'margin-top:12px;border-top:1px solid rgba(0,255,204,0.15);padding-top:8px;';
+                    const details = document.createElement('details');
+                    const summary = document.createElement('summary');
+                    summary.style.cssText = "cursor:pointer;color:var(--cyan);font-family:'Orbitron',monospace;font-size:11px;user-select:none;opacity:0.7;";
+                    const lineCount = rapiraContent.split('\n').length;
+                    summary.textContent = 'Cognitive trace (' + lineCount + ' lines)';
+                    const pre = document.createElement('pre');
+                    pre.style.cssText = 'white-space:pre-wrap;word-break:break-word;margin:6px 0 0 0;padding:10px;background:rgba(0,0,0,0.25);border:1px solid rgba(0,255,204,0.08);border-radius:6px;color:var(--cyan);opacity:0.6;font-size:11.5px;line-height:1.5;max-height:500px;overflow-y:auto;font-family:monospace;';
+                    pre.textContent = rapiraContent;
+                    details.appendChild(summary);
+                    details.appendChild(pre);
+                    wrapper.appendChild(details);
+                    lastAi.appendChild(wrapper);
                 } else if (msg.msg_type === 'system_message' && msg.payload && msg.payload.status === 'queued') {
                     // Queue notification - show as a toast, NOT as model response
                     const _qn = msg.payload.pending || '?';
@@ -868,7 +897,7 @@ function showDownloads() {
                     // Close reasoning display when content starts streaming
                     if (window._reasoningEl && window._reasoningSummary) {
                         const _toks = Math.round((window._reasoningContent||'').length/4);
-                        window._reasoningSummary.innerHTML = 'Reasoning <span style="opacity:0.5;font-size:11px;">(' + _toks + ' tokens)</span>';
+                        window._reasoningSummary.innerHTML = (window.RHODES_RAPIRA_ENABLED !== false ? 'Compiled' : 'Reasoning') + ' <span style="opacity:0.5;font-size:11px;">(' + _toks + ' tokens)</span>';
                         const _det = window._reasoningEl.querySelector('details');
                         if (_det) _det.open = false;
                         window._reasoningEl = null;
