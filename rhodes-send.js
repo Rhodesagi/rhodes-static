@@ -305,7 +305,7 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
         // [EXPERIMENTAL] /rapira — toggle Rapira cognitive trace display
         if (text.trim().toLowerCase() === '/rapira') {
             clearInputAndResize(input);
-            const enabling = (window.RHODES_RAPIRA_ENABLED === false);
+            const enabling = (window.RHODES_RAPIRA_ENABLED !== true);
             window.RHODES_RAPIRA_ENABLED = enabling;
             const ws = getWs();
             if (ws && ws.readyState === WebSocket.OPEN) {
