@@ -825,24 +825,6 @@ body .tab:hover {
               </div>
               </div>
             </div>
-            <div class="form-section" id="prefill-corrections-section">
-              <div class="form-section-header" style="cursor:pointer;user-select:none" onclick="togglePrefillCorrectionsSection()">
-                <span>Prefill Corrections (topic-keyed fact injection)</span>
-                <span id="prefillCorrectionsArrow" style="font-size:11px;color:var(--muted)">&#9650;</span>
-              </div>
-              <div id="prefillCorrectionsBody">
-              <p style="font-size:11px;color:var(--muted);margin:6px 0 10px">
-                Topic-keyed factual corrections injected into &lt;think&gt; blocks. Keywords trigger matching; facts are injected; tics_to_avoid guide the model away from common errors.
-              </p>
-              <div id="prefillCorrectionsList" style="display:flex;flex-direction:column;gap:8px">
-                <div style="color:var(--muted);font-size:12px">Loading corrections...</div>
-              </div>
-              <div style="margin-top:10px">
-                <button class="btn btn-sm" onclick="loadPrefillCorrections()" style="font-size:11px">Reload</button>
-                <button class="btn btn-sm" onclick="addPrefillCorrection()" style="font-size:11px;margin-left:6px">+ Add Correction</button>
-              </div>
-              </div>
-            </div>
             <div class="form-section" id="version-history-section">
               <div class="form-section-header">
                 <span>Version History <span id="bHistoryCount" style="font-size:10px;color:var(--muted);font-weight:400;margin-left:8px"></span></span>
@@ -2615,7 +2597,7 @@ const ALL_SECTION_IDS = [
   'section-identity', 'section-system-prompt', 'section-warmup-seed',
   'identity-tool-calls', 'seed-tool-call-builder',
   'section-prefill-think', 'section-final-think', 'section-per-turn-think-tool',
-  'congress-tool-section', 'expand-prompt-section', 'prefill-corrections-section',
+  'congress-tool-section', 'expand-prompt-section',
   'version-history-section', 'tool-config-section',
   'injection-toggles', 'section-recurring-injections', 'thought-sanitize-section', 'model-behavior-section'
 ];
@@ -3723,7 +3705,6 @@ async function saveExpandedPosition(topic) {
   try {
     await api('/api/admin/expanded-positions', {method:'POST', body:JSON.stringify({action:'upsert', topic:topic, text:submitted})});
     await loadExpandedPositions();
-    await loadPrefillCorrections();
     if ((EXPANDED_POSITIONS[topic] || '') !== submitted) {
       throw new Error('Save did not round-trip. Reloaded value differs from submitted text.');
     }
@@ -3766,103 +3747,6 @@ async function addExpandedPosition() {
 }
 
 
-
-// ---- Prefill Corrections CRUD ----
-var PREFILL_CORRECTIONS = [];
-
-async function loadPrefillCorrections() {
-  try {
-    var data = await api('/api/admin/prefill-corrections');
-    PREFILL_CORRECTIONS = data.corrections || [];
-    renderPrefillCorrections();
-  } catch(e) {
-    console.error('Failed to load prefill corrections:', e);
-    var el = document.getElementById('prefillCorrectionsList');
-    if (el) el.innerHTML = '<div style="color:var(--error);font-size:12px">Failed to load: ' + esc(e.message||String(e)) + '</div>';
-  }
-}
-
-function renderPrefillCorrections() {
-  var el = document.getElementById('prefillCorrectionsList');
-  if (!el) return;
-  if (!PREFILL_CORRECTIONS.length) {
-    el.innerHTML = '<div style="color:var(--muted);font-size:12px">No prefill corrections defined.</div>';
-    return;
-  }
-  el.innerHTML = PREFILL_CORRECTIONS.map(function(c, idx) {
-    var topic = c.topic || '';
-    var keywords = (c.keywords || []).join(', ');
-    var facts = (c.facts || []).join('\n---\n');
-    var tics = (c.tics_to_avoid || []).join('\n---\n');
-    return '<div style="border:1px solid var(--border);border-radius:6px;padding:8px 10px;background:var(--bg-surface)">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
-      + '<label style="font-size:11px;color:var(--muted);margin-right:6px">Topic</label>'
-      + '<input type="text" id="pfcTopic_' + idx + '" value="' + esc(topic) + '" style="font-family:var(--mono);font-size:13px;background:transparent;border:1px solid var(--border);color:var(--text);padding:2px 4px;border-radius:3px;flex:1">'
-      + '</div>'
-      + '<label style="font-size:11px;color:var(--muted)">Keywords (comma-separated)</label>'
-      + '<textarea id="pfcKeywords_' + idx + '" style="width:100%;min-height:32px;max-height:80px;font-size:12px;margin-top:2px">' + esc(keywords) + '</textarea>'
-      + '<label style="font-size:11px;color:var(--muted);margin-top:6px;display:block">Facts (separated by ---)</label>'
-      + '<textarea id="pfcFacts_' + idx + '" style="width:100%;min-height:60px;max-height:200px;font-size:12px;margin-top:2px">' + esc(facts) + '</textarea>'
-      + '<label style="font-size:11px;color:var(--muted);margin-top:6px;display:block">Tics to avoid (separated by ---)</label>'
-      + '<textarea id="pfcTics_' + idx + '" style="width:100%;min-height:40px;max-height:150px;font-size:12px;margin-top:2px">' + esc(tics) + '</textarea>'
-      + '<div style="display:flex;gap:6px;margin-top:6px">'
-      + '<button class="btn btn-sm" onclick="savePrefillCorrection(' + idx + ')" style="font-size:11px">Save</button>'
-      + '<button class="btn btn-sm" onclick="deletePrefillCorrection(' + idx + ')" style="font-size:11px;color:var(--error)">Delete</button>'
-      + '</div>'
-      + '</div>';
-  }).join('');
-}
-
-async function savePrefillCorrection(index) {
-  var topicEl = document.getElementById('pfcTopic_' + index);
-  var kwEl = document.getElementById('pfcKeywords_' + index);
-  var factsEl = document.getElementById('pfcFacts_' + index);
-  var ticsEl = document.getElementById('pfcTics_' + index);
-  if (!topicEl || !kwEl || !factsEl || !ticsEl) return;
-  var topic = topicEl.value.trim();
-  if (!topic) { setStatus('Topic cannot be empty', 'error'); return; }
-  var keywords = kwEl.value.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
-  var facts = factsEl.value.split(/\n---\n/).map(function(s){ return s.trim(); }).filter(Boolean);
-  var tics = ticsEl.value.split(/\n---\n/).map(function(s){ return s.trim(); }).filter(Boolean);
-  try {
-    await api('/api/admin/prefill-corrections', {method:'POST', body:JSON.stringify({action:'upsert', topic:topic, keywords:keywords, facts:facts, tics_to_avoid:tics})});
-    await loadPrefillCorrections();
-    setStatus('Saved correction: ' + topic);
-  } catch(e) { setStatus('Error: ' + (e.message||e), 'error'); }
-}
-
-async function deletePrefillCorrection(index) {
-  var c = PREFILL_CORRECTIONS[index];
-  if (!c) return;
-  if (!confirm('Delete correction: ' + c.topic + '?')) return;
-  try {
-    await api('/api/admin/prefill-corrections', {method:'POST', body:JSON.stringify({action:'delete', topic:c.topic})});
-    await loadPrefillCorrections();
-    setStatus('Deleted correction: ' + c.topic);
-  } catch(e) { setStatus('Error: ' + (e.message||e), 'error'); }
-}
-
-async function addPrefillCorrection() {
-  var topic = prompt('New correction topic (lowercase, no spaces):');
-  if (!topic) return;
-  topic = topic.trim();
-  var existing = PREFILL_CORRECTIONS.find(function(c){ return c.topic === topic; });
-  if (existing) { setStatus('Topic already exists', 'error'); return; }
-  try {
-    await api('/api/admin/prefill-corrections', {method:'POST', body:JSON.stringify({action:'upsert', topic:topic, keywords:[], facts:[], tics_to_avoid:[]})});
-    await loadPrefillCorrections();
-    setStatus('Added correction: ' + topic);
-  } catch(e) { setStatus('Error: ' + (e.message||e), 'error'); }
-}
-
-function togglePrefillCorrectionsSection() {
-  var body = document.getElementById('prefillCorrectionsBody');
-  var arrow = document.getElementById('prefillCorrectionsArrow');
-  var collapsed = body.style.display === 'none';
-  body.style.display = collapsed ? '' : 'none';
-  arrow.innerHTML = collapsed ? '&#9650;' : '&#9660;';
-  localStorage.setItem('prefillCorrectionsCollapsed', collapsed ? 'false' : 'true');
-}
 
 // ---- Base Model Info Viewer ----
 async function loadBaseModelInfo(baseAlias) {
@@ -5536,7 +5420,6 @@ async function init() {
     await Promise.all([loadAllPrompts(), loadAllSeeds(), loadAllFineTunes(), loadModelModelConfigs(), loadModelToolCatalog()]);
     await loadExpandedPositions();
     if (localStorage.getItem('expandPromptCollapsed') === 'true') { var b=$('expandPromptBody'); if(b){b.style.display='none'; var a=$('expandPromptArrow'); if(a) a.innerHTML='&#9660;';} }
-    if (localStorage.getItem('prefillCorrectionsCollapsed') === 'true') { var b=$('prefillCorrectionsBody'); if(b){b.style.display='none'; var a=$('prefillCorrectionsArrow'); if(a) a.innerHTML='&#9660;';} }
     setStatus('Ready');
   } catch(e) {
     setStatus('Load error: '+e.message);
