@@ -824,8 +824,10 @@ function showDownloads() {
                         }
                     }
                 } else if (msg.msg_type === 'reasoning_chunk') {
-                    // Live reasoning/thinking stream — admin only
-                    if (!window.RHODES_CONFIG || !window.RHODES_CONFIG.isAdmin) return;
+                    // Live reasoning/thinking stream — admin only, OR rapira mode active
+                    const _isAdmin = window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin;
+                    const _rapiraOn = window.RHODES_RAPIRA_ENABLED === true;
+                    if (!_isAdmin && !_rapiraOn) return;
                     if (activeReqId && msg.payload && msg.payload.req_id && msg.payload.req_id !== activeReqId) return;
                     const rChunk = msg.payload.content || '';
                     if (rChunk) {
