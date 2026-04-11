@@ -26,40 +26,66 @@
 
             this.clock = new THREE.Clock();
             this.scene = new THREE.Scene();
-            this.scene.background = new THREE.Color(0x1a1a2e);
-            this.scene.fog = new THREE.FogExp2(0x1a1a2e, 0.015);
+            this.scene.background = new THREE.Color(0x87ceeb);
+            this.scene.fog = new THREE.Fog(0xb8d4e8, 60, 280);
 
-            this.camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 500);
+            this.camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 600);
             this.camera.position.set(0, 1.6, 0);
 
             this.renderer = new THREE.WebGLRenderer({ antialias: true });
             this.renderer.setSize(container.clientWidth, container.clientHeight);
             this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             this.renderer.shadowMap.enabled = true;
+            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             container.appendChild(this.renderer.domElement);
 
-            // Lights
-            const ambient = new THREE.AmbientLight(0x404060, 0.6);
+            // ── Lighting (daytime, warm) ──
+            const ambient = new THREE.AmbientLight(0xffffff, 0.55);
             this.scene.add(ambient);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            dirLight.position.set(20, 40, 20);
+            const dirLight = new THREE.DirectionalLight(0xffeedd, 1.4);
+            dirLight.position.set(60, 100, 40);
             dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.camera.near = 1;
+            dirLight.shadow.camera.far = 300;
+            dirLight.shadow.camera.left = -80;
+            dirLight.shadow.camera.right = 80;
+            dirLight.shadow.camera.top = 80;
+            dirLight.shadow.camera.bottom = -80;
             this.scene.add(dirLight);
-            // Hemisphere for outdoor feel
-            const hemi = new THREE.HemisphereLight(0x87ceeb, 0x362d59, 0.3);
+            const hemi = new THREE.HemisphereLight(0x87ceeb, 0x6b8e4e, 0.65);
             this.scene.add(hemi);
 
-            // Grid helper (subtle reference plane)
-            const grid = new THREE.GridHelper(200, 200, 0x333355, 0x222244);
-            grid.position.y = -0.01;
-            this.scene.add(grid);
+            // ── Ground plane (large grass terrain so building has a foundation) ──
+            const groundGeo = new THREE.PlaneGeometry(600, 600, 4, 4);
+            const groundMat = new THREE.MeshStandardMaterial({
+                color: 0x6b8e4e, roughness: 0.95, metalness: 0
+            });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -0.05;
+            ground.receiveShadow = true;
+            this.scene.add(ground);
+            this._groundMesh = ground;
 
-            // Skybox — simple gradient via large sphere
-            const skyGeo = new THREE.SphereGeometry(400, 32, 32);
+            // Subtle stone plaza around origin so the building sits on a clear platform
+            const plazaGeo = new THREE.PlaneGeometry(80, 80);
+            const plazaMat = new THREE.MeshStandardMaterial({
+                color: 0xb8a888, roughness: 0.85, metalness: 0
+            });
+            const plaza = new THREE.Mesh(plazaGeo, plazaMat);
+            plaza.rotation.x = -Math.PI / 2;
+            plaza.position.y = -0.02;
+            plaza.receiveShadow = true;
+            this.scene.add(plaza);
+
+            // ── Sky (bright daytime gradient) ──
+            const skyGeo = new THREE.SphereGeometry(450, 32, 32);
             const skyMat = new THREE.ShaderMaterial({
                 uniforms: {
-                    topColor: { value: new THREE.Color(0x0d1b2a) },
-                    bottomColor: { value: new THREE.Color(0x1b2838) },
+                    topColor: { value: new THREE.Color(0x4a90c8) },
+                    bottomColor: { value: new THREE.Color(0xc8e0f0) },
                 },
                 vertexShader: `
                     varying vec3 vWorldPos;
@@ -75,6 +101,7 @@
                     varying vec3 vWorldPos;
                     void main() {
                         float h = normalize(vWorldPos).y * 0.5 + 0.5;
+                        h = pow(h, 0.7);
                         gl_FragColor = vec4(mix(bottomColor, topColor, h), 1.0);
                     }
                 `,
@@ -117,11 +144,11 @@
             const opacity = matData.opacity != null ? matData.opacity : 1.0;
             const mat = new THREE.MeshStandardMaterial({
                 color: new THREE.Color(color),
-                roughness: 0.7,
-                metalness: 0.1,
+                roughness: 0.85,
+                metalness: 0.05,
                 transparent: opacity < 1,
                 opacity: opacity,
-                side: THREE.DoubleSide
+                side: THREE.FrontSide
             });
             this._materials[key] = mat;
             return mat;
@@ -130,21 +157,36 @@
         _addSurface(s) {
             const t = s.transform || { position: [0,0,0], rotation: [0,0,0], scale: [1,1,1] };
             const d = s.dimensions || { width: 4, height: 3 };
-            const geo = new THREE.PlaneGeometry(d.width, d.height);
             const mat = this._getMaterial(s.material || {});
-            const mesh = new THREE.Mesh(geo, mat);
+            let mesh;
 
-            mesh.position.set(t.position[0], t.position[1], t.position[2]);
-            mesh.rotation.set(
-                t.rotation[0] * Math.PI / 180,
-                t.rotation[1] * Math.PI / 180,
-                t.rotation[2] * Math.PI / 180
-            );
-            if (t.scale) mesh.scale.set(t.scale[0], t.scale[1], t.scale[2]);
-
-            // Floors face up by default
-            if (s.type === 'floor' || s.type === 'ramp') {
-                mesh.rotation.x = -Math.PI / 2 + (t.rotation[0] * Math.PI / 180);
+            if (s.type === 'wall') {
+                // Walls are 3D boxes — width × tall × 0.25 thick
+                const wallH = (d.height || 3) * 1.8; // taller for presence
+                const geo = new THREE.BoxGeometry(d.width || 4, wallH, 0.3);
+                mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(t.position[0], wallH / 2, t.position[2]);
+                mesh.rotation.set(
+                    t.rotation[0] * Math.PI / 180,
+                    t.rotation[1] * Math.PI / 180,
+                    t.rotation[2] * Math.PI / 180
+                );
+            } else if (s.type === 'ceiling') {
+                const geo = new THREE.PlaneGeometry(d.width || 4, d.height || 3);
+                mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(t.position[0], t.position[1], t.position[2]);
+                mesh.rotation.x = Math.PI / 2;
+            } else {
+                // Floor / ramp — flat plane laid down
+                const geo = new THREE.PlaneGeometry(d.width || 4, d.height || 3);
+                mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(t.position[0], t.position[1] + 0.01, t.position[2]);
+                mesh.rotation.set(
+                    -Math.PI / 2 + (t.rotation[0] * Math.PI / 180),
+                    t.rotation[1] * Math.PI / 180,
+                    t.rotation[2] * Math.PI / 180
+                );
+                if (t.scale) mesh.scale.set(t.scale[0], t.scale[1], t.scale[2]);
             }
 
             mesh.receiveShadow = true;

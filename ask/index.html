@@ -1,0 +1,947 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rhodes Ask</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🜛%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #0b0c0e;
+    --bg-alt: #14161a;
+    --bg-card: #171a1f;
+    --bg-card-hover: #1e222a;
+    --border: #23272f;
+    --border-soft: #1b1e24;
+    --fg: #ececf1;
+    --fg-dim: #9ba0ad;
+    --fg-fade: #6b7280;
+    --accent: #e8b84b;
+    --accent-soft: rgba(232, 184, 75, 0.14);
+    --chip: #2a2e38;
+    --chip-hover: #3a3f4b;
+    --red: #e25e5e;
+    --green: #7ec97e;
+    --serif: "Charter", "Iowan Old Style", "Georgia", "Times New Roman", serif;
+    --sans: -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ─── Layout ────────────────────────────────────────────── */
+  #app {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 32px 24px 120px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 48px;
+  }
+  .logo {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .logo .glyph { color: var(--accent); }
+  .logo .sub { color: var(--fg-dim); font-weight: 400; font-style: italic; font-size: 16px; margin-left: 6px; }
+  .meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--fg-fade);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .meta .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--fg-fade); margin-right: 6px; vertical-align: middle; }
+  .meta.live .dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .meta.err .dot  { background: var(--red); }
+
+  /* ─── Empty state (big search) ──────────────────────────── */
+  #hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    margin-top: -40px;
+  }
+  #hero .tagline {
+    font-family: var(--serif);
+    font-size: 28px;
+    line-height: 1.3;
+    color: var(--fg);
+    text-align: center;
+    max-width: 560px;
+  }
+  #hero .tagline em { color: var(--accent); font-style: italic; }
+  #hero .tagline .small {
+    display: block;
+    font-size: 14px;
+    color: var(--fg-dim);
+    font-style: normal;
+    margin-top: 10px;
+    font-family: var(--sans);
+  }
+
+  /* ─── Search input ──────────────────────────────────────── */
+  .searchbox {
+    width: 100%;
+    max-width: 640px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    padding: 4px 4px 4px 18px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .searchbox:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .searchbox input {
+    flex: 1;
+    background: transparent;
+    border: 0;
+    color: var(--fg);
+    font: inherit;
+    font-size: 16px;
+    padding: 14px 0;
+    outline: none;
+  }
+  .searchbox input::placeholder { color: var(--fg-fade); }
+  .searchbox button {
+    background: var(--accent);
+    color: #1a1408;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: filter 0.1s;
+  }
+  .searchbox button:hover { filter: brightness(1.1); }
+  .searchbox button:disabled { background: var(--chip); color: var(--fg-fade); cursor: not-allowed; }
+
+  /* Focus-mode chips under the search bar */
+  .focuschips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 640px;
+  }
+  .focuschips label {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-dim);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.1s;
+  }
+  .focuschips label:hover { background: var(--bg-card-hover); color: var(--fg); }
+  .focuschips input { display: none; }
+  .focuschips input:checked + span { color: var(--accent); }
+  .focuschips label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+
+  /* ─── Question (after submit) ───────────────────────────── */
+  .question {
+    font-family: var(--serif);
+    font-size: 26px;
+    line-height: 1.3;
+    color: var(--fg);
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  /* ─── Sources strip ─────────────────────────────────────── */
+  .sources-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--fg-fade);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sources-title .count { color: var(--accent); }
+  .sources {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+    margin-bottom: 32px;
+  }
+  .source {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.1s;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .source:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent);
+    text-decoration: none;
+  }
+  .source-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--fg-dim);
+  }
+  .source-head img { width: 14px; height: 14px; border-radius: 2px; flex-shrink: 0; }
+  .source-head .n {
+    background: var(--accent);
+    color: #1a1408;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 10px;
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-right: 2px;
+  }
+  .source-head .domain {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .source-title {
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--fg);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .source-note {
+    font-size: 11px;
+    color: var(--fg-fade);
+    font-style: italic;
+    line-height: 1.3;
+  }
+  .source.ref { cursor: default; border-style: dashed; }
+  .source.ref:hover { border-color: var(--border); background: var(--bg-card); }
+  .ref-badge {
+    background: var(--accent);
+    color: #1a1408;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 3px;
+    letter-spacing: 0.04em;
+  }
+
+  /* ─── Thinking (collapsed) ──────────────────────────────── */
+  .thinking {
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--fg-dim);
+  }
+  .thinking summary {
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-fade);
+  }
+  .thinking summary:hover { color: var(--fg-dim); }
+  .thinking .tk-body {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+    white-space: pre-wrap;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.5;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  /* ─── Answer ────────────────────────────────────────────── */
+  .answer {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--fg);
+    margin-bottom: 32px;
+  }
+  .answer p { margin-bottom: 1em; }
+  .answer strong { color: var(--fg); }
+  .answer em { color: var(--fg); }
+  .answer h1, .answer h2, .answer h3 { font-family: var(--serif); margin: 1.2em 0 0.5em; line-height: 1.25; }
+  .answer h1 { font-size: 1.4em; }
+  .answer h2 { font-size: 1.2em; }
+  .answer h3 { font-size: 1.08em; }
+  .answer ul, .answer ol { margin: 0.5em 0 1em 1.4em; }
+  .answer li { margin-bottom: 0.3em; }
+  .answer code {
+    font-family: var(--mono);
+    font-size: 0.9em;
+    background: var(--bg-card);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  .answer blockquote {
+    border-left: 3px solid var(--accent);
+    padding-left: 14px;
+    color: var(--fg-dim);
+    margin: 0.8em 0;
+  }
+  .cite {
+    display: inline-block;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 0.72em;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin: 0 1px;
+    cursor: pointer;
+    vertical-align: super;
+    line-height: 1.4;
+    transition: all 0.1s;
+  }
+  .cite:hover { background: var(--accent); color: #1a1408; }
+  .cursor {
+    display: inline-block;
+    width: 8px;
+    height: 1.2em;
+    background: var(--accent);
+    vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+    margin-left: 2px;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ─── Related ───────────────────────────────────────────── */
+  .related-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--fg-fade);
+    margin: 16px 0 10px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-soft);
+  }
+  .related {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .related button {
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--border-soft);
+    color: var(--fg);
+    font: inherit;
+    font-family: var(--serif);
+    font-size: 16px;
+    text-align: left;
+    padding: 12px 0;
+    cursor: pointer;
+    transition: all 0.1s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .related button:last-child { border-bottom: 0; }
+  .related button:hover { color: var(--accent); padding-left: 4px; }
+  .related button::after {
+    content: "+";
+    color: var(--fg-fade);
+    font-size: 20px;
+    font-family: var(--sans);
+    font-weight: 300;
+  }
+
+  /* ─── Status / pending ──────────────────────────────────── */
+  .status {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--fg-dim);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--bg-card);
+    border-left: 2px solid var(--accent);
+    border-radius: 4px;
+  }
+  .status .spin {
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .status .phase { color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .status.done { border-left-color: var(--green); }
+  .status.done .spin { display: none; }
+
+  /* ─── Follow-up bar (sticky bottom) ─────────────────────── */
+  .followup {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, var(--bg) 60%, transparent);
+    padding: 24px 24px 20px;
+    z-index: 10;
+  }
+  .followup .searchbox {
+    max-width: 820px;
+    margin: 0 auto;
+  }
+
+  /* ─── Errors ────────────────────────────────────────────── */
+  .error {
+    background: rgba(226, 94, 94, 0.1);
+    border: 1px solid rgba(226, 94, 94, 0.3);
+    color: var(--red);
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  /* ─── Animations ────────────────────────────────────────── */
+  .fade-in { animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+
+<body>
+<div id="app">
+  <header>
+    <div class="logo"><span class="glyph">🜛</span> Rhodes<span class="sub">/ ask</span></div>
+    <div class="meta" id="status-pill"><span class="dot"></span><span id="status-txt">connecting</span></div>
+  </header>
+
+  <main id="main">
+    <div id="hero">
+      <div class="tagline">
+        Ask anything. <em>Opinionated answers.</em>
+        <span class="small">Rhodes searches the web and its own archive, then tells you what it thinks. Citations included.</span>
+      </div>
+
+      <form class="searchbox" id="hero-form">
+        <input type="text" id="hero-input" placeholder="Why did Calvinist societies outcompete their neighbors?" autocomplete="off" autofocus>
+        <button type="submit">Ask</button>
+      </form>
+
+      <div class="focuschips">
+        <label><input type="radio" name="focus" value="all" checked><span>All</span></label>
+        <label><input type="radio" name="focus" value="kb"><span>KB Only</span></label>
+        <label><input type="radio" name="focus" value="web"><span>Web</span></label>
+        <label><input type="radio" name="focus" value="academic"><span>Academic</span></label>
+        <label><input type="radio" name="focus" value="contrarian"><span>Contrarian</span></label>
+      </div>
+    </div>
+
+    <div id="thread"></div>
+  </main>
+</div>
+
+<div class="followup" id="followup" style="display:none">
+  <form class="searchbox" id="followup-form">
+    <input type="text" id="followup-input" placeholder="Ask a follow-up…" autocomplete="off">
+    <button type="submit">↵</button>
+  </form>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   Rhodes Ask — Perplexity-style surface over the Rhodes WS.
+   Standalone frontend. No backend changes. Uses the existing
+   /ws endpoint, routes to bap-ea-d (opinionated DeepSeek),
+   wraps every user turn with a citation contract the model
+   answers against, then parses <sources> + <related> blocks.
+   ═══════════════════════════════════════════════════════════ */
+
+const MODEL = "bap-ea-d";
+const WS_URL = (location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws";
+
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const escapeHtml = (s) => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const state = {
+  ws: null,
+  authed: false,
+  modelSet: false,
+  thread: [],         // list of {q, sources, answer, related, thinking, status, phase, nodes}
+  currentTurn: null,
+  phaseTimer: null,
+};
+
+/* ───────────── Prompt wrap: the citation contract ───────────── */
+function buildWrappedQuery(userQuestion, focus) {
+  const focusDirective = ({
+    "all":        "Use web_search AND search_knowledge. Cast a wide net across live web results and Rhodes's internal archive (LessWrong, EA Forum, DSL, Sailer, Hanania, Kirkegaard, Zvi, Cremieux, Anthropic research).",
+    "kb":         "Use search_knowledge ONLY — do not touch web_search. Sources must come from Rhodes's internal corpus (LessWrong, DSL, Sailer, Hanania, Kirkegaard, Zvi, Cremieux).",
+    "web":        "Use web_search primarily. Use search_knowledge only if the topic is plainly in-corpus.",
+    "academic":   "Use web_search with preference for primary literature, preprints, and working papers. Quote effect sizes. Name authors.",
+    "contrarian": "Use web_search AND search_knowledge. Weight sources toward heterodox/dissident/neoreactionary/HBD-adjacent analysis. No mainstream consensus-laundering.",
+  })[focus] || "";
+
+  return (
+`[RHODES-ASK MODE — PERPLEXITY SURFACE]
+
+The user has submitted a question through the Rhodes Ask interface. Answer in structured Perplexity-style citation format.
+
+PROCEDURE:
+1. ${focusDirective}
+2. Before answering, run at least one search tool call. Prefer 3-6 sources total.
+3. Write a substantive, opinionated answer in your own Rhodes voice. Do NOT hedge, neutralize, or both-sides. Plain-spoken. Data-first. If the mainstream view is wrong, say so and say why.
+4. Cite inline as [1], [2], etc. — every non-obvious empirical claim must carry a citation.
+5. End your answer with the TWO required blocks below, in this EXACT format (no extra prose between them):
+
+<sources>
+[1] https://full.url/path | Source Title | one-line why-this-matters
+[2] https://full.url/path | Source Title | one-line why-this-matters
+</sources>
+
+<related>
+1. A natural follow-up question the user might ask next
+2. A second follow-up question
+3. A third follow-up question
+</related>
+
+IMPORTANT:
+- Use REAL urls from your actual search results. Do not fabricate urls.
+- Every [n] inline must appear in the <sources> block.
+- The one-line "why-this-matters" should be tight and pointed — 6-12 words.
+- Do not add any text after </related>.
+
+USER QUESTION:
+${userQuestion}`
+  );
+}
+
+/* ───────────── Parsers ───────────── */
+function parseSourcesBlock(block) {
+  return block.trim().split("\n").map(line => {
+    line = line.trim();
+    if (!line) return null;
+    // Format: [n] <url-or-ref> | title | note    (note optional)
+    // Tolerant split-on-pipe parser — handles https:// urls AND identifier refs
+    // like "KB: CALVINIST-EVOLUTION" where the "url" has spaces.
+    const m = line.match(/^\[(\d+)\]\s+(.+)$/);
+    if (!m) return null;
+    const parts = m[2].split(/\s*\|\s*/);
+    if (parts.length < 2) return null;
+    const url = parts[0].trim();
+    const title = parts[1].trim();
+    const note = (parts[2] || "").trim();
+    let domain = "";
+    try {
+      // Real URL
+      domain = new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      // Identifier ref — strip to a short tag
+      domain = url.slice(0, 24);
+    }
+    return { n: parseInt(m[1], 10), url, title, note, domain, isRef: !/^https?:\/\//.test(url) };
+  }).filter(Boolean);
+}
+
+function parseRelatedBlock(block) {
+  return block.trim().split("\n").map(line => {
+    return line.trim().replace(/^(\d+[\.\)]|[-*])\s*/, "").trim();
+  }).filter(s => s.length > 0).slice(0, 5);
+}
+
+function splitAnswerAndBlocks(fullText) {
+  const srcIdx = fullText.indexOf("<sources>");
+  const answerText = srcIdx === -1 ? fullText : fullText.slice(0, srcIdx);
+  const srcMatch = fullText.match(/<sources>([\s\S]*?)<\/sources>/);
+  const relMatch = fullText.match(/<related>([\s\S]*?)<\/related>/);
+  return {
+    answer: answerText.trim(),
+    sources: srcMatch ? parseSourcesBlock(srcMatch[1]) : [],
+    related: relMatch ? parseRelatedBlock(relMatch[1]) : [],
+  };
+}
+
+/* ───────────── Rendering ───────────── */
+function renderAnswerBody(text, sources, streaming) {
+  // Basic markdown: **bold**, *italic*, `code`, paragraphs, headings, lists
+  let html = escapeHtml(text);
+  html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>");
+  html = html.replace(/^## (.+)$/gm, "<h2>$1</h2>");
+  html = html.replace(/^# (.+)$/gm, "<h1>$1</h1>");
+  html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, "<em>$1</em>");
+  html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+  // citation chips
+  html = html.replace(/\[(\d+)\]/g, '<sup class="cite" data-n="$1">[$1]</sup>');
+  // paragraph splitting on blank lines
+  const paras = html.split(/\n\n+/).map(p => {
+    if (/^<h[1-3]>/.test(p)) return p;
+    // list detection
+    if (/^[-*]\s/.test(p)) {
+      const items = p.split("\n").filter(l => l.trim()).map(l => "<li>" + l.replace(/^[-*]\s*/, "") + "</li>").join("");
+      return "<ul>" + items + "</ul>";
+    }
+    if (/^\d+[.)]\s/.test(p)) {
+      const items = p.split("\n").filter(l => l.trim()).map(l => "<li>" + l.replace(/^\d+[.)]\s*/, "") + "</li>").join("");
+      return "<ol>" + items + "</ol>";
+    }
+    return "<p>" + p.replace(/\n/g, "<br>") + "</p>";
+  }).join("");
+  return paras + (streaming ? '<span class="cursor"></span>' : "");
+}
+
+function renderTurn(turn) {
+  const root = turn.nodes.root;
+  root.innerHTML = "";
+  root.className = "fade-in";
+
+  // Question
+  root.appendChild(el("div", "question", turn.q));
+
+  // Status (phase)
+  if (turn.status !== "done") {
+    const st = el("div", "status" + (turn.status === "done" ? " done" : ""));
+    st.appendChild(el("div", "spin"));
+    const phaseEl = el("span", "phase", turn.phase || "thinking");
+    st.appendChild(phaseEl);
+    if (turn.phaseDetail) st.appendChild(document.createTextNode(" · " + turn.phaseDetail));
+    root.appendChild(st);
+    turn.nodes.status = st;
+  }
+
+  // Thinking (collapsed)
+  if (turn.thinking && turn.thinking.trim()) {
+    const det = document.createElement("details");
+    det.className = "thinking";
+    const sum = el("summary", null, "▸ reasoning (" + turn.thinking.length + " chars)");
+    det.appendChild(sum);
+    det.appendChild(el("div", "tk-body", turn.thinking));
+    root.appendChild(det);
+  }
+
+  // Sources
+  if (turn.sources && turn.sources.length) {
+    const ttl = el("div", "sources-title");
+    ttl.innerHTML = 'Sources <span class="count">' + turn.sources.length + "</span>";
+    root.appendChild(ttl);
+
+    const grid = el("div", "sources");
+    turn.sources.forEach(s => {
+      const card = s.isRef ? document.createElement("div") : document.createElement("a");
+      card.className = "source" + (s.isRef ? " ref" : "");
+      if (!s.isRef) {
+        card.href = s.url;
+        card.target = "_blank";
+        card.rel = "noopener noreferrer";
+      }
+      card.id = "src-" + turn.id + "-" + s.n;
+
+      const head = el("div", "source-head");
+      head.appendChild(el("span", "n", s.n));
+      if (s.isRef) {
+        // "KB" badge instead of favicon
+        const badge = el("span", "ref-badge", "KB");
+        head.appendChild(badge);
+      } else {
+        const fav = document.createElement("img");
+        fav.src = "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(s.domain) + "&sz=32";
+        fav.alt = "";
+        fav.onerror = () => fav.style.display = "none";
+        head.appendChild(fav);
+      }
+      head.appendChild(el("span", "domain", s.domain));
+      card.appendChild(head);
+
+      card.appendChild(el("div", "source-title", s.title));
+      if (s.note) card.appendChild(el("div", "source-note", s.note));
+      grid.appendChild(card);
+    });
+    root.appendChild(grid);
+  }
+
+  // Answer
+  if (turn.answer) {
+    const ans = el("div", "answer");
+    ans.innerHTML = renderAnswerBody(turn.answer, turn.sources, turn.status !== "done");
+    // wire citation chips to scroll to source card
+    ans.querySelectorAll(".cite").forEach(ch => {
+      ch.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        const n = ch.getAttribute("data-n");
+        const target = document.getElementById("src-" + turn.id + "-" + n);
+        if (target) {
+          target.scrollIntoView({behavior: "smooth", block: "center"});
+          target.style.transition = "transform .2s";
+          target.style.transform = "scale(1.04)";
+          setTimeout(() => target.style.transform = "", 300);
+        }
+      });
+    });
+    root.appendChild(ans);
+  }
+
+  // Related
+  if (turn.related && turn.related.length && turn.status === "done") {
+    root.appendChild(el("div", "related-title", "Related"));
+    const rel = el("div", "related");
+    turn.related.forEach(q => {
+      const btn = el("button", null, q);
+      btn.addEventListener("click", () => submitQuery(q));
+      rel.appendChild(btn);
+    });
+    root.appendChild(rel);
+  }
+}
+
+/* ───────────── Status / phases ───────────── */
+function setPhase(turn, phase, detail) {
+  turn.phase = phase;
+  turn.phaseDetail = detail || "";
+  renderTurn(turn);
+}
+
+function setStatusPill(state, text) {
+  const pill = $("status-pill");
+  pill.className = "meta " + (state || "");
+  $("status-txt").textContent = text;
+}
+
+/* ───────────── WebSocket ───────────── */
+function connect() {
+  try { state.ws = new WebSocket(WS_URL); } catch (e) { setStatusPill("err", "ws failed"); return; }
+
+  state.ws.onopen = () => {
+    setStatusPill("", "authing");
+    state.ws.send(JSON.stringify({
+      msg_type: "auth_request",
+      msg_id: uid(),
+      payload: { client_id: "ask", tab_id: uid(), token: "", user_token: "", resume_session: "" }
+    }));
+  };
+
+  state.ws.onclose = () => {
+    setStatusPill("err", "disconnected");
+    state.authed = false;
+    state.modelSet = false;
+    setTimeout(connect, 2000);
+  };
+
+  state.ws.onerror = () => setStatusPill("err", "ws error");
+
+  state.ws.onmessage = (e) => {
+    let m; try { m = JSON.parse(e.data); } catch { return; }
+    handleMessage(m);
+  };
+}
+
+function handleMessage(m) {
+  const p = m.payload || {};
+  const type = m.msg_type;
+
+  if (type === "auth_response") {
+    state.authed = !!p.success;
+    if (state.authed) {
+      // Switch to opinionated model
+      state.ws.send(JSON.stringify({
+        msg_type: "model_set_request",
+        msg_id: uid(),
+        payload: { model: MODEL }
+      }));
+      setStatusPill("live", "ready · " + MODEL);
+      state.modelSet = true;
+    } else {
+      setStatusPill("err", "auth failed");
+    }
+    return;
+  }
+
+  if (type === "model_set_response") {
+    // ignore — we optimistically set above
+    return;
+  }
+
+  if (!state.currentTurn) return;
+  const turn = state.currentTurn;
+
+  if (type === "tool_call") {
+    const name = p.name || p.tool || "tool";
+    const mapping = {
+      "web_search": "searching the web",
+      "search_knowledge": "searching rhodes archive",
+      "web_fetch": "reading page",
+      "rhodes_thinking": "thinking",
+    };
+    setPhase(turn, mapping[name] || name, p.arguments?.query || "");
+    return;
+  }
+
+  if (type === "tool_result") {
+    setPhase(turn, "synthesizing");
+    return;
+  }
+
+  if (type === "ai_thinking" || type === "reasoning_chunk") {
+    turn.thinking = (turn.thinking || "") + (p.content || p.thinking || "");
+    // no rerender while thinking — too noisy
+    return;
+  }
+
+  if (type === "ai_message_chunk") {
+    const chunk = p.content || "";
+    if (!chunk) return;
+    turn.rawBuffer += chunk;
+    // While streaming, show everything up to <sources>
+    const split = splitAnswerAndBlocks(turn.rawBuffer);
+    turn.answer = split.answer;
+    if (turn.phase !== "writing") setPhase(turn, "writing");
+    else renderTurn(turn);
+    // autoscroll
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    return;
+  }
+
+  if (type === "ai_message") {
+    // Final — parse blocks, finalize
+    const finalText = p.content || turn.rawBuffer;
+    const split = splitAnswerAndBlocks(finalText);
+    turn.answer = split.answer;
+    turn.sources = split.sources;
+    turn.related = split.related;
+    turn.status = "done";
+    turn.phase = null;
+    renderTurn(turn);
+    // Show follow-up bar
+    $("followup").style.display = "block";
+    $("followup-input").focus();
+    state.currentTurn = null;
+    setStatusPill("live", "ready · " + MODEL);
+    return;
+  }
+
+  if (type === "error" || type === "usage_limit") {
+    const msg = p.message || p.error || "error";
+    const err = el("div", "error", "⚠ " + msg);
+    turn.nodes.root.appendChild(err);
+    turn.status = "done";
+    state.currentTurn = null;
+    setStatusPill("err", "error");
+    return;
+  }
+}
+
+/* ───────────── Submit ───────────── */
+function submitQuery(q) {
+  if (!q || !q.trim()) return;
+  if (!state.authed || !state.modelSet) return;
+
+  q = q.trim();
+
+  // Hide hero
+  $("hero").style.display = "none";
+
+  // Create turn
+  const turn = {
+    id: uid(),
+    q,
+    answer: "",
+    sources: [],
+    related: [],
+    thinking: "",
+    rawBuffer: "",
+    status: "pending",
+    phase: "queued",
+    phaseDetail: "",
+    nodes: { root: el("div", "turn") },
+  };
+  $("thread").appendChild(turn.nodes.root);
+  state.thread.push(turn);
+  state.currentTurn = turn;
+  renderTurn(turn);
+
+  // Focus mode
+  const focus = (document.querySelector('input[name="focus"]:checked') || {}).value || "all";
+
+  // Send wrapped message
+  const wrapped = buildWrappedQuery(q, focus);
+  state.ws.send(JSON.stringify({
+    msg_type: "user_message",
+    msg_id: uid(),
+    payload: { content: wrapped, stream: true }
+  }));
+  setStatusPill("live", "thinking…");
+  setPhase(turn, "dispatching");
+
+  // Clear inputs
+  $("hero-input").value = "";
+  $("followup-input").value = "";
+
+  // Scroll into view
+  turn.nodes.root.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* ───────────── Wire up ───────────── */
+$("hero-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  submitQuery($("hero-input").value);
+});
+$("followup-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  submitQuery($("followup-input").value);
+});
+
+connect();
+</script>
+</body>
+</html>

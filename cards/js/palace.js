@@ -188,7 +188,15 @@
             sel.innerHTML = this._decks.map(d =>
                 "<option value=\"" + d.id + "\">" + RC.esc(d.name) + " (" + (d.card_count || d.total_cards || 0) + ")</option>"
             ).join("");
-            document.getElementById("palaceGenStatus").textContent = "";
+            // If palace already has loci, default to rebind (so they slot into the existing rooms)
+            var lociCount = (RC.PalaceRenderer.lociMeshes || []).length;
+            var rebindRadio = document.querySelector("input[name=palaceGenMode][value=rebind]");
+            var appendRadio = document.querySelector("input[name=palaceGenMode][value=append]");
+            if (lociCount > 0) { rebindRadio.checked = true; }
+            else { appendRadio.checked = true; }
+            document.getElementById("palaceGenStatus").textContent = lociCount > 0
+                ? ("Palace has " + lociCount + " loci — rebind will slot cards into them.")
+                : "Palace has no loci yet — append will create new ones inside the building.";
             document.getElementById("palaceGenBtn").disabled = false;
         },
         _cancelGenerate() {
