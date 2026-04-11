@@ -29,6 +29,9 @@
 
         init(camera, domElement) {
             this.camera = camera;
+            // Force YXZ Euler order so rotation.y reads cleanly as yaw
+            // regardless of mouselook pitch applied by PointerLockControls
+            camera.rotation.order = 'YXZ';
             this.controls = new THREE.PointerLockControls(camera, domElement);
 
             // Click to lock pointer

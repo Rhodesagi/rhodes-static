@@ -150,7 +150,7 @@ RC.PalaceTraverse = { startTraversal: function() {}, update: function() {} };
 <script src="lib/three-addons/SSAOPass.js"></script>
 <script src="js/palace-templates.js?v=4"></script>
 <script src="js/palace-renderer.js?v=5"></script>
-<script src="js/palace-walker.js?v=2"></script>
+<script src="js/palace-walker.js?v=5"></script>
 
 <script>
 (function() {
@@ -175,6 +175,7 @@ RC.PalaceTraverse = { startTraversal: function() {}, update: function() {} };
     let dragAngle = 0, dragHeight = 0;
     let dragging = false;
     let walkMode = false;
+    let qHeld = false, eHeld = false;
     let spawnPos = [0, 1.6, 10];
     let walkerInited = false;
 
@@ -259,12 +260,16 @@ RC.PalaceTraverse = { startTraversal: function() {}, update: function() {} };
                 PW.update(delta);
             } else if (orbit && !dragging) {
                 orbitAngle += delta * 0.15;
+                if (qHeld) orbitAngle -= delta * 1.8;
+                if (eHeld) orbitAngle += delta * 1.8;
                 const cx = Math.cos(orbitAngle) * orbitRadius + orbitTarget[0];
                 const cz = Math.sin(orbitAngle) * orbitRadius + orbitTarget[2];
                 this.camera.position.set(cx, orbitHeight + orbitTarget[1], cz);
                 this.camera.lookAt(orbitTarget[0], orbitTarget[1], orbitTarget[2]);
             } else if (!walkMode) {
-                // Manual-drag orbit
+                // Manual-drag orbit — Q/E still rotate when orbit is paused
+                if (qHeld) orbitAngle -= delta * 1.8;
+                if (eHeld) orbitAngle += delta * 1.8;
                 const cx = Math.cos(orbitAngle) * orbitRadius + orbitTarget[0];
                 const cz = Math.sin(orbitAngle) * orbitRadius + orbitTarget[2];
                 this.camera.position.set(cx, orbitHeight + orbitTarget[1], cz);
@@ -299,6 +304,8 @@ RC.PalaceTraverse = { startTraversal: function() {}, update: function() {} };
     });
 
     document.addEventListener('keydown', (e) => {
+        if (e.code === 'KeyQ') qHeld = true;
+        if (e.code === 'KeyE') eHeld = true;
         // Template hotkeys work in both walk and orbit modes
         const keyMap = {
             '0': 'forum',
@@ -309,6 +316,11 @@ RC.PalaceTraverse = { startTraversal: function() {}, update: function() {} };
             '5': 'observatory',
         };
         if (keyMap[e.key]) loadTemplate(keyMap[e.key]);
+    });
+
+    document.addEventListener('keyup', (e) => {
+        if (e.code === 'KeyQ') qHeld = false;
+        if (e.code === 'KeyE') eHeld = false;
     });
 
     // Drag to rotate + scroll to zoom (only when not in walk mode)
