@@ -77,11 +77,13 @@
         async _loadCard(cid) {
             try {
                 const res = await RC.api("GET", "/cards/" + cid + "/info");
-                const fields = (res && res.note && res.note.fields) || {};
                 const s = this._state;
-                if (!s) return;
-                s._front = RC.esc(fields.front || fields.text || fields.q || "(no front)");
-                s._back = RC.esc(fields.back || fields.extra || fields.a || "");
+                if (!s || !res) return;
+                // card_info returns front/back at top level (see cards_review.handle_card_info)
+                const front = res.front || (res.note && res.note.fields && res.note.fields.front) || "(no front)";
+                const back  = res.back  || (res.note && res.note.fields && res.note.fields.back)  || "";
+                s._front = RC.esc(front);
+                s._back  = RC.esc(back);
                 const el = document.getElementById("locus-cardfront");
                 if (el) el.innerHTML = s._front;
             } catch (e) { /* ignore */ }
