@@ -909,6 +909,10 @@ body .tab:hover {
                   <input type="checkbox" id="bExcludeThinkTools" onchange="onBuilderChange()" style="width:16px;height:16px;cursor:pointer">
                   Exclude Think Tools (strip think_* tools)
                 </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px">
+                  <input type="checkbox" id="bUseToolGroups" onchange="onBuilderChange()" style="width:16px;height:16px;cursor:pointer">
+                  Use Tool Groups (auto-detect task and ship a minimal tool set — saves ~3k tokens per query)
+                </label>
               </div>
             </div>
           </div>
@@ -4331,6 +4335,7 @@ async function loadModelIntoBuilder(alias) {
   $('bUseTools').checked = cfg.use_tools !== false;
   $('bDisableSeedInjection').checked = !!cfg.disable_seed_injection;
   $('bExcludeThinkTools').checked = !!cfg.exclude_think_tools;
+  $('bUseToolGroups').checked = !!cfg.use_tool_groups;
   renderInjectionToggles();
   syncInjectionDependentTools();
   renderToolConfig();
@@ -4682,6 +4687,7 @@ async function saveModel() {
   payload.use_tools = !!$('bUseTools').checked ? null : false;
   payload.disable_seed_injection = !!$('bDisableSeedInjection').checked ? true : null;
   payload.exclude_think_tools = !!$('bExcludeThinkTools').checked ? true : null;
+  payload.use_tool_groups = !!$('bUseToolGroups').checked ? true : null;
 
   try {
     const data = await api('/api/admin/model-configs', {method:'POST', body: JSON.stringify(payload)});

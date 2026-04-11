@@ -1,134 +1,134 @@
 /**
- * RhodesCards Memory Palace — Loci & Card Binding (Raycaster version)
- * Binds flashcards to spatial loci. Triggers review on interaction.
+ * RhodesCards Memory Palace — Loci binding + review (Three.js version)
+ * Handles activate-locus → show AI image → reveal card → grade → next.
  */
 (function() {
-    'use strict';
+    "use strict";
 
-    var PL = {
-        // Called from raycaster interact when locus has cards
-        activateLocusRay: function(sprite, index) {
-            var cardIds = sprite.data.card_ids || [];
-            if (!cardIds.length) return;
-            RC.Raycaster.stop();
-            if (document.pointerLockElement) document.exitPointerLock();
-            this._showReview(sprite, index, cardIds, 0);
+    const PL = {
+        _state: null,
+
+        // Called from walker raycast when user presses E near a locus mesh
+        activateLocus(locusData) {
+            if (!locusData) return;
+            const settings = locusData.marker_settings || {};
+            const images = settings.images && settings.images.length
+                ? settings.images
+                : (settings.image ? [{
+                    card_id: (locusData.card_ids || [])[0],
+                    image: settings.image,
+                    label: locusData.label,
+                    marker_type: locusData.marker_type
+                }] : []);
+            const cardIds = (locusData.card_ids || []).map(x => parseInt(x, 10)).filter(x => !isNaN(x));
+            if (!cardIds.length) {
+                this._showBinder(locusData);
+                return;
+            }
+            // Unlock pointer so the overlay is usable
+            if (RC.PalaceWalker && RC.PalaceWalker.unlock) RC.PalaceWalker.unlock();
+            this._state = {
+                locus: locusData,
+                images: images,
+                cardIds: cardIds,
+                idx: 0,
+                revealed: false
+            };
+            this._renderReview();
         },
 
-        _showReview: function(sprite, index, cardIds, cardIdx) {
-            var overlay = document.getElementById('palace-review-overlay');
-            overlay.style.display = 'flex';
-            overlay.innerHTML = '<div class="palace-review-card loading">Loading card...</div>';
+        _renderReview() {
+            const s = this._state;
+            if (!s) return;
+            const overlay = document.getElementById("palace-review-overlay");
+            const cid = s.cardIds[s.idx];
+            const img = s.images.find(im => im.card_id === cid) || s.images[s.idx] || {};
+            const markerName = (img.marker_type || s.locus.marker_type || "orb").toUpperCase();
+            const imageText = img.image || "(no mnemonic image — click Fill to generate)";
+            const counter = "Card " + (s.idx + 1) + " of " + s.cardIds.length;
 
-            var self = this;
-            RC.api('GET', '/cards/' + cardIds[cardIdx] + '/info').then(function(res) {
-                if (!res || res.error) {
-                    overlay.innerHTML = '<div class="palace-review-card"><p>Card not found.</p>' +
-                        '<button class="btn" onclick="RC.Palace.closeOverlay()">Close</button></div>';
-                    return;
-                }
-                var card = res.card || res;
-                var front = card.fields ? card.fields.Front : (card.front || '');
-                var back = card.fields ? card.fields.Back : (card.back || '');
-                var label = sprite.data.label ? '<div class="locus-label">' + RC.esc(sprite.data.label) + '</div>' : '';
-                var progress = cardIds.length > 1 ? '<div class="review-progress">' + (cardIdx+1) + '/' + cardIds.length + '</div>' : '';
+            let inner = "<div class=\"locus-panel\">" +
+                "<div class=\"locus-header\"><span class=\"locus-marker\">" + markerName + "</span>" +
+                "<span class=\"locus-counter\">" + counter + "</span>" +
+                "<button class=\"locus-close\" onclick=\"RC.PalaceLoci.close()\">&times;</button></div>" +
+                "<div class=\"locus-label\">" + RC.esc(img.label || s.locus.label || "") + "</div>" +
+                "<div class=\"locus-image\">" + RC.esc(imageText) + "</div>";
 
-                overlay.innerHTML = '<div class="palace-review-card">' + label + progress +
-                    '<div class="card-front">' + front + '</div>' +
-                    '<div class="card-back" id="palace-card-back" style="display:none">' + back + '</div>' +
-                    '<div class="review-actions">' +
-                        '<button id="palace-reveal-btn" onclick="document.getElementById(\'palace-card-back\').style.display=\'block\';this.style.display=\'none\';document.getElementById(\'palace-grade-btns\').style.display=\'flex\'" class="btn-reveal">Show Answer</button>' +
-                        '<div id="palace-grade-btns" style="display:none;gap:8px;justify-content:center">' +
-                            '<button onclick="RC.PalaceLoci._grade(' + card.id + ',1,' + index + ',' + cardIdx + ')" class="btn-again">Again</button>' +
-                            '<button onclick="RC.PalaceLoci._grade(' + card.id + ',2,' + index + ',' + cardIdx + ')" class="btn-hard">Hard</button>' +
-                            '<button onclick="RC.PalaceLoci._grade(' + card.id + ',3,' + index + ',' + cardIdx + ')" class="btn-good">Good</button>' +
-                            '<button onclick="RC.PalaceLoci._grade(' + card.id + ',4,' + index + ',' + cardIdx + ')" class="btn-easy">Easy</button>' +
-                        '</div>' +
-                        '<button onclick="RC.Palace.closeOverlay()" class="btn-close" style="margin-top:8px">Close</button>' +
-                    '</div></div>';
-            }).catch(function() {
-                overlay.innerHTML = '<div class="palace-review-card"><p>Error loading card.</p>' +
-                    '<button class="btn" onclick="RC.Palace.closeOverlay()">Close</button></div>';
-            });
+            if (!s.revealed) {
+                inner += "<div class=\"locus-cardfront\" id=\"locus-cardfront\">Loading card...</div>" +
+                    "<div class=\"locus-actions\"><button class=\"btn btn-primary\" onclick=\"RC.PalaceLoci._reveal()\">Reveal</button></div>";
+            } else {
+                inner += "<div class=\"locus-cardfront\" id=\"locus-cardfront\">" + (s._front || "") + "</div>" +
+                    "<div class=\"locus-cardback\" id=\"locus-cardback\">" + (s._back || "") + "</div>" +
+                    "<div class=\"locus-grades\">" +
+                    "<button class=\"btn-again\" onclick=\"RC.PalaceLoci._grade(1)\">Again</button>" +
+                    "<button class=\"btn-hard\" onclick=\"RC.PalaceLoci._grade(2)\">Hard</button>" +
+                    "<button class=\"btn-good\" onclick=\"RC.PalaceLoci._grade(3)\">Good</button>" +
+                    "<button class=\"btn-easy\" onclick=\"RC.PalaceLoci._grade(4)\">Easy</button>" +
+                    "</div>";
+            }
+            inner += "</div>";
+            overlay.innerHTML = inner;
+            overlay.style.display = "flex";
+            // Fetch card front
+            if (!s.revealed) this._loadCard(cid);
         },
 
-        _grade: function(cardId, rating, spriteIndex, cardIdx) {
-            RC.api('POST', '/review', { card_id: cardId, rating: rating }).then(function() {
-                RC.toast('Reviewed!');
-                // Move to next card at this locus or close
-                var sprite = RC.Raycaster.sprites[spriteIndex];
-                var cardIds = sprite.data.card_ids || [];
-                if (cardIdx + 1 < cardIds.length) {
-                    RC.PalaceLoci._showReview(sprite, spriteIndex, cardIds, cardIdx + 1);
-                } else {
-                    RC.Palace.closeOverlay();
-                }
-            }).catch(function() { RC.toast('Review failed'); });
+        async _loadCard(cid) {
+            try {
+                const res = await RC.api("GET", "/cards/" + cid + "/info");
+                const fields = (res && res.note && res.note.fields) || {};
+                const s = this._state;
+                if (!s) return;
+                s._front = RC.esc(fields.front || fields.text || fields.q || "(no front)");
+                s._back = RC.esc(fields.back || fields.extra || fields.a || "");
+                const el = document.getElementById("locus-cardfront");
+                if (el) el.innerHTML = s._front;
+            } catch (e) { /* ignore */ }
         },
 
-        // Card binder for raycaster sprites
-        openCardBinderRay: function(spriteIndex) {
-            var sprite = RC.Raycaster.sprites[spriteIndex];
-            var overlay = document.getElementById('palace-review-overlay');
-            overlay.style.display = 'flex';
-            this._currentBindIndex = spriteIndex;
+        _reveal() {
+            if (!this._state) return;
+            this._state.revealed = true;
+            this._renderReview();
+        },
 
-            overlay.innerHTML = '<div class="palace-review-card card-binder">' +
-                '<h3>Bind Cards to ' + RC.esc(sprite.data.label || 'Locus') + '</h3>' +
-                '<input type="text" id="card-search-input" class="modal-input" placeholder="Search cards..." oninput="RC.PalaceLoci._searchCards(this.value)">' +
-                '<div id="card-search-results" style="max-height:200px;overflow-y:auto;margin:8px 0"></div>' +
-                '<div id="bound-cards-list"></div>' +
-                '<button class="btn" onclick="RC.Palace.closeOverlay()" style="margin-top:8px">Done</button>' +
-            '</div>';
-
-            if (sprite.data.card_ids && sprite.data.card_ids.length) {
-                this._showBound(sprite.data.card_ids);
+        async _grade(rating) {
+            const s = this._state;
+            if (!s) return;
+            const cid = s.cardIds[s.idx];
+            try {
+                await RC.api("POST", "/review", { card_id: cid, rating: rating });
+            } catch (e) { RC.toast("Review failed"); }
+            s.idx++;
+            s.revealed = false;
+            if (s.idx >= s.cardIds.length) {
+                this.close();
+                RC.toast("Locus complete");
+            } else {
+                this._renderReview();
             }
         },
 
-        _searchCards: function(query) {
-            if (query.length < 2) { document.getElementById('card-search-results').innerHTML = ''; return; }
-            RC.api('GET', '/decks/0/browse?q=' + encodeURIComponent(query)).then(function(res) {
-                var cards = (res && res.cards) ? res.cards : [];
-                var html = cards.slice(0, 15).map(function(c) {
-                    var preview = ((c.fields && c.fields.Front) || c.front || '').substring(0, 60);
-                    return '<div class="search-result" onclick="RC.PalaceLoci._bind(' + c.id + ')" style="padding:6px;cursor:pointer;border-bottom:1px solid #333">' +
-                        '<span>' + RC.esc(preview) + '</span> <span style="color:var(--accent)">+ Bind</span></div>';
-                }).join('');
-                document.getElementById('card-search-results').innerHTML = html || '<p style="color:#888">No results</p>';
-            }).catch(function() {
-                document.getElementById('card-search-results').innerHTML = '<p style="color:#f44">Search error</p>';
-            });
+        close() {
+            this._state = null;
+            const overlay = document.getElementById("palace-review-overlay");
+            if (overlay) { overlay.style.display = "none"; overlay.innerHTML = ""; }
         },
 
-        _bind: function(cardId) {
-            var sprite = RC.Raycaster.sprites[this._currentBindIndex];
-            if (!sprite) return;
-            if (!sprite.data.card_ids) sprite.data.card_ids = [];
-            if (sprite.data.card_ids.indexOf(cardId) >= 0) { RC.toast('Already bound'); return; }
-            sprite.data.card_ids.push(cardId);
-            RC.toast('Card bound');
-            this._showBound(sprite.data.card_ids);
-            // Auto-save
-            RC.Palace.savePalace();
-        },
-
-        _showBound: function(cardIds) {
-            var el = document.getElementById('bound-cards-list');
-            if (!el) return;
-            el.innerHTML = '<h4 style="margin:8px 0 4px">Bound (' + cardIds.length + ')</h4>' +
-                cardIds.map(function(id) {
-                    return '<div style="padding:3px 0">Card #' + id +
-                        ' <button onclick="RC.PalaceLoci._unbind(' + id + ')" style="color:#f44;border:none;background:none;cursor:pointer">&times;</button></div>';
-                }).join('');
-        },
-
-        _unbind: function(cardId) {
-            var sprite = RC.Raycaster.sprites[this._currentBindIndex];
-            if (!sprite) return;
-            sprite.data.card_ids = (sprite.data.card_ids || []).filter(function(id) { return id !== cardId; });
-            this._showBound(sprite.data.card_ids);
-            RC.Palace.savePalace();
+        // ── Manual card-to-locus binder (used when locus has no cards yet) ──
+        _showBinder(locusData) {
+            if (RC.PalaceWalker && RC.PalaceWalker.unlock) RC.PalaceWalker.unlock();
+            const overlay = document.getElementById("palace-review-overlay");
+            overlay.innerHTML = "<div class=\"locus-panel\">" +
+                "<div class=\"locus-header\">" +
+                "<span class=\"locus-marker\">" + (locusData.marker_type || "orb").toUpperCase() + "</span>" +
+                "<span class=\"locus-counter\">Empty</span>" +
+                "<button class=\"locus-close\" onclick=\"RC.PalaceLoci.close()\">&times;</button></div>" +
+                "<div class=\"locus-label\">" + RC.esc(locusData.label || "Empty locus") + "</div>" +
+                "<div class=\"locus-image\">This locus has no cards. Use the <b>AI Fill</b> button in the toolbar to generate imagery for a whole deck at once.</div>" +
+                "</div>";
+            overlay.style.display = "flex";
         }
     };
 

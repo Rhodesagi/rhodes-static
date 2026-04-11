@@ -451,6 +451,7 @@
                 <button class="mode-btn" data-mode="build" onclick="RC.Palace.setMode('build')">Build</button>
             </div>
             <div class="palace-actions">
+                <button class="btn btn-sm btn-primary" onclick="RC.Palace.openGenerateModal()">AI Fill</button>
                 <button class="btn btn-sm" onclick="RC.Palace.savePalace()">Save</button>
                 <button class="btn btn-sm" onclick="RC.PalaceIO.exportPalace()">Export</button>
                 <button class="btn btn-sm" onclick="RC.PalaceIO.duplicatePalace()">Duplicate</button>
@@ -522,6 +523,34 @@
         </div>
     </div>
 
+    <!-- AI Fill (Generate Loci from Deck) Modal -->
+    <div class="modal-overlay" id="palaceGenerateModal" style="display:none" onclick="if(event.target===this)RC.Palace._cancelGenerate()">
+        <div class="modal" style="max-width:500px">
+            <h3>Fill Palace from Deck</h3>
+            <p style="margin:12px 0;color:var(--text-dim);font-size:13px">
+                Rhodes will design vivid mnemonic imagery for every card in the chosen deck and bind them to loci in this palace.
+            </p>
+            <div style="margin:16px 0">
+                <label style="display:block;margin-bottom:8px;color:var(--text-dim)">Deck</label>
+                <select id="palaceGenDeck" class="modal-input"></select>
+            </div>
+            <div style="margin:16px 0">
+                <label style="display:block;margin-bottom:8px;color:var(--text-dim)">Mode</label>
+                <label style="display:block;margin:6px 0"><input type="radio" name="palaceGenMode" value="rebind" checked> Rebind existing loci (reuse layout)</label>
+                <label style="display:block;margin:6px 0"><input type="radio" name="palaceGenMode" value="append"> Append new loci (spiral placement)</label>
+            </div>
+            <div style="margin:16px 0">
+                <label style="display:block;margin-bottom:8px;color:var(--text-dim)">Card limit (safety cap)</label>
+                <input type="number" id="palaceGenLimit" class="modal-input" value="60" min="1" max="200">
+            </div>
+            <div id="palaceGenStatus" style="margin:12px 0;color:var(--text-dim);font-size:13px"></div>
+            <div class="form-actions">
+                <button class="btn" onclick="RC.Palace._cancelGenerate()">Cancel</button>
+                <button class="btn btn-primary" id="palaceGenBtn" onclick="RC.Palace._confirmGenerate()">Generate</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Card Info Modal -->
 <div class="modal-overlay" id="cardInfoModal" style="display:none" onclick="if(event.target===this)RC.closeCardInfo()">
     <div class="modal modal-wide">
@@ -564,11 +593,18 @@
 <script src="js/editor-toolbar.js?v=10"></script>
 <script src="js/editreview.js?v=10"></script>
 <script src="js/cardinfo.js?v=10"></script>
-<!-- Memory Palace modules -->
-<script src="js/palace-raycaster.js?v=4"></script>
-<script src="js/palace-mapgen.js?v=1"></script>
-<script src="js/palace-loci.js?v=2"></script>
-<script src="js/palace.js?v=11"></script>
+<!-- Memory Palace (Three.js 3D) -->
+<script src="lib/three.min.js"></script>
+<script src="lib/PointerLockControls.js"></script>
+<script src="js/palace-templates.js?v=2"></script>
+<script src="js/palace-generator.js?v=2"></script>
+<script src="js/palace-renderer.js?v=2"></script>
+<script src="js/palace-walker.js?v=2"></script>
+<script src="js/palace-traverse.js?v=2"></script>
+<script src="js/palace-builder.js?v=2"></script>
+<script src="js/palace-io.js?v=2"></script>
+<script src="js/palace-loci.js?v=20"></script>
+<script src="js/palace.js?v=20"></script>
 <script src="js/app.js?v=10"></script>
 </body>
 </html>
