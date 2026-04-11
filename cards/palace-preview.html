@@ -93,12 +93,13 @@
 <body>
 <div id="canvas"></div>
 <div id="ui">
-    <span class="title">RHODES // PALACE PREVIEW</span>
-    <button class="btn" data-tmpl="roman_villa">Roman Villa</button>
-    <button class="btn" data-tmpl="library_tower">Library Tower</button>
-    <button class="btn" data-tmpl="museum_hall">Museum Hall</button>
+    <span class="title">RHODES // MEMORY CITY</span>
+    <button class="btn" data-tmpl="forum">The Forum</button>
+    <button class="btn" data-tmpl="roman_villa">Villa</button>
+    <button class="btn" data-tmpl="library_tower">Library</button>
+    <button class="btn" data-tmpl="museum_hall">Museum</button>
     <button class="btn" data-tmpl="catacombs">Catacombs</button>
-    <button class="btn" data-tmpl="sky_palace">Sky Palace</button>
+    <button class="btn" data-tmpl="observatory">Observatory</button>
     <button class="btn" id="orbit-toggle">⏸ Pause Orbit</button>
 </div>
 
@@ -119,7 +120,17 @@
 <script>
 window.RC = window.RC || {};
 RC.Palace = { mode: 'walk', setMode: function() {} };
-RC.PalaceLoci = { activateLocus: function(l) { console.log('locus activated:', l && l.label); } };
+// Portal handler: door loci with marker_settings.portal_target teleport to that template
+RC.PalaceLoci = {
+    activateLocus: function(l) {
+        if (!l) return;
+        console.log('[locus]', l.label);
+        var target = l.marker_settings && l.marker_settings.portal_target;
+        if (target && window._loadPalaceTemplate) {
+            window._loadPalaceTemplate(target);
+        }
+    }
+};
 RC.PalaceTraverse = { startTraversal: function() {}, update: function() {} };
 </script>
 
@@ -137,9 +148,9 @@ RC.PalaceTraverse = { startTraversal: function() {}, update: function() {} };
 <script src="lib/three-addons/ShaderPass.js"></script>
 <script src="lib/three-addons/UnrealBloomPass.js"></script>
 <script src="lib/three-addons/SSAOPass.js"></script>
-<script src="js/palace-templates.js?v=5"></script>
-<script src="js/palace-renderer.js?v=8"></script>
-<script src="js/palace-walker.js?v=3"></script>
+<script src="js/palace-templates.js?v=4"></script>
+<script src="js/palace-renderer.js?v=5"></script>
+<script src="js/palace-walker.js?v=2"></script>
 
 <script>
 (function() {
@@ -172,11 +183,12 @@ RC.PalaceTraverse = { startTraversal: function() {}, update: function() {} };
 
     // Per-template camera presets + spawn points
     const PRESETS = {
-        roman_villa:   { radius: 80,  height: 35, target: [0, 5, 0]  },
-        library_tower: { radius: 55,  height: 30, target: [0, 14, 0] },
-        museum_hall:   { radius: 90,  height: 45, target: [0, 5, 0]  },
-        catacombs:     { radius: 60,  height: 45, target: [0, 0, 0]  },
-        sky_palace:    { radius: 100, height: 50, target: [0, 5, 0]  },
+        forum:         { radius: 30,  height: 15, target: [0, 3, 0]   },
+        roman_villa:   { radius: 90,  height: 40, target: [0, 5, 0]   },
+        library_tower: { radius: 60,  height: 40, target: [0, 15, 0]  },
+        museum_hall:   { radius: 120, height: 55, target: [0, 5, 0]   },
+        catacombs:     { radius: 70,  height: 50, target: [0, 0, 0]   },
+        observatory:   { radius: 50,  height: 25, target: [0, 8, 0]   },
     };
 
     async function loadTemplate(tid) {
@@ -287,9 +299,15 @@ RC.PalaceTraverse = { startTraversal: function() {}, update: function() {} };
     });
 
     document.addEventListener('keydown', (e) => {
-        // Only allow template switch + orbit toggle when not walking
-        if (walkMode) return;
-        const keyMap = { '1': 'roman_villa', '2': 'library_tower', '3': 'museum_hall', '4': 'catacombs', '5': 'sky_palace' };
+        // Template hotkeys work in both walk and orbit modes
+        const keyMap = {
+            '0': 'forum',
+            '1': 'roman_villa',
+            '2': 'library_tower',
+            '3': 'museum_hall',
+            '4': 'catacombs',
+            '5': 'observatory',
+        };
         if (keyMap[e.key]) loadTemplate(keyMap[e.key]);
     });
 
@@ -317,8 +335,11 @@ RC.PalaceTraverse = { startTraversal: function() {}, update: function() {} };
         orbitRadius = Math.max(5, Math.min(400, orbitRadius + e.deltaY * 0.15));
     }, { passive: false });
 
-    // Auto-load first template
-    loadTemplate('museum_hall');
+    // Expose loadTemplate globally so the portal handler can teleport from any wing
+    window._loadPalaceTemplate = loadTemplate;
+
+    // Auto-load The Forum hub on arrival
+    loadTemplate('forum');
 })();
 </script>
 </body>

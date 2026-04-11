@@ -13,6 +13,9 @@
         moveBackward: false,
         moveLeft: false,
         moveRight: false,
+        moveTurnLeft: false,
+        moveTurnRight: false,
+        turnSpeed: 2.5,
         canJump: true,
         playerHeight: 1.6,
         moveSpeed: 10.0,
@@ -57,12 +60,14 @@
         },
 
         _onKeyDown(e) {
-            if (!this.controls || !this.controls.isLocked) return;
+            if (!this.controls) return;
             switch (e.code) {
                 case 'KeyW': case 'ArrowUp':    this.moveForward = true; break;
                 case 'KeyS': case 'ArrowDown':  this.moveBackward = true; break;
                 case 'KeyA': case 'ArrowLeft':  this.moveLeft = true; break;
                 case 'KeyD': case 'ArrowRight': this.moveRight = true; break;
+                case 'KeyQ': this.moveTurnLeft = true; break;
+                case 'KeyE': this.moveTurnRight = true; break;
                 case 'Space':
                     if (this.canJump) {
                         this.velocity.y = this.jumpForce;
@@ -75,8 +80,8 @@
                 case 'Escape':
                     this.controls.unlock();
                     break;
-                case 'KeyE':
-                    // Interact with nearest locus
+                case 'KeyF':
+                    // Interact with nearest locus (moved from E to F; E is now turn-right)
                     this._interact();
                     break;
                 case 'KeyB':
@@ -92,6 +97,8 @@
                 case 'KeyS': case 'ArrowDown':  this.moveBackward = false; break;
                 case 'KeyA': case 'ArrowLeft':  this.moveLeft = false; break;
                 case 'KeyD': case 'ArrowRight': this.moveRight = false; break;
+                case 'KeyQ': this.moveTurnLeft = false; break;
+                case 'KeyE': this.moveTurnRight = false; break;
                 case 'ShiftLeft': case 'ShiftRight':
                     this.moveSpeed = 10.0;
                     break;
@@ -121,7 +128,11 @@
         },
 
         update(delta) {
-            if (!this.controls || !this.controls.isLocked) return;
+            if (!this.controls) return;
+
+            // Apply Q/E keyboard yaw turn (works whether pointer is locked or not)
+            if (this.moveTurnLeft)  this.controls.getObject().rotation.y += this.turnSpeed * delta;
+            if (this.moveTurnRight) this.controls.getObject().rotation.y -= this.turnSpeed * delta;
 
             // Friction
             this.velocity.x -= this.velocity.x * 10.0 * delta;

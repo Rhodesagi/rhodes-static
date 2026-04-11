@@ -279,7 +279,22 @@
 
             // 5. Connectors + loci (same shape in v1 and v2)
             (tmpl.connectors || []).forEach(c => this._addConnector(c));
-            (tmpl.loci || []).forEach(l => this._addLocus(l));
+
+            // Loci: group by marker_type and use InstancedMesh for orb/glow at scale.
+            const lociList = tmpl.loci || [];
+            const byType = {};
+            for (let i = 0; i < lociList.length; i++) {
+                const mt = lociList[i].marker_type || 'orb';
+                (byType[mt] = byType[mt] || []).push(lociList[i]);
+            }
+            for (const mt of Object.keys(byType)) {
+                const arr = byType[mt];
+                if ((mt === 'orb' || mt === 'glow') && arr.length > 20) {
+                    this._addInstancedLoci(mt, arr);
+                } else {
+                    arr.forEach(l => this._addLocus(l));
+                }
+            }
 
             // 6. Apply spawn point to camera
             const spawn = tmpl.meta?.spawn_point || tmpl.spawn_point;
@@ -806,6 +821,32 @@
             return mesh;
         },
 
+        _addInstancedLoci(type, loci) {
+            // Batch-render orb/glow as a single InstancedMesh. One draw call for 1000+ loci.
+            const isOrb = type === 'orb';
+            const geo = new THREE.SphereGeometry(isOrb ? 0.19 : 0.16, 16, 16);
+            const mat = new THREE.MeshStandardMaterial({
+                color: isOrb ? 0x88aaff : 0xffd080,
+                emissive: isOrb ? 0x3366dd : 0xff9040,
+                emissiveIntensity: isOrb ? 1.8 : 3.0,
+                transparent: true,
+                opacity: isOrb ? 0.9 : 0.85,
+            });
+            const mesh = new THREE.InstancedMesh(geo, mat, loci.length);
+            const dummy = new THREE.Object3D();
+            for (let i = 0; i < loci.length; i++) {
+                const p = loci[i].position || [0, 1, 0];
+                dummy.position.set(p[0], p[1], p[2]);
+                dummy.updateMatrix();
+                mesh.setMatrixAt(i, dummy.matrix);
+            }
+            mesh.instanceMatrix.needsUpdate = true;
+            mesh.userData = { dbType: 'locus_instanced', type: type, lociData: loci };
+            this.scene.add(mesh);
+            this.lociMeshes.push(mesh);
+            return mesh;
+        },
+
         // ─────────────────────────────────────────────
         // Export (editor roundtrip, v1 compat)
         // ─────────────────────────────────────────────
@@ -857,6 +898,7 @@
 
             // Bob orbs/glows gently
             this.lociMeshes.forEach((m, i) => {
+                if (m.isInstancedMesh) return; // skip bob for instanced loci
                 const mt = m.userData.dbData?.marker_type;
                 if (mt === 'orb' || mt === 'glow') {
                     const base = m.userData.dbData.position?.[1] ?? 1;
