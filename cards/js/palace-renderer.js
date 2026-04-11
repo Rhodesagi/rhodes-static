@@ -17,8 +17,142 @@
         connectorMeshes: [],
         lociMeshes: [],
 
-        // Materials cache
+        // Materials + texture cache
         _materials: {},
+        _textures: {},
+
+        // ── Procedural textures (Canvas2D, cached) ──
+        _makeTexture(kind) {
+            if (this._textures[kind]) return this._textures[kind];
+            const c = document.createElement('canvas');
+            c.width = 256; c.height = 256;
+            const ctx = c.getContext('2d');
+
+            const noise = function(x, y) {
+                return Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453 % 1);
+            };
+
+            if (kind === 'stone') {
+                // Mottled grey limestone with darker veins + lighter highlights
+                ctx.fillStyle = '#a8a39a'; ctx.fillRect(0, 0, 256, 256);
+                for (let i = 0; i < 8000; i++) {
+                    const x = Math.random() * 256, y = Math.random() * 256;
+                    const v = Math.random();
+                    const shade = 90 + v * 100;
+                    ctx.fillStyle = 'rgba(' + shade + ',' + (shade - 5) + ',' + (shade - 15) + ',' + (0.15 + v * 0.25) + ')';
+                    ctx.fillRect(x, y, 1 + v * 2, 1 + v * 2);
+                }
+                // Cracks
+                for (let i = 0; i < 12; i++) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'rgba(60,55,50,0.35)';
+                    ctx.lineWidth = 0.5 + Math.random();
+                    ctx.moveTo(Math.random() * 256, Math.random() * 256);
+                    for (let j = 0; j < 4; j++) {
+                        ctx.lineTo(Math.random() * 256, Math.random() * 256);
+                    }
+                    ctx.stroke();
+                }
+            } else if (kind === 'marble') {
+                // Cream marble with grey/gold veining
+                ctx.fillStyle = '#ede4d0'; ctx.fillRect(0, 0, 256, 256);
+                for (let band = 0; band < 6; band++) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'rgba(120,110,90,' + (0.15 + Math.random() * 0.2) + ')';
+                    ctx.lineWidth = 1 + Math.random() * 2;
+                    let x = Math.random() * 256, y = Math.random() * 256;
+                    ctx.moveTo(x, y);
+                    for (let s = 0; s < 30; s++) {
+                        x += (Math.random() - 0.5) * 30;
+                        y += (Math.random() - 0.5) * 30;
+                        ctx.lineTo(x, y);
+                    }
+                    ctx.stroke();
+                }
+                // Sprinkle of darker flecks
+                for (let i = 0; i < 1500; i++) {
+                    ctx.fillStyle = 'rgba(140,125,95,' + Math.random() * 0.3 + ')';
+                    ctx.fillRect(Math.random() * 256, Math.random() * 256, 1, 1);
+                }
+            } else if (kind === 'wood') {
+                // Warm wood plank grain
+                ctx.fillStyle = '#8b5a2b'; ctx.fillRect(0, 0, 256, 256);
+                // Plank stripes
+                for (let p = 0; p < 8; p++) {
+                    const baseY = p * 32;
+                    const shade = 90 + Math.random() * 50;
+                    ctx.fillStyle = 'rgb(' + (shade + 50) + ',' + shade + ',' + (shade - 40) + ')';
+                    ctx.fillRect(0, baseY, 256, 30);
+                    // grain lines
+                    for (let g = 0; g < 12; g++) {
+                        ctx.strokeStyle = 'rgba(60,40,20,' + (0.2 + Math.random() * 0.3) + ')';
+                        ctx.lineWidth = 0.5 + Math.random();
+                        ctx.beginPath();
+                        ctx.moveTo(0, baseY + 2 + Math.random() * 28);
+                        ctx.bezierCurveTo(64, baseY + Math.random() * 32, 192, baseY + Math.random() * 32, 256, baseY + 2 + Math.random() * 28);
+                        ctx.stroke();
+                    }
+                    // plank divider
+                    ctx.fillStyle = 'rgba(30,20,10,0.6)';
+                    ctx.fillRect(0, baseY + 30, 256, 2);
+                }
+            } else if (kind === 'grass') {
+                ctx.fillStyle = '#5a8a3c'; ctx.fillRect(0, 0, 256, 256);
+                for (let i = 0; i < 4000; i++) {
+                    const v = Math.random();
+                    ctx.fillStyle = 'rgb(' + (60 + v * 60) + ',' + (110 + v * 80) + ',' + (40 + v * 50) + ')';
+                    ctx.fillRect(Math.random() * 256, Math.random() * 256, 1 + v * 2, 1 + v * 2);
+                }
+            } else if (kind === 'brick') {
+                ctx.fillStyle = '#923c2a'; ctx.fillRect(0, 0, 256, 256);
+                const bw = 64, bh = 24;
+                for (let row = 0; row < 11; row++) {
+                    const offset = (row % 2) * (bw / 2);
+                    for (let col = -1; col < 5; col++) {
+                        const x = col * bw + offset;
+                        const y = row * bh;
+                        const v = Math.random();
+                        ctx.fillStyle = 'rgb(' + (130 + v * 50) + ',' + (50 + v * 30) + ',' + (40 + v * 25) + ')';
+                        ctx.fillRect(x + 2, y + 2, bw - 4, bh - 4);
+                    }
+                }
+                // mortar lines
+                ctx.strokeStyle = '#3a2a20'; ctx.lineWidth = 2;
+                for (let row = 0; row <= 11; row++) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, row * bh); ctx.lineTo(256, row * bh); ctx.stroke();
+                }
+            } else if (kind === 'plaster') {
+                // Off-white roman plaster
+                ctx.fillStyle = '#e8dcc4'; ctx.fillRect(0, 0, 256, 256);
+                for (let i = 0; i < 6000; i++) {
+                    const v = Math.random();
+                    ctx.fillStyle = 'rgba(' + (200 + v * 30) + ',' + (180 + v * 40) + ',' + (140 + v * 40) + ',' + (0.1 + v * 0.3) + ')';
+                    ctx.fillRect(Math.random() * 256, Math.random() * 256, 1 + v * 2, 1);
+                }
+            } else if (kind === 'water') {
+                // Stylized water
+                ctx.fillStyle = '#3b6e8f'; ctx.fillRect(0, 0, 256, 256);
+                for (let i = 0; i < 30; i++) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'rgba(180,210,235,' + (0.15 + Math.random() * 0.2) + ')';
+                    ctx.lineWidth = 1 + Math.random() * 2;
+                    const y = Math.random() * 256;
+                    ctx.moveTo(0, y);
+                    for (let x = 0; x < 256; x += 16) ctx.lineTo(x, y + Math.sin(x * 0.1 + i) * 4);
+                    ctx.stroke();
+                }
+            } else {
+                // default — flat grey
+                ctx.fillStyle = '#888888'; ctx.fillRect(0, 0, 256, 256);
+            }
+
+            const tex = new THREE.CanvasTexture(c);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            tex.anisotropy = 4;
+            this._textures[kind] = tex;
+            return tex;
+        },
 
         init(canvasId) {
             const container = document.getElementById(canvasId);
@@ -57,10 +191,14 @@
             const hemi = new THREE.HemisphereLight(0x87ceeb, 0x6b8e4e, 0.65);
             this.scene.add(hemi);
 
-            // ── Ground plane (large grass terrain so building has a foundation) ──
-            const groundGeo = new THREE.PlaneGeometry(600, 600, 4, 4);
+            // ── Ground plane: tiled grass terrain (foundation for any palace) ──
+            const grassTex = this._makeTexture('grass').clone();
+            grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
+            grassTex.repeat.set(60, 60);
+            grassTex.needsUpdate = true;
+            const groundGeo = new THREE.PlaneGeometry(600, 600);
             const groundMat = new THREE.MeshStandardMaterial({
-                color: 0x6b8e4e, roughness: 0.95, metalness: 0
+                map: grassTex, color: 0xffffff, roughness: 0.95, metalness: 0
             });
             const ground = new THREE.Mesh(groundGeo, groundMat);
             ground.rotation.x = -Math.PI / 2;
@@ -69,10 +207,14 @@
             this.scene.add(ground);
             this._groundMesh = ground;
 
-            // Subtle stone plaza around origin so the building sits on a clear platform
-            const plazaGeo = new THREE.PlaneGeometry(80, 80);
+            // Stone plaza below the building (large, marble texture)
+            const plazaTex = this._makeTexture('marble').clone();
+            plazaTex.wrapS = plazaTex.wrapT = THREE.RepeatWrapping;
+            plazaTex.repeat.set(8, 8);
+            plazaTex.needsUpdate = true;
+            const plazaGeo = new THREE.PlaneGeometry(140, 140);
             const plazaMat = new THREE.MeshStandardMaterial({
-                color: 0xb8a888, roughness: 0.85, metalness: 0
+                map: plazaTex, color: 0xffffff, roughness: 0.6, metalness: 0
             });
             const plaza = new THREE.Mesh(plazaGeo, plazaMat);
             plaza.rotation.x = -Math.PI / 2;
@@ -140,16 +282,26 @@
         _getMaterial(matData) {
             const key = JSON.stringify(matData);
             if (this._materials[key]) return this._materials[key];
-            const color = matData.color || '#888888';
+            const color = matData.color || '#ffffff';
             const opacity = matData.opacity != null ? matData.opacity : 1.0;
-            const mat = new THREE.MeshStandardMaterial({
+            const opts = {
                 color: new THREE.Color(color),
-                roughness: 0.85,
-                metalness: 0.05,
+                roughness: matData.roughness != null ? matData.roughness : 0.85,
+                metalness: matData.metalness != null ? matData.metalness : 0.05,
                 transparent: opacity < 1,
                 opacity: opacity,
                 side: THREE.FrontSide
-            });
+            };
+            if (matData.texture) {
+                const tex = this._makeTexture(matData.texture).clone();
+                tex.needsUpdate = true;
+                tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+                const r = matData.repeat || [4, 4];
+                tex.repeat.set(r[0], r[1]);
+                opts.map = tex;
+                if (!matData.color) opts.color = new THREE.Color(0xffffff);
+            }
+            const mat = new THREE.MeshStandardMaterial(opts);
             this._materials[key] = mat;
             return mat;
         },
