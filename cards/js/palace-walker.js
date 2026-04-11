@@ -15,7 +15,7 @@
         moveRight: false,
         canJump: true,
         playerHeight: 1.6,
-        moveSpeed: 8.0,
+        moveSpeed: 10.0,
         jumpForce: 6.0,
         gravity: -15.0,
         raycaster: new THREE.Raycaster(),
@@ -70,7 +70,7 @@
                     }
                     break;
                 case 'ShiftLeft': case 'ShiftRight':
-                    this.moveSpeed = 16.0; // Sprint
+                    this.moveSpeed = 20.0; // Sprint
                     break;
                 case 'Escape':
                     this.controls.unlock();
@@ -93,7 +93,7 @@
                 case 'KeyA': case 'ArrowLeft':  this.moveLeft = false; break;
                 case 'KeyD': case 'ArrowRight': this.moveRight = false; break;
                 case 'ShiftLeft': case 'ShiftRight':
-                    this.moveSpeed = 8.0;
+                    this.moveSpeed = 10.0;
                     break;
             }
         },
@@ -156,16 +156,21 @@
         },
 
         _checkSurfaceCollision() {
+            // Cast ray down from slightly above eye to find the floor/step below us.
+            // Allow step-up of up to 0.6m (normal stair riser) without jumping.
             const pos = this.controls.getObject().position;
-            this.raycaster.set(new THREE.Vector3(pos.x, pos.y + 1, pos.z), new THREE.Vector3(0, -1, 0));
+            const rayOriginY = pos.y + 0.5;
+            this.raycaster.set(new THREE.Vector3(pos.x, rayOriginY, pos.z), new THREE.Vector3(0, -1, 0));
             const hits = this.raycaster.intersectObjects(RC.PalaceRenderer.surfaceMeshes, true);
-            if (hits.length > 0 && hits[0].distance < this.playerHeight + 0.5) {
-                const surfaceY = pos.y - hits[0].distance + this.playerHeight;
-                if (surfaceY > this.playerHeight && pos.y < surfaceY + 0.1) {
-                    pos.y = surfaceY;
-                    this.velocity.y = 0;
-                    this.canJump = true;
-                }
+            if (hits.length === 0) return;
+            const hitY = rayOriginY - hits[0].distance;           // absolute world-Y of the surface top
+            const feetY = pos.y - this.playerHeight;               // where our feet currently are
+            const dy = hitY - feetY;                               // + = surface is above feet (climb up), - = surface is below (drop down)
+            if (dy > -0.1 && dy <= 0.65) {
+                // Standing on, or short step up — snap to it
+                pos.y = hitY + this.playerHeight;
+                this.velocity.y = Math.max(0, this.velocity.y);
+                this.canJump = true;
             }
         },
 

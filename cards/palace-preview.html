@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>RhodesCards Palace Preview — S175</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+        width: 100%; height: 100%;
+        background: #000; color: #e0e0e0;
+        font-family: system-ui, -apple-system, sans-serif;
+        overflow: hidden;
+    }
+    #canvas {
+        position: absolute; top: 0; left: 0;
+        width: 100%; height: 100%;
+        touch-action: none;
+    }
+    #ui {
+        position: absolute; top: 0; left: 0; right: 0;
+        padding: 12px 16px;
+        background: linear-gradient(180deg, rgba(0,0,0,0.75), rgba(0,0,0,0));
+        z-index: 10;
+        display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+        pointer-events: none;
+    }
+    #ui > * { pointer-events: auto; }
+    .title {
+        font-size: 14px; font-weight: 600; letter-spacing: 0.5px;
+        color: #00ff9f; margin-right: 8px;
+    }
+    .btn {
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        color: #e0e0e0;
+        padding: 6px 12px; border-radius: 4px;
+        font-size: 13px; cursor: pointer;
+        transition: all 0.15s;
+        font-family: inherit;
+    }
+    .btn:hover { background: rgba(255, 255, 255, 0.1); border-color: #00ff9f; }
+    .btn.active { background: #00ff9f; color: #000; border-color: #00ff9f; font-weight: 600; }
+    #status {
+        position: absolute; bottom: 12px; left: 16px;
+        font-size: 12px; color: #888;
+        z-index: 10;
+        background: rgba(0,0,0,0.5);
+        padding: 6px 10px; border-radius: 4px;
+    }
+    #help {
+        position: absolute; bottom: 12px; right: 16px;
+        font-size: 11px; color: #888;
+        z-index: 10; text-align: right;
+        background: rgba(0,0,0,0.5);
+        padding: 6px 10px; border-radius: 4px;
+        max-width: 420px;
+    }
+    kbd {
+        background: rgba(255,255,255,0.15); padding: 1px 5px;
+        border-radius: 3px; font-family: ui-monospace, monospace;
+        font-size: 10px;
+    }
+    /* Walk mode HUD */
+    #palace-crosshair {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 20px; color: #fff;
+        text-shadow: 0 0 4px #000;
+        z-index: 20; pointer-events: none;
+        display: none;
+    }
+    #palace-instructions {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 24px 40px;
+        background: rgba(0, 0, 0, 0.75);
+        border: 1px solid #00ff9f;
+        border-radius: 8px;
+        color: #fff; text-align: center;
+        z-index: 20; pointer-events: none;
+        font-size: 14px; line-height: 1.8;
+        display: none;
+    }
+    #palace-instructions h2 {
+        color: #00ff9f; font-size: 16px; margin-bottom: 12px;
+        letter-spacing: 1px;
+    }
+</style>
+</head>
+<body>
+<div id="canvas"></div>
+<div id="ui">
+    <span class="title">RHODES // PALACE PREVIEW</span>
+    <button class="btn" data-tmpl="roman_villa">Roman Villa</button>
+    <button class="btn" data-tmpl="library_tower">Library Tower</button>
+    <button class="btn" data-tmpl="museum_hall">Museum Hall</button>
+    <button class="btn" data-tmpl="catacombs">Catacombs</button>
+    <button class="btn" data-tmpl="sky_palace">Sky Palace</button>
+    <button class="btn" id="orbit-toggle">⏸ Pause Orbit</button>
+</div>
+
+<div id="palace-crosshair">+</div>
+<div id="palace-instructions">
+    <h2>CLICK TO WALK</h2>
+    <div><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> &nbsp; move</div>
+    <div><kbd>Shift</kbd> &nbsp; sprint &nbsp;&nbsp; <kbd>Space</kbd> &nbsp; jump</div>
+    <div><kbd>E</kbd> &nbsp; interact &nbsp;&nbsp; <kbd>Esc</kbd> &nbsp; exit walk mode</div>
+</div>
+
+<div id="status">loading...</div>
+<div id="help">
+    orbit: drag to rotate · scroll zoom · <kbd>1</kbd>–<kbd>5</kbd> switch · click to walk
+</div>
+
+<!-- RC namespace + stubs for palace-walker dependencies -->
+<script>
+window.RC = window.RC || {};
+RC.Palace = { mode: 'walk', setMode: function() {} };
+RC.PalaceLoci = { activateLocus: function(l) { console.log('locus activated:', l && l.label); } };
+RC.PalaceTraverse = { startTraversal: function() {}, update: function() {} };
+</script>
+
+<!-- Three.js + addons (same stack as cards/) -->
+<script src="lib/three.min.js"></script>
+<script src="lib/PointerLockControls.js"></script>
+<script src="lib/three-addons/GLTFLoader.js"></script>
+<script src="lib/three-addons/RGBELoader.js"></script>
+<script src="lib/three-addons/CopyShader.js"></script>
+<script src="lib/three-addons/LuminosityHighPassShader.js"></script>
+<script src="lib/three-addons/SSAOShader.js"></script>
+<script src="lib/three-addons/SimplexNoise.js"></script>
+<script src="lib/three-addons/EffectComposer.js"></script>
+<script src="lib/three-addons/RenderPass.js"></script>
+<script src="lib/three-addons/ShaderPass.js"></script>
+<script src="lib/three-addons/UnrealBloomPass.js"></script>
+<script src="lib/three-addons/SSAOPass.js"></script>
+<script src="js/palace-templates.js?v=5"></script>
+<script src="js/palace-renderer.js?v=8"></script>
+<script src="js/palace-walker.js?v=3"></script>
+
+<script>
+(function() {
+    'use strict';
+
+    const PR = RC.PalaceRenderer;
+    const PT = RC.PalaceTemplates;
+    const PW = RC.PalaceWalker;
+
+    const statusEl = document.getElementById('status');
+    const orbitBtn = document.getElementById('orbit-toggle');
+    const buttons = document.querySelectorAll('.btn[data-tmpl]');
+    const instructionsEl = document.getElementById('palace-instructions');
+    const crosshairEl = document.getElementById('palace-crosshair');
+
+    let orbit = true;
+    let orbitAngle = 0;
+    let orbitRadius = 60;
+    let orbitHeight = 25;
+    let orbitTarget = [0, 5, 0];
+    let dragStartX = 0, dragStartY = 0;
+    let dragAngle = 0, dragHeight = 0;
+    let dragging = false;
+    let walkMode = false;
+    let spawnPos = [0, 1.6, 10];
+    let walkerInited = false;
+
+    PR.init('canvas');
+    statusEl.textContent = 'initialized — pick a palace';
+
+    // Per-template camera presets + spawn points
+    const PRESETS = {
+        roman_villa:   { radius: 80,  height: 35, target: [0, 5, 0]  },
+        library_tower: { radius: 55,  height: 30, target: [0, 14, 0] },
+        museum_hall:   { radius: 90,  height: 45, target: [0, 5, 0]  },
+        catacombs:     { radius: 60,  height: 45, target: [0, 0, 0]  },
+        sky_palace:    { radius: 100, height: 50, target: [0, 5, 0]  },
+    };
+
+    async function loadTemplate(tid) {
+        statusEl.textContent = `loading ${tid}...`;
+        buttons.forEach(b => b.classList.toggle('active', b.dataset.tmpl === tid));
+
+        const preset = PRESETS[tid] || { radius: 60, height: 25, target: [0, 5, 0] };
+        orbitRadius = preset.radius;
+        orbitHeight = preset.height;
+        orbitTarget = preset.target;
+
+        const tmpl = PT.generate(tid);
+        if (!tmpl) {
+            statusEl.textContent = `FAIL: template ${tid} missing`;
+            return;
+        }
+        try {
+            await PR.loadTemplate(tmpl);
+            spawnPos = (tmpl.meta && tmpl.meta.spawn_point && tmpl.meta.spawn_point.position) || [0, 1.6, 10];
+            statusEl.textContent = `${tmpl.meta.name} — ${(tmpl.surfaces || []).length} surfaces, ${(tmpl.props || []).length} props, ${(tmpl.loci || []).length} loci`;
+
+            if (!walkerInited) {
+                PW.init(PR.camera, PR.renderer.domElement);
+                walkerInited = true;
+                // When pointer locks, enter walk mode; when it unlocks, return to orbit
+                PW.controls.addEventListener('lock', () => {
+                    walkMode = true;
+                    crosshairEl.style.display = 'block';
+                    instructionsEl.style.display = 'none';
+                });
+                PW.controls.addEventListener('unlock', () => {
+                    walkMode = false;
+                    crosshairEl.style.display = 'none';
+                    instructionsEl.style.display = walkerReady() ? 'block' : 'none';
+                });
+            }
+            // Reset walker position to this template's spawn point
+            const walkerObj = PW.controls.getObject();
+            walkerObj.position.set(spawnPos[0], spawnPos[1], spawnPos[2]);
+            if (tmpl.meta && tmpl.meta.spawn_point && tmpl.meta.spawn_point.rotation_y != null) {
+                walkerObj.rotation.y = tmpl.meta.spawn_point.rotation_y * Math.PI / 180;
+            }
+            // Show walk instructions unless already in walk mode
+            instructionsEl.style.display = walkMode ? 'none' : 'block';
+
+            if (!PR.animFrameId) PR.animate();
+            patchAnimate();
+        } catch (e) {
+            statusEl.textContent = `LOAD ERROR: ${e.message || e}`;
+            console.error(e);
+        }
+    }
+
+    function walkerReady() {
+        return walkerInited && PW.controls;
+    }
+
+    function patchAnimate() {
+        if (PR._modePatched) return;
+        PR._modePatched = true;
+        PR.animate = function() {
+            this.animFrameId = requestAnimationFrame(() => this.animate());
+            const delta = this.clock.getDelta();
+            const t = this.clock.getElapsedTime();
+
+            if (walkMode && walkerReady()) {
+                // Walker drives the camera — do not touch position
+                PW.update(delta);
+            } else if (orbit && !dragging) {
+                orbitAngle += delta * 0.15;
+                const cx = Math.cos(orbitAngle) * orbitRadius + orbitTarget[0];
+                const cz = Math.sin(orbitAngle) * orbitRadius + orbitTarget[2];
+                this.camera.position.set(cx, orbitHeight + orbitTarget[1], cz);
+                this.camera.lookAt(orbitTarget[0], orbitTarget[1], orbitTarget[2]);
+            } else if (!walkMode) {
+                // Manual-drag orbit
+                const cx = Math.cos(orbitAngle) * orbitRadius + orbitTarget[0];
+                const cz = Math.sin(orbitAngle) * orbitRadius + orbitTarget[2];
+                this.camera.position.set(cx, orbitHeight + orbitTarget[1], cz);
+                this.camera.lookAt(orbitTarget[0], orbitTarget[1], orbitTarget[2]);
+            }
+
+            // Locus bob
+            this.lociMeshes.forEach((m, i) => {
+                const mt = m.userData.dbData && m.userData.dbData.marker_type;
+                if (mt === 'orb' || mt === 'glow') {
+                    const base = (m.userData.dbData.position && m.userData.dbData.position[1]) != null ? m.userData.dbData.position[1] : 1;
+                    m.position.y = base + Math.sin(t * 2 + i) * 0.05;
+                }
+            });
+
+            if (this.composer) {
+                this.composer.render(delta);
+            } else {
+                this.renderer.render(this.scene, this.camera);
+            }
+        };
+    }
+
+    // Button wiring
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => loadTemplate(btn.dataset.tmpl));
+    });
+
+    orbitBtn.addEventListener('click', () => {
+        orbit = !orbit;
+        orbitBtn.textContent = orbit ? '⏸ Pause Orbit' : '▶ Resume Orbit';
+    });
+
+    document.addEventListener('keydown', (e) => {
+        // Only allow template switch + orbit toggle when not walking
+        if (walkMode) return;
+        const keyMap = { '1': 'roman_villa', '2': 'library_tower', '3': 'museum_hall', '4': 'catacombs', '5': 'sky_palace' };
+        if (keyMap[e.key]) loadTemplate(keyMap[e.key]);
+    });
+
+    // Drag to rotate + scroll to zoom (only when not in walk mode)
+    const canvas = document.getElementById('canvas');
+    canvas.addEventListener('mousedown', (e) => {
+        if (walkMode) return;
+        dragging = true;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+        dragAngle = orbitAngle;
+        dragHeight = orbitHeight;
+    });
+    window.addEventListener('mousemove', (e) => {
+        if (!dragging || walkMode) return;
+        const dx = e.clientX - dragStartX;
+        const dy = e.clientY - dragStartY;
+        orbitAngle = dragAngle - dx * 0.01;
+        orbitHeight = Math.max(2, Math.min(250, dragHeight + dy * 0.3));
+    });
+    window.addEventListener('mouseup', () => { dragging = false; });
+    canvas.addEventListener('wheel', (e) => {
+        if (walkMode) return;
+        e.preventDefault();
+        orbitRadius = Math.max(5, Math.min(400, orbitRadius + e.deltaY * 0.15));
+    }, { passive: false });
+
+    // Auto-load first template
+    loadTemplate('museum_hall');
+})();
+</script>
+</body>
+</html>

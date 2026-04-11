@@ -63,7 +63,7 @@
 
             // Camera
             this.camera = new THREE.PerspectiveCamera(
-                75,
+                85,
                 container.clientWidth / container.clientHeight,
                 0.1,
                 1200
@@ -252,6 +252,10 @@
             const isV2 = !!(tmpl.meta || tmpl.environment || tmpl.materials || tmpl.props);
 
             if (isV2) {
+                // v2 templates bring their own ground + environment — hide the v1 fallback scaffold
+                if (this._groundMesh) this._groundMesh.visible = false;
+                if (this._plazaMesh) this._plazaMesh.visible = false;
+                if (this._skyMesh) this._skyMesh.visible = false;
                 // 1. Environment (HDRI + sun override)
                 if (tmpl.environment) {
                     await this._applyEnvironment(tmpl.environment);
@@ -267,7 +271,9 @@
                     await this._loadProps(tmpl.props);
                 }
             } else {
-                // Legacy v1 path
+                // Legacy v1 path — restore fallback scaffold
+                if (this._groundMesh) this._groundMesh.visible = true;
+                if (this._skyMesh) this._skyMesh.visible = true;
                 (tmpl.surfaces || []).forEach(s => this._addSurface(s));
             }
 
@@ -328,24 +334,21 @@
                 }
             }
 
-            // HDRI
+            // HDRI — used for LIGHTING ONLY. Scene background is always black;
+            // the palace itself is the environment. No visible skybox.
+            this.scene.background = new THREE.Color(0x000000);
+            if (this._skyMesh) this._skyMesh.visible = false;
             if (env.hdri) {
-                // Mobile fallback: swap _2k.hdr for _1k.hdr path
                 let url = env.hdri;
                 if (this._mobile) url = url.replace('_2k.hdr', '_1k.hdr').replace('/2k/', '/1k/');
                 try {
                     const envMap = await this._loadHDRI(url);
                     this.scene.environment = envMap;
-                    if (env.hdri_as_background !== false) {
-                        this.scene.background = envMap;
-                        // Hide procedural sky when HDRI is backgrounded
-                        if (this._skyMesh) this._skyMesh.visible = false;
-                    }
                     if (env.hdri_intensity != null) {
                         this.renderer.toneMappingExposure = env.hdri_intensity;
                     }
                 } catch (e) {
-                    console.warn('[PR] HDRI load failed, keeping procedural sky:', e);
+                    console.warn('[PR] HDRI load failed:', e);
                 }
             }
 
