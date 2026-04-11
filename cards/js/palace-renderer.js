@@ -1,6 +1,13 @@
 /**
- * RhodesCards Memory Palace — Three.js Renderer
- * Converts DB primitives (surfaces, connectors, loci) into a 3D scene.
+ * RhodesCards Memory Palace — Three.js Renderer v2
+ *
+ * PBR + HDRI + GLB props + post-processing. r137 addons required.
+ *
+ * v2 template shape (see memory/reference-palace-v2-schema.md):
+ *   { meta, environment, materials, surfaces, props, connectors, loci }
+ *
+ * Backward compat: v1 DB shape { surfaces, connectors, loci } still renders
+ * via fallback environment (procedural sky + grass ground).
  */
 (function() {
     'use strict';
@@ -9,221 +16,135 @@
         scene: null,
         camera: null,
         renderer: null,
+        composer: null,            // EffectComposer (desktop only)
         clock: null,
         animFrameId: null,
+        container: null,
 
         // Scene object groups for easy iteration
         surfaceMeshes: [],
         connectorMeshes: [],
         lociMeshes: [],
+        propMeshes: [],
 
-        // Materials + texture cache
-        _materials: {},
-        _textures: {},
+        // Resource caches (per-session)
+        _materialLib: {},          // name -> MeshStandardMaterial
+        _textureCache: {},         // url -> THREE.Texture
+        _gltfCache: {},            // url -> THREE.Group (to clone)
+        _hdrCache: {},             // url -> PMREM envMap
+        _legacyMaterials: {},      // JSON(matObj) -> MeshStandardMaterial (v1 path)
 
-        // ── Procedural textures (Canvas2D, cached) ──
-        _makeTexture(kind) {
-            if (this._textures[kind]) return this._textures[kind];
-            const c = document.createElement('canvas');
-            c.width = 256; c.height = 256;
-            const ctx = c.getContext('2d');
+        _pmremGen: null,
+        _gltfLoader: null,
+        _rgbeLoader: null,
+        _texLoader: null,
 
-            const noise = function(x, y) {
-                return Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453 % 1);
-            };
+        _sunLight: null,
+        _hemiLight: null,
+        _ambientLight: null,
+        _groundMesh: null,
+        _plazaMesh: null,
+        _skyMesh: null,             // procedural fallback
+        _mobile: false,
 
-            if (kind === 'stone') {
-                // Mottled grey limestone with darker veins + lighter highlights
-                ctx.fillStyle = '#a8a39a'; ctx.fillRect(0, 0, 256, 256);
-                for (let i = 0; i < 8000; i++) {
-                    const x = Math.random() * 256, y = Math.random() * 256;
-                    const v = Math.random();
-                    const shade = 90 + v * 100;
-                    ctx.fillStyle = 'rgba(' + shade + ',' + (shade - 5) + ',' + (shade - 15) + ',' + (0.15 + v * 0.25) + ')';
-                    ctx.fillRect(x, y, 1 + v * 2, 1 + v * 2);
-                }
-                // Cracks
-                for (let i = 0; i < 12; i++) {
-                    ctx.beginPath();
-                    ctx.strokeStyle = 'rgba(60,55,50,0.35)';
-                    ctx.lineWidth = 0.5 + Math.random();
-                    ctx.moveTo(Math.random() * 256, Math.random() * 256);
-                    for (let j = 0; j < 4; j++) {
-                        ctx.lineTo(Math.random() * 256, Math.random() * 256);
-                    }
-                    ctx.stroke();
-                }
-            } else if (kind === 'marble') {
-                // Cream marble with grey/gold veining
-                ctx.fillStyle = '#ede4d0'; ctx.fillRect(0, 0, 256, 256);
-                for (let band = 0; band < 6; band++) {
-                    ctx.beginPath();
-                    ctx.strokeStyle = 'rgba(120,110,90,' + (0.15 + Math.random() * 0.2) + ')';
-                    ctx.lineWidth = 1 + Math.random() * 2;
-                    let x = Math.random() * 256, y = Math.random() * 256;
-                    ctx.moveTo(x, y);
-                    for (let s = 0; s < 30; s++) {
-                        x += (Math.random() - 0.5) * 30;
-                        y += (Math.random() - 0.5) * 30;
-                        ctx.lineTo(x, y);
-                    }
-                    ctx.stroke();
-                }
-                // Sprinkle of darker flecks
-                for (let i = 0; i < 1500; i++) {
-                    ctx.fillStyle = 'rgba(140,125,95,' + Math.random() * 0.3 + ')';
-                    ctx.fillRect(Math.random() * 256, Math.random() * 256, 1, 1);
-                }
-            } else if (kind === 'wood') {
-                // Warm wood plank grain
-                ctx.fillStyle = '#8b5a2b'; ctx.fillRect(0, 0, 256, 256);
-                // Plank stripes
-                for (let p = 0; p < 8; p++) {
-                    const baseY = p * 32;
-                    const shade = 90 + Math.random() * 50;
-                    ctx.fillStyle = 'rgb(' + (shade + 50) + ',' + shade + ',' + (shade - 40) + ')';
-                    ctx.fillRect(0, baseY, 256, 30);
-                    // grain lines
-                    for (let g = 0; g < 12; g++) {
-                        ctx.strokeStyle = 'rgba(60,40,20,' + (0.2 + Math.random() * 0.3) + ')';
-                        ctx.lineWidth = 0.5 + Math.random();
-                        ctx.beginPath();
-                        ctx.moveTo(0, baseY + 2 + Math.random() * 28);
-                        ctx.bezierCurveTo(64, baseY + Math.random() * 32, 192, baseY + Math.random() * 32, 256, baseY + 2 + Math.random() * 28);
-                        ctx.stroke();
-                    }
-                    // plank divider
-                    ctx.fillStyle = 'rgba(30,20,10,0.6)';
-                    ctx.fillRect(0, baseY + 30, 256, 2);
-                }
-            } else if (kind === 'grass') {
-                ctx.fillStyle = '#5a8a3c'; ctx.fillRect(0, 0, 256, 256);
-                for (let i = 0; i < 4000; i++) {
-                    const v = Math.random();
-                    ctx.fillStyle = 'rgb(' + (60 + v * 60) + ',' + (110 + v * 80) + ',' + (40 + v * 50) + ')';
-                    ctx.fillRect(Math.random() * 256, Math.random() * 256, 1 + v * 2, 1 + v * 2);
-                }
-            } else if (kind === 'brick') {
-                ctx.fillStyle = '#923c2a'; ctx.fillRect(0, 0, 256, 256);
-                const bw = 64, bh = 24;
-                for (let row = 0; row < 11; row++) {
-                    const offset = (row % 2) * (bw / 2);
-                    for (let col = -1; col < 5; col++) {
-                        const x = col * bw + offset;
-                        const y = row * bh;
-                        const v = Math.random();
-                        ctx.fillStyle = 'rgb(' + (130 + v * 50) + ',' + (50 + v * 30) + ',' + (40 + v * 25) + ')';
-                        ctx.fillRect(x + 2, y + 2, bw - 4, bh - 4);
-                    }
-                }
-                // mortar lines
-                ctx.strokeStyle = '#3a2a20'; ctx.lineWidth = 2;
-                for (let row = 0; row <= 11; row++) {
-                    ctx.beginPath();
-                    ctx.moveTo(0, row * bh); ctx.lineTo(256, row * bh); ctx.stroke();
-                }
-            } else if (kind === 'plaster') {
-                // Off-white roman plaster
-                ctx.fillStyle = '#e8dcc4'; ctx.fillRect(0, 0, 256, 256);
-                for (let i = 0; i < 6000; i++) {
-                    const v = Math.random();
-                    ctx.fillStyle = 'rgba(' + (200 + v * 30) + ',' + (180 + v * 40) + ',' + (140 + v * 40) + ',' + (0.1 + v * 0.3) + ')';
-                    ctx.fillRect(Math.random() * 256, Math.random() * 256, 1 + v * 2, 1);
-                }
-            } else if (kind === 'water') {
-                // Stylized water
-                ctx.fillStyle = '#3b6e8f'; ctx.fillRect(0, 0, 256, 256);
-                for (let i = 0; i < 30; i++) {
-                    ctx.beginPath();
-                    ctx.strokeStyle = 'rgba(180,210,235,' + (0.15 + Math.random() * 0.2) + ')';
-                    ctx.lineWidth = 1 + Math.random() * 2;
-                    const y = Math.random() * 256;
-                    ctx.moveTo(0, y);
-                    for (let x = 0; x < 256; x += 16) ctx.lineTo(x, y + Math.sin(x * 0.1 + i) * 4);
-                    ctx.stroke();
-                }
-            } else {
-                // default — flat grey
-                ctx.fillStyle = '#888888'; ctx.fillRect(0, 0, 256, 256);
-            }
-
-            const tex = new THREE.CanvasTexture(c);
-            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-            tex.anisotropy = 4;
-            this._textures[kind] = tex;
-            return tex;
-        },
-
-        init(canvasId) {
+        // ─────────────────────────────────────────────
+        // Init
+        // ─────────────────────────────────────────────
+        init(canvasId, opts) {
+            opts = opts || {};
             const container = document.getElementById(canvasId);
             if (!container) return;
+            this.container = container;
+
+            this._mobile = this._detectMobile();
 
             this.clock = new THREE.Clock();
             this.scene = new THREE.Scene();
-            this.scene.background = new THREE.Color(0x87ceeb);
-            this.scene.fog = new THREE.Fog(0xb8d4e8, 60, 280);
 
-            this.camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 600);
+            // Camera
+            this.camera = new THREE.PerspectiveCamera(
+                75,
+                container.clientWidth / container.clientHeight,
+                0.1,
+                1200
+            );
             this.camera.position.set(0, 1.6, 0);
 
-            this.renderer = new THREE.WebGLRenderer({ antialias: true });
+            // WebGL renderer — PBR-correct output, ACES tone mapping
+            this.renderer = new THREE.WebGLRenderer({
+                antialias: !this._mobile,
+                powerPreference: this._mobile ? 'low-power' : 'high-performance',
+                preserveDrawingBuffer: false,
+            });
             this.renderer.setSize(container.clientWidth, container.clientHeight);
-            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this._mobile ? 1.5 : 2));
+            this.renderer.outputEncoding = THREE.sRGBEncoding;
+            this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            this.renderer.toneMappingExposure = 1.0;
+            this.renderer.physicallyCorrectLights = true;
             this.renderer.shadowMap.enabled = true;
-            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            this.renderer.shadowMap.type = this._mobile
+                ? THREE.PCFShadowMap
+                : THREE.PCFSoftShadowMap;
             container.appendChild(this.renderer.domElement);
 
-            // ── Lighting (daytime, warm) ──
-            const ambient = new THREE.AmbientLight(0xffffff, 0.55);
-            this.scene.add(ambient);
-            const dirLight = new THREE.DirectionalLight(0xffeedd, 1.4);
-            dirLight.position.set(60, 100, 40);
-            dirLight.castShadow = true;
-            dirLight.shadow.mapSize.width = 2048;
-            dirLight.shadow.mapSize.height = 2048;
-            dirLight.shadow.camera.near = 1;
-            dirLight.shadow.camera.far = 300;
-            dirLight.shadow.camera.left = -80;
-            dirLight.shadow.camera.right = 80;
-            dirLight.shadow.camera.top = 80;
-            dirLight.shadow.camera.bottom = -80;
-            this.scene.add(dirLight);
-            const hemi = new THREE.HemisphereLight(0x87ceeb, 0x6b8e4e, 0.65);
-            this.scene.add(hemi);
+            // Loaders
+            this._texLoader = new THREE.TextureLoader();
+            this._rgbeLoader = new THREE.RGBELoader();
+            this._gltfLoader = new THREE.GLTFLoader();
+            this._pmremGen = new THREE.PMREMGenerator(this.renderer);
+            this._pmremGen.compileEquirectangularShader();
 
-            // ── Ground plane: tiled grass terrain (foundation for any palace) ──
-            const grassTex = this._makeTexture('grass').clone();
-            grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
-            grassTex.repeat.set(60, 60);
-            grassTex.needsUpdate = true;
-            const groundGeo = new THREE.PlaneGeometry(600, 600);
-            const groundMat = new THREE.MeshStandardMaterial({
-                map: grassTex, color: 0xffffff, roughness: 0.95, metalness: 0
-            });
-            const ground = new THREE.Mesh(groundGeo, groundMat);
-            ground.rotation.x = -Math.PI / 2;
-            ground.position.y = -0.05;
-            ground.receiveShadow = true;
-            this.scene.add(ground);
-            this._groundMesh = ground;
+            // Default lighting — templates can override these via environment block
+            this._installDefaultLighting();
 
-            // Stone plaza below the building (large, marble texture)
-            const plazaTex = this._makeTexture('marble').clone();
-            plazaTex.wrapS = plazaTex.wrapT = THREE.RepeatWrapping;
-            plazaTex.repeat.set(8, 8);
-            plazaTex.needsUpdate = true;
-            const plazaGeo = new THREE.PlaneGeometry(140, 140);
-            const plazaMat = new THREE.MeshStandardMaterial({
-                map: plazaTex, color: 0xffffff, roughness: 0.6, metalness: 0
-            });
-            const plaza = new THREE.Mesh(plazaGeo, plazaMat);
-            plaza.rotation.x = -Math.PI / 2;
-            plaza.position.y = -0.02;
-            plaza.receiveShadow = true;
-            this.scene.add(plaza);
+            // Fallback environment: procedural sky + grass ground (for v1 palaces
+            // without HDRI). Replaced/hidden when a template sets environment.hdri.
+            this._installFallbackSky();
+            this._installFallbackGround();
 
-            // ── Sky (bright daytime gradient) ──
-            const skyGeo = new THREE.SphereGeometry(450, 32, 32);
+            // Post-processing (desktop only)
+            if (!this._mobile && opts.postProcessing !== false) {
+                this._setupPostProcessing();
+            }
+
+            window.addEventListener('resize', () => this._onResize());
+        },
+
+        _detectMobile() {
+            const w = window.innerWidth;
+            const touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+            const smallScreen = w < 900;
+            const ua = navigator.userAgent || '';
+            const mobileUA = /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
+            return mobileUA || (touch && smallScreen);
+        },
+
+        _installDefaultLighting() {
+            this._ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+            this.scene.add(this._ambientLight);
+
+            this._sunLight = new THREE.DirectionalLight(0xffeedd, 2.5);
+            this._sunLight.position.set(60, 100, 40);
+            this._sunLight.castShadow = true;
+            this._sunLight.shadow.mapSize.width = this._mobile ? 1024 : 2048;
+            this._sunLight.shadow.mapSize.height = this._mobile ? 1024 : 2048;
+            this._sunLight.shadow.camera.near = 1;
+            this._sunLight.shadow.camera.far = 400;
+            this._sunLight.shadow.camera.left = -100;
+            this._sunLight.shadow.camera.right = 100;
+            this._sunLight.shadow.camera.top = 100;
+            this._sunLight.shadow.camera.bottom = -100;
+            this._sunLight.shadow.bias = -0.0002;
+            this.scene.add(this._sunLight);
+            this.scene.add(this._sunLight.target);
+
+            this._hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x6b8e4e, 0.35);
+            this.scene.add(this._hemiLight);
+        },
+
+        _installFallbackSky() {
+            const skyGeo = new THREE.SphereGeometry(800, 32, 24);
             const skyMat = new THREE.ShaderMaterial({
                 uniforms: {
                     topColor: { value: new THREE.Color(0x4a90c8) },
@@ -247,96 +168,434 @@
                         gl_FragColor = vec4(mix(bottomColor, topColor, h), 1.0);
                     }
                 `,
-                side: THREE.BackSide
+                side: THREE.BackSide,
+                depthWrite: false,
             });
-            this.scene.add(new THREE.Mesh(skyGeo, skyMat));
-
-            window.addEventListener('resize', () => this._onResize(container));
+            this._skyMesh = new THREE.Mesh(skyGeo, skyMat);
+            this.scene.add(this._skyMesh);
+            this.scene.background = new THREE.Color(0xc8e0f0);
+            this.scene.fog = new THREE.Fog(0xb8d4e8, 80, 500);
         },
 
-        _onResize(container) {
-            if (!this.camera || !this.renderer) return;
-            this.camera.aspect = container.clientWidth / container.clientHeight;
+        _installFallbackGround() {
+            const groundGeo = new THREE.PlaneGeometry(1000, 1000);
+            const groundMat = new THREE.MeshStandardMaterial({
+                color: 0x5a8a3c,
+                roughness: 0.95,
+                metalness: 0,
+            });
+            this._groundMesh = new THREE.Mesh(groundGeo, groundMat);
+            this._groundMesh.rotation.x = -Math.PI / 2;
+            this._groundMesh.position.y = -0.05;
+            this._groundMesh.receiveShadow = true;
+            this.scene.add(this._groundMesh);
+        },
+
+        _setupPostProcessing() {
+            if (typeof THREE.EffectComposer !== 'function') {
+                console.warn('[PR] EffectComposer not loaded; skipping post-processing');
+                return;
+            }
+            this.composer = new THREE.EffectComposer(this.renderer);
+            this.composer.setSize(this.container.clientWidth, this.container.clientHeight);
+            this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            const renderPass = new THREE.RenderPass(this.scene, this.camera);
+            this.composer.addPass(renderPass);
+
+            if (typeof THREE.SSAOPass === 'function') {
+                const ssao = new THREE.SSAOPass(
+                    this.scene, this.camera,
+                    this.container.clientWidth, this.container.clientHeight
+                );
+                ssao.kernelRadius = 8;
+                ssao.minDistance = 0.005;
+                ssao.maxDistance = 0.08;
+                this.composer.addPass(ssao);
+            }
+
+            if (typeof THREE.UnrealBloomPass === 'function') {
+                const bloom = new THREE.UnrealBloomPass(
+                    new THREE.Vector2(this.container.clientWidth, this.container.clientHeight),
+                    0.35,  // strength
+                    0.6,   // radius
+                    0.85   // threshold
+                );
+                this.composer.addPass(bloom);
+            }
+        },
+
+        _onResize() {
+            if (!this.camera || !this.renderer || !this.container) return;
+            const w = this.container.clientWidth;
+            const h = this.container.clientHeight;
+            this.camera.aspect = w / h;
             this.camera.updateProjectionMatrix();
-            this.renderer.setSize(container.clientWidth, container.clientHeight);
+            this.renderer.setSize(w, h);
+            if (this.composer) this.composer.setSize(w, h);
         },
 
-        // ── Build scene from DB data ──
-
-        buildScene(surfaces, connectors, loci) {
+        // ─────────────────────────────────────────────
+        // v2 template entrypoint
+        // ─────────────────────────────────────────────
+        /**
+         * Load a v2 template object. Returns a Promise that resolves when
+         * all assets (HDRI, textures, GLBs) are loaded and the scene is ready.
+         *
+         * Accepts either v2 shape {meta, environment, materials, surfaces, props, connectors, loci}
+         * or legacy {surfaces, connectors, loci}.
+         */
+        async loadTemplate(tmpl) {
+            if (!tmpl) return;
             this.clearScene();
-            surfaces.forEach(s => this._addSurface(s));
-            connectors.forEach(c => this._addConnector(c));
-            loci.forEach(l => this._addLocus(l));
+
+            const isV2 = !!(tmpl.meta || tmpl.environment || tmpl.materials || tmpl.props);
+
+            if (isV2) {
+                // 1. Environment (HDRI + sun override)
+                if (tmpl.environment) {
+                    await this._applyEnvironment(tmpl.environment);
+                }
+                // 2. Material library
+                if (tmpl.materials) {
+                    await this._loadMaterialLibrary(tmpl.materials);
+                }
+                // 3. Surfaces (reference materials by string key)
+                (tmpl.surfaces || []).forEach(s => this._addSurface(s));
+                // 4. Props (GLB instances)
+                if (tmpl.props && tmpl.props.length) {
+                    await this._loadProps(tmpl.props);
+                }
+            } else {
+                // Legacy v1 path
+                (tmpl.surfaces || []).forEach(s => this._addSurface(s));
+            }
+
+            // 5. Connectors + loci (same shape in v1 and v2)
+            (tmpl.connectors || []).forEach(c => this._addConnector(c));
+            (tmpl.loci || []).forEach(l => this._addLocus(l));
+
+            // 6. Apply spawn point to camera
+            const spawn = tmpl.meta?.spawn_point || tmpl.spawn_point;
+            if (spawn && spawn.position) {
+                this.camera.position.set(spawn.position[0], spawn.position[1], spawn.position[2]);
+                if (spawn.rotation_y != null) {
+                    this.camera.rotation.y = spawn.rotation_y * Math.PI / 180;
+                }
+            }
+        },
+
+        // Legacy entrypoint kept for any caller that still passes raw arrays
+        buildScene(surfaces, connectors, loci) {
+            return this.loadTemplate({ surfaces, connectors, loci });
         },
 
         clearScene() {
-            this.surfaceMeshes.forEach(m => this.scene.remove(m));
-            this.connectorMeshes.forEach(m => this.scene.remove(m));
-            this.lociMeshes.forEach(m => this.scene.remove(m));
-            this.surfaceMeshes = [];
-            this.connectorMeshes = [];
-            this.lociMeshes = [];
+            [this.surfaceMeshes, this.connectorMeshes, this.lociMeshes, this.propMeshes].forEach(group => {
+                group.forEach(m => this.scene.remove(m));
+                group.length = 0;
+            });
+            // Invalidate per-template material lib so next template gets fresh
+            this._materialLib = {};
         },
 
-        _getMaterial(matData) {
-            const key = JSON.stringify(matData);
-            if (this._materials[key]) return this._materials[key];
-            const color = matData.color || '#ffffff';
-            const opacity = matData.opacity != null ? matData.opacity : 1.0;
-            const opts = {
-                color: new THREE.Color(color),
-                roughness: matData.roughness != null ? matData.roughness : 0.85,
-                metalness: matData.metalness != null ? matData.metalness : 0.05,
-                transparent: opacity < 1,
-                opacity: opacity,
-                side: THREE.FrontSide
-            };
-            if (matData.texture) {
-                const tex = this._makeTexture(matData.texture).clone();
-                tex.needsUpdate = true;
-                tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-                const r = matData.repeat || [4, 4];
-                tex.repeat.set(r[0], r[1]);
-                opts.map = tex;
-                if (!matData.color) opts.color = new THREE.Color(0xffffff);
+        // ─────────────────────────────────────────────
+        // Environment (HDRI + lights)
+        // ─────────────────────────────────────────────
+        async _applyEnvironment(env) {
+            // Fog
+            if (env.fog) {
+                this.scene.fog = new THREE.Fog(env.fog.color, env.fog.near, env.fog.far);
             }
-            const mat = new THREE.MeshStandardMaterial(opts);
-            this._materials[key] = mat;
+            // Ambient
+            if (env.ambient && this._ambientLight) {
+                this._ambientLight.intensity = env.ambient.intensity ?? 0.1;
+                if (env.ambient.color) this._ambientLight.color.set(env.ambient.color);
+            }
+            // Sun
+            if (env.sun && this._sunLight) {
+                if (env.sun.position) this._sunLight.position.set(...env.sun.position);
+                if (env.sun.intensity != null) this._sunLight.intensity = env.sun.intensity;
+                if (env.sun.color) this._sunLight.color.set(env.sun.color);
+                if (env.sun.cast_shadow != null) this._sunLight.castShadow = env.sun.cast_shadow;
+                if (env.sun.shadow_bounds) {
+                    const b = env.sun.shadow_bounds;
+                    this._sunLight.shadow.camera.left = -b;
+                    this._sunLight.shadow.camera.right = b;
+                    this._sunLight.shadow.camera.top = b;
+                    this._sunLight.shadow.camera.bottom = -b;
+                    this._sunLight.shadow.camera.updateProjectionMatrix();
+                }
+            }
+
+            // HDRI
+            if (env.hdri) {
+                // Mobile fallback: swap _2k.hdr for _1k.hdr path
+                let url = env.hdri;
+                if (this._mobile) url = url.replace('_2k.hdr', '_1k.hdr').replace('/2k/', '/1k/');
+                try {
+                    const envMap = await this._loadHDRI(url);
+                    this.scene.environment = envMap;
+                    if (env.hdri_as_background !== false) {
+                        this.scene.background = envMap;
+                        // Hide procedural sky when HDRI is backgrounded
+                        if (this._skyMesh) this._skyMesh.visible = false;
+                    }
+                    if (env.hdri_intensity != null) {
+                        this.renderer.toneMappingExposure = env.hdri_intensity;
+                    }
+                } catch (e) {
+                    console.warn('[PR] HDRI load failed, keeping procedural sky:', e);
+                }
+            }
+
+            // Templates that specify their own ground hide the fallback
+            if (env.hide_fallback_ground && this._groundMesh) {
+                this._groundMesh.visible = false;
+            }
+        },
+
+        _loadHDRI(url) {
+            if (this._hdrCache[url]) return Promise.resolve(this._hdrCache[url]);
+            return new Promise((resolve, reject) => {
+                this._rgbeLoader.load(
+                    url,
+                    (tex) => {
+                        const envMap = this._pmremGen.fromEquirectangular(tex).texture;
+                        tex.dispose();
+                        this._hdrCache[url] = envMap;
+                        resolve(envMap);
+                    },
+                    undefined,
+                    reject
+                );
+            });
+        },
+
+        // ─────────────────────────────────────────────
+        // PBR material library
+        // ─────────────────────────────────────────────
+        async _loadMaterialLibrary(mats) {
+            const names = Object.keys(mats);
+            await Promise.all(names.map(name => this._buildPBRMaterial(name, mats[name])));
+        },
+
+        async _buildPBRMaterial(name, spec) {
+            const repeat = spec.repeat || [1, 1];
+
+            const loadMap = (url, isColor) => {
+                if (!url) return Promise.resolve(null);
+                if (this._textureCache[url]) return Promise.resolve(this._textureCache[url]);
+                return new Promise((resolve) => {
+                    this._texLoader.load(
+                        url,
+                        (tex) => {
+                            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+                            tex.repeat.set(repeat[0], repeat[1]);
+                            if (isColor) tex.encoding = THREE.sRGBEncoding;
+                            tex.anisotropy = this._mobile ? 4 : 8;
+                            this._textureCache[url] = tex;
+                            resolve(tex);
+                        },
+                        undefined,
+                        () => {
+                            console.warn('[PR] texture failed:', url);
+                            resolve(null);
+                        }
+                    );
+                });
+            };
+
+            const [albedo, normal, rough, ao] = await Promise.all([
+                loadMap(spec.albedo, true),
+                loadMap(spec.normal, false),
+                loadMap(spec.roughness, false),
+                loadMap(spec.ao, false),
+            ]);
+
+            const mat = new THREE.MeshStandardMaterial({
+                map: albedo,
+                normalMap: normal,
+                roughnessMap: rough,
+                aoMap: ao,
+                roughness: spec.roughness_scale != null ? spec.roughness_scale : 1.0,
+                metalness: spec.metalness != null ? spec.metalness : 0.0,
+                color: spec.color_tint != null ? new THREE.Color(spec.color_tint) : 0xffffff,
+                side: THREE.FrontSide,
+            });
+            if (spec.emissive) mat.emissive = new THREE.Color(spec.emissive);
+            if (spec.emissive_intensity) mat.emissiveIntensity = spec.emissive_intensity;
+
+            this._materialLib[name] = mat;
             return mat;
         },
 
+        _resolveMaterial(ref) {
+            // v2 string key
+            if (typeof ref === 'string') {
+                if (this._materialLib[ref]) return this._materialLib[ref];
+                console.warn('[PR] unknown material key:', ref);
+                return this._fallbackMaterial(0x888888);
+            }
+            // v1 object { color, texture, ... }
+            if (ref && typeof ref === 'object') {
+                const key = JSON.stringify(ref);
+                if (this._legacyMaterials[key]) return this._legacyMaterials[key];
+                const color = ref.color || '#888888';
+                const opacity = ref.opacity != null ? ref.opacity : 1.0;
+                const mat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(color),
+                    roughness: ref.roughness != null ? ref.roughness : 0.85,
+                    metalness: ref.metalness != null ? ref.metalness : 0.05,
+                    transparent: opacity < 1,
+                    opacity: opacity,
+                    side: THREE.FrontSide,
+                });
+                this._legacyMaterials[key] = mat;
+                return mat;
+            }
+            return this._fallbackMaterial();
+        },
+
+        _fallbackMaterial(color) {
+            return new THREE.MeshStandardMaterial({
+                color: color || 0x888888,
+                roughness: 0.9,
+                metalness: 0,
+            });
+        },
+
+        // ─────────────────────────────────────────────
+        // GLB props
+        // ─────────────────────────────────────────────
+        async _loadProps(props) {
+            // Group by glb URL for batch loading
+            const byUrl = {};
+            props.forEach(p => {
+                (byUrl[p.glb] = byUrl[p.glb] || []).push(p);
+            });
+
+            await Promise.all(Object.keys(byUrl).map(async (url) => {
+                const root = await this._loadGLB(url);
+                if (!root) return;
+                byUrl[url].forEach(p => this._instantiateProp(root, p));
+            }));
+        },
+
+        _loadGLB(url) {
+            if (this._gltfCache[url]) return Promise.resolve(this._gltfCache[url]);
+            return new Promise((resolve) => {
+                this._gltfLoader.load(
+                    url,
+                    (gltf) => {
+                        const root = gltf.scene;
+                        // Ensure all meshes cast/receive shadows by default
+                        root.traverse(obj => {
+                            if (obj.isMesh) {
+                                obj.castShadow = true;
+                                obj.receiveShadow = true;
+                                if (obj.material && obj.material.map) {
+                                    obj.material.map.encoding = THREE.sRGBEncoding;
+                                }
+                            }
+                        });
+                        this._gltfCache[url] = root;
+                        resolve(root);
+                    },
+                    undefined,
+                    (err) => {
+                        console.warn('[PR] GLB load failed:', url, err);
+                        resolve(null);
+                    }
+                );
+            });
+        },
+
+        _instantiateProp(rootGroup, p) {
+            const clone = rootGroup.clone(true);
+            const t = p.transform || { position: [0,0,0], rotation: [0,0,0], scale: [1,1,1] };
+            clone.position.set(...(t.position || [0,0,0]));
+            const rot = t.rotation || [0,0,0];
+            clone.rotation.set(
+                rot[0] * Math.PI / 180,
+                rot[1] * Math.PI / 180,
+                rot[2] * Math.PI / 180
+            );
+            const sc = t.scale;
+            if (Array.isArray(sc)) clone.scale.set(sc[0], sc[1], sc[2]);
+            else if (typeof sc === 'number') clone.scale.set(sc, sc, sc);
+
+            if (p.material_override && this._materialLib[p.material_override]) {
+                const mat = this._materialLib[p.material_override];
+                clone.traverse(obj => {
+                    if (obj.isMesh) obj.material = mat;
+                });
+            }
+            if (p.cast_shadow === false || p.receive_shadow === false) {
+                clone.traverse(obj => {
+                    if (obj.isMesh) {
+                        if (p.cast_shadow === false) obj.castShadow = false;
+                        if (p.receive_shadow === false) obj.receiveShadow = false;
+                    }
+                });
+            }
+            clone.userData = { dbType: 'prop', dbData: p };
+            this.scene.add(clone);
+            this.propMeshes.push(clone);
+            return clone;
+        },
+
+        // ─────────────────────────────────────────────
+        // Surfaces (primitives — floors, walls, ceilings, roofs)
+        // ─────────────────────────────────────────────
         _addSurface(s) {
             const t = s.transform || { position: [0,0,0], rotation: [0,0,0], scale: [1,1,1] };
             const d = s.dimensions || { width: 4, height: 3 };
-            const mat = this._getMaterial(s.material || {});
+            const mat = this._resolveMaterial(s.material);
             let mesh;
 
             if (s.type === 'wall') {
-                // Walls are 3D boxes — width × tall × 0.25 thick
-                const wallH = (d.height || 3) * 1.8; // taller for presence
-                const geo = new THREE.BoxGeometry(d.width || 4, wallH, 0.3);
+                const wallH = d.height || 3;
+                const thick = d.depth || 0.3;
+                const geo = new THREE.BoxGeometry(d.width || 4, wallH, thick);
                 mesh = new THREE.Mesh(geo, mat);
-                mesh.position.set(t.position[0], wallH / 2, t.position[2]);
+                mesh.position.set(t.position[0], (t.position[1] || 0) + wallH / 2, t.position[2]);
                 mesh.rotation.set(
-                    t.rotation[0] * Math.PI / 180,
-                    t.rotation[1] * Math.PI / 180,
-                    t.rotation[2] * Math.PI / 180
+                    (t.rotation[0] || 0) * Math.PI / 180,
+                    (t.rotation[1] || 0) * Math.PI / 180,
+                    (t.rotation[2] || 0) * Math.PI / 180
                 );
             } else if (s.type === 'ceiling') {
-                const geo = new THREE.PlaneGeometry(d.width || 4, d.height || 3);
+                const thick = d.depth || 0.15;
+                const geo = new THREE.BoxGeometry(d.width || 4, thick, d.height || 4);
                 mesh = new THREE.Mesh(geo, mat);
                 mesh.position.set(t.position[0], t.position[1], t.position[2]);
-                mesh.rotation.x = Math.PI / 2;
-            } else {
-                // Floor / ramp — flat plane laid down
-                const geo = new THREE.PlaneGeometry(d.width || 4, d.height || 3);
-                mesh = new THREE.Mesh(geo, mat);
-                mesh.position.set(t.position[0], t.position[1] + 0.01, t.position[2]);
                 mesh.rotation.set(
-                    -Math.PI / 2 + (t.rotation[0] * Math.PI / 180),
-                    t.rotation[1] * Math.PI / 180,
-                    t.rotation[2] * Math.PI / 180
+                    (t.rotation[0] || 0) * Math.PI / 180,
+                    (t.rotation[1] || 0) * Math.PI / 180,
+                    (t.rotation[2] || 0) * Math.PI / 180
+                );
+            } else if (s.type === 'roof') {
+                // Sloped roof: box with a pitched rotation, material usually terracotta
+                const thick = d.depth || 0.25;
+                const geo = new THREE.BoxGeometry(d.width || 4, thick, d.height || 4);
+                mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(t.position[0], t.position[1], t.position[2]);
+                mesh.rotation.set(
+                    (t.rotation[0] || 0) * Math.PI / 180,
+                    (t.rotation[1] || 0) * Math.PI / 180,
+                    (t.rotation[2] || 0) * Math.PI / 180
+                );
+            } else {
+                // Floor / ramp — a thick slab (not a plane) for proper shadows + AO
+                const thick = d.depth || 0.2;
+                const geo = new THREE.BoxGeometry(d.width || 4, thick, d.height || 4);
+                mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(t.position[0], (t.position[1] || 0) - thick / 2, t.position[2]);
+                mesh.rotation.set(
+                    (t.rotation[0] || 0) * Math.PI / 180,
+                    (t.rotation[1] || 0) * Math.PI / 180,
+                    (t.rotation[2] || 0) * Math.PI / 180
                 );
                 if (t.scale) mesh.scale.set(t.scale[0], t.scale[1], t.scale[2]);
             }
@@ -350,82 +609,42 @@
             return mesh;
         },
 
+        // ─────────────────────────────────────────────
+        // Connectors (stairs, bridges, elevators, ladders, portals)
+        // ─────────────────────────────────────────────
         _addConnector(c) {
-            const from = c.from_point.position || [0,0,0];
-            const to = c.to_point.position || [0,0,0];
-            const mat = this._getMaterial(c.material || { color: '#4488ff', opacity: 0.8 });
+            const from = c.from_point?.position || [0,0,0];
+            const to = c.to_point?.position || [0,0,0];
+            const matRef = c.material || { color: '#8a7b66' };
+            const mat = this._resolveMaterial(matRef);
 
             if (c.type === 'bridge' || c.type === 'road') {
-                // Spline-based path
                 const points = [];
                 if (c.path_points && c.path_points.length > 0) {
                     c.path_points.forEach(p => points.push(new THREE.Vector3(p[0], p[1], p[2])));
                 } else {
                     points.push(new THREE.Vector3(from[0], from[1], from[2]));
-                    // Auto-arc for bridges
-                    const mid = [(from[0]+to[0])/2, Math.max(from[1], to[1]) + 2, (from[2]+to[2])/2];
+                    const mid = [(from[0]+to[0])/2, Math.max(from[1], to[1]) + 1, (from[2]+to[2])/2];
                     points.push(new THREE.Vector3(mid[0], mid[1], mid[2]));
                     points.push(new THREE.Vector3(to[0], to[1], to[2]));
                 }
                 const curve = new THREE.CatmullRomCurve3(points);
-                // Bridge deck (flat ribbon along spline)
-                const tubeGeo = new THREE.TubeGeometry(curve, 32, 0.5, 4, false);
+                const tubeGeo = new THREE.TubeGeometry(curve, 32, 0.6, 6, false);
                 const mesh = new THREE.Mesh(tubeGeo, mat);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
                 mesh.userData = { dbType: 'connector', dbData: c, dbId: c.id };
                 this.scene.add(mesh);
                 this.connectorMeshes.push(mesh);
-
-                // Walkable flat surface along the bridge
-                const bridgePoints = curve.getPoints(40);
-                const bridgeGeo = new THREE.BufferGeometry().setFromPoints(bridgePoints);
-                const bridgeLine = new THREE.Line(bridgeGeo, new THREE.LineBasicMaterial({ color: 0x88aaff }));
-                this.scene.add(bridgeLine);
-                this.connectorMeshes.push(bridgeLine);
-            } else if (c.type === 'elevator') {
-                // Vertical shaft — translucent cylinder
-                const height = Math.abs(to[1] - from[1]) || 3;
-                const geo = new THREE.CylinderGeometry(0.6, 0.6, height, 8, 1, true);
-                const shaftMat = new THREE.MeshStandardMaterial({
-                    color: 0x4488ff, transparent: true, opacity: 0.2, side: THREE.DoubleSide
-                });
-                const mesh = new THREE.Mesh(geo, shaftMat);
-                mesh.position.set(from[0], (from[1] + to[1]) / 2, from[2]);
-                mesh.userData = { dbType: 'connector', dbData: c, dbId: c.id, connectorType: 'elevator' };
-                this.scene.add(mesh);
-                this.connectorMeshes.push(mesh);
-                // Platform indicator
-                const platGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 8);
-                const platMat = new THREE.MeshStandardMaterial({ color: 0x66aaff, emissive: 0x224488 });
-                const platBottom = new THREE.Mesh(platGeo, platMat);
-                platBottom.position.set(from[0], from[1], from[2]);
-                this.scene.add(platBottom);
-                this.connectorMeshes.push(platBottom);
-            } else if (c.type === 'ladder') {
-                // Series of rungs
-                const height = Math.abs(to[1] - from[1]) || 3;
-                const rungs = Math.floor(height / 0.3);
-                const group = new THREE.Group();
-                const rungGeo = new THREE.BoxGeometry(0.6, 0.04, 0.08);
-                const rungMat = new THREE.MeshStandardMaterial({ color: 0x886644 });
-                for (let i = 0; i < rungs; i++) {
-                    const rung = new THREE.Mesh(rungGeo, rungMat);
-                    rung.position.y = from[1] + (i * 0.3);
-                    group.add(rung);
-                }
-                group.position.set(from[0], 0, from[2]);
-                group.userData = { dbType: 'connector', dbData: c, dbId: c.id };
-                this.scene.add(group);
-                this.connectorMeshes.push(group);
             } else if (c.type === 'stairs') {
-                const steps = 10;
+                const steps = 14;
                 const dx = (to[0] - from[0]) / steps;
                 const dy = (to[1] - from[1]) / steps;
                 const dz = (to[2] - from[2]) / steps;
                 const group = new THREE.Group();
-                const stepGeo = new THREE.BoxGeometry(1.2, 0.15, 0.4);
-                const stepMat = this._getMaterial(c.material || { color: '#777777' });
+                const stepGeo = new THREE.BoxGeometry(1.4, 0.18, 0.45);
                 for (let i = 0; i < steps; i++) {
-                    const step = new THREE.Mesh(stepGeo, stepMat);
+                    const step = new THREE.Mesh(stepGeo, mat);
                     step.position.set(from[0] + dx * i, from[1] + dy * i, from[2] + dz * i);
                     step.castShadow = true;
                     step.receiveShadow = true;
@@ -434,19 +653,46 @@
                 group.userData = { dbType: 'connector', dbData: c, dbId: c.id };
                 this.scene.add(group);
                 this.connectorMeshes.push(group);
+            } else if (c.type === 'elevator') {
+                const height = Math.abs(to[1] - from[1]) || 3;
+                const geo = new THREE.CylinderGeometry(0.7, 0.7, height, 12, 1, true);
+                const shaftMat = new THREE.MeshStandardMaterial({
+                    color: 0xccddee, transparent: true, opacity: 0.25, side: THREE.DoubleSide,
+                    roughness: 0.1, metalness: 0.9,
+                });
+                const mesh = new THREE.Mesh(geo, shaftMat);
+                mesh.position.set(from[0], (from[1] + to[1]) / 2, from[2]);
+                mesh.userData = { dbType: 'connector', dbData: c, dbId: c.id, connectorType: 'elevator' };
+                this.scene.add(mesh);
+                this.connectorMeshes.push(mesh);
+            } else if (c.type === 'ladder') {
+                const height = Math.abs(to[1] - from[1]) || 3;
+                const rungs = Math.max(1, Math.floor(height / 0.3));
+                const group = new THREE.Group();
+                const rungGeo = new THREE.BoxGeometry(0.6, 0.04, 0.08);
+                const rungMat = new THREE.MeshStandardMaterial({ color: 0x6b4a2a, roughness: 0.8 });
+                for (let i = 0; i < rungs; i++) {
+                    const rung = new THREE.Mesh(rungGeo, rungMat);
+                    rung.position.y = from[1] + (i * 0.3);
+                    rung.castShadow = true;
+                    group.add(rung);
+                }
+                group.position.set(from[0], 0, from[2]);
+                group.userData = { dbType: 'connector', dbData: c, dbId: c.id };
+                this.scene.add(group);
+                this.connectorMeshes.push(group);
             } else if (c.type === 'portal') {
-                // Glowing ring at each end
-                const ringGeo = new THREE.TorusGeometry(0.8, 0.08, 8, 32);
+                const ringGeo = new THREE.TorusGeometry(0.9, 0.1, 12, 48);
                 const ringMat = new THREE.MeshStandardMaterial({
-                    color: 0xff44ff, emissive: 0x880088, emissiveIntensity: 2
+                    color: 0xffccff, emissive: 0x880088, emissiveIntensity: 2.5,
+                    roughness: 0.3, metalness: 0.5,
                 });
                 const ring1 = new THREE.Mesh(ringGeo, ringMat);
                 ring1.position.set(from[0], from[1] + 1, from[2]);
                 ring1.userData = { dbType: 'connector', dbData: c, dbId: c.id, portalEnd: 'from' };
                 this.scene.add(ring1);
                 this.connectorMeshes.push(ring1);
-
-                const ring2 = new THREE.Mesh(ringGeo, ringMat.clone());
+                const ring2 = new THREE.Mesh(ringGeo, ringMat);
                 ring2.position.set(to[0], to[1] + 1, to[2]);
                 ring2.userData = { dbType: 'connector', dbData: c, dbId: c.id, portalEnd: 'to' };
                 this.scene.add(ring2);
@@ -454,6 +700,9 @@
             }
         },
 
+        // ─────────────────────────────────────────────
+        // Loci (memory markers)
+        // ─────────────────────────────────────────────
         _addLocus(l) {
             const pos = l.position || [0, 1, 0];
             let mesh;
@@ -461,14 +710,17 @@
             switch (l.marker_type) {
                 case 'pedestal': {
                     const group = new THREE.Group();
-                    const baseGeo = new THREE.CylinderGeometry(0.2, 0.25, 0.8, 8);
-                    const baseMat = new THREE.MeshStandardMaterial({ color: 0x666677 });
+                    const baseGeo = new THREE.CylinderGeometry(0.22, 0.28, 0.9, 12);
+                    const baseMat = new THREE.MeshStandardMaterial({ color: 0xd0c8b8, roughness: 0.6, metalness: 0.05 });
                     const base = new THREE.Mesh(baseGeo, baseMat);
-                    base.position.y = 0.4;
+                    base.position.y = 0.45;
+                    base.castShadow = true;
+                    base.receiveShadow = true;
                     group.add(base);
-                    const topGeo = new THREE.CylinderGeometry(0.3, 0.2, 0.05, 8);
+                    const topGeo = new THREE.CylinderGeometry(0.32, 0.22, 0.06, 12);
                     const top = new THREE.Mesh(topGeo, baseMat);
-                    top.position.y = 0.82;
+                    top.position.y = 0.93;
+                    top.castShadow = true;
                     group.add(top);
                     group.position.set(pos[0], pos[1], pos[2]);
                     mesh = group;
@@ -476,66 +728,68 @@
                 }
                 case 'frame': {
                     const shape = new THREE.Shape();
-                    shape.moveTo(-0.4, -0.3);
-                    shape.lineTo(0.4, -0.3);
-                    shape.lineTo(0.4, 0.3);
-                    shape.lineTo(-0.4, 0.3);
-                    shape.lineTo(-0.4, -0.3);
+                    shape.moveTo(-0.45, -0.32);
+                    shape.lineTo(0.45, -0.32);
+                    shape.lineTo(0.45, 0.32);
+                    shape.lineTo(-0.45, 0.32);
+                    shape.lineTo(-0.45, -0.32);
                     const hole = new THREE.Path();
-                    hole.moveTo(-0.35, -0.25);
-                    hole.lineTo(0.35, -0.25);
-                    hole.lineTo(0.35, 0.25);
-                    hole.lineTo(-0.35, 0.25);
-                    hole.lineTo(-0.35, -0.25);
+                    hole.moveTo(-0.38, -0.26);
+                    hole.lineTo(0.38, -0.26);
+                    hole.lineTo(0.38, 0.26);
+                    hole.lineTo(-0.38, 0.26);
+                    hole.lineTo(-0.38, -0.26);
                     shape.holes.push(hole);
-                    const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.03, bevelEnabled: false });
-                    const mat = new THREE.MeshStandardMaterial({ color: 0x8B7355 });
+                    const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.04, bevelEnabled: true, bevelSize: 0.01, bevelThickness: 0.01, bevelSegments: 1 });
+                    const mat = new THREE.MeshStandardMaterial({ color: 0x8a6a3a, roughness: 0.4, metalness: 0.3 });
                     mesh = new THREE.Mesh(geo, mat);
                     mesh.position.set(pos[0], pos[1], pos[2]);
+                    mesh.castShadow = true;
                     break;
                 }
                 case 'door': {
-                    const geo = new THREE.BoxGeometry(0.9, 2, 0.08);
-                    const mat = new THREE.MeshStandardMaterial({ color: 0x654321 });
+                    const geo = new THREE.BoxGeometry(1.0, 2.1, 0.1);
+                    const mat = new THREE.MeshStandardMaterial({ color: 0x4a2f1a, roughness: 0.85, metalness: 0 });
                     mesh = new THREE.Mesh(geo, mat);
-                    mesh.position.set(pos[0], pos[1] + 1, pos[2]);
+                    mesh.position.set(pos[0], pos[1] + 1.05, pos[2]);
+                    mesh.castShadow = true;
                     break;
                 }
                 case 'statue': {
                     const group = new THREE.Group();
-                    // Simple abstract statue: stacked shapes
-                    const bodyGeo = new THREE.CylinderGeometry(0.15, 0.2, 1.0, 6);
-                    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x999999 });
-                    const body = new THREE.Mesh(bodyGeo, bodyMat);
-                    body.position.y = 0.5;
+                    const mat = new THREE.MeshStandardMaterial({ color: 0xeeeae0, roughness: 0.4, metalness: 0.02 });
+                    const bodyGeo = new THREE.CylinderGeometry(0.18, 0.22, 1.1, 8);
+                    const body = new THREE.Mesh(bodyGeo, mat);
+                    body.position.y = 0.55;
+                    body.castShadow = true;
                     group.add(body);
-                    const headGeo = new THREE.SphereGeometry(0.15, 8, 8);
-                    const head = new THREE.Mesh(headGeo, bodyMat);
-                    head.position.y = 1.15;
+                    const headGeo = new THREE.SphereGeometry(0.17, 10, 10);
+                    const head = new THREE.Mesh(headGeo, mat);
+                    head.position.y = 1.28;
+                    head.castShadow = true;
                     group.add(head);
                     group.position.set(pos[0], pos[1], pos[2]);
                     mesh = group;
                     break;
                 }
                 case 'glow': {
-                    const geo = new THREE.SphereGeometry(0.15, 16, 16);
+                    const geo = new THREE.SphereGeometry(0.16, 18, 18);
                     const mat = new THREE.MeshStandardMaterial({
-                        color: 0x44ffaa, emissive: 0x22aa66, emissiveIntensity: 3,
-                        transparent: true, opacity: 0.7
+                        color: 0xffd080, emissive: 0xff9040, emissiveIntensity: 3,
+                        transparent: true, opacity: 0.85,
                     });
                     mesh = new THREE.Mesh(geo, mat);
                     mesh.position.set(pos[0], pos[1], pos[2]);
-                    // Point light for actual glow
-                    const light = new THREE.PointLight(0x44ffaa, 1, 5);
+                    const light = new THREE.PointLight(0xffb060, 1.5, 6, 2);
                     light.position.copy(mesh.position);
                     this.scene.add(light);
                     break;
                 }
                 default: { // 'orb'
-                    const geo = new THREE.SphereGeometry(0.18, 16, 16);
+                    const geo = new THREE.SphereGeometry(0.19, 18, 18);
                     const mat = new THREE.MeshStandardMaterial({
-                        color: 0x6688ff, emissive: 0x2244aa, emissiveIntensity: 1.5,
-                        transparent: true, opacity: 0.85
+                        color: 0x88aaff, emissive: 0x3366dd, emissiveIntensity: 1.8,
+                        transparent: true, opacity: 0.9,
                     });
                     mesh = new THREE.Mesh(geo, mat);
                     mesh.position.set(pos[0], pos[1], pos[2]);
@@ -549,8 +803,9 @@
             return mesh;
         },
 
-        // ── Export scene data back to DB format ──
-
+        // ─────────────────────────────────────────────
+        // Export (editor roundtrip, v1 compat)
+        // ─────────────────────────────────────────────
         exportSceneData() {
             const surfaces = this.surfaceMeshes.map(m => {
                 const d = m.userData.dbData || {};
@@ -563,12 +818,12 @@
                             m.rotation.y * 180 / Math.PI,
                             m.rotation.z * 180 / Math.PI
                         ],
-                        scale: [m.scale.x, m.scale.y, m.scale.z]
+                        scale: [m.scale.x, m.scale.y, m.scale.z],
                     },
                     dimensions: d.dimensions || { width: 4, height: 3 },
                     material: d.material || { color: '#888888' },
                     label: d.label,
-                    sort_order: d.sort_order || 0
+                    sort_order: d.sort_order || 0,
                 };
             });
             const connectors = this.connectorMeshes
@@ -576,53 +831,53 @@
                 .map(m => m.userData.dbData || {});
             const loci = this.lociMeshes.map(m => {
                 const d = m.userData.dbData || {};
-                const pos = m.position || m.children?.[0]?.parent?.position;
+                const pos = m.position;
                 return {
                     surface_id: d.surface_id,
-                    position: [
-                        pos ? pos.x : 0,
-                        pos ? pos.y : 1,
-                        pos ? pos.z : 0
-                    ],
+                    position: [pos.x, pos.y, pos.z],
                     marker_type: d.marker_type || 'orb',
                     marker_settings: d.marker_settings || {},
                     card_ids: d.card_ids || [],
-                    label: d.label
+                    label: d.label,
                 };
             });
             return { surfaces, connectors, loci };
         },
 
-        // ── Animation loop ──
-
+        // ─────────────────────────────────────────────
+        // Animation loop
+        // ─────────────────────────────────────────────
         animate() {
             this.animFrameId = requestAnimationFrame(() => this.animate());
             const delta = this.clock.getDelta();
-
-            // Animate loci (gentle bob)
             const t = this.clock.getElapsedTime();
+
+            // Bob orbs/glows gently
             this.lociMeshes.forEach((m, i) => {
-                if (m.userData.dbData?.marker_type === 'orb' || m.userData.dbData?.marker_type === 'glow') {
-                    m.position.y = (m.userData.dbData.position?.[1] || 1) + Math.sin(t * 2 + i) * 0.05;
+                const mt = m.userData.dbData?.marker_type;
+                if (mt === 'orb' || mt === 'glow') {
+                    const base = m.userData.dbData.position?.[1] ?? 1;
+                    m.position.y = base + Math.sin(t * 2 + i) * 0.05;
                 }
             });
 
-            // Walker update
-            if (RC.PalaceWalker && RC.PalaceWalker.update) {
-                RC.PalaceWalker.update(delta);
-            }
+            // Walker / traversal updates
+            if (RC.PalaceWalker && RC.PalaceWalker.update) RC.PalaceWalker.update(delta);
+            if (RC.PalaceTraverse && RC.PalaceTraverse.update) RC.PalaceTraverse.update(delta);
 
-            // Traversal update
-            if (RC.PalaceTraverse && RC.PalaceTraverse.update) {
-                RC.PalaceTraverse.update(delta);
+            // Render — composer on desktop, direct on mobile
+            if (this.composer) {
+                this.composer.render(delta);
+            } else {
+                this.renderer.render(this.scene, this.camera);
             }
-
-            this.renderer.render(this.scene, this.camera);
         },
 
         dispose() {
             if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
             this.clearScene();
+            if (this._pmremGen) this._pmremGen.dispose();
+            if (this.composer) this.composer.dispose?.();
             if (this.renderer) {
                 this.renderer.domElement.remove();
                 this.renderer.dispose();
@@ -630,8 +885,13 @@
             this.scene = null;
             this.camera = null;
             this.renderer = null;
-            this._materials = {};
-        }
+            this.composer = null;
+            this._materialLib = {};
+            this._textureCache = {};
+            this._gltfCache = {};
+            this._hdrCache = {};
+            this._legacyMaterials = {};
+        },
     };
 
     RC.PalaceRenderer = PR;
