@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duel of Muskets 4 - 2 Player FPS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            overflow: hidden; 
+            background: #000; 
+            font-family: 'Courier New', monospace;
+        }
+        #gameContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #instructions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #8B4513;
+            padding: 30px;
+            color: #D2B48C;
+            text-align: center;
+            z-index: 1000;
+            max-width: 800px;
+        }
+        #instructions h1 {
+            color: #FFD700;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        .player-controls {
+            background: rgba(139, 69, 19, 0.3);
+            padding: 15px;
+            border: 1px solid #8B4513;
+        }
+        .player-controls h3 {
+            color: #FFD700;
+            margin-bottom: 10px;
+        }
+        .key {
+            display: inline-block;
+            background: #333;
+            border: 1px solid #666;
+            padding: 2px 8px;
+            margin: 2px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        #startBtn {
+            background: linear-gradient(180deg, #8B4513 0%, #654321 100%);
+            border: 2px solid #FFD700;
+            color: #FFD700;
+            padding: 15px 40px;
+            font-size: 20px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        #startBtn:hover {
+            background: linear-gradient(180deg, #A0522D 0%, #8B4513 100%);
+        }
+        #hud1, #hud2 {
+            position: absolute;
+            width: 100%;
+            height: 50%;
+            pointer-events: none;
+        }
+        #hud1 { top: 0; }
+        #hud2 { bottom: 0; }
+        .hud-content {
+            position: absolute;
+            padding: 20px;
+            color: #FFD700;
+            text-shadow: 2px 2px 2px rgba(0,0,0,0.9);
+        }
+        #hud1 .hud-content { top: 10px; left: 10px; }
+        #hud2 .hud-content { bottom: 10px; left: 10px; }
+        .health-bar {
+            width: 200px;
+            height: 20px;
+            background: rgba(0,0,0,0.7);
+            border: 2px solid #8B4513;
+            margin-top: 5px;
+        }
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8B0000 0%, #FF0000 100%);
+            transition: width 0.3s;
+        }
+        .reload-indicator {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .state-display {
+            color: #87CEEB;
+            font-weight: bold;
+        }
+        .crosshair {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(255,215,0,0.8);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        .crosshair::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            background: #FFD700;
+            transform: translate(-50%, -50%);
+        }
+        #winner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #FFD700;
+            padding: 50px;
+            color: #FFD700;
+            text-align: center;
+            z-index: 2000;
+            display: none;
+        }
+        #winner h2 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        #restartBtn {
+            background: #8B4513;
+            border: 2px solid #FFD700;
+            color: #FFD700;
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer"></div>
+    
+    <div id="instructions">
+        <h1>⚔️ DUEL OF MUSKETS 4 ⚔️</h1>
+        <p>Face your opponent in a deadly duel. Load your musket, aim true, and fire!</p>
+        
+        <div class="controls-grid">
+            <div class="player-controls">
+                <h3>🔵 PLAYER 1 (Top Screen)</h3>
+                <p><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> - Move</p>
+                <p><span class="key">Q</span><span class="key">E</span> - Rotate Musket</p>
+                <p><span class="key">X</span> - Hold to Aim Iron Sights</p>
+                <p><span class="key">F</span> - Fire (when ready)</p>
+                <p><span class="key">R</span> - Reload / Next Step</p>
+            </div>
+            <div class="player-controls">
+                <h3>🔴 PLAYER 2 (Bottom Screen)</h3>
+                <p><span class="key">I</span><span class="key">J</span><span class="key">K</span><span class="key">L</span> - Move</p>
+                <p><span class="key">U</span><span class="key">O</span> - Rotate Musket</p>
+                <p><span class="key">M</span> - Hold to Aim Iron Sights</p>
+                <p><span class="key">N</span> - Fire (when ready)</p>
+                <p><span class="key">H</span> - Reload / Next Step</p>
+            </div>
+        </div>
+        
+        <p style="margin-top: 15px; font-size: 12px; color: #999;">
+            Reloading Steps: Half-Cock → Prime Pan → Charge Barrel → Ram Ball → Full-Cock → Ready to Fire<br>
+            Press Reload key to advance through each step. Must be aiming iron sights to fire accurately!
+        </p>
+        
+        <button id="startBtn">BEGIN DUEL</button>
+    </div>
+    
+    <div id="hud1">
+        <div class="hud-content">
+            <div>PLAYER 1</div>
+            <div class="health-bar"><div class="health-fill" id="health1" style="width: 100%"></div></div>
+            <div class="reload-indicator">
+                State: <span class="state-display" id="state1">UNLOADED</span>
+            </div>
+        </div>
+    </div>
+    
+    <div id="hud2">
+        <div class="hud-content">
+            <div>PLAYER 2</div>
+            <div class="health-bar"><div class="health-fill" id="health2" style="width: 100%"></div></div>
+            <div class="reload-indicator">
+                State: <span class="state-display" id="state2">UNLOADED</span>
+            </div>
+        </div>
+    </div>
+    
+    <div id="winner">
+        <h2 id="winnerText">PLAYER 1 WINS!</h2>
+        <button id="restartBtn">DUEL AGAIN</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="controls.js"></script>
+    <script src="musket.js"></script>
+    <script src="projectile.js"></script>
+    <script src="arena.js"></script>
+    <script src="player.js"></script>
+    <script src="ui.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

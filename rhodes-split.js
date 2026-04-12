@@ -14,6 +14,65 @@ window.paneMessageCounters = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}; // Message nu
 window.paneLetters = {1: 'A', 2: 'B', 3: 'G', 4: 'D', 5: 'E', 6: 'Z'}; // Alpha, Beta, Gamma, Delta
 window.paneColors = {1: '#00ff41', 2: '#00bfff', 3: '#bf00ff', 4: '#ff8c00', 5: '#ff0066', 6: '#ffff00'};
 
+const RHODES_SPLIT_STATE_KEY = 'rhodes_split_resume_state';
+
+function persistSplitResumeState() {
+    try {
+        if (!window.splitModeActive || !window.splitPaneCount) return;
+        var resumeSessionIds = {};
+        Object.keys(window.paneSessionIds || {}).forEach(function(key) {
+            var sid = window.paneSessionIds[key];
+            if (sid) resumeSessionIds[key] = sid;
+        });
+        var payload = {
+            paneCount: window.splitPaneCount,
+            resumeSessionIds: resumeSessionIds,
+            currentSplitGroupId: window.currentSplitGroupId || null,
+            savedAt: Date.now()
+        };
+        sessionStorage.setItem(RHODES_SPLIT_STATE_KEY, JSON.stringify(payload));
+    } catch (e) {
+        console.warn('[SPLIT] Failed to persist split state', e);
+    }
+}
+
+function clearPersistedSplitResumeState() {
+    try {
+        sessionStorage.removeItem(RHODES_SPLIT_STATE_KEY);
+    } catch (e) {
+        console.warn('[SPLIT] Failed to clear split state', e);
+    }
+}
+
+function loadPersistedSplitResumeState() {
+    try {
+        var raw = sessionStorage.getItem(RHODES_SPLIT_STATE_KEY);
+        if (!raw) return null;
+        var parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return null;
+        var paneCount = parseInt(parsed.paneCount, 10);
+        if (!Number.isFinite(paneCount) || paneCount < 1 || paneCount > 6) return null;
+        if (!parsed.resumeSessionIds || typeof parsed.resumeSessionIds !== 'object') return null;
+        return {
+            paneCount: paneCount,
+            resumeSessionIds: parsed.resumeSessionIds,
+            currentSplitGroupId: parsed.currentSplitGroupId || null
+        };
+    } catch (e) {
+        console.warn('[SPLIT] Failed to load split state', e);
+        return null;
+    }
+}
+
+window.restoreSplitModeIfNeeded = function() {
+    if (window.splitModeActive) return false;
+    var saved = loadPersistedSplitResumeState();
+    if (!saved) return false;
+    console.log('[SPLIT] Restoring split mode from persisted state', saved);
+    window.enterSplitMode(saved.paneCount, saved.resumeSessionIds, saved.currentSplitGroupId || null);
+    return true;
+};
+
 // ============================================
 // SPLIT MODE CSS (injected)
 // ============================================
@@ -42,7 +101,7 @@ window.paneColors = {1: '#00ff41', 2: '#00bfff', 3: '#bf00ff', 4: '#ff8c00', 5: 
 
  // Green, Blue, Purple, Orange
 
-window.enterSplitMode = function(paneCount, resumeSessionIds) {
+window.enterSplitMode = function(paneCount, resumeSessionIds, persistedGroupId) {
     console.log('[SPLIT] Entering split mode with', paneCount, 'panes', resumeSessionIds ? '(resuming)' : '(new)');
     // Close main WS to prevent duplicate message delivery
     if (window.ws && (window.ws.readyState === WebSocket.OPEN || window.ws.readyState === WebSocket.CONNECTING)) {
@@ -54,7 +113,7 @@ window.enterSplitMode = function(paneCount, resumeSessionIds) {
     }
     window._splitResumeIds = resumeSessionIds || null;
     window._multisandboxMode = true;  // All split sessions get isolated sandboxes
-    window.currentSplitGroupId = 'splitgrp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    window.currentSplitGroupId = persistedGroupId || window.currentSplitGroupId || ('splitgrp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9));
     
     // Hide main chat
     const mainChat = document.getElementById('chat');
@@ -111,6 +170,7 @@ window.enterSplitMode = function(paneCount, resumeSessionIds) {
     
     window.splitModeActive = true;
     window.splitPaneCount = paneCount;
+    persistSplitResumeState();
     
     // Connect each pane to its own WebSocket
     for (let i = 1; i <= paneCount; i++) {
@@ -134,6 +194,7 @@ window.exitSplitMode = function() {
     console.log('[SPLIT] Exiting split mode');
     window.splitActive = false;
     window.currentSplitGroupId = null;
+    clearPersistedSplitResumeState();
     
     // Show main chat
     const mainChat = document.getElementById('chat');
@@ -1251,12 +1312,14 @@ function handlePaneSessionRotatedMessage(paneNum, msg) {
     const newSessionId = msg.payload?.new_session_id || msg.payload?.rhodes_id;
     const model = msg.payload?.model || 'unknown';
     window.paneSessionIds[paneNum] = newSessionId;
+    persistSplitResumeState();
     console.log('[SPLIT] Instance', paneNum, 'session rotated to:', newSessionId, 'model:', model);
     addInstanceMessage(paneNum, 'system', 'Model switched to ' + model);
 }
 
 function handlePaneAuthResponseMessage(paneNum, msg) {
     window.paneSessionIds[paneNum] = msg.payload?.rhodes_id || msg.payload?.session_id || null;
+    persistSplitResumeState();
     console.log('[SPLIT] Instance', paneNum, 'session:', window.paneSessionIds[paneNum]);
 
     // Restore conversation history from resumed session

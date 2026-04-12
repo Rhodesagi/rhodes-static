@@ -445,10 +445,16 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
         }
         let TAB_ID;
         const chatEl = document.getElementById('chat'); const chatHasContent = chatEl && chatEl.children.length > 0; if (wantsNewRhodes && !chatHasContent) {
-            // New Rhodes requested - ALWAYS generate fresh ID (sessionStorage is copied to new windows)
-            TAB_ID = 'new_' + Math.random().toString(36).substr(2,8) + '_' + Date.now();
-            rhodesSessionStorage.setItem('rhodes_new_tab_id', TAB_ID);
+            // Keep the temporary tab identity stable across reloads so reconnects resume
+            // the same in-flight "new" session instead of silently minting a new one.
+            TAB_ID = rhodesSessionStorage.getItem('rhodes_new_tab_id');
+            if (!TAB_ID) {
+                TAB_ID = 'new_' + Math.random().toString(36).substr(2,8) + '_' + Date.now();
+                rhodesSessionStorage.setItem('rhodes_new_tab_id', TAB_ID);
+            }
         } else {
+            rhodesSessionStorage.removeItem('rhodes_new_tab_id');
+            rhodesSessionStorage.removeItem('rhodes_new_session_id');
             // Default - use sessionStorage so each browser tab keeps its own identity on reload
             TAB_ID = rhodesSessionStorage.getItem('rhodes_tab_id');
             if (!TAB_ID) {

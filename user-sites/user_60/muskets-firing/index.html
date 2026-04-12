@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muskets Firing - 2 Player FPS</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="game-container">
+        <div id="p1-viewport" class="viewport"></div>
+        <div id="p2-viewport" class="viewport"></div>
+        <div id="instructions">
+            <h2>MUSKETS FIRING - 2 Player Split Screen</h2>
+            <p><strong>Player 1 (Left Screen):</strong> WASD - Move | Q - Aim Down Sights | E - Fire | R - Reload</p>
+            <p><strong>Player 2 (Right Screen):</strong> Arrow Keys - Move | O - Aim Down Sights | P - Fire | [ - Reload</p>
+            <p><em>No crosshairs. Use iron sights only. Reload is a full 12-step animated sequence.</em></p>
+            <button id="start-btn">START GAME</button>
+        </div>
+    </div>
+
+    <script src="js/input.js"></script>
+    <script src="js/animations.js"></script>
+    <script src="js/musket.js"></script>
+    <script src="js/projectile.js"></script>
+    <script src="js/environment.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

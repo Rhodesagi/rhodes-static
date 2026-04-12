@@ -2826,7 +2826,7 @@ window._loadSessionsUp = function(query) {
                 if (isSplit) {
                     var splitGroupId = String(s.split_group_id || '').trim();
                     var created = (s.created_at || s.updated_at || '').substring(0, 16);
-                    var userPrefix = s.session_id.replace(/split-\d+-.*/, 'split').replace(/_[a-f0-9]{8}$/, '');
+                    var userPrefix = s.session_id.replace(/-p\d+$/, '').replace(/split-\d+-.*/, 'split').replace(/_[a-f0-9]{8}$/, '');
                     var fallbackKey = userPrefix + '_' + created;
                     var groupKey = splitGroupId ? ('group_' + splitGroupId) : fallbackKey;
                     s.__splitFallbackKey = fallbackKey;
@@ -2858,7 +2858,7 @@ window._loadSessionsUp = function(query) {
             var buildBestSplitPaneMap = function(group) {
                 var paneBest = {};
                 (group || []).forEach(function(gs) {
-                    var m = gs.session_id && gs.session_id.match(/split-(\d+)/);
+                    var m = gs.session_id && (gs.session_id.match(/-p(\d+)$/) || gs.session_id.match(/split-(\d+)/));
                     if (!m) return;
                     var paneNum = parseInt(m[1], 10);
                     var prev = paneBest[paneNum];
@@ -3072,7 +3072,7 @@ window._loadSessionsUp = function(query) {
                             if (isNaN(projId)) return;
                             window._assignSessionToProject(sessionIdRef, projId, 'project');
                         }; })(s.session_id, paneDiv);
-                        var paneMatch = s.session_id.match(/split-(\d+)/);
+                        var paneMatch = s.session_id.match(/-p(\d+)$/) || s.session_id.match(/split-(\d+)/);
                         var paneNum = paneMatch ? paneMatch[1] : '?';
                         var pTitle = s.title || ('Pane ' + paneNum);
                         paneDiv.innerHTML = '<span style="color:var(--dim);">\u2514</span> <span style="color:var(--cyan);font-weight:700;">P' + paneNum + '</span> ' + pTitle + ' <span style="color:var(--green);font-weight:700;">(' + getSplitMessageCount(s) + ' msgs)</span>';

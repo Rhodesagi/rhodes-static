@@ -475,19 +475,22 @@ function showDownloads() {
                 if (debugBtn) debugBtn.style.display = 'none';
                 console.log('WebSocket opened, sending auth request');
                 // Get saved session ID for auto-resume.
-                // IMPORTANT: when starting a brand-new session (?new=1), do not auto-resume the main saved session.
-                const savedSessionId = wantsNewRhodes ? '' : (
-                    (window.rhodesSessionState && window.rhodesSessionState.getResumeSessionIdForCurrentIdentity)
-                        ? window.rhodesSessionState.getResumeSessionIdForCurrentIdentity()
-                        : (rhodesStorage.getItem('rhodes_session_id') || '')
-                );
+                // Normal mode uses the identity-scoped pointer. New-session mode uses a
+                // tab-scoped pointer so reconnects stay on the same temporary session
+                // without overwriting the user's main session pointer.
+                const savedSessionId = wantsNewRhodes
+                    ? (rhodesSessionStorage.getItem('rhodes_new_session_id') || '')
+                    : (
+                        (window.rhodesSessionState && window.rhodesSessionState.getResumeSessionIdForCurrentIdentity)
+                            ? window.rhodesSessionState.getResumeSessionIdForCurrentIdentity()
+                            : (rhodesStorage.getItem('rhodes_session_id') || '')
+                    );
 
-                // When ?new=1, force empty resume to create fresh session
-                // Resume for both logged-in AND guest sessions
-                // Don't auto-resume a split session from the main chat
+                // Resume for both logged-in and guest sessions.
+                // Don't auto-resume a split session from the main chat.
                 const _candidate = RHODES_ID || savedSessionId || '';
-                const resumeSession = wantsNewRhodes ? '' :
-                    (_candidate.indexOf('split-') === -1 ? _candidate : '');
+                const resumeSession = (_candidate.indexOf('split-') === -1 ? _candidate : '');
+                const forceNewSession = !!(wantsNewRhodes && !resumeSession);
 
                 ws.send(JSON.stringify({
                     msg_type: 'auth_request',
@@ -498,10 +501,10 @@ function showDownloads() {
                         tab_id: TAB_ID,
                         token: hasToken ? TOKEN : '',
                         user_token: hasUserToken ? USER_TOKEN : '',
-                        // Important: even in ?new=1 mode, reconnects must resume the same in-tab session,
-                        // otherwise any transient disconnect (or /stop) looks like "new Rhodes with no memory".
+                        // In ?new=1 mode, only the first auth should force a fresh session.
+                        // Later reconnects must resume the tab-local session id.
                         resume_session: resumeSession,
-                        force_new: !!wantsNewRhodes,
+                        force_new: forceNewSession,
                         client_version: '3.0.0',
                         platform: (window.rhodes && window.rhodes.isDesktop) ? 'desktop-electron' : 'web',
                         desktop_mode: !!(window.rhodes && window.rhodes.isDesktop),
@@ -576,14 +579,18 @@ function showDownloads() {
                             window.rhodesSessionState.setLastIdentity(incomingIdentity);
                         }
 
-                        // Save rhodes_id for auto-resume on next visit (both users and guests)
-                        // Don't save if this is a temporary new session
-                        if (RHODES_ID && !wantsNewRhodes && RHODES_ID.indexOf('split-') === -1) {
-                            if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
+                        // Persist the active session pointer. New-session mode keeps it tab-local
+                        // so refresh/reconnect works without clobbering the user's normal resume target.
+                        if (RHODES_ID && RHODES_ID.indexOf('split-') === -1) {
+                            if (wantsNewRhodes) {
+                                rhodesSessionStorage.setItem('rhodes_new_session_id', RHODES_ID);
+                            } else if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
                                 window.rhodesSessionState.setResumeSessionIdForCurrentIdentity(RHODES_ID);
                             } else {
                                 rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
                             }
+                        } else if (!wantsNewRhodes) {
+                            rhodesSessionStorage.removeItem('rhodes_new_session_id');
                         }
 
                         // Update session ID display
@@ -598,6 +605,11 @@ function showDownloads() {
                             if (window.__rhodesApplySessionNote) {
                                 window.__rhodesApplySessionNote(msg.payload.session_note);
                             }
+                        }
+                        if (window.restoreSplitModeIfNeeded && !window.splitModeActive) {
+                            setTimeout(() => {
+                                try { window.restoreSplitModeIfNeeded(); } catch (e) { console.warn('[SPLIT] restore failed', e); }
+                            }, 0);
                         }
 
                         // Load conversation history if resumed session has messages
@@ -1159,7 +1171,9 @@ function showDownloads() {
                         if (msg.payload.session_id) {
                             RHODES_ID = msg.payload.session_id;
                             if (RHODES_ID.indexOf('split-') === -1) {
-                                if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
+                                if (wantsNewRhodes) {
+                                    rhodesSessionStorage.setItem('rhodes_new_session_id', RHODES_ID);
+                                } else if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
                                     window.rhodesSessionState.setResumeSessionIdForCurrentIdentity(RHODES_ID);
                                 } else {
                                     rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
@@ -1231,7 +1245,9 @@ function showDownloads() {
                         if (msg.payload.session_id) {
                             RHODES_ID = msg.payload.session_id;
                             if (RHODES_ID.indexOf('split-') === -1) {
-                                if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
+                                if (wantsNewRhodes) {
+                                    rhodesSessionStorage.setItem('rhodes_new_session_id', RHODES_ID);
+                                } else if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
                                     window.rhodesSessionState.setResumeSessionIdForCurrentIdentity(RHODES_ID);
                                 } else {
                                     rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
@@ -1273,7 +1289,9 @@ function showDownloads() {
                         if (sid) {
                             RHODES_ID = sid;
                             if (RHODES_ID.indexOf('split-') === -1) {
-                                if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
+                                if (wantsNewRhodes) {
+                                    rhodesSessionStorage.setItem('rhodes_new_session_id', RHODES_ID);
+                                } else if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
                                     window.rhodesSessionState.setResumeSessionIdForCurrentIdentity(RHODES_ID);
                                 } else {
                                     rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
@@ -1412,12 +1430,14 @@ function showDownloads() {
                     if (msg.payload && msg.payload.new_session_id) {
                         RHODES_ID = msg.payload.new_session_id;
                         if (RHODES_ID.indexOf('split-') === -1) {
-                                if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
-                                    window.rhodesSessionState.setResumeSessionIdForCurrentIdentity(RHODES_ID);
-                                } else {
-                                    rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
-                                }
+                            if (wantsNewRhodes) {
+                                rhodesSessionStorage.setItem('rhodes_new_session_id', RHODES_ID);
+                            } else if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
+                                window.rhodesSessionState.setResumeSessionIdForCurrentIdentity(RHODES_ID);
+                            } else {
+                                rhodesStorage.setItem('rhodes_session_id', RHODES_ID);
                             }
+                        }
                         const sessionEl = document.getElementById('session-id');
                         if (sessionEl) {
                             sessionEl.dataset.sessionId = RHODES_ID;

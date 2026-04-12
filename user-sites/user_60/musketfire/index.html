@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUSKETFIRE - 2 Player Iron Sight Duel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: 'Courier New', monospace;
+        }
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        #instructions {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #888;
+            font-size: 12px;
+            text-align: center;
+            z-index: 100;
+            background: rgba(0,0,0,0.7);
+            padding: 5px 15px;
+            border-radius: 3px;
+            pointer-events: none;
+        }
+        #damageOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+        .p1-damage {
+            background: linear-gradient(to bottom, rgba(255,0,0,0.4) 0%, transparent 50%);
+        }
+        .p2-damage {
+            background: linear-gradient(to top, rgba(255,0,0,0.4) 0%, transparent 50%);
+        }
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+        #startScreen h1 {
+            color: #c9a227;
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        #startScreen .controls {
+            color: #ccc;
+            font-size: 14px;
+            margin: 20px 0;
+            text-align: left;
+            line-height: 1.8;
+        }
+        #startScreen .controls table {
+            border-collapse: collapse;
+        }
+        #startScreen .controls td {
+            padding: 5px 15px;
+        }
+        #startScreen .controls .p1 {
+            color: #4a9;
+        }
+        #startScreen .controls .p2 {
+            color: #a94;
+        }
+        #startButton {
+            padding: 15px 40px;
+            font-size: 20px;
+            background: #333;
+            color: #c9a227;
+            border: 2px solid #c9a227;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            margin-top: 20px;
+        }
+        #startButton:hover {
+            background: #444;
+        }
+        #reloadStatus {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #666;
+            font-size: 11px;
+            z-index: 100;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="startScreen">
+        <h1>MUSKETFIRE</h1>
+        <div class="controls">
+            <table>
+                <tr>
+                    <td class="p1"><b>PLAYER 1 (Top)</b></td>
+                    <td class="p2"><b>PLAYER 2 (Bottom)</b></td>
+                </tr>
+                <tr>
+                    <td class="p1">WASD - Move</td>
+                    <td class="p2">Arrow Keys - Move</td>
+                </tr>
+                <tr>
+                    <td class="p1">Mouse - Aim</td>
+                    <td class="p2">Numpad 8/4/6/2 - Aim</td>
+                </tr>
+                <tr>
+                    <td class="p1">L-Click - Fire/Reload</td>
+                    <td class="p2">Numpad 0 - Fire/Reload</td>
+                </tr>
+                <tr>
+                    <td class="p1">R-Click - Iron Sights</td>
+                    <td class="p2">Numpad Enter - Iron Sights</td>
+                </tr>
+            </table>
+        </div>
+        <p style="color: #888; font-size: 12px; max-width: 600px; text-align: center;">
+            No HUD. Use iron sights. 15-second reloads. First to 5 kills wins.
+        </p>
+        <button id="startButton">CLICK TO START</button>
+    </div>
+
+    <div id="instructions">MUSKETFIRE - Iron sights only. No HUD. Real reloads.</div>
+    <div id="damageOverlay"></div>
+    <div id="reloadStatus"></div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/sounds.js"></script>
+    <script src="js/input.js"></script>
+    <script src="js/world.js"></script>
+    <script src="js/projectile.js"></script>
+    <script src="js/musket.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
