@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Musket Duel - 2 Player Historical FPS</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+  </div>
+  
+  <div id="ui">
+    <div id="score">
+      <span class="player1">P1: <span id="p1Score">0</span></span> | 
+      <span class="player2">P2: <span id="p2Score">0</span></span>
+    </div>
+  </div>
+  
+  <div id="reloadStatus">
+    <div class="reload-indicator player1" id="p1Reload">READY</div>
+    <div class="reload-indicator player2" id="p2Reload">READY</div>
+  </div>
+  
+  <div id="instructions">
+    <div class="player-instructions player1">
+      <strong>PLAYER 1 (Blue)</strong><br>
+      WASD = Move | QE = Turn/Aim | SHIFT = Iron Sights | SPACE = Fire/Reload Step
+    </div>
+    <div class="player-instructions player2">
+      <strong>PLAYER 2 (Red)</strong><br>
+      Arrows = Move | , . / = Turn/Aim | RCTRL = Iron Sights | ENTER = Fire/Reload Step
+    </div>
+  </div>
+  
+  <div id="victory">
+    <div id="victoryText">PLAYER 1 WINS!</div>
+    <div style="font-size: 18px; margin-top: 20px;">Press R to restart</div>
+  </div>
+
+  <script src="ballistics.js"></script>
+  <script src="world.js"></script>
+  <script src="input.js"></script>
+  <script src="musket.js"></script>
+  <script src="player.js"></script>
+  <script src="renderer.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

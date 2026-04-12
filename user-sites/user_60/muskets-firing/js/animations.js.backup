@@ -153,25 +153,19 @@ class AnimationSystem {
             }
         }, 'easeInOut'));
         
-        // Step 9: Blow on priming powder to ensure ignition - 0.3s
-        sequence.push(this.createKeyframe(300, (progress) => {
-            // Slight camera/musket shake simulating blowing
-            musket.mesh.position.x = Math.sin(progress * Math.PI * 4) * 0.01;
-        }, 'easeInOut'));
-        
-        // Step 10: Close frizzen - 0.4s
+        // Step 9: Close frizzen - 0.4s
         sequence.push(this.createKeyframe(400, (progress) => {
             const angle = THREE.MathUtils.lerp(-Math.PI / 4, 0, progress);
             parts.frizzen.rotation.x = angle;
         }, 'easeInOut'));
         
-        // Step 11: Cock hammer to full cock - 0.5s
+        // Step 10: Cock hammer to full cock - 0.5s
         sequence.push(this.createKeyframe(500, (progress) => {
             const angle = THREE.MathUtils.lerp(-Math.PI / 6, -Math.PI / 2.5, progress);
             parts.hammer.rotation.x = angle;
         }, 'easeInOut'));
         
-        // Step 12: Present arms (final ready position) - 0.4s
+        // Step 11: Present arms (final ready position) - 0.4s
         sequence.push(this.createKeyframe(400, (progress) => {
             // Return to firing position
             const startRot = musket.mesh.rotation.x;

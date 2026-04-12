@@ -93,11 +93,11 @@ class Player {
             this.rotation.x = Math.max(-Math.PI / 2, 
                 Math.min(Math.PI / 2, this.rotation.x - input.mouseDeltaY * this.lookSpeed));
         } else if (!this.isPlayer1) {
-            // Player 2 uses keys for rotation
-            if (input.lookLeft) this.rotation.y += deltaTime * 2;
-            if (input.lookRight) this.rotation.y -= deltaTime * 2;
-            if (input.lookUp) this.rotation.x = Math.max(-Math.PI / 2, this.rotation.x - deltaTime * 2);
-            if (input.lookDown) this.rotation.x = Math.min(Math.PI / 2, this.rotation.x + deltaTime * 2);
+            // Player 2 uses keys for rotation when not moving
+            if (!input.moveForward && !input.moveBackward) {
+                if (input.lookLeft) this.rotation.y += deltaTime * 2;
+                if (input.lookRight) this.rotation.y -= deltaTime * 2;
+            }
         }
         
         // Calculate movement direction

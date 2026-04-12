@@ -92,9 +92,7 @@ class InputManager {
             reload: this.isPressed(this.p2Keys.reload),
             // P2 uses I/L for rotation
             lookLeft: this.isPressed(this.p2Keys.rotateLeft),
-            lookRight: this.isPressed(this.p2Keys.rotateRight),
-            lookUp: this.isPressed(this.p2Keys.lookUp),
-            lookDown: this.isPressed(this.p2Keys.lookDown)
+            lookRight: this.isPressed(this.p2Keys.rotateRight)
         };
     }
     

@@ -272,11 +272,6 @@ class Musket {
                 this.isLoaded = true;
                 this.reloadSequence = null;
                 this.hideReloadProps();
-                
-                // Trigger reload complete callback
-                if (this.onReloadComplete) {
-                    this.onReloadComplete();
-                }
             }
         }
     }
