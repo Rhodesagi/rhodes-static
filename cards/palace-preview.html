@@ -240,7 +240,7 @@ RC.PalaceTraverse = { startTraversal: function() {}, update: function() {} };
                 }
             }
             // Show walk instructions unless already in walk mode
-            instructionsEl.style.display = walkMode ? 'none' : 'block';
+            instructionsEl.style.display = (walkMode || noWalk) ? 'none' : 'block';
 
             if (!PR.animFrameId) PR.animate();
             patchAnimate();
