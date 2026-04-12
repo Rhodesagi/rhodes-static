@@ -3318,7 +3318,7 @@
             ],
         };
         return t;
-    }
+    },
     _observatory() {
         // ----- octagon geometry -----
         // 8 walls, apothem (distance from center to wall face) = 20 * cos(pi/8)
@@ -3831,7 +3831,7 @@
                 { position: [vertexPos(0)[0], 4.5, vertexPos(0)[2]], marker_type: 'orb', label: 'Column of the South (Crux)' },
                 { position: [vertexPos(2)[0], 4.5, vertexPos(2)[2]], marker_type: 'orb', label: 'Column of the West (Lyra)' },
                 { position: [vertexPos(4)[0], 4.5, vertexPos(4)[2]], marker_type: 'orb', label: 'Column of the North (Ursa Major)' },
-                { position: [vertexPos(6)[0], 4.5, vertexPos(6)[2]], marker_type: 'orb', label: 'Column of the East (Orion)' }
+                { position: [vertexPos(6)[0], 4.5, vertexPos(6)[2]], marker_type: 'orb', label: 'Column of the East (Orion)' },
 
                 // ============================================================
                 // PROCEDURAL: 6 star chart walls × shelfGrid(6 rows × 12 cols) = 432 loci

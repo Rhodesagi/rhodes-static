@@ -148,9 +148,9 @@ RC.PalaceTraverse = { startTraversal: function() {}, update: function() {} };
 <script src="lib/three-addons/ShaderPass.js"></script>
 <script src="lib/three-addons/UnrealBloomPass.js"></script>
 <script src="lib/three-addons/SSAOPass.js"></script>
-<script src="js/palace-templates.js?v=4"></script>
-<script src="js/palace-renderer.js?v=5"></script>
-<script src="js/palace-walker.js?v=5"></script>
+<script src="js/palace-templates.js?v=nv959175"></script>
+<script src="js/palace-renderer.js?v=nv959175"></script>
+<script src="js/palace-walker.js?v=nv959175"></script>
 
 <script>
 (function() {
@@ -211,7 +211,12 @@ RC.PalaceTraverse = { startTraversal: function() {}, update: function() {} };
             spawnPos = (tmpl.meta && tmpl.meta.spawn_point && tmpl.meta.spawn_point.position) || [0, 1.6, 10];
             statusEl.textContent = `${tmpl.meta.name} — ${(tmpl.surfaces || []).length} surfaces, ${(tmpl.props || []).length} props, ${(tmpl.loci || []).length} loci`;
 
-            if (!walkerInited) {
+            // noVNC mode: ?nowalk=1 disables walker entirely (no pointer lock, no walk mode)
+            const noWalk = new URLSearchParams(window.location.search).has('nowalk');
+            if (noWalk) {
+                // Hide the click-to-walk instructions since walk mode is disabled
+                if (instructionsEl) instructionsEl.style.display = 'none';
+            } else if (!walkerInited) {
                 PW.init(PR.camera, PR.renderer.domElement);
                 walkerInited = true;
                 // When pointer locks, enter walk mode; when it unlocks, return to orbit
@@ -226,11 +231,13 @@ RC.PalaceTraverse = { startTraversal: function() {}, update: function() {} };
                     instructionsEl.style.display = walkerReady() ? 'block' : 'none';
                 });
             }
-            // Reset walker position to this template's spawn point
-            const walkerObj = PW.controls.getObject();
-            walkerObj.position.set(spawnPos[0], spawnPos[1], spawnPos[2]);
-            if (tmpl.meta && tmpl.meta.spawn_point && tmpl.meta.spawn_point.rotation_y != null) {
-                walkerObj.rotation.y = tmpl.meta.spawn_point.rotation_y * Math.PI / 180;
+            // Reset walker position to this template's spawn point (skip if walker disabled)
+            if (!noWalk && PW.controls) {
+                const walkerObj = PW.controls.getObject();
+                walkerObj.position.set(spawnPos[0], spawnPos[1], spawnPos[2]);
+                if (tmpl.meta && tmpl.meta.spawn_point && tmpl.meta.spawn_point.rotation_y != null) {
+                    walkerObj.rotation.y = tmpl.meta.spawn_point.rotation_y * Math.PI / 180;
+                }
             }
             // Show walk instructions unless already in walk mode
             instructionsEl.style.display = walkMode ? 'none' : 'block';
