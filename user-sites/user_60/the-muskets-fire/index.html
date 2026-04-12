@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Muskets Fire - 2-Player Flintlock FPS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            overflow: hidden; 
+            background: #000; 
+            font-family: 'Courier New', monospace;
+        }
+        #game-canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .hud {
+            position: absolute;
+            padding: 10px;
+            color: #ddd;
+            font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        .player1-hud {
+            top: 10px;
+            left: 10px;
+            width: calc(50% - 20px);
+        }
+        .player2-hud {
+            top: 10px;
+            right: 10px;
+            width: calc(50% - 20px);
+            text-align: right;
+        }
+        .health-bar {
+            width: 200px;
+            height: 20px;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid #666;
+            margin-top: 5px;
+        }
+        .player2-hud .health-bar {
+            margin-left: auto;
+        }
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #a00, #f00);
+            transition: width 0.2s;
+        }
+        .reload-indicator {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #ff6;
+        }
+        #center-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(180deg, 
+                transparent 0%, 
+                rgba(255,255,255,0.3) 20%, 
+                rgba(255,255,255,0.3) 80%, 
+                transparent 100%);
+            pointer-events: none;
+        }
+        .key { 
+            color: #fff; 
+            background: #444; 
+            padding: 2px 6px; 
+            border-radius: 3px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game-canvas"></canvas>
+    <div id="ui-layer">
+        <div class="hud player1-hud">
+            <div>PLAYER 1 (Left - Click here for mouse)</div>
+            <div>Health: <span id="p1-health">100</span>%</div>
+            <div class="health-bar"><div class="health-fill" id="p1-health-bar" style="width: 100%"></div></div>
+            <div class="reload-indicator" id="p1-reload">READY TO FIRE</div>
+            <div style="margin-top:10px; font-size:11px; color:#aaa;">
+                <span class="key">WASD</span> Move | <span class="key">Mouse</span> Look | 
+                <span class="key">RMB</span> Iron Sights | <span class="key">LMB</span> Fire | 
+                <span class="key">R</span> Reload
+            </div>
+        </div>
+        <div class="hud player2-hud">
+            <div>PLAYER 2 (Right)</div>
+            <div>Health: <span id="p2-health">100</span>%</div>
+            <div class="health-bar"><div class="health-fill" id="p2-health-bar" style="width: 100%"></div></div>
+            <div class="reload-indicator" id="p2-reload">READY TO FIRE</div>
+            <div style="margin-top:10px; font-size:11px; color:#aaa;">
+                <span class="key">Arrows</span> Move | <span class="key">Numpad 8/4/5/6</span> Look | 
+                <span class="key">RCtrl</span> Iron Sights | <span class="key">RShift</span> Fire | 
+                <span class="key">Enter</span> Reload
+            </div>
+        </div>
+        <div id="center-line"></div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
