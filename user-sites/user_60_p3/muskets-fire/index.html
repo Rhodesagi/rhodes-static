@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUSKETS FIRE - 2 Player Split-Screen FPS</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="start-screen">
+        <h1>MUSKETS FIRE</h1>
+        <h2>2-Player Split-Screen Musket Duel</h2>
+        <div class="controls">
+            <div class="player-controls">
+                <h3>PLAYER 1 (Top Screen)</h3>
+                <p><strong>Move:</strong> WASD</p>
+                <p><strong>Aim:</strong> Mouse</p>
+                <p><strong>Iron Sights:</strong> Q</p>
+                <p><strong>Fire:</strong> F</p>
+                <p><strong>Reload:</strong> R</p>
+            </div>
+            <div class="player-controls">
+                <h3>PLAYER 2 (Bottom Screen)</h3>
+                <p><strong>Move:</strong> IJKL (I=forward, J=left, K=back, L=right)</p>
+                <p><strong>Aim:</strong> Arrow Keys</p>
+                <p><strong>Iron Sights:</strong> O</p>
+                <p><strong>Fire:</strong> Semicolon (;)</p>
+                <p><strong>Reload:</strong> P</p>
+            </div>
+        </div>
+        <div class="instructions">
+            <p><strong>No HUD:</strong> Check your weapon to see if it's loaded!</p>
+            <p><strong>Reload:</strong> Pour powder, patch, ball, ramrod, prime, cock. ~7 seconds.</p>
+            <p><strong>Iron Sights:</strong> Line up front and rear sights for accuracy.</p>
+        </div>
+        <button id="start-btn">CLICK TO START</button>
+    </div>
+    <canvas id="game-canvas"></canvas>
+    <div id="game-over" style="display: none;">
+        <h1 id="winner-text"></h1>
+        <button id="restart-btn">PLAY AGAIN</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/InputHandler.js"></script>
+    <script src="js/Projectile.js"></script>
+    <script src="js/Musket.js"></script>
+    <script src="js/Environment.js"></script>
+    <script src="js/Player.js"></script>
+    <script src="js/Game.js"></script>
+    <script>
+        document.getElementById('start-btn').addEventListener('click', () => {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('game-canvas').style.display = 'block';
+            document.getElementById('game-canvas').requestPointerLock();
+            game.init();
+        });
+
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            document.getElementById('game-over').style.display = 'none';
+            game.restart();
+        });
+
+        const game = new Game();
+    </script>
+</body>
+</html>

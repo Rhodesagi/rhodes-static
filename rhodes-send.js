@@ -138,6 +138,9 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
             evt.initEvent('input', true, true);
             inputEl.dispatchEvent(evt);
         }
+        // Safety net: directly reset height in case event dispatch didn't trigger auto-grow
+        inputEl.style.setProperty('height', '44px', 'important');
+        inputEl.style.setProperty('overflow-y', 'hidden', 'important');
     }
 
     function send() {

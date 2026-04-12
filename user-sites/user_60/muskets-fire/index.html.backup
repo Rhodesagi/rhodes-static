@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUSKETS FIRE - 2 Player Split-Screen FPS</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="split-screen">
+            <div id="viewport-p1" class="viewport">
+                <div class="player-label">PLAYER 1 - CLICK TO LOCK</div>
+                <div class="controls-hint">WASD: Move | Mouse: Aim | R: Reload | L-Click: Fire | R-Click: Iron Sights</div>
+            </div>
+            <div id="viewport-p2" class="viewport">
+                <div class="player-label">PLAYER 2 - CLICK TO LOCK</div>
+                <div class="controls-hint">Arrow: Move | Numpad 4/6/8/2: Aim | Enter: Reload | R-Shift: Fire | R-Ctrl: Iron Sights</div>
+            </div>
+        </div>
+        <canvas id="game-canvas"></canvas>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/ballistics.js"></script>
+    <script src="js/musket.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/world.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

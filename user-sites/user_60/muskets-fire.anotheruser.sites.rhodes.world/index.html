@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUSKETS-FIRE | 2-Player Historical FPS</title>
+    <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+    <!-- Split-screen container -->
+    <div id="game-container">
+        <div id="viewport-p1" class="player-viewport">
+            <div class="player-label">PLAYER 1</div>
+            <div class="controls-hint">
+                WASD: Move | Q/E: Lean | SHIFT: Sprint | F: Fire | R: Reload
+            </div>
+        </div>
+        <div id="viewport-p2" class="player-viewport">
+            <div class="player-label">PLAYER 2</div>
+            <div class="controls-hint">
+                IJKL: Move | U/O: Lean | ENTER: Sprint | P: Fire | 7: Reload
+            </div>
+        </div>
+    </div>
+    
+    <!-- Iron sight overlay indicators (only show when aiming, NOT crosshairs) -->
+    <div id="sight-p1" class="iron-sight-hint">IRON SIGHTS</div>
+    <div id="sight-p2" class="iron-sight-hint">IRON SIGHTS</div>
+    
+    <!-- Game status -->
+    <div id="game-ui">
+        <div id="health-p1" class="health-bar">P1 Health: 100</div>
+        <div id="health-p2" class="health-bar">P2 Health: 100</div>
+        <div id="reload-status"></div>
+    </div>
+    
+    <!-- Three.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Game modules -->
+    <script src="js/input.js"></script>
+    <script src="js/ballistics.js"></script>
+    <script src="js/musket.js"></script>
+    <script src="js/world.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

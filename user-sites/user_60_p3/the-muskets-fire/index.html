@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Muskets Fire</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+        }
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #1a0f0a 0%, #0d0503 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #d4a574;
+            z-index: 1000;
+        }
+        #startScreen h1 {
+            font-size: 48px;
+            text-shadow: 0 0 20px #8b4513;
+            margin-bottom: 20px;
+            letter-spacing: 4px;
+        }
+        #startScreen .subtitle {
+            font-size: 18px;
+            color: #a08060;
+            margin-bottom: 40px;
+        }
+        #startScreen .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 40px;
+            text-align: left;
+        }
+        #startScreen .controlBox {
+            background: rgba(139, 69, 19, 0.2);
+            border: 1px solid #8b4513;
+            padding: 20px;
+            border-radius: 4px;
+        }
+        #startScreen .controlBox h3 {
+            color: #daa520;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        #startScreen .controlBox p {
+            margin: 8px 0;
+            font-size: 14px;
+            color: #c0a080;
+        }
+        #startButton {
+            padding: 15px 40px;
+            font-size: 24px;
+            background: #8b4513;
+            color: #f5deb3;
+            border: 2px solid #d4a574;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            transition: all 0.3s;
+        }
+        #startButton:hover {
+            background: #a0522d;
+            box-shadow: 0 0 20px #8b4513;
+        }
+        #gameUI {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: none;
+        }
+        #gameUI .healthBar {
+            position: absolute;
+            height: 8px;
+            background: #333;
+            border: 1px solid #666;
+        }
+        #gameUI .healthBar .fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8b0000, #dc143c);
+            transition: width 0.3s;
+        }
+        #p1Health { top: 10px; left: 10px; width: 200px; }
+        #p2Health { top: 10px; right: 10px; width: 200px; }
+        #gameUI .playerLabel {
+            position: absolute;
+            color: #d4a574;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        #p1Label { top: 22px; left: 10px; }
+        #p2Label { top: 22px; right: 10px; }
+        #centerLine {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(180deg, transparent 0%, #8b4513 20%, #8b4513 80%, transparent 100%);
+            opacity: 0.3;
+        }
+        #reloadIndicators {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 40px;
+        }
+        .reloadBar {
+            width: 200px;
+            height: 6px;
+            background: #222;
+            border: 1px solid #444;
+            overflow: hidden;
+        }
+        .reloadBar .progress {
+            height: 100%;
+            background: #daa520;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        #gamepadWarning {
+            position: absolute;
+            bottom: 80px;
+            width: 100%;
+            text-align: center;
+            color: #ff6b6b;
+            font-size: 14px;
+            display: none;
+        }
+        .weaponStatus {
+            position: absolute;
+            bottom: 30px;
+            color: #a08060;
+            font-size: 12px;
+        }
+        #p1Weapon { left: 40px; }
+        #p2Weapon { right: 40px; }
+    </style>
+</head>
+<body>
+    <div id="startScreen">
+        <h1>THE MUSKETS FIRE</h1>
+        <div class="subtitle">A Two-Player Duel of Powder and Ball</div>
+        <div class="controls">
+            <div class="controlBox">
+                <h3>PLAYER 1 (Top Screen)</h3>
+                <p><strong>WASD</strong> - Move</p>
+                <p><strong>MOUSE</strong> - Aim (Iron Sights)</p>
+                <p><strong>LEFT CLICK</strong> - Fire</p>
+                <p><strong>R</strong> - Reload</p>
+                <p><strong>E</strong> - Aim Down Sights</p>
+            </div>
+            <div class="controlBox">
+                <h3>PLAYER 2 (Bottom Screen)</h3>
+                <p><strong>GAMEPAD</strong> - REQUIRED</p>
+                <p><strong>Left Stick</strong> - Move</p>
+                <p><strong>Right Stick</strong> - Aim</p>
+                <p><strong>RT (R2)</strong> - Fire</p>
+                <p><strong>X (Square)</strong> - Reload</p>
+                <p><strong>LT (L2)</strong> - Aim Down Sights</p>
+            </div>
+        </div>
+        <div style="color: #888; font-size: 12px; margin-bottom: 20px;">
+            Connect a gamepad for Player 2 before clicking START
+        </div>
+        <button id="startButton">ENTER THE FIELD</button>
+    </div>
+
+    <div id="gameUI">
+        <div id="centerLine"></div>
+        <div class="healthBar" id="p1Health"><div class="fill" id="p1HealthFill" style="width: 100%"></div></div>
+        <div class="healthBar" id="p2Health"><div class="fill" id="p2HealthFill" style="width: 100%"></div></div>
+        <div class="playerLabel" id="p1Label">DUELIST 1</div>
+        <div class="playerLabel" id="p2Label">DUELIST 2</div>
+        <div id="reloadIndicators">
+            <div class="reloadBar" id="p1Reload"><div class="progress" id="p1ReloadProgress"></div></div>
+            <div class="reloadBar" id="p2Reload"><div class="progress" id="p2ReloadProgress"></div></div>
+        </div>
+        <div id="gamepadWarning">⚠ CONNECT GAMEPAD FOR PLAYER 2</div>
+        <div class="weaponStatus" id="p1Weapon">READY</div>
+        <div class="weaponStatus" id="p2Weapon">READY</div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

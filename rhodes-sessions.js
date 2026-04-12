@@ -92,7 +92,7 @@ window.installRhodesSessionUi = function installRhodesSessionUi(deps) {
             if (isSplit) {
                 const splitGroupId = String(s.split_group_id || '').trim();
                 const created = (s.created_at || s.updated_at || '').substring(0, 16);
-                const userPrefix = s.session_id.replace(/split-\d+-.*/, 'split').replace(/_[a-f0-9]{8}$/, '');
+                const userPrefix = s.session_id.replace(/-p\d+$/, '').replace(/split-\d+-.*/, 'split').replace(/_[a-f0-9]{8}$/, '');
                 const fallbackKey = userPrefix + '_' + created;
                 const groupKey = splitGroupId ? ('group_' + splitGroupId) : fallbackKey;
                 s.__splitFallbackKey = fallbackKey;
@@ -127,7 +127,7 @@ window.installRhodesSessionUi = function installRhodesSessionUi(deps) {
         function buildBestSplitPaneMap(group) {
             const paneBest = {};
             (group || []).forEach(function(gs) {
-                const m = gs.session_id && gs.session_id.match(/split-(\d+)/);
+                const m = gs.session_id && (gs.session_id.match(/-p(\d+)$/) || gs.session_id.match(/split-(\d+)/));
                 if (!m) return;
                 const paneNum = parseInt(m[1], 10);
                 const prev = paneBest[paneNum];
@@ -214,7 +214,7 @@ window.installRhodesSessionUi = function installRhodesSessionUi(deps) {
                 detailSessions.forEach(function(s) {
                     var title = withSessionNote((s.title || '').trim() || s.session_id || 'Session', s.session_note);
                     var count = getSplitMessageCount(s);
-                    var paneMatch = s.session_id.match(/split-(\d+)/);
+                    var paneMatch = s.session_id.match(/-p(\d+)$/) || s.session_id.match(/split-(\d+)/);
                     var paneLabel = paneMatch ? 'Pane ' + paneMatch[1] : '';
                     html += '<div class="session-item" style="cursor:pointer;" onclick="loadSession(\'' + s.session_id + '\', event)">';
                     html += '<div class="session-preview">' + (paneLabel ? '<span style="color:var(--cyan);font-size:10px;margin-right:6px;">' + paneLabel + '</span>' : '') + escHtml(title) + '</div>';

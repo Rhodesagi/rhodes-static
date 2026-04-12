@@ -1,0 +1,219 @@
+import * as THREE from 'three';
+import { Musket } from './musket.js';
+
+export class Player {
+    constructor(options) {
+        this.id = options.id;
+        this.color = options.color;
+        this.inputConfig = options.inputConfig;
+        this.scene = options.scene;
+        this.audio = options.audio;
+        
+        this.health = 100;
+        this.maxHealth = 100;
+        this.speed = 3;
+        this.lookSensitivity = 0.002;
+        
+        // Position and rotation
+        this.position = options.position.clone();
+        this.yaw = this.id === 1 ? 0 : Math.PI;
+        this.pitch = 0;
+        
+        // Camera setup
+        this.camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        this.camera.position.copy(this.position);
+        
+        // Weapon
+        this.musket = new Musket(this.scene, this.audio, this.color);
+        this.musket.attachToCamera(this.camera);
+        
+        // Aiming state
+        this.isAiming = false;
+        this.aimProgress = 0; // 0 = hip, 1 = iron sights
+        
+        // Hitbox
+        this.hitboxRadius = 0.3;
+        this.hitboxHeight = 1.8;
+        
+        // Last shot time for click detection
+        this.lastFireState = false;
+    }
+    
+    update(delta, input, allPlayers) {
+        const playerInput = input.getPlayerInput(this.id);
+        
+        // Movement
+        this.updateMovement(playerInput.movement, delta);
+        
+        // Looking/Aiming
+        this.updateLook(playerInput.look, delta);
+        
+        // Aiming down sights
+        this.updateAiming(playerInput.aim, delta);
+        
+        // Weapon update (reload animation, etc)
+        this.musket.update(delta, this.isAiming);
+        
+        // Firing - detect click/press
+        const firePressed = playerInput.fire;
+        const fireJustPressed = firePressed && !this.lastFireState;
+        this.lastFireState = firePressed;
+        
+        if (fireJustPressed && this.isAiming) {
+            this.fire(allPlayers);
+        }
+        
+        // Update camera position
+        this.camera.position.copy(this.position);
+        this.camera.rotation.order = 'YXZ';
+        this.camera.rotation.y = this.yaw;
+        this.camera.rotation.x = this.pitch;
+    }
+    
+    updateMovement(movement, delta) {
+        const forward = movement.forward;
+        const strafe = movement.strafe;
+        
+        if (forward === 0 && strafe === 0) return;
+        
+        // Calculate movement direction based on yaw
+        const moveDir = new THREE.Vector3();
+        
+        if (forward !== 0) {
+            moveDir.x += Math.sin(this.yaw) * forward;
+            moveDir.z += Math.cos(this.yaw) * forward;
+        }
+        
+        if (strafe !== 0) {
+            moveDir.x += Math.cos(this.yaw) * strafe;
+            moveDir.z -= Math.sin(this.yaw) * strafe;
+        }
+        
+        moveDir.normalize().multiplyScalar(this.speed * delta);
+        
+        this.position.add(moveDir);
+        
+        // Simple ground clamping
+        this.position.y = 1.6;
+        
+        // Bounds checking
+        this.position.x = Math.max(-45, Math.min(45, this.position.x));
+        this.position.z = Math.max(-45, Math.min(45, this.position.z));
+    }
+    
+    updateLook(look, delta) {
+        // Apply look input
+        this.yaw -= look.dx * this.lookSensitivity;
+        this.pitch -= look.dy * this.lookSensitivity;
+        
+        // Clamp pitch
+        this.pitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, this.pitch));
+    }
+    
+    updateAiming(aimInput, delta) {
+        const aimSpeed = 3;
+        
+        if (aimInput) {
+            this.isAiming = true;
+            this.aimProgress = Math.min(1, this.aimProgress + aimSpeed * delta);
+        } else {
+            this.isAiming = false;
+            this.aimProgress = Math.max(0, this.aimProgress - aimSpeed * delta);
+        }
+        
+        // Update weapon position based on aim
+        this.musket.updateAimPosition(this.aimProgress);
+    }
+    
+    fire(allPlayers) {
+        const result = this.musket.fire();
+        if (!result) return; // Couldn't fire (not ready, reloading, etc)
+        
+        // Raycast from iron sights
+        const rayOrigin = result.rayOrigin;
+        const rayDirection = result.rayDirection;
+        
+        // Check hits against other players
+        const hit = this.checkHit(rayOrigin, rayDirection, allPlayers);
+        
+        if (hit) {
+            hit.player.takeDamage(50, this);
+        }
+        
+        // Visual effect at hit point
+        const hitPoint = hit ? hit.point : rayOrigin.clone().add(rayDirection.clone().multiplyScalar(100));
+        this.musket.spawnSmoke(hitPoint);
+    }
+    
+    checkHit(origin, direction, allPlayers) {
+        let closestHit = null;
+        let closestDistance = Infinity;
+        
+        for (const player of allPlayers) {
+            if (player === this) continue;
+            
+            // Simple capsule hit detection
+            const hit = this.intersectCapsule(origin, direction, player.position, this.hitboxRadius, this.hitboxHeight);
+            
+            if (hit && hit.distance < closestDistance) {
+                closestDistance = hit.distance;
+                closestHit = { player, point: hit.point };
+            }
+        }
+        
+        return closestHit;
+    }
+    
+    intersectCapsule(rayOrigin, rayDir, capsuleCenter, radius, height) {
+        // Simplified capsule-ray intersection
+        const halfHeight = height / 2;
+        const capsuleTop = capsuleCenter.clone().add(new THREE.Vector3(0, halfHeight, 0));
+        const capsuleBottom = capsuleCenter.clone().sub(new THREE.Vector3(0, halfHeight, 0));
+        
+        // Check cylinder part
+        const toOrigin = new THREE.Vector3().subVectors(rayOrigin, capsuleCenter);
+        
+        // Simple sphere approximation for hit detection
+        const sphereCenter = capsuleCenter.clone().add(new THREE.Vector3(0, 0.9, 0));
+        const sphereRadius = radius + 0.3;
+        
+        const toSphere = new THREE.Vector3().subVectors(rayOrigin, sphereCenter);
+        const b = toSphere.dot(rayDir);
+        const c = toSphere.dot(toSphere) - sphereRadius * sphereRadius;
+        
+        if (c > 0 && b > 0) return null;
+        
+        const discriminant = b * b - c;
+        if (discriminant < 0) return null;
+        
+        const distance = -b - Math.sqrt(discriminant);
+        if (distance < 0) return null;
+        
+        const hitPoint = rayOrigin.clone().add(rayDir.clone().multiplyScalar(distance));
+        return { distance, point: hitPoint };
+    }
+    
+    takeDamage(amount, fromPlayer) {
+        this.health = Math.max(0, this.health - amount);
+        
+        if (this.health <= 0) {
+            this.respawn();
+        }
+    }
+    
+    respawn() {
+        this.health = this.maxHealth;
+        
+        // Random respawn position
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 20 + Math.random() * 20;
+        this.position.set(
+            Math.cos(angle) * distance,
+            1.6,
+            Math.sin(angle) * distance
+        );
+        
+        this.yaw = this.id === 1 ? 0 : Math.PI;
+        this.pitch = 0;
+    }
+}

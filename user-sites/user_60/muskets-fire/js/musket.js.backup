@@ -1,0 +1,377 @@
+import * as THREE from 'three';
+
+export class Musket {
+    constructor(scene, audio, color) {
+        this.scene = scene;
+        this.audio = audio;
+        this.playerColor = color;
+        
+        // Reload state machine
+        this.reloadState = 'READY';
+        this.reloadTimer = 0;
+        this.reloadStageDuration = 0;
+        this.reloadProgress = 0;
+        
+        // State constants with realistic timings (18 seconds total)
+        this.STATE_TIMINGS = {
+            'HALF_COCK': 0.5,
+            'POUR_POWDER': 2.0,
+            'INSERT_BALL': 2.0,
+            'RAMROD_DOWN': 3.0,
+            'RAMROD_OUT': 1.0,
+            'PRIME_PAN': 2.5,
+            'FULL_COCK': 0.5,
+            'READY': 0
+        };
+        
+        this.animationTime = 0;
+        this.weaponGroup = new THREE.Group();
+        
+        this.createMesh();
+        this.createSights();
+    }
+    
+    createMesh() {
+        // Musket stock (wood)
+        const stockGeo = new THREE.BoxGeometry(0.08, 0.12, 0.7);
+        const stockMat = new THREE.MeshStandardMaterial({ color: 0x5C3A21, roughness: 0.9 });
+        this.stock = new THREE.Mesh(stockGeo, stockMat);
+        this.stock.position.z = -0.2;
+        this.weaponGroup.add(this.stock);
+        
+        // Barrel (metal)
+        const barrelGeo = new THREE.CylinderGeometry(0.015, 0.02, 0.9, 8);
+        const barrelMat = new THREE.MeshStandardMaterial({ 
+            color: 0x2a2a2a, 
+            metalness: 0.8, 
+            roughness: 0.3 
+        });
+        this.barrel = new THREE.Mesh(barrelGeo, barrelMat);
+        this.barrel.rotation.x = Math.PI / 2;
+        this.barrel.position.set(0, 0.08, 0.3);
+        this.weaponGroup.add(this.barrel);
+        
+        // Barrel bands
+        for (let i = 0; i < 3; i++) {
+            const bandGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.02, 8);
+            const band = new THREE.Mesh(bandGeo, barrelMat);
+            band.rotation.x = Math.PI / 2;
+            band.position.set(0, 0.08, 0.1 + i * 0.25);
+            this.weaponGroup.add(band);
+        }
+        
+        // Lock mechanism (flintlock)
+        const lockGeo = new THREE.BoxGeometry(0.04, 0.06, 0.08);
+        const lockMat = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.7 });
+        this.lock = new THREE.Mesh(lockGeo, lockMat);
+        this.lock.position.set(0.04, 0.08, 0);
+        this.weaponGroup.add(this.lock);
+        
+        // Hammer/cock
+        const hammerGeo = new THREE.BoxGeometry(0.02, 0.08, 0.03);
+        this.hammer = new THREE.Mesh(hammerGeo, lockMat);
+        this.hammer.position.set(0.03, 0.15, 0);
+        this.hammerPivot = new THREE.Group();
+        this.hammerPivot.position.set(0.03, 0.1, 0);
+        this.hammer.position.set(0, 0.05, 0);
+        this.hammerPivot.add(this.hammer);
+        this.weaponGroup.add(this.hammerPivot);
+        
+        // Trigger guard
+        const triggerGuardGeo = new THREE.TorusGeometry(0.03, 0.005, 4, 8, Math.PI);
+        const triggerGuard = new THREE.Mesh(triggerGuardGeo, lockMat);
+        triggerGuard.position.set(0, 0.02, -0.15);
+        triggerGuard.rotation.x = Math.PI / 2;
+        this.weaponGroup.add(triggerGuard);
+        
+        // Trigger
+        const triggerGeo = new THREE.BoxGeometry(0.005, 0.02, 0.01);
+        this.trigger = new THREE.Mesh(triggerGeo, lockMat);
+        this.trigger.position.set(0, 0.02, -0.12);
+        this.weaponGroup.add(this.trigger);
+        
+        // Ramrod (stored under barrel)
+        const ramrodGeo = new THREE.CylinderGeometry(0.004, 0.004, 0.8, 6);
+        const ramrodMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.5 });
+        this.ramrod = new THREE.Mesh(ramrodGeo, ramrodMat);
+        this.ramrod.rotation.x = Math.PI / 2;
+        this.ramrod.position.set(0, -0.02, 0.2);
+        this.weaponGroup.add(this.ramrod);
+        
+        // Ramrod handle
+        const ramrodHandleGeo = new THREE.SphereGeometry(0.01, 6, 6);
+        this.ramrodHandle = new THREE.Mesh(ramrodHandleGeo, new THREE.MeshStandardMaterial({ color: 0x5C3A21 }));
+        this.ramrodHandle.position.set(0, -0.02, 0.6);
+        this.weaponGroup.add(this.ramrodHandle);
+        
+        // Set initial position (hip position)
+        this.weaponGroup.position.set(0.3, -0.4, 0.5);
+        this.weaponGroup.rotation.y = -0.2;
+    }
+    
+    createSights() {
+        // Rear sight (notch)
+        const rearSightGeo = new THREE.BoxGeometry(0.01, 0.015, 0.005);
+        const sightMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+        this.rearSight = new THREE.Mesh(rearSightGeo, sightMat);
+        this.rearSight.position.set(0, 0.115, -0.1);
+        this.barrel.add(this.rearSight);
+        
+        // Front sight post
+        const frontSightGeo = new THREE.CylinderGeometry(0.003, 0.003, 0.02, 4);
+        this.frontSight = new THREE.Mesh(frontSightGeo, sightMat);
+        this.frontSight.position.set(0, 0.05, 0.42);
+        this.barrel.add(this.frontSight);
+    }
+    
+    attachToCamera(camera) {
+        camera.add(this.weaponGroup);
+        this.camera = camera;
+    }
+    
+    update(delta, isAiming) {
+        this.animationTime += delta;
+        
+        // Handle reload state machine
+        if (this.reloadState !== 'READY') {
+            this.reloadTimer += delta;
+            this.reloadProgress = this.reloadTimer / this.reloadStageDuration;
+            
+            if (this.reloadProgress >= 1) {
+                this.advanceReloadState();
+            }
+            
+            this.updateReloadAnimation(delta);
+        }
+    }
+    
+    advanceReloadState() {
+        const stateOrder = [
+            'HALF_COCK',
+            'POUR_POWDER', 
+            'INSERT_BALL',
+            'RAMROD_DOWN',
+            'RAMROD_OUT',
+            'PRIME_PAN',
+            'FULL_COCK',
+            'READY'
+        ];
+        
+        const currentIndex = stateOrder.indexOf(this.reloadState);
+        if (currentIndex < stateOrder.length - 1) {
+            this.reloadState = stateOrder[currentIndex + 1];
+            this.reloadTimer = 0;
+            this.reloadStageDuration = this.STATE_TIMINGS[this.reloadState];
+        }
+    }
+    
+    updateReloadAnimation(delta) {
+        // Animate based on current reload state
+        switch (this.reloadState) {
+            case 'HALF_COCK':
+                // Hammer moves to half-cock position (middle)
+                const halfCockRot = Math.min(1, this.reloadProgress) * 0.3;
+                this.hammerPivot.rotation.z = halfCockRot;
+                break;
+                
+            case 'POUR_POWDER':
+                // Weapon tilts up slightly as if pouring
+                const pourTilt = Math.sin(this.reloadProgress * Math.PI) * 0.2;
+                this.weaponGroup.rotation.x = pourTilt;
+                break;
+                
+            case 'INSERT_BALL':
+                // Ramrod pulled out partially then ball inserted (simulated)
+                const rodPull = Math.sin(this.reloadProgress * Math.PI) * 0.3;
+                this.ramrod.position.z = 0.2 + rodPull;
+                this.ramrodHandle.position.z = 0.6 + rodPull;
+                this.weaponGroup.rotation.x = 0;
+                break;
+                
+            case 'RAMROD_DOWN':
+                // Ramrod extended fully and pushed down multiple strokes
+                const strokeCount = 3;
+                const strokePhase = (this.reloadProgress * strokeCount) % 1;
+                const rodExtend = Math.sin(strokePhase * Math.PI) * 0.4;
+                this.ramrod.position.z = 0.2 + rodExtend;
+                this.ramrodHandle.position.z = 0.6 + rodExtend;
+                // Muzzle tilts up slightly during ramming
+                this.weaponGroup.rotation.x = Math.sin(strokePhase * Math.PI) * 0.1;
+                break;
+                
+            case 'RAMROD_OUT':
+                // Ramrod returned to storage
+                const rodReturn = (1 - this.reloadProgress) * 0.4;
+                this.ramrod.position.z = 0.2 + rodReturn;
+                this.ramrodHandle.position.z = 0.6 + rodReturn;
+                this.weaponGroup.rotation.x = 0;
+                break;
+                
+            case 'PRIME_PAN':
+                // Weapon tilts for priming
+                const primeTilt = Math.sin(this.reloadProgress * Math.PI) * 0.15;
+                this.weaponGroup.rotation.x = primeTilt;
+                break;
+                
+            case 'FULL_COCK':
+                // Hammer moves to full cock (back)
+                const fullCockProgress = Math.min(1, this.reloadProgress);
+                this.hammerPivot.rotation.z = 0.3 + fullCockProgress * 0.5;
+                this.weaponGroup.rotation.x = 0;
+                break;
+        }
+    }
+    
+    updateAimPosition(progress) {
+        // Interpolate between hip position and iron sight position
+        const hipPos = new THREE.Vector3(0.3, -0.4, 0.5);
+        const hipRot = new THREE.Euler(0, -0.2, 0);
+        
+        // Iron sight position - shouldered, aligned with eye
+        const aimPos = new THREE.Vector3(0, -0.15, 0.25);
+        const aimRot = new THREE.Euler(0, 0, 0);
+        
+        this.weaponGroup.position.lerpVectors(hipPos, aimPos, progress);
+        this.weaponGroup.rotation.x = hipRot.x + (aimRot.x - hipRot.x) * progress;
+        this.weaponGroup.rotation.y = hipRot.y + (aimRot.y - hipRot.y) * progress;
+        this.weaponGroup.rotation.z = hipRot.z + (aimRot.z - hipRot.z) * progress;
+    }
+    
+    fire() {
+        if (this.reloadState !== 'READY') return null;
+        if (this.hammerPivot.rotation.z < 0.5) return null; // Not fully cocked
+        
+        // Trigger animation
+        this.trigger.rotation.x = 0.3;
+        setTimeout(() => { this.trigger.rotation.x = 0; }, 100);
+        
+        // Hammer falls
+        this.hammerPivot.rotation.z = 0;
+        
+        // Muzzle flash effect
+        this.createMuzzleFlash();
+        
+        // Sound
+        this.audio.playMusketFire();
+        
+        // Calculate raycast from sights
+        this.weaponGroup.updateMatrixWorld();
+        this.barrel.updateMatrixWorld();
+        this.rearSight.updateMatrixWorld();
+        this.frontSight.updateMatrixWorld();
+        
+        const rearPos = new THREE.Vector3();
+        this.rearSight.getWorldPosition(rearPos);
+        
+        const frontPos = new THREE.Vector3();
+        this.frontSight.getWorldPosition(frontPos);
+        
+        const direction = new THREE.Vector3().subVectors(frontPos, rearPos).normalize();
+        
+        // Add slight random spread for realism
+        direction.x += (Math.random() - 0.5) * 0.005;
+        direction.y += (Math.random() - 0.5) * 0.005;
+        direction.z += (Math.random() - 0.5) * 0.005;
+        direction.normalize();
+        
+        // Start reload automatically after firing
+        this.startReload();
+        
+        return {
+            rayOrigin: rearPos,
+            rayDirection: direction
+        };
+    }
+    
+    startReload() {
+        this.reloadState = 'HALF_COCK';
+        this.reloadTimer = 0;
+        this.reloadStageDuration = this.STATE_TIMINGS.HALF_COCK;
+        this.audio.playReloadStart();
+    }
+    
+    getReloadStageName() {
+        if (this.reloadState === 'READY') return '';
+        
+        const displayNames = {
+            'HALF_COCK': 'Half-cocking...',
+            'POUR_POWDER': 'Pouring powder...',
+            'INSERT_BALL': 'Loading ball...',
+            'RAMROD_DOWN': 'Ramming...',
+            'RAMROD_OUT': 'Returning ramrod...',
+            'PRIME_PAN': 'Priming pan...',
+            'FULL_COCK': 'Full cock...'
+        };
+        
+        return displayNames[this.reloadState] || this.reloadState;
+    }
+    
+    createMuzzleFlash() {
+        // Flash geometry
+        const flashGeo = new THREE.ConeGeometry(0.03, 0.2, 8);
+        const flashMat = new THREE.MeshBasicMaterial({ 
+            color: 0xFFAA00, 
+            transparent: true,
+            opacity: 0.8
+        });
+        const flash = new THREE.Mesh(flashGeo, flashMat);
+        
+        flash.position.set(0, 0, 0.5);
+        flash.rotation.x = Math.PI / 2;
+        this.barrel.add(flash);
+        
+        // Smoke
+        this.spawnSmoke(new THREE.Vector3(0, 0, 0.6).applyMatrix4(this.barrel.matrixWorld));
+        
+        // Remove flash after short delay
+        setTimeout(() => {
+            this.barrel.remove(flash);
+        }, 50);
+    }
+    
+    spawnSmoke(position) {
+        const particleCount = 15;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const size = 0.05 + Math.random() * 0.1;
+            const geo = new THREE.SphereGeometry(size, 6, 6);
+            const mat = new THREE.MeshBasicMaterial({
+                color: 0x888888,
+                transparent: true,
+                opacity: 0.4
+            });
+            const particle = new THREE.Mesh(geo, mat);
+            
+            particle.position.copy(position);
+            particle.position.x += (Math.random() - 0.5) * 0.2;
+            particle.position.y += (Math.random() - 0.5) * 0.2;
+            particle.position.z += (Math.random() - 0.5) * 0.2;
+            
+            this.scene.add(particle);
+            
+            // Animate and remove
+            const velocity = new THREE.Vector3(
+                (Math.random() - 0.5) * 0.5,
+                Math.random() * 0.5,
+                (Math.random() - 0.5) * 0.5
+            );
+            
+            let age = 0;
+            const animate = () => {
+                age += 0.016;
+                particle.position.add(velocity.clone().multiplyScalar(0.016));
+                velocity.y += 0.01; // Rise
+                particle.material.opacity = Math.max(0, 0.4 - age * 0.3);
+                
+                if (age < 1.5) {
+                    requestAnimationFrame(animate);
+                } else {
+                    this.scene.remove(particle);
+                    particle.geometry.dispose();
+                    particle.material.dispose();
+                }
+            };
+            animate();
+        }
+    }
+}

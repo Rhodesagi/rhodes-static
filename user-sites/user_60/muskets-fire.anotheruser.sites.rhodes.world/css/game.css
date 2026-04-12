@@ -1,0 +1,167 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #000;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+    color: #fff;
+}
+
+#game-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+.player-viewport {
+    flex: 1;
+    position: relative;
+    border: 2px solid #333;
+    overflow: hidden;
+}
+
+#viewport-p1 {
+    border-right: 4px solid #444;
+}
+
+#viewport-p2 {
+    border-left: 4px solid #444;
+}
+
+.player-label {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 2px 2px 4px #000;
+    z-index: 100;
+    background: rgba(0,0,0,0.5);
+    padding: 5px 10px;
+    border-radius: 3px;
+}
+
+#viewport-p1 .player-label {
+    border-left: 3px solid #00ff00;
+}
+
+#viewport-p2 .player-label {
+    border-left: 3px solid #ff0000;
+}
+
+.controls-hint {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    font-size: 11px;
+    color: #aaa;
+    background: rgba(0,0,0,0.7);
+    padding: 8px;
+    border-radius: 3px;
+    z-index: 100;
+    max-width: 200px;
+}
+
+.iron-sight-hint {
+    position: absolute;
+    top: 50%;
+    font-size: 10px;
+    color: rgba(255,255,255,0.3);
+    background: rgba(0,0,0,0.3);
+    padding: 2px 6px;
+    border-radius: 2px;
+    z-index: 99;
+    display: none;
+}
+
+#sight-p1 {
+    left: 25%;
+    transform: translateX(-50%);
+}
+
+#sight-p2 {
+    right: 25%;
+    transform: translateX(50%);
+}
+
+.iron-sight-hint.active {
+    display: block;
+}
+
+#game-ui {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    pointer-events: none;
+    z-index: 200;
+}
+
+.health-bar {
+    position: absolute;
+    top: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    background: rgba(0,0,0,0.6);
+    padding: 8px 15px;
+    border-radius: 5px;
+}
+
+#health-p1 {
+    left: 10px;
+    color: #00ff00;
+    border: 2px solid #00ff00;
+}
+
+#health-p2 {
+    right: 10px;
+    color: #ff4444;
+    border: 2px solid #ff4444;
+}
+
+#reload-status {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    color: #ffff00;
+    background: rgba(0,0,0,0.8);
+    padding: 10px 20px;
+    border-radius: 5px;
+    display: none;
+}
+
+#reload-status.active {
+    display: block;
+}
+
+.canvas-3d {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Damage flash overlay */
+.damage-flash {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,0,0,0.3);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s;
+    z-index: 150;
+}
+
+.damage-flash.active {
+    opacity: 1;
+}
