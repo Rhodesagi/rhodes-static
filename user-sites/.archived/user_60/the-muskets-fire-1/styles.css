@@ -1,0 +1,113 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    overflow: hidden;
+    background: #000;
+    font-family: 'Georgia', serif;
+}
+
+#game-container {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+#game-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+#instructions {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(20, 15, 10, 0.95);
+    border: 3px solid #8B4513;
+    padding: 40px;
+    color: #D4A574;
+    text-align: center;
+    min-width: 600px;
+}
+
+#instructions h1 {
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    color: #FFD700;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    letter-spacing: 4px;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-around;
+    margin: 30px 0;
+}
+
+.player-controls {
+    padding: 20px;
+    border: 1px solid #5C4033;
+    background: rgba(0,0,0,0.3);
+}
+
+.player-controls h3 {
+    color: #CD853F;
+    margin-bottom: 15px;
+}
+
+.player-controls p {
+    margin: 8px 0;
+    font-size: 0.95em;
+}
+
+.hint {
+    font-style: italic;
+    color: #A0522D;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+#reload-hints {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+#reload-hints.hidden {
+    display: none;
+}
+
+.reload-status {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    color: #D4A574;
+    padding: 10px 20px;
+    font-size: 1.2em;
+    border: 1px solid #8B4513;
+}
+
+#p1-reload {
+    top: 20px;
+}
+
+#p2-reload {
+    bottom: 20px;
+}
+
+.hidden {
+    display: none !important;
+}

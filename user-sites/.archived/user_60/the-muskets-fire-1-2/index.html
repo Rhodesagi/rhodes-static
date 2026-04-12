@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Muskets Fire - 2 Player Duel</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="ui-layer">
+            <div id="instructions">
+                <h1>THE MUSKETS FIRE</h1>
+                <div class="controls">
+                    <div class="player-control">
+                        <h3>PLAYER 1 (Top Screen)</h3>
+                        <p>WASD - Move</p>
+                        <p>Mouse - Aim</p>
+                        <p>Click - Fire / Cock</p>
+                        <p>R - Start Reload Sequence</p>
+                        <p>Hold R - Check Pan (see if loaded)</p>
+                        <p>F - Iron Sights</p>
+                    </div>
+                    <div class="player-control">
+                        <h3>PLAYER 2 (Bottom Screen)</h3>
+                        <p>Gamepad Left Stick - Move</p>
+                        <p>Gamepad Right Stick - Aim</p>
+                        <p>RT (R2) - Fire / Cock</p>
+                        <p>RB (R1) - Start Reload</p>
+                        <p>Hold RB - Check Pan</p>
+                        <p>LT (L2) - Iron Sights</p>
+                    </div>
+                </div>
+                <p class="note">NO HUD. Check your weapon manually. Watch for smoke. Mind the drop.</p>
+                <button id="startBtn">CLICK TO START</button>
+            </div>
+            <div id="pause-message" class="hidden">PAUSED - Click to Resume</div>
+        </div>
+    </div>
+
+    <!-- Three.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Game modules -->
+    <script src="js/environment.js"></script>
+    <script src="js/projectile.js"></script>
+    <script src="js/musket.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

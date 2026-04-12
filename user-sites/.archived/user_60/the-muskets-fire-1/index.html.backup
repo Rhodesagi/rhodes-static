@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Muskets Fire - 2 Player Flintlock FPS</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        <div id="instructions">
+            <h1>THE MUSKETS FIRE</h1>
+            <div class="controls">
+                <div class="player-controls">
+                    <h3>Player 1 (Top Screen)</h3>
+                    <p>WASD - Move</p>
+                    <p>Mouse - Aim</p>
+                    <p>LMB - Fire / Advance Reload</p>
+                    <p>RMB - Iron Sights</p>
+                </div>
+                <div class="player-controls">
+                    <h3>Player 2 (Bottom Screen)</h3>
+                    <p>Arrow Keys - Move</p>
+                    <p>Numpad 8456 - Aim</p>
+                    <p>Enter - Fire / Advance Reload</p>
+                    <p>RShift - Iron Sights</p>
+                </div>
+            </div>
+            <p class="hint">Click anywhere to start</p>
+        </div>
+        <div id="reload-hints" class="hidden">
+            <div id="p1-reload" class="reload-status"></div>
+            <div id="p2-reload" class="reload-status"></div>
+        </div>
+    </div>
+
+    <!-- Three.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Game modules -->
+    <script src="input.js"></script>
+    <script src="audio.js"></script>
+    <script src="projectile.js"></script>
+    <script src="musket.js"></script>
+    <script src="player.js"></script>
+    <script src="level.js"></script>
+    <script src="renderer.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

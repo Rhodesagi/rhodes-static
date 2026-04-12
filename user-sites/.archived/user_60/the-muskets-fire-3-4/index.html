@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Muskets Fire 3</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Georgia', serif;
+        }
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .player-ui {
+            position: absolute;
+            width: 50%;
+            height: 100%;
+            pointer-events: auto;
+        }
+        #p1-ui { left: 0; border-right: 2px solid rgba(255,200,100,0.3); }
+        #p2-ui { right: 0; border-left: 2px solid rgba(100,200,255,0.3); }
+        .center-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: rgba(255,255,255,0.5);
+            transform: translateX(-50%);
+        }
+        .status {
+            position: absolute;
+            bottom: 20px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.9);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.6);
+            padding: 10px 15px;
+            border-radius: 5px;
+        }
+        #p1-status { left: 20px; }
+        #p2-status { right: 20px; }
+        .reload-bar {
+            position: absolute;
+            bottom: 60px;
+            width: 200px;
+            height: 6px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        #p1-reload { left: 20px; }
+        #p2-reload { right: 20px; }
+        .reload-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #c4a35a, #f0d78c, #c4a35a);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        .reload-text {
+            position: absolute;
+            bottom: 70px;
+            font-size: 12px;
+            color: rgba(255,220,150,0.9);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.9);
+        }
+        #p1-reload-text { left: 20px; }
+        #p2-reload-text { right: 20px; text-align: right; }
+        .ammo-count {
+            position: absolute;
+            top: 20px;
+            font-size: 24px;
+            color: rgba(255,255,255,0.95);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            font-weight: bold;
+        }
+        #p1-ammo { left: 20px; }
+        #p2-ammo { right: 20px; }
+        .hit-indicator {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 32px;
+            font-weight: bold;
+            color: #ff4444;
+            text-shadow: 0 0 10px rgba(255,0,0,0.8);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        #p1-hit { right: 30%; }
+        #p2-hit { left: 30%; }
+        .hit-indicator.show { opacity: 1; }
+        
+        .controls-hint {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
+            color: rgba(200,200,200,0.7);
+            text-align: center;
+            width: 40%;
+        }
+        #p1-hint { left: 5%; }
+        #p2-hint { right: 5%; }
+        
+        .iron-sight-hint {
+            position: absolute;
+            top: 60%;
+            font-size: 10px;
+            color: rgba(255,200,100,0.8);
+            text-align: center;
+            width: 100%;
+        }
+        
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            z-index: 100;
+        }
+        #start-screen h1 {
+            font-size: 48px;
+            color: #c4a35a;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+        }
+        #start-screen p {
+            font-size: 16px;
+            color: #ccc;
+            margin: 10px 0;
+            max-width: 600px;
+            text-align: center;
+            line-height: 1.5;
+        }
+        #start-btn {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 20px;
+            background: linear-gradient(180deg, #c4a35a, #8b6914);
+            border: 2px solid #a08040;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+            font-family: Georgia, serif;
+        }
+        #start-btn:hover {
+            background: linear-gradient(180deg, #d4b36a, #9b7924);
+        }
+        
+        .player-label {
+            position: absolute;
+            top: 20px;
+            font-size: 18px;
+            color: rgba(255,200,100,0.6);
+        }
+        #p1-label { left: 50%; transform: translateX(-150%); }
+        #p2-label { right: 50%; transform: translateX(150%); }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui">
+        <div class="center-line"></div>
+        
+        <div id="p1-ui" class="player-ui">
+            <div class="player-label" id="p1-label">▸ PLAYER 1</div>
+            <div class="ammo-count" id="p1-ammo">READY</div>
+            <div class="controls-hint" id="p1-hint">
+                Click here to AIM<br>
+                WASD to move • Mouse to look<br>
+                CLICK to fire (iron sights only)
+            </div>
+            <div class="reload-bar" id="p1-reload"><div class="reload-progress" id="p1-progress"></div></div>
+            <div class="reload-text" id="p1-reload-text"></div>
+            <div class="status" id="p1-status">HEALTH: 100%</div>
+            <div class="hit-indicator" id="p1-hit">HIT!</div>
+        </div>
+        
+        <div id="p2-ui" class="player-ui">
+            <div class="player-label" id="p2-label">◂ PLAYER 2</div>
+            <div class="ammo-count" id="p2-ammo">READY</div>
+            <div class="controls-hint" id="p2-hint">
+                Click here to AIM<br>
+                IJKL to move • Arrows to look<br>
+                ENTER to fire (iron sights only)
+            </div>
+            <div class="reload-bar" id="p2-reload"><div class="reload-progress" id="p2-progress"></div></div>
+            <div class="reload-text" id="p2-reload-text"></div>
+            <div class="status" id="p2-status">HEALTH: 100%</div>
+            <div class="hit-indicator" id="p2-hit">HIT!</div>
+        </div>
+    </div>
+    
+    <div id="start-screen">
+        <h1>THE MUSKETS FIRE 3</h1>
+        <p>A duel of marksmanship. Two players. One computer. Flintlock muskets.</p>
+        <p><strong>NO CROSSHAIRS.</strong> Use iron sights only. Align the front post in the rear notch.</p>
+        <p>Realistic reloading: Powder → Patch → Ball → Ram → Prime → Fire. ~20 seconds.</p>
+        <p style="color:#c4a35a;">Player 1: Mouse + WASD • Player 2: Arrow keys + IJKL</p>
+        <button id="start-btn">DUEL!</button>
+    </div>
+
+    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+    <script src="js/musket.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/ballistics.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
