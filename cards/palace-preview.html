@@ -88,6 +88,45 @@
         color: #00ff9f; font-size: 16px; margin-bottom: 12px;
         letter-spacing: 1px;
     }
+    /* Mobile touch controls */
+    #mobile-controls {
+        display: none;
+        position: absolute; bottom: 0; left: 0; right: 0;
+        height: 200px; z-index: 25;
+        pointer-events: none;
+    }
+    #mobile-joystick {
+        position: absolute; bottom: 30px; left: 40px;
+        width: 120px; height: 120px;
+        border: 2px solid rgba(0,255,159,0.4);
+        border-radius: 50%;
+        background: rgba(0,0,0,0.3);
+        pointer-events: auto; touch-action: none;
+    }
+    #mobile-joystick-knob {
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        background: rgba(0,255,159,0.5);
+        border: 1px solid rgba(0,255,159,0.8);
+    }
+    #mobile-interact-btn {
+        position: absolute; bottom: 50px; right: 40px;
+        width: 64px; height: 64px; border-radius: 50%;
+        background: rgba(0,255,159,0.3); border: 2px solid rgba(0,255,159,0.6);
+        color: #00ff9f; font-size: 12px; font-weight: 600;
+        display: flex; align-items: center; justify-content: center;
+        pointer-events: auto; touch-action: none;
+    }
+    #mobile-walk-toggle {
+        position: absolute; bottom: 140px; right: 40px;
+        width: 52px; height: 52px; border-radius: 50%;
+        background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+        color: #fff; font-size: 18px;
+        display: flex; align-items: center; justify-content: center;
+        pointer-events: auto; touch-action: none;
+    }
 </style>
 </head>
 <body>
@@ -104,6 +143,11 @@
 </div>
 
 <div id="palace-crosshair">+</div>
+<div id="mobile-controls">
+    <div id="mobile-joystick"><div id="mobile-joystick-knob"></div></div>
+    <div id="mobile-interact-btn">USE</div>
+    <div id="mobile-walk-toggle">&#x1f6b6;</div>
+</div>
 <div id="palace-elevator-hint" style="
     position:absolute; bottom:60px; left:50%; transform:translateX(-50%);
     background:rgba(0,0,0,0.75); border:1px solid #00ff9f; border-radius:6px;
@@ -293,8 +337,8 @@ RC.PalaceTraverse = {
 <script src="lib/three-addons/UnrealBloomPass.js"></script>
 <script src="lib/three-addons/SSAOPass.js"></script>
 <script src="js/palace-templates.js?v=4"></script>
-<script src="js/palace-renderer.js?v=8"></script>
-<script src="js/palace-walker.js?v=5"></script>
+<script src="js/palace-renderer.js?v=5"></script>
+<script src="js/palace-walker.js?v=6"></script>
 
 <script>
 (function() {
@@ -484,6 +528,138 @@ RC.PalaceTraverse = {
 
     // Expose loadTemplate globally so the portal handler can teleport from any wing
     window._loadPalaceTemplate = loadTemplate;
+
+    // ================================================================
+    // MOBILE TOUCH CONTROLS
+    // ================================================================
+    const isMobile = PR._mobile || (('ontouchstart' in window) && window.innerWidth < 900);
+    const mobileControls = document.getElementById('mobile-controls');
+    const joystick = document.getElementById('mobile-joystick');
+    const knob = document.getElementById('mobile-joystick-knob');
+    const interactBtn = document.getElementById('mobile-interact-btn');
+    const walkToggle = document.getElementById('mobile-walk-toggle');
+    let mobileWalk = false;
+    let joystickTouch = null;
+    let lookTouch = null;
+    let joyCenter = { x: 0, y: 0 };
+
+    if (isMobile) {
+        mobileControls.style.display = 'block';
+        // Hide desktop walk instructions
+        instructionsEl.style.display = 'none';
+
+        // Walk mode toggle
+        walkToggle.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            mobileWalk = !mobileWalk;
+            walkToggle.style.background = mobileWalk ? 'rgba(0,255,159,0.4)' : 'rgba(255,255,255,0.15)';
+            if (mobileWalk && walkerInited) {
+                // Enter walk mode without pointer lock
+                walkMode = true;
+                crosshairEl.style.display = 'block';
+                const walkerObj = PW.controls.getObject();
+                walkerObj.position.set(spawnPos[0], spawnPos[1], spawnPos[2]);
+            } else {
+                walkMode = false;
+                crosshairEl.style.display = 'none';
+                PW.moveForward = false; PW.moveBackward = false;
+                PW.moveLeft = false; PW.moveRight = false;
+            }
+        });
+
+        // Interact button — triggers F key action
+        interactBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (walkerInited && PW._interact) PW._interact();
+        });
+
+        // Virtual joystick for WASD movement
+        joystick.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const t = e.changedTouches[0];
+            joystickTouch = t.identifier;
+            const rect = joystick.getBoundingClientRect();
+            joyCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            for (const t of e.changedTouches) {
+                if (t.identifier === joystickTouch) {
+                    e.preventDefault();
+                    const dx = t.clientX - joyCenter.x;
+                    const dy = t.clientY - joyCenter.y;
+                    const maxR = 50;
+                    const r = Math.min(maxR, Math.hypot(dx, dy));
+                    const angle = Math.atan2(dy, dx);
+                    const nx = Math.cos(angle) * r;
+                    const ny = Math.sin(angle) * r;
+                    knob.style.transform = `translate(calc(-50% + ${nx}px), calc(-50% + ${ny}px))`;
+                    // Map joystick to walker input
+                    const threshold = 15;
+                    PW.moveForward = dy < -threshold;
+                    PW.moveBackward = dy > threshold;
+                    PW.moveLeft = dx < -threshold;
+                    PW.moveRight = dx > threshold;
+                } else if (t.identifier === lookTouch && mobileWalk) {
+                    // Look: swipe on right side rotates camera
+                    const walkerObj = PW.controls.getObject();
+                    if (walkerObj) {
+                        const dlx = t.clientX - lastLookX;
+                        const dly = t.clientY - lastLookY;
+                        walkerObj.rotation.y -= dlx * 0.003;
+                        // Clamp pitch to avoid flipping
+                        walkerObj.rotation.x = Math.max(-1.2, Math.min(1.2,
+                            walkerObj.rotation.x - dly * 0.003));
+                        lastLookX = t.clientX;
+                        lastLookY = t.clientY;
+                    }
+                }
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', (e) => {
+            for (const t of e.changedTouches) {
+                if (t.identifier === joystickTouch) {
+                    joystickTouch = null;
+                    knob.style.transform = 'translate(-50%, -50%)';
+                    PW.moveForward = false; PW.moveBackward = false;
+                    PW.moveLeft = false; PW.moveRight = false;
+                }
+                if (t.identifier === lookTouch) lookTouch = null;
+            }
+        });
+
+        // Right-side touch for camera look (when in walk mode)
+        let lastLookX = 0, lastLookY = 0;
+        canvas.addEventListener('touchstart', (e) => {
+            for (const t of e.changedTouches) {
+                if (t.clientX > window.innerWidth / 2 && mobileWalk && lookTouch == null) {
+                    lookTouch = t.identifier;
+                    lastLookX = t.clientX;
+                    lastLookY = t.clientY;
+                }
+            }
+        });
+
+        // Override orbit drag for touch (left side = orbit in orbit mode)
+        canvas.addEventListener('touchstart', (e) => {
+            if (mobileWalk) return;
+            const t = e.changedTouches[0];
+            dragging = true;
+            dragStartX = t.clientX;
+            dragStartY = t.clientY;
+            dragAngle = orbitAngle;
+            dragHeight = orbitHeight;
+        });
+        canvas.addEventListener('touchmove', (e) => {
+            if (mobileWalk || !dragging) return;
+            e.preventDefault();
+            const t = e.changedTouches[0];
+            orbitAngle = dragAngle - (t.clientX - dragStartX) * 0.01;
+            orbitHeight = Math.max(2, Math.min(250, dragHeight + (t.clientY - dragStartY) * 0.3));
+        }, { passive: false });
+        canvas.addEventListener('touchend', () => { dragging = false; });
+    }
 
     // Auto-load The Forum hub on arrival
     loadTemplate('forum');

@@ -64,7 +64,7 @@
             RC.toast("Creating palace...");
             const data = RC.PalaceTemplates.generate(templateId);
             const tName = (RC.PalaceTemplates.catalog.find(t => t.id === templateId) || {}).name || "Palace";
-            const res = await RC.api("POST", "/palaces", { name: tName, spawn_point: data.spawn_point });
+            const res = await RC.api("POST", "/palaces", { name: tName, spawn_point: data.meta.spawn_point, settings: { template_id: templateId, v2: true } });
             if (!res || !res.id) { RC.toast("Create failed"); return; }
             await RC.api("PUT", "/palaces/" + res.id + "/bulk", {
                 spawn_point: data.spawn_point,
@@ -120,8 +120,20 @@
             if (!RC.PalaceRenderer.scene) {
                 RC.PalaceRenderer.init("palace-canvas");
             }
-            // Build the scene
-            RC.PalaceRenderer.buildScene(res.surfaces || [], res.connectors || [], res.loci || []);
+            // Build the scene — v2 templates use loadTemplate for PBR/HDRI, v1 uses buildScene
+            var settings = res.palace.settings || {};
+            if (settings.v2 && settings.template_id && RC.PalaceTemplates) {
+                var tmpl = RC.PalaceTemplates.generate(settings.template_id);
+                // Merge DB loci (which may have AI Fill card_ids) into template loci
+                var dbLoci = res.loci || [];
+                if (dbLoci.length > 0) {
+                    // DB loci have card bindings — use them instead of blank template loci
+                    tmpl.loci = dbLoci;
+                }
+                await RC.PalaceRenderer.loadTemplate(tmpl);
+            } else {
+                RC.PalaceRenderer.buildScene(res.surfaces || [], res.connectors || [], res.loci || []);
+            }
 
             // Init walker if not already
             if (!RC.PalaceWalker.controls) {
@@ -197,6 +209,9 @@
             document.getElementById("palaceGenStatus").textContent = lociCount > 0
                 ? ("Palace has " + lociCount + " loci — rebind will slot cards into them.")
                 : "Palace has no loci yet — append will create new ones inside the building.";
+            // Auto-suggest limit based on palace loci count (so v2 palaces with 1800 loci fill properly)
+            var limitEl = document.getElementById("palaceGenLimit");
+            if (limitEl && lociCount > 60) { limitEl.value = Math.min(lociCount, 2000); }
             document.getElementById("palaceGenBtn").disabled = false;
         },
         _cancelGenerate() {
@@ -228,7 +243,14 @@
                 const full = await RC.api("GET", "/palaces/" + this.currentPalace.id);
                 if (full && full.palace) {
                     this.currentPalace = full.palace;
-                    RC.PalaceRenderer.buildScene(full.surfaces || [], full.connectors || [], full.loci || []);
+                    var s2 = (this.currentPalace.settings || {});
+                    if (s2.v2 && s2.template_id && RC.PalaceTemplates) {
+                        var tmpl2 = RC.PalaceTemplates.generate(s2.template_id);
+                        tmpl2.loci = full.loci || [];
+                        await RC.PalaceRenderer.loadTemplate(tmpl2);
+                    } else {
+                        RC.PalaceRenderer.buildScene(full.surfaces || [], full.connectors || [], full.loci || []);
+                    }
                 }
                 setTimeout(() => this._cancelGenerate(), 1500);
                 RC.toast("AI fill complete: " + res.generated + " loci");

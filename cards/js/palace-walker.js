@@ -34,12 +34,15 @@
             camera.rotation.order = 'YXZ';
             this.controls = new THREE.PointerLockControls(camera, domElement);
 
-            // Click to lock pointer
-            domElement.addEventListener('click', () => {
-                if (RC.Palace.mode !== 'build') {
-                    this.controls.lock();
-                }
-            });
+            // Click to lock pointer (desktop only — mobile uses virtual joystick)
+            const isMobileDevice = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            if (!isMobileDevice) {
+                domElement.addEventListener('click', () => {
+                    if (RC.Palace.mode !== 'build') {
+                        this.controls.lock();
+                    }
+                });
+            }
 
             this._onLock = () => {
                 document.getElementById('palace-crosshair').style.display = 'block';
