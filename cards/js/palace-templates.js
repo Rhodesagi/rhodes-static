@@ -1244,7 +1244,19 @@
                   transform: {position:[8,0.08,26], rotation:[0,0,0], scale:[1.5,1.5,1.5]},
                   cast_shadow: true, receive_shadow: true, label: 'Entrance statue E' },
             ],
-            connectors: [],
+            connectors: [
+                // Elevator in the atrium — ground to upper floor
+                {
+                    type: 'elevator', id: 'villa-elevator',
+                    position: [12, 0],
+                    from_point: { position: [12, 0, 0] },
+                    to_point: { position: [12, 6, 0] },
+                    stops: [
+                        { y: 0, label: 'Ground Floor — Atrium' },
+                        { y: 6, label: 'Upper Floor — Cubiculum' },
+                    ],
+                },
+            ],
             loci: [
                 // ============================================================
                 // HAND-PLACED HERO LOCI (distinct-mesh markers). Keep under ~30
@@ -1483,8 +1495,8 @@
         // Interior floor diagonal ~26m across (octagon inscribed circle diameter ~26).
         // Floor y: 0, 6, 12, 18, 24. Each floor is 6m tall. Total tower height 30m + dome.
         // Straight east-west marble stair between each pair of floors (alternating direction).
-        // On every floor, 6 of the 8 walls carry a _shelfGrid(3 rows x 20 cols) of orb loci
-        // = 360 loci/floor x 5 floors = 1800 procedural shelf loci.
+        // On every floor, 6 of the 8 walls carry a _shelfGrid with per-floor grid dimensions
+        // (rows, cols, step, marker all vary by floor — see WALL_CONFIGS).
         // A handful of handcrafted hero loci mark desks, the armillary, the telescope, the
         // return portal, and the central candelabra.
 
@@ -1507,7 +1519,7 @@
         // the wall tangent, and starts 0.7m above the floor.
         // rightAxis is the unit tangent to the octagon at that wall (perpendicular to normal).
         // tangent = (-sin(ang), 0, cos(ang))
-        const _wallShelf = (k, y_floor, labelPrefix) => {
+        const _wallShelf = (k, y_floor, labelPrefix, overrides = {}) => {
             const o = OCTO[k];
             const r_inner = 13.6;
             const cx = r_inner * Math.cos(o.ang);
@@ -1515,20 +1527,21 @@
             // tangent (direction along wall length)
             const tx = -Math.sin(o.ang);
             const tz =  Math.cos(o.ang);
-            // Grid: 20 cols * 0.45m step = 9m total span, centered on wall midpoint.
-            // Start offset = midpoint - tangent * 4.5m
-            const half_span = 4.5;
+            // Defaults: 20 cols * 0.45m step = 9m total span, centered on wall midpoint.
+            const cols     = overrides.cols     ?? 20;
+            const stepR    = overrides.stepRight ?? 0.45;
+            const half_span = (cols * stepR) / 2;
             const ox = cx - tx * half_span;
             const oz = cz - tz * half_span;
             return this._shelfGrid({
                 origin: [ox, y_floor + 0.7, oz],
                 rightAxis: [tx, 0, tz],
                 upAxis: [0, 1, 0],
-                rows: 3,
-                cols: 20,
-                stepRight: 0.45,
-                stepUp: 1.4,
-                marker: 'orb',
+                rows:      overrides.rows     ?? 3,
+                cols:      cols,
+                stepRight: stepR,
+                stepUp:    overrides.stepUp   ?? 1.4,
+                marker:    overrides.marker   ?? 'orb',
                 labelPrefix: labelPrefix,
             });
         };
@@ -1549,17 +1562,40 @@
         ];
         const floorNames = ['Reading Hall', 'Study', 'Scriptorium', 'Upper Archive', 'Observation'];
 
-        // Build all procedural shelf loci (6 walls * 5 floors * 3 rows * 20 cols = 1800)
+        // Per-floor shelf grid variations so each floor looks distinct
+        const WALL_CONFIGS = [
+            { rows: 4, cols: 15, stepRight: 0.55, stepUp: 0.8,  marker: 'orb'   }, // F1 Reading Hall: wide spacing, packed shelves
+            { rows: 3, cols: 18, stepRight: 0.48, stepUp: 1.2,  marker: 'glow'  }, // F2 Study: glowing study loci
+            { rows: 2, cols: 25, stepRight: 0.38, stepUp: 1.6,  marker: 'orb'   }, // F3 Scriptorium: long low scroll shelves
+            { rows: 5, cols: 12, stepRight: 0.65, stepUp: 0.9,  marker: 'frame' }, // F4 Upper Archive: tall narrow stacks
+            { rows: 2, cols: 20, stepRight: 0.45, stepUp: 2.0,  marker: 'glow'  }, // F5 Observation: short shelves, high spacing
+        ];
+
+        // Build all procedural shelf loci (varied per floor)
         const shelfLoci = [];
         for (let f = 0; f < 5; f++) {
             const y_floor = f * 6;
             const skip = SKIP_PER_FLOOR[f];
+            const cfg = WALL_CONFIGS[f];
             for (let k = 0; k < 8; k++) {
                 if (skip.includes(k)) continue;
                 const lbl = `F${f + 1} ${floorNames[f]} W${k} shelf`;
-                shelfLoci.push(..._wallShelf(k, y_floor, lbl));
+                shelfLoci.push(..._wallShelf(k, y_floor, lbl, cfg));
             }
         }
+
+        // Per-floor center loci — distinctive non-shelf placements
+        const centerLociF1 = this._ring({ center: [0, 0, 0], radius: 6, count: 12, y: 1.2, marker: 'pedestal', labelPrefix: 'F1 reading circle' });
+        const centerLociF2 = this._floorGrid({ origin: [-3, 0, -3], rows: 3, cols: 3, stepX: 3, stepZ: 3, y: 7.2, marker: 'pedestal', labelPrefix: 'F2 study desk' });
+        const centerLociF3 = this._nicheRow({ start: [-8, 13.5, 0], end: [8, 13.5, 0], count: 8, marker: 'frame', labelPrefix: 'F3 manuscript' });
+        const centerLociF4 = this._ring({ center: [0, 0, 0], radius: 5, count: 8, y: 19.2, marker: 'statue', labelPrefix: 'F4 archive bust' });
+        const centerLociF5 = this._nicheRow({ start: [-6, 25.5, 0], end: [6, 25.5, 0], count: 6, marker: 'glow', labelPrefix: 'F5 observation window' });
+
+        // Stair landing loci — 5 loci per stair flight along the railing
+        const stairLociF12 = this._nicheRow({ start: [-4.67, 6.8, 4.5], end: [4.67, 12.8, 4.5], count: 5, marker: 'glow', labelPrefix: 'Stair F1-F2 rail' });
+        const stairLociF23 = this._nicheRow({ start: [4.67, 12.8, -4.5], end: [-4.67, 18.8, -4.5], count: 5, marker: 'glow', labelPrefix: 'Stair F2-F3 rail' });
+        const stairLociF34 = this._nicheRow({ start: [-4.67, 18.8, 4.5], end: [4.67, 24.8, 4.5], count: 5, marker: 'glow', labelPrefix: 'Stair F3-F4 rail' });
+        const stairLociF45 = this._nicheRow({ start: [4.67, 24.8, -4.5], end: [-4.67, 30.8, -4.5], count: 5, marker: 'glow', labelPrefix: 'Stair F4-F5 rail' });
 
         const t = {
             meta: {
@@ -1987,7 +2023,22 @@
                 { glb: 'assets/props/kenney/furniture_kit/pottedPlant.glb', transform: { position: [  9, 24.2,  0], rotation: [0, 0, 0], scale: [1.6, 1.6, 1.6] }, cast_shadow: true, receive_shadow: true, label: 'F5 potted plant E' },
                 { glb: 'assets/props/kenney/furniture_kit/pottedPlant.glb', transform: { position: [ -9, 24.2,  9], rotation: [0, 0, 0], scale: [1.6, 1.6, 1.6] }, cast_shadow: true, receive_shadow: true, label: 'F5 potted plant NW' },
             ],
-            connectors: [],
+            connectors: [
+                // Multi-floor elevator shaft — west side of octagon
+                {
+                    type: 'elevator', id: 'tower-elevator',
+                    position: [-10, 0],  // x, z of the shaft center
+                    from_point: { position: [-10, 0, 0] },
+                    to_point: { position: [-10, 24, 0] },
+                    stops: [
+                        { y: 0,  label: 'F1 — Reading Hall' },
+                        { y: 6,  label: 'F2 — Study' },
+                        { y: 12, label: 'F3 — Scriptorium' },
+                        { y: 18, label: 'F4 — Upper Archive' },
+                        { y: 24, label: 'F5 — Observation' },
+                    ],
+                },
+            ],
             loci: [
                 // ================================================================
                 // RETURN PORTAL — first locus, at spawn (center of F1), facing south door.
@@ -2044,11 +2095,24 @@
                 { position: [-11, 25.3, 0], marker_type: 'frame',    label: 'F5 west window — sunset over the forest' },
 
                 // ================================================================
-                // PROCEDURAL SHELF LOCI — 6 walls × 5 floors × 3 rows × 20 cols = 1800 orbs
+                // PROCEDURAL SHELF LOCI — 6 walls × 5 floors, varied grids per floor.
                 // Spread from the pre-built `shelfLoci` array computed at the top of the
-                // function. Each is an orb marker labeled by floor/wall/grid coords.
+                // function. Marker types vary by floor (orb/glow/frame).
                 // ================================================================
                 ...shelfLoci,
+
+                // Per-floor center loci (rings, grids, niche rows)
+                ...centerLociF1,
+                ...centerLociF2,
+                ...centerLociF3,
+                ...centerLociF4,
+                ...centerLociF5,
+
+                // Stair railing loci
+                ...stairLociF12,
+                ...stairLociF23,
+                ...stairLociF34,
+                ...stairLociF45,
             ],
         };
         return t;
@@ -2412,6 +2476,23 @@
             });
         }
 
+        // Mezzanine viewing gallery at south end (y=8, 20m wide, 12m deep)
+        surfaces.push({
+            type: 'floor',
+            transform: { position: [0, 8, HALL_Z_S + 8], rotation: [0, 0, 0], scale: [1, 1, 1] },
+            dimensions: { width: 28, height: 14, depth: 0.4 },
+            material: 'oak_beam_dark',
+            label: 'Mezzanine gallery floor',
+        });
+        // Mezzanine railing (low wall)
+        surfaces.push({
+            type: 'wall',
+            transform: { position: [0, 8.6, HALL_Z_S + 15], rotation: [0, 0, 0], scale: [1, 1, 1] },
+            dimensions: { width: 28, height: 1.2, depth: 0.15 },
+            material: 'bronze_trim',
+            label: 'Mezzanine railing',
+        });
+
         // =========================================================================
         // Props: columns, chandeliers, busts, chests, banners
         // =========================================================================
@@ -2556,65 +2637,119 @@
         // =========================================================================
         const proceduralLoci = [];
 
-        // --- 40 alcove shelfGrids (2 rows × 4 cols per alcove = 8 loci × 40 = 320) ---
+        // --- 40 alcove grids — varied dimensions and markers per alcove type ---
+        // Alternate between 4 alcove styles for visual variety
+        const ALCOVE_STYLES = [
+            { rows: 2, cols: 4, stepRight: 0.8, stepUp: 1.1, marker: 'orb' },    // standard shelf
+            { rows: 3, cols: 3, stepRight: 1.0, stepUp: 0.9, marker: 'frame' },   // art gallery
+            { rows: 1, cols: 5, stepRight: 0.7, stepUp: 0,   marker: 'pedestal' }, // display case
+            { rows: 2, cols: 4, stepRight: 0.8, stepUp: 1.4, marker: 'glow' },    // illuminated
+        ];
         for (let i = 0; i < alcoveZs.length; i++) {
             const z = alcoveZs[i];
             for (const xSign of [-1, +1]) {
                 const side = xSign < 0 ? 'W' : 'E';
-                // Grid sits inside alcove just in front of back wall (0.3m off wall)
-                // rightAxis runs along the alcove width (the z direction)
-                // upAxis = +y
-                // origin = near-back corner of the alcove, bottom-left shelf
+                const style = ALCOVE_STYLES[(i + (xSign > 0 ? 2 : 0)) % ALCOVE_STYLES.length];
                 const backX = xSign * ALCOVE_BACK;
-                const originX = backX - xSign * 0.25;  // 0.25m off back wall toward hall
-                const originZ = z - ((4 - 1) * 0.8) / 2;  // center 4 cols at 0.8m spacing
-                const originY = 1.7; // bottom shelf height (above pedestal)
+                const originX = backX - xSign * 0.25;
+                const originZ = z - ((style.cols - 1) * style.stepRight) / 2;
+                const originY = 1.7;
                 proceduralLoci.push(
                     ...this._shelfGrid({
                         origin: [originX, originY, originZ],
                         rightAxis: [0, 0, 1],
                         upAxis: [0, 1, 0],
-                        rows: 2,
-                        cols: 4,
-                        stepRight: 0.8,
-                        stepUp: 1.1,
-                        marker: 'orb',
+                        rows: style.rows,
+                        cols: style.cols,
+                        stepRight: style.stepRight,
+                        stepUp: style.stepUp,
+                        marker: style.marker,
                         labelPrefix: `${side} alcove ${i + 1} shelf`,
                     })
                 );
             }
         }
 
-        // --- Central nave display rows (2 rows × 30 = 60 loci) ---
+        // --- Central nave display rows — alternating heights and markers ---
         proceduralLoci.push(
             ...this._nicheRow({
                 start: [-60, 1.3, -2],
+                end: [-20, 1.3, -2],
+                count: 15,
+                marker: 'pedestal',
+                labelPrefix: 'Nave S near display',
+            }),
+            ...this._nicheRow({
+                start: [-18, 2.0, -2],
+                end: [18, 2.0, -2],
+                count: 12,
+                marker: 'glow',
+                labelPrefix: 'Nave S center highlight',
+            }),
+            ...this._nicheRow({
+                start: [20, 1.3, -2],
                 end: [60, 1.3, -2],
-                count: 30,
-                marker: 'orb',
-                labelPrefix: 'Central nave display S',
-            })
+                count: 15,
+                marker: 'pedestal',
+                labelPrefix: 'Nave S far display',
+            }),
         );
         proceduralLoci.push(
             ...this._nicheRow({
-                start: [-60, 1.3, 2],
-                end: [60, 1.3, 2],
-                count: 30,
+                start: [-60, 1.5, 2],
+                end: [0, 1.5, 2],
+                count: 20,
+                marker: 'frame',
+                labelPrefix: 'Nave N timeline',
+            }),
+            ...this._nicheRow({
+                start: [2, 1.5, 2],
+                end: [60, 1.5, 2],
+                count: 20,
                 marker: 'orb',
-                labelPrefix: 'Central nave display N',
-            })
+                labelPrefix: 'Nave N collection',
+            }),
         );
 
-        // --- Rotunda ring (30 loci around marble bust) ---
+        // --- Rotunda: outer ring + inner ring at different heights ---
         proceduralLoci.push(
             ...this._ring({
                 center: [0, 0, ROT_CENTER_Z],
                 radius: 8,
-                count: 30,
+                count: 20,
                 y: 1.5,
-                marker: 'orb',
-                labelPrefix: 'Rotunda ring',
-            })
+                marker: 'pedestal',
+                labelPrefix: 'Rotunda outer ring',
+            }),
+            ...this._ring({
+                center: [0, 0, ROT_CENTER_Z],
+                radius: 4,
+                count: 12,
+                y: 2.5,
+                marker: 'glow',
+                labelPrefix: 'Rotunda inner ring',
+            }),
+        );
+
+        // --- Mezzanine gallery loci (y=8 level, south end) ---
+        proceduralLoci.push(
+            ...this._nicheRow({
+                start: [-12, 9.5, HALL_Z_S + 14],
+                end: [12, 9.5, HALL_Z_S + 14],
+                count: 10,
+                marker: 'frame',
+                labelPrefix: 'Mezzanine railing view',
+            }),
+            ...this._floorGrid({
+                origin: [-8, 9.2, HALL_Z_S + 4],
+                rows: 2,
+                cols: 5,
+                stepX: 4,
+                stepZ: 4,
+                y: 9.2,
+                marker: 'pedestal',
+                labelPrefix: 'Mezzanine display',
+            }),
         );
 
         // --- Handcrafted hero loci ---
@@ -2778,6 +2913,19 @@
             },
             surfaces: surfaces,
             props: props,
+            connectors: [
+                // Elevator to mezzanine viewing gallery
+                {
+                    type: 'elevator', id: 'museum-elevator',
+                    position: [0, -60],
+                    from_point: { position: [0, 0, -60] },
+                    to_point: { position: [0, 8, -60] },
+                    stops: [
+                        { y: 0, label: 'Ground Floor — Main Gallery' },
+                        { y: 8, label: 'Mezzanine — Viewing Gallery' },
+                    ],
+                },
+            ],
             loci: [
                 ...handcraftedLoci,
                 ...proceduralLoci,
@@ -3173,7 +3321,19 @@
                   transform: { position: [1.2, 0, 39], rotation: [0, -45, 0], scale: [1.0, 1.0, 1.0] },
                   cast_shadow: true, receive_shadow: true, label: 'Entry chest' },
             ],
-            connectors: [],
+            connectors: [
+                // Ladder down to lower ossuary level at the altar chamber
+                {
+                    type: 'elevator', id: 'catacombs-ladder',
+                    position: [0, -48],
+                    from_point: { position: [0, 0, -48] },
+                    to_point: { position: [0, -4, -48] },
+                    stops: [
+                        { y: 0,  label: 'Upper Catacombs' },
+                        { y: -4, label: 'Lower Ossuary' },
+                    ],
+                },
+            ],
             // ============================================================
             // LOCI — ~400 total (built procedurally via _nicheRow + _ring + handcrafted)
             // ============================================================
@@ -3245,22 +3405,22 @@
                 // Passage torches
                 { position: [18.5, 2.4, 0], marker_type: 'glow', label: 'Catacombs: Crypt passage torch' },
 
-                // ========== PROCEDURAL NICHE ROWS — 6 walls × 50 = 300 loci ==========
+                // ========== PROCEDURAL NICHE ROWS — varied counts, heights, markers ==========
                 // Niches are placed 0.15m inboard of wall plane so they sit inside the corridor.
 
                 // --- CENTRAL CORRIDOR niches (x=0 corridor, walls at x=-2 and x=+2) ---
                 ...this._nicheRow({
-                    start: [-1.85, 1.8, -38],
-                    end:   [-1.85, 1.8,  38],
-                    count: 50,
+                    start: [-1.85, 1.5, -38],
+                    end:   [-1.85, 1.5,  38],
+                    count: 40,
                     marker: 'orb',
                     labelPrefix: 'Central corr W wall niche',
                 }),
                 ...this._nicheRow({
-                    start: [1.85, 1.8, -38],
-                    end:   [1.85, 1.8,  38],
-                    count: 50,
-                    marker: 'orb',
+                    start: [1.85, 2.2, -38],
+                    end:   [1.85, 2.2,  38],
+                    count: 55,
+                    marker: 'glow',
                     labelPrefix: 'Central corr E wall niche',
                 }),
 
@@ -3268,32 +3428,87 @@
                 ...this._nicheRow({
                     start: [-13.85, 1.8, -38],
                     end:   [-13.85, 1.8,  38],
-                    count: 50,
-                    marker: 'orb',
+                    count: 35,
+                    marker: 'frame',
                     labelPrefix: 'West corr W wall niche',
                 }),
                 ...this._nicheRow({
-                    start: [-10.15, 1.8, -38],
-                    end:   [-10.15, 1.8,  38],
-                    count: 50,
+                    start: [-10.15, 1.4, -38],
+                    end:   [-10.15, 1.4,  38],
+                    count: 45,
                     marker: 'orb',
                     labelPrefix: 'West corr E wall niche',
                 }),
 
                 // --- EAST CORRIDOR niches (x=+12 corridor, walls at x=+10 and x=+14) ---
                 ...this._nicheRow({
-                    start: [10.15, 1.8, -38],
-                    end:   [10.15, 1.8,  38],
+                    start: [10.15, 2.0, -38],
+                    end:   [10.15, 2.0,  38],
                     count: 50,
-                    marker: 'orb',
+                    marker: 'pedestal',
                     labelPrefix: 'East corr W wall niche',
                 }),
                 ...this._nicheRow({
-                    start: [13.85, 1.8, -38],
-                    end:   [13.85, 1.8,  38],
-                    count: 50,
-                    marker: 'orb',
+                    start: [13.85, 2.5, -38],
+                    end:   [13.85, 2.5,  38],
+                    count: 30,
+                    marker: 'glow',
                     labelPrefix: 'East corr E wall niche',
+                }),
+
+                // ========== FLOOR-LEVEL BONE PILE LOCI ==========
+                ...this._floorGrid({
+                    origin: [-1.5, 0.3, -30],
+                    rows: 6, cols: 2, stepX: 3, stepZ: 10,
+                    y: 0.5,
+                    marker: 'pedestal',
+                    labelPrefix: 'Central floor bones',
+                }),
+                ...this._floorGrid({
+                    origin: [-13, 0.3, -25],
+                    rows: 4, cols: 2, stepX: 3, stepZ: 12,
+                    y: 0.5,
+                    marker: 'pedestal',
+                    labelPrefix: 'West floor bones',
+                }),
+                ...this._floorGrid({
+                    origin: [11, 0.3, -20],
+                    rows: 3, cols: 2, stepX: 3, stepZ: 15,
+                    y: 0.5,
+                    marker: 'pedestal',
+                    labelPrefix: 'East floor bones',
+                }),
+
+                // ========== CEILING-MOUNTED LOCI IN CROSS-CORRIDORS ==========
+                ...this._nicheRow({
+                    start: [-14, 3.2, -15],
+                    end:   [14, 3.2, -15],
+                    count: 10,
+                    marker: 'glow',
+                    labelPrefix: 'Cross-N ceiling chain',
+                }),
+                ...this._nicheRow({
+                    start: [-14, 3.2, 15],
+                    end:   [14, 3.2, 15],
+                    count: 10,
+                    marker: 'glow',
+                    labelPrefix: 'Cross-S ceiling chain',
+                }),
+
+                // ========== VAULT NICHE STACKS (altar + crypt chambers) ==========
+                ...this._columnLoci({
+                    columnPositions: [[-3, 0, -48], [3, 0, -48], [-3, 0, -52], [3, 0, -52]],
+                    perColumn: 4,
+                    heights: [0.8, 1.6, 2.4, 3.2],
+                    marker: 'frame',
+                    labelPrefix: 'Altar vault niche',
+                }),
+                ...this._columnLoci({
+                    columnPositions: [[25, 0, 0], [31, 0, 0], [25, 0, 3], [31, 0, 3]],
+                    perColumn: 3,
+                    heights: [0.8, 1.6, 2.4],
+                    marker: 'frame',
+                    labelPrefix: 'Crypt vault niche',
                 }),
 
                 // ========== ALTAR CHAMBER RING — 16 loci around central altar ==========
@@ -3350,18 +3565,19 @@
         const CHART_WALLS = [1, 2, 3, 5, 6, 7];
 
         // Build shelfGrid params for one chart wall.
-        // rows 6 × cols 12 = 72 loci per wall × 6 walls = 432 loci.
-        const buildChartWall = (i) => {
+        // Per-wall overrides diversify grid dimensions and markers.
+        const buildChartWall = (i, overrides = {}) => {
             const tan = wallTangent(i);
             const out = wallOutward(i);
             // Place the loci on a plane just INSIDE the wall surface (offset 0.4m inward).
             const inset = R_APOTHEM - 0.4;
             const centerX = inset * Math.cos(wallAngle(i));
             const centerZ = inset * Math.sin(wallAngle(i));
-            const COLS = 11;
-            const ROWS = 6;
-            const STEP_R = 0.95;
-            const STEP_U = 1.3;
+            const COLS = overrides.cols || 11;
+            const ROWS = overrides.rows || 6;
+            const STEP_R = overrides.stepRight || 0.95;
+            const STEP_U = overrides.stepUp || 1.3;
+            const MARKER = overrides.marker || 'orb';
             // Origin = bottom-LEFT corner. Shift back along tangent by (COLS-1)/2 * STEP_R.
             const halfW = ((COLS - 1) * STEP_R) / 2;
             const yBase = 2.4;
@@ -3375,7 +3591,7 @@
                 cols: COLS,
                 stepRight: STEP_R,
                 stepUp: STEP_U,
-                marker: 'orb',
+                marker: MARKER,
                 labelPrefix: `Star chart W${i}`,
             };
         };
@@ -3557,6 +3773,37 @@
                   dimensions: { width: 42, height: 42, depth: 0.3 },
                   material: 'sandstone_wall',
                   label: 'Wall crown ring' },
+
+                // ============================================================
+                // DOME GALLERY WALKWAY — ring platform at wall top height (y=12)
+                // accessible via elevator on the east side
+                // ============================================================
+                { type: 'floor',
+                  transform: { position: [0, 12, 0], rotation: [0, 0, 0], scale: [1, 1, 1] },
+                  dimensions: { width: 42, height: 42, depth: 0.3 },
+                  material: 'marble_white',
+                  label: 'Dome gallery floor (full ring)' },
+                // Railing around the inner edge (low wall ring)
+                { type: 'wall',
+                  transform: { position: [0, 12.6, 12], rotation: [0, 0, 0], scale: [1, 1, 1] },
+                  dimensions: { width: 24, height: 1.2, depth: 0.12 },
+                  material: 'bronze_trim',
+                  label: 'Dome gallery railing S' },
+                { type: 'wall',
+                  transform: { position: [0, 12.6, -12], rotation: [0, 0, 0], scale: [1, 1, 1] },
+                  dimensions: { width: 24, height: 1.2, depth: 0.12 },
+                  material: 'bronze_trim',
+                  label: 'Dome gallery railing N' },
+                { type: 'wall',
+                  transform: { position: [12, 12.6, 0], rotation: [0, Math.PI / 2, 0], scale: [1, 1, 1] },
+                  dimensions: { width: 24, height: 1.2, depth: 0.12 },
+                  material: 'bronze_trim',
+                  label: 'Dome gallery railing E' },
+                { type: 'wall',
+                  transform: { position: [-12, 12.6, 0], rotation: [0, Math.PI / 2, 0], scale: [1, 1, 1] },
+                  dimensions: { width: 24, height: 1.2, depth: 0.12 },
+                  material: 'bronze_trim',
+                  label: 'Dome gallery railing W' },
 
                 // ============================================================
                 // DOME — 4 stacked octagonal marble slabs shrinking upward
@@ -3785,7 +4032,19 @@
                   transform: { position: [-12, 1.2, 0], rotation: [0, 0, 0], scale: [0.6, 0.6, 0.6] },
                   cast_shadow: true, receive_shadow: true, label: 'West instrument jewel' },
             ],
-            connectors: [],
+            connectors: [
+                // Elevator — ground floor to dome observation gallery
+                {
+                    type: 'elevator', id: 'observatory-elevator',
+                    position: [15, 0],
+                    from_point: { position: [15, 0, 0] },
+                    to_point: { position: [15, 12, 0] },
+                    stops: [
+                        { y: 0,  label: 'Main Floor — Observatory' },
+                        { y: 12, label: 'Dome Gallery — Constellation View' },
+                    ],
+                },
+            ],
             loci: [
                 // ============================================================
                 // RETURN PORTAL (mandatory — one only, near spawn)
@@ -3836,12 +4095,12 @@
                 // ============================================================
                 // PROCEDURAL: 6 star chart walls × shelfGrid(6 rows × 12 cols) = 432 loci
                 // ============================================================
-                ...this._shelfGrid(buildChartWall(1)),
-                ...this._shelfGrid(buildChartWall(2)),
-                ...this._shelfGrid(buildChartWall(3)),
-                ...this._shelfGrid(buildChartWall(5)),
-                ...this._shelfGrid(buildChartWall(6)),
-                ...this._shelfGrid(buildChartWall(7)),
+                ...this._shelfGrid(buildChartWall(1, {cols:14, rows:4, stepRight:0.72, stepUp:1.8, marker:'orb'})),
+                ...this._shelfGrid(buildChartWall(2, {cols:8, rows:8, stepRight:1.2, stepUp:1.0, marker:'glow'})),
+                ...this._shelfGrid(buildChartWall(3, {cols:11, rows:6, stepRight:0.95, stepUp:1.3, marker:'orb'})),
+                ...this._shelfGrid(buildChartWall(5, {cols:16, rows:3, stepRight:0.62, stepUp:2.5, marker:'frame'})),
+                ...this._shelfGrid(buildChartWall(6, {cols:10, rows:7, stepRight:1.0, stepUp:1.1, marker:'orb'})),
+                ...this._shelfGrid(buildChartWall(7, {cols:6, rows:10, stepRight:1.5, stepUp:0.85, marker:'glow'})),
 
                 // ============================================================
                 // PROCEDURAL: constellation ring at dome base (36 loci)
@@ -3856,17 +4115,96 @@
                 }),
 
                 // ============================================================
-                // PROCEDURAL: ecliptic floor grid (8 × 8 = 64 loci)
+                // PROCEDURAL: inner constellation ring at lower height (24 loci)
+                // ============================================================
+                ...this._ring({
+                    center: [0, 0, 0],
+                    radius: 12,
+                    count: 24,
+                    y: 9,
+                    marker: 'orb',
+                    labelPrefix: 'Inner constellation ring',
+                }),
+
+                // ============================================================
+                // PROCEDURAL: ecliptic floor loci (25 + 12 + 8 = 45 loci)
                 // ============================================================
                 ...this._floorGrid({
-                    origin: [-5.25, 0.35, -5.25],
-                    rows: 8,
-                    cols: 8,
-                    stepX: 1.5,
-                    stepZ: 1.5,
+                    origin: [-4, 0.35, -4],
+                    rows: 5,
+                    cols: 5,
+                    stepX: 2,
+                    stepZ: 2,
+                    y: 0.35,
+                    marker: 'pedestal',
+                    labelPrefix: 'Ecliptic inner',
+                }),
+                ...this._ring({
+                    center: [0, 0, 0],
+                    radius: 7,
+                    count: 12,
                     y: 0.35,
                     marker: 'orb',
-                    labelPrefix: 'Ecliptic floor',
+                    labelPrefix: 'Ecliptic outer ring',
+                }),
+                ...this._nicheRow({
+                    start: [-7, 0.35, 0],
+                    end: [7, 0.35, 0],
+                    count: 8,
+                    marker: 'glow',
+                    labelPrefix: 'Ecliptic meridian',
+                }),
+
+                // ============================================================
+                // PROCEDURAL: dome height loci (8 + 6 = 14 loci)
+                // ============================================================
+                ...this._ring({
+                    center: [0, 0, 0],
+                    radius: 8,
+                    count: 8,
+                    y: 13.5,
+                    marker: 'glow',
+                    labelPrefix: 'Dome tier 1 light',
+                }),
+                ...this._ring({
+                    center: [0, 0, 0],
+                    radius: 5,
+                    count: 6,
+                    y: 15.5,
+                    marker: 'glow',
+                    labelPrefix: 'Dome tier 2 light',
+                }),
+
+                // ============================================================
+                // PROCEDURAL: instrument table quadrant rows (4 × 6 = 24 loci)
+                // ============================================================
+                ...this._nicheRow({
+                    start: [0, 1.4, -12],
+                    end: [12, 1.4, 0],
+                    count: 6,
+                    marker: 'pedestal',
+                    labelPrefix: 'NE quadrant instruments',
+                }),
+                ...this._nicheRow({
+                    start: [12, 1.4, 0],
+                    end: [0, 1.4, 12],
+                    count: 6,
+                    marker: 'pedestal',
+                    labelPrefix: 'SE quadrant instruments',
+                }),
+                ...this._nicheRow({
+                    start: [0, 1.4, 12],
+                    end: [-12, 1.4, 0],
+                    count: 6,
+                    marker: 'pedestal',
+                    labelPrefix: 'SW quadrant instruments',
+                }),
+                ...this._nicheRow({
+                    start: [-12, 1.4, 0],
+                    end: [0, 1.4, -12],
+                    count: 6,
+                    marker: 'pedestal',
+                    labelPrefix: 'NW quadrant instruments',
                 }),
             ],
         };

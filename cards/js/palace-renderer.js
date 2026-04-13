@@ -63,7 +63,7 @@
 
             // Camera
             this.camera = new THREE.PerspectiveCamera(
-                85,
+                75,
                 container.clientWidth / container.clientHeight,
                 0.1,
                 1200
@@ -252,10 +252,6 @@
             const isV2 = !!(tmpl.meta || tmpl.environment || tmpl.materials || tmpl.props);
 
             if (isV2) {
-                // v2 templates bring their own ground + environment — hide the v1 fallback scaffold
-                if (this._groundMesh) this._groundMesh.visible = false;
-                if (this._plazaMesh) this._plazaMesh.visible = false;
-                if (this._skyMesh) this._skyMesh.visible = false;
                 // 1. Environment (HDRI + sun override)
                 if (tmpl.environment) {
                     await this._applyEnvironment(tmpl.environment);
@@ -271,30 +267,13 @@
                     await this._loadProps(tmpl.props);
                 }
             } else {
-                // Legacy v1 path — restore fallback scaffold
-                if (this._groundMesh) this._groundMesh.visible = true;
-                if (this._skyMesh) this._skyMesh.visible = true;
+                // Legacy v1 path
                 (tmpl.surfaces || []).forEach(s => this._addSurface(s));
             }
 
             // 5. Connectors + loci (same shape in v1 and v2)
             (tmpl.connectors || []).forEach(c => this._addConnector(c));
-
-            // Loci: group by marker_type and use InstancedMesh for orb/glow at scale.
-            const lociList = tmpl.loci || [];
-            const byType = {};
-            for (let i = 0; i < lociList.length; i++) {
-                const mt = lociList[i].marker_type || 'orb';
-                (byType[mt] = byType[mt] || []).push(lociList[i]);
-            }
-            for (const mt of Object.keys(byType)) {
-                const arr = byType[mt];
-                if ((mt === 'orb' || mt === 'glow') && arr.length > 20) {
-                    this._addInstancedLoci(mt, arr);
-                } else {
-                    arr.forEach(l => this._addLocus(l));
-                }
-            }
+            (tmpl.loci || []).forEach(l => this._addLocus(l));
 
             // 6. Apply spawn point to camera
             const spawn = tmpl.meta?.spawn_point || tmpl.spawn_point;
@@ -349,21 +328,24 @@
                 }
             }
 
-            // HDRI — used for LIGHTING ONLY. Scene background is always black;
-            // the palace itself is the environment. No visible skybox.
-            this.scene.background = new THREE.Color(0x000000);
-            if (this._skyMesh) this._skyMesh.visible = false;
+            // HDRI
             if (env.hdri) {
+                // Mobile fallback: swap _2k.hdr for _1k.hdr path
                 let url = env.hdri;
                 if (this._mobile) url = url.replace('_2k.hdr', '_1k.hdr').replace('/2k/', '/1k/');
                 try {
                     const envMap = await this._loadHDRI(url);
                     this.scene.environment = envMap;
+                    if (env.hdri_as_background !== false) {
+                        this.scene.background = envMap;
+                        // Hide procedural sky when HDRI is backgrounded
+                        if (this._skyMesh) this._skyMesh.visible = false;
+                    }
                     if (env.hdri_intensity != null) {
                         this.renderer.toneMappingExposure = env.hdri_intensity;
                     }
                 } catch (e) {
-                    console.warn('[PR] HDRI load failed:', e);
+                    console.warn('[PR] HDRI load failed, keeping procedural sky:', e);
                 }
             }
 
@@ -672,17 +654,46 @@
                 this.scene.add(group);
                 this.connectorMeshes.push(group);
             } else if (c.type === 'elevator') {
-                const height = Math.abs(to[1] - from[1]) || 3;
-                const geo = new THREE.CylinderGeometry(0.7, 0.7, height, 12, 1, true);
+                // Multi-floor elevator: c.stops = [{y, label}, ...] OR legacy from/to pair
+                const stops = c.stops || [
+                    { y: from[1], label: c.from_label || 'Lower' },
+                    { y: to[1], label: c.to_label || 'Upper' },
+                ];
+                const shaftX = c.position ? c.position[0] : from[0];
+                const shaftZ = c.position ? c.position[1] : from[2];
+                const minY = Math.min(...stops.map(s => s.y));
+                const maxY = Math.max(...stops.map(s => s.y));
+                const height = maxY - minY || 3;
+                // Translucent oval shaft — scale X wider than Z for oval cross-section
+                const geo = new THREE.CylinderGeometry(1.2, 1.2, height + 2, 24, 1, true);
                 const shaftMat = new THREE.MeshStandardMaterial({
-                    color: 0xccddee, transparent: true, opacity: 0.25, side: THREE.DoubleSide,
-                    roughness: 0.1, metalness: 0.9,
+                    color: 0xccddee, transparent: true, opacity: 0.12, side: THREE.DoubleSide,
+                    roughness: 0.02, metalness: 0.98,
                 });
                 const mesh = new THREE.Mesh(geo, shaftMat);
-                mesh.position.set(from[0], (from[1] + to[1]) / 2, from[2]);
-                mesh.userData = { dbType: 'connector', dbData: c, dbId: c.id, connectorType: 'elevator' };
+                mesh.position.set(shaftX, (minY + maxY) / 2 + 1, shaftZ);
+                mesh.scale.set(1.4, 1, 0.9); // oval: wider on X, narrower on Z
+                // Store resolved stops for interaction
+                mesh.userData = { dbType: 'connector', dbData: c, dbId: c.id, connectorType: 'elevator',
+                                  elevatorStops: stops, elevatorX: shaftX, elevatorZ: shaftZ };
                 this.scene.add(mesh);
                 this.connectorMeshes.push(mesh);
+                // Floor indicator rings at each stop (oval to match shaft)
+                stops.forEach((stop) => {
+                    const ringGeo = new THREE.TorusGeometry(1.2, 0.06, 8, 32);
+                    const ringMat = new THREE.MeshStandardMaterial({
+                        color: 0x88ccff, emissive: 0x2266aa, emissiveIntensity: 1.5,
+                        roughness: 0.2, metalness: 0.8,
+                    });
+                    const ring = new THREE.Mesh(ringGeo, ringMat);
+                    ring.rotation.x = Math.PI / 2;
+                    ring.position.set(shaftX, stop.y + 0.1, shaftZ);
+                    ring.scale.set(1.4, 0.9, 1); // oval to match shaft
+                    ring.userData = { dbType: 'connector', dbData: c, dbId: c.id, connectorType: 'elevator',
+                                     elevatorStops: stops, elevatorX: shaftX, elevatorZ: shaftZ };
+                    this.scene.add(ring);
+                    this.connectorMeshes.push(ring);
+                });
             } else if (c.type === 'ladder') {
                 const height = Math.abs(to[1] - from[1]) || 3;
                 const rungs = Math.max(1, Math.floor(height / 0.3));
@@ -821,32 +832,6 @@
             return mesh;
         },
 
-        _addInstancedLoci(type, loci) {
-            // Batch-render orb/glow as a single InstancedMesh. One draw call for 1000+ loci.
-            const isOrb = type === 'orb';
-            const geo = new THREE.SphereGeometry(isOrb ? 0.19 : 0.16, 16, 16);
-            const mat = new THREE.MeshStandardMaterial({
-                color: isOrb ? 0x88aaff : 0xffd080,
-                emissive: isOrb ? 0x3366dd : 0xff9040,
-                emissiveIntensity: isOrb ? 1.8 : 3.0,
-                transparent: true,
-                opacity: isOrb ? 0.9 : 0.85,
-            });
-            const mesh = new THREE.InstancedMesh(geo, mat, loci.length);
-            const dummy = new THREE.Object3D();
-            for (let i = 0; i < loci.length; i++) {
-                const p = loci[i].position || [0, 1, 0];
-                dummy.position.set(p[0], p[1], p[2]);
-                dummy.updateMatrix();
-                mesh.setMatrixAt(i, dummy.matrix);
-            }
-            mesh.instanceMatrix.needsUpdate = true;
-            mesh.userData = { dbType: 'locus_instanced', type: type, lociData: loci };
-            this.scene.add(mesh);
-            this.lociMeshes.push(mesh);
-            return mesh;
-        },
-
         // ─────────────────────────────────────────────
         // Export (editor roundtrip, v1 compat)
         // ─────────────────────────────────────────────
@@ -898,7 +883,6 @@
 
             // Bob orbs/glows gently
             this.lociMeshes.forEach((m, i) => {
-                if (m.isInstancedMesh) return; // skip bob for instanced loci
                 const mt = m.userData.dbData?.marker_type;
                 if (mt === 'orb' || mt === 'glow') {
                     const base = m.userData.dbData.position?.[1] ?? 1;

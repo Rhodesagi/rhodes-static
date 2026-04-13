@@ -632,6 +632,124 @@ function showDownloads() {
                             }, 0);
                         }
 
+                        
+                        // -- Tool call rendering for resumed sessions --
+                        window.renderResumedToolCalls = window.renderResumedToolCalls || function renderResumedToolCalls(toolCalls, chatEl) {
+                            if (!toolCalls || !toolCalls.length) return;
+                            var esc = typeof escapeHtml === 'function' ? escapeHtml : function(x) { return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+
+                            // Parse all tool calls into structured data
+                            var parsed = [];
+                            for (var i = 0; i < toolCalls.length; i++) {
+                                var tc = toolCalls[i];
+                                var fn = tc.function || tc;
+                                var toolName = fn.name || tc.name || 'unknown';
+                                var argsStr = fn.arguments || tc.arguments || '{}';
+                                var toolArgs = {};
+                                try { toolArgs = typeof argsStr === 'string' ? JSON.parse(argsStr) : argsStr; } catch(e) {}
+                                var preview = '';
+                                var detailsHtml = '';
+                                if (toolArgs.thought) {
+                                    preview = toolArgs.thought.substring(0, 60);
+                                    detailsHtml = '<pre style="color:var(--green);white-space:pre-wrap;">' + esc(toolArgs.thought) + '</pre>';
+                                } else if (toolArgs.command) {
+                                    preview = toolArgs.command.substring(0, 60);
+                                    detailsHtml = '<pre style="color:var(--cyan);white-space:pre-wrap;">' + esc(toolArgs.command) + '</pre>';
+                                } else if ((toolName === 'Write' || toolName === 'Edit') && (toolArgs.file_path || toolArgs.path)) {
+                                    preview = toolArgs.file_path || toolArgs.path;
+                                    detailsHtml = '<strong>File:</strong> ' + esc(preview);
+                                    if (toolArgs.old_string) detailsHtml += '<br><strong>Old:</strong><pre>' + esc(toolArgs.old_string) + '</pre>';
+                                    if (toolArgs.new_string) detailsHtml += '<br><strong>New:</strong><pre>' + esc(toolArgs.new_string) + '</pre>';
+                                    if (toolArgs.content) detailsHtml += '<br><pre style="max-height:200px;overflow:auto">' + esc(toolArgs.content) + '</pre>';
+                                } else if (toolArgs.url) {
+                                    preview = toolArgs.url.substring(0, 60);
+                                    detailsHtml = '<pre>' + esc(toolArgs.url) + '</pre>';
+                                } else if (toolArgs.file_path || toolArgs.path) {
+                                    preview = toolArgs.file_path || toolArgs.path;
+                                    detailsHtml = '<pre>' + esc(preview) + '</pre>';
+                                } else {
+                                    var keys = Object.keys(toolArgs);
+                                    preview = keys.slice(0, 3).join(', ');
+                                    detailsHtml = '<pre style="white-space:pre-wrap;">' + esc(JSON.stringify(toolArgs, null, 2)) + '</pre>';
+                                }
+                                parsed.push({ toolName: toolName, preview: preview, detailsHtml: detailsHtml });
+                            }
+
+                            // Build container
+                            var container = document.createElement('div');
+                            container.className = 'tool-dot-container';
+
+                            if (parsed.length === 1) {
+                                // Single tool call — render inline, no collapse
+                                var p = parsed[0];
+                                var shortP = p.preview.length > 40 ? p.preview.substring(0, 40) + '...' : p.preview;
+                                var wrapper = document.createElement('div');
+                                wrapper.className = 'tool-dot-wrapper';
+                                wrapper.setAttribute('data-status', 'complete');
+                                var dot = document.createElement('span');
+                                dot.className = 'tool-dot';
+                                dot.setAttribute('data-status', 'complete');
+                                dot.onclick = function() { wrapper.classList.toggle('tool-dot-expanded'); };
+                                dot.innerHTML = '<span class="tool-dot-indicator">\u25cf</span>' +
+                                    '<span class="tool-dot-name">' + esc(p.toolName + (shortP ? ': ' + shortP : '')) + '</span>';
+                                var det = document.createElement('div');
+                                det.className = 'tool-dot-details';
+                                det.innerHTML = p.detailsHtml;
+                                wrapper.appendChild(dot);
+                                wrapper.appendChild(det);
+                                container.appendChild(wrapper);
+                            } else {
+                                // Multiple tool calls — collapsed summary line
+                                var firstName = parsed[0].toolName;
+                                var othersCount = parsed.length - 1;
+                                var summaryLabel = firstName + ' and ' + othersCount + ' other' + (othersCount > 1 ? 's' : '');
+
+                                var summaryWrapper = document.createElement('div');
+                                summaryWrapper.className = 'tool-dot-wrapper tool-resume-group';
+                                summaryWrapper.setAttribute('data-status', 'complete');
+
+                                var summaryDot = document.createElement('span');
+                                summaryDot.className = 'tool-dot';
+                                summaryDot.setAttribute('data-status', 'complete');
+                                summaryDot.style.cursor = 'pointer';
+
+                                var expandedList = document.createElement('div');
+                                expandedList.className = 'tool-dot-details';
+
+                                summaryDot.onclick = function() { summaryWrapper.classList.toggle('tool-dot-expanded'); };
+                                summaryDot.innerHTML = '<span class="tool-dot-indicator">\u25cf</span>' +
+                                    '<span class="tool-dot-name">' + esc(summaryLabel) + '</span>';
+
+                                // Build each tool as a sub-item inside the expandable details
+                                for (var j = 0; j < parsed.length; j++) {
+                                    var pj = parsed[j];
+                                    var shortPj = pj.preview.length > 40 ? pj.preview.substring(0, 40) + '...' : pj.preview;
+                                    var subWrapper = document.createElement('div');
+                                    subWrapper.className = 'tool-dot-wrapper';
+                                    subWrapper.setAttribute('data-status', 'complete');
+                                    subWrapper.style.marginLeft = '12px';
+                                    var subDot = document.createElement('span');
+                                    subDot.className = 'tool-dot';
+                                    subDot.setAttribute('data-status', 'complete');
+                                    subDot.onclick = (function(sw) { return function() { sw.classList.toggle('tool-dot-expanded'); }; })(subWrapper);
+                                    subDot.innerHTML = '<span class="tool-dot-indicator">\u25cf</span>' +
+                                        '<span class="tool-dot-name">' + esc(pj.toolName + (shortPj ? ': ' + shortPj : '')) + '</span>';
+                                    var subDet = document.createElement('div');
+                                    subDet.className = 'tool-dot-details';
+                                    subDet.innerHTML = pj.detailsHtml;
+                                    subWrapper.appendChild(subDot);
+                                    subWrapper.appendChild(subDet);
+                                    expandedList.appendChild(subWrapper);
+                                }
+
+                                summaryWrapper.appendChild(summaryDot);
+                                summaryWrapper.appendChild(expandedList);
+                                container.appendChild(summaryWrapper);
+                            }
+
+                            chatEl.appendChild(container);
+                        }
+
                         // Load conversation history if resumed session has messages
                         if (msg.payload.conversation && msg.payload.conversation.length > 0) {
                             // Clear chat before loading to prevent duplicates on WS reconnect
@@ -640,12 +758,18 @@ function showDownloads() {
                             CONNECTION_MSG_SHOWN = true;
                             if (typeof VoiceChat !== 'undefined') VoiceChat._suppressSpeak = true;
                             let _lastAiText = '';
+                            var _pendingTools1 = [];
                             for (const m of msg.payload.conversation) {
-                                // Skip tool result messages and empty assistant messages (tool call initiators)
                                 if (m.role === 'tool') continue;
+                                var _tc = m.tool_calls || (m.metadata && m.metadata.tool_calls);
+                                if (_tc && _tc.length) { _pendingTools1 = _pendingTools1.concat(_tc); }
                                 if (m.role === 'assistant' && (!m.content || !m.content.trim())) continue;
+                                // Flush batched tool calls before rendering text
+                                if (_pendingTools1.length && window.renderResumedToolCalls) {
+                                    window.renderResumedToolCalls(_pendingTools1, chat);
+                                    _pendingTools1 = [];
+                                }
                                 const content = m.role === 'user' ? maskPasswords(m.content) : m.content;
-                                // DEDUP: Skip consecutive duplicate assistant messages (tool loop narration)
                                 if (m.role === 'assistant') {
                                     const trimmed = (content || '').trim();
                                     if (trimmed === _lastAiText) continue;
@@ -654,6 +778,10 @@ function showDownloads() {
                                     _lastAiText = '';
                                 }
                                 addMsg(m.role === 'user' ? 'user' : 'ai', content);
+                            }
+                            // Flush any remaining tool calls at end
+                            if (_pendingTools1.length && window.renderResumedToolCalls) {
+                                window.renderResumedToolCalls(_pendingTools1, chat);
                             }
                             if (typeof VoiceChat !== 'undefined') VoiceChat._suppressSpeak = false;
                         }
@@ -1313,13 +1441,19 @@ function showDownloads() {
                         try { chat.innerHTML = ''; } catch {}
                         if (window.RhodesReportMode && window.RhodesReportMode.resetSession) window.RhodesReportMode.resetSession();
                         let _lastAiText2 = '';
+                        var _pendingTools2 = [];
                         for (const m of conversation) {
-                            // Skip tool result messages and empty assistant messages
                             if (m.role === 'tool') continue;
+                            var _tc2 = m.tool_calls || (m.metadata && m.metadata.tool_calls);
+                            if (_tc2 && _tc2.length) { _pendingTools2 = _pendingTools2.concat(_tc2); }
                             if (m.role === 'assistant' && (!m.content || !m.content.trim())) continue;
+                            // Flush batched tool calls before rendering text
+                            if (_pendingTools2.length && window.renderResumedToolCalls) {
+                                window.renderResumedToolCalls(_pendingTools2, chat);
+                                _pendingTools2 = [];
+                            }
                             // Mask passwords in user messages when replaying history
                             const content = m.role === 'user' ? maskPasswords(m.content) : m.content;
-                            // DEDUP: Skip consecutive duplicate assistant messages (tool loop narration)
                             if (m.role === 'assistant') {
                                 const trimmed = (content || '').trim();
                                 if (trimmed === _lastAiText2) continue;
@@ -1328,6 +1462,10 @@ function showDownloads() {
                                 _lastAiText2 = '';
                             }
                             addMsg(m.role === 'user' ? 'user' : 'ai', content);
+                        }
+                        // Flush any remaining tool calls at end
+                        if (_pendingTools2.length && window.renderResumedToolCalls) {
+                            window.renderResumedToolCalls(_pendingTools2, chat);
                         }
                         const sid = msg.payload.session_id || msg.payload.rhodes_id || '';
                         if (sid) {

@@ -119,13 +119,35 @@
                     RC.PalaceLoci.activateLocus(obj.userData.dbData);
                 }
             }
-            // Check connectors too (elevators, portals)
+            // Check connectors — raycast for portals, proximity for elevators
             const connHits = this.raycaster.intersectObjects(RC.PalaceRenderer.connectorMeshes, true);
             if (connHits.length > 0 && connHits[0].distance < 3) {
                 let obj = connHits[0].object;
                 while (obj && !obj.userData.dbId) obj = obj.parent;
                 if (obj && obj.userData.dbType === 'connector') {
                     RC.PalaceTraverse.startTraversal(obj.userData.dbData);
+                    return;
+                }
+            }
+            // Proximity-based elevator/ladder check (transparent shafts are hard to aim at)
+            const pos = this.controls.getObject().position;
+            const ELEV_RANGE = 2.5;
+            const seen = new Set(); // dedupe — multiple meshes share same connector
+            for (const m of RC.PalaceRenderer.connectorMeshes) {
+                const ct = m.userData.connectorType || (m.userData.dbData && m.userData.dbData.type);
+                if (ct === 'elevator' || ct === 'ladder') {
+                    const c = m.userData.dbData;
+                    if (!c || seen.has(c.id)) continue;
+                    seen.add(c.id);
+                    // Check proximity to shaft center (uses elevatorX/Z from renderer or from_point)
+                    const sx = m.userData.elevatorX != null ? m.userData.elevatorX :
+                               ((c.from_point && c.from_point.position && c.from_point.position[0]) || 0);
+                    const sz = m.userData.elevatorZ != null ? m.userData.elevatorZ :
+                               ((c.from_point && c.from_point.position && c.from_point.position[2]) || 0);
+                    if (Math.hypot(pos.x - sx, pos.z - sz) < ELEV_RANGE) {
+                        RC.PalaceTraverse.startTraversal(c);
+                        return;
+                    }
                 }
             }
         },
@@ -151,9 +173,15 @@
             if (this.moveForward || this.moveBackward) this.velocity.z -= this.direction.z * this.moveSpeed * delta * 10;
             if (this.moveLeft || this.moveRight) this.velocity.x -= this.direction.x * this.moveSpeed * delta * 10;
 
+            // Save position before movement for wall collision rollback
+            const prevPos = this.controls.getObject().position.clone();
+
             this.controls.moveRight(-this.velocity.x * delta);
             this.controls.moveForward(-this.velocity.z * delta);
             this.controls.getObject().position.y += this.velocity.y * delta;
+
+            // Wall collision — cast horizontal rays and push back if too close
+            this._checkWallCollision(prevPos);
 
             // Floor collision
             if (this.controls.getObject().position.y < this.playerHeight) {
@@ -188,6 +216,45 @@
             }
         },
 
+        _checkWallCollision(prevPos) {
+            const pos = this.controls.getObject().position;
+            const WALL_DIST = 0.45; // minimum distance from wall
+            const RAY_Y = pos.y - 0.3; // chest height for ray origin
+            // Only check wall-type surfaces (not floors/ceilings)
+            const walls = RC.PalaceRenderer.surfaceMeshes.filter(m => {
+                const s = m.userData.dbData;
+                return s && s.type === 'wall';
+            });
+            if (walls.length === 0) return;
+
+            // Cast 4 cardinal horizontal rays from the new position
+            const dirs = [
+                new THREE.Vector3(1, 0, 0),
+                new THREE.Vector3(-1, 0, 0),
+                new THREE.Vector3(0, 0, 1),
+                new THREE.Vector3(0, 0, -1),
+            ];
+            const origin = new THREE.Vector3(pos.x, RAY_Y, pos.z);
+            for (const dir of dirs) {
+                this.raycaster.set(origin, dir);
+                this.raycaster.far = WALL_DIST;
+                const hits = this.raycaster.intersectObjects(walls, true);
+                if (hits.length > 0 && hits[0].distance < WALL_DIST) {
+                    // Push back along this axis
+                    const pushback = WALL_DIST - hits[0].distance;
+                    pos.x -= dir.x * pushback;
+                    pos.z -= dir.z * pushback;
+                    // Kill velocity in the blocked direction
+                    if (dir.x !== 0) this.velocity.x = 0;
+                    if (dir.z !== 0) this.velocity.z = 0;
+                    // Update origin for subsequent ray checks
+                    origin.x = pos.x;
+                    origin.z = pos.z;
+                }
+            }
+            this.raycaster.far = Infinity; // reset
+        },
+
         _checkLociProximity() {
             if (!RC.PalaceRenderer.lociMeshes.length) return;
             const pos = this.controls.getObject().position;
@@ -195,7 +262,6 @@
                 const mPos = m.position || (m.children?.[0]?.parent?.position);
                 if (!mPos) return;
                 const dist = pos.distanceTo(mPos);
-                // Highlight when close
                 if (dist < 3) {
                     if (m.material && m.material.emissiveIntensity !== undefined) {
                         m.material.emissiveIntensity = 2.5 + Math.sin(Date.now() * 0.005) * 0.5;
@@ -206,6 +272,50 @@
                     }
                 }
             });
+            // Proximity hints for elevators AND portal doors
+            let hintText = '';
+            const hintEl = document.getElementById('palace-elevator-hint');
+
+            // Check elevator/connector proximity
+            for (const m of RC.PalaceRenderer.connectorMeshes) {
+                const ct = m.userData.connectorType || (m.userData.dbData && m.userData.dbData.type);
+                if (ct === 'elevator' || ct === 'ladder') {
+                    const c = m.userData.dbData;
+                    if (!c) continue;
+                    const sx = m.userData.elevatorX != null ? m.userData.elevatorX : 0;
+                    const sz = m.userData.elevatorZ != null ? m.userData.elevatorZ : 0;
+                    if (Math.hypot(pos.x - sx, pos.z - sz) < 3) {
+                        hintText = 'Press <kbd>F</kbd> to use elevator';
+                        break;
+                    }
+                }
+            }
+
+            // Check portal door loci proximity (marker_type === 'door')
+            if (!hintText) {
+                for (const m of RC.PalaceRenderer.lociMeshes) {
+                    const d = m.userData.dbData;
+                    if (!d || d.marker_type !== 'door') continue;
+                    const mPos = m.position;
+                    if (!mPos) continue;
+                    const dist = pos.distanceTo(mPos);
+                    if (dist < 4) {
+                        const target = d.marker_settings && d.marker_settings.portal_target;
+                        const label = d.label || (target ? 'Enter ' + target : 'Enter portal');
+                        hintText = 'Press <kbd>F</kbd> — ' + label;
+                        break;
+                    }
+                }
+            }
+
+            if (hintEl) {
+                if (hintText) {
+                    hintEl.innerHTML = hintText;
+                    hintEl.style.display = 'block';
+                } else {
+                    hintEl.style.display = 'none';
+                }
+            }
         },
 
         lock() {
