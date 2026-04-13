@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Musketeer Duel</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="player1-viewport" class="viewport">
+            <canvas id="canvas1"></canvas>
+            <div class="player-label">PLAYER 1 - WASD to move, Q aim, E reload, F fire</div>
+        </div>
+        <div id="player2-viewport" class="viewport">
+            <canvas id="canvas2"></canvas>
+            <div class="player-label">PLAYER 2 - Arrows to move, RSHIFT aim, ENTER reload, RCTRL fire</div>
+        </div>
+        <div id="center-bar"></div>
+    </div>
+    
+    <!-- Start Screen -->
+    <div id="start-screen">
+        <h1>MUSKETEER DUEL</h1>
+        <p>Two players. One computer. Flintlock muskets.</p>
+        <p class="instructions">Aim with iron sights only. No crosshairs.</p>
+        <p class="instructions">Complete the full reloading sequence to fire again.</p>
+        <div class="controls">
+            <div class="control-section">
+                <h3>PLAYER 1 (Left Screen)</h3>
+                <p><strong>WASD</strong> - Move</p>
+                <p><strong>Mouse</strong> - Look around</p>
+                <p><strong>Q</strong> - Aim down sights</p>
+                <p><strong>E</strong> - Advance reload step</p>
+                <p><strong>F</strong> - Fire (when cocked)</p>
+            </div>
+            <div class="control-section">
+                <h3>PLAYER 2 (Right Screen)</h3>
+                <p><strong>Arrow Keys</strong> - Move</p>
+                <p><strong>Numpad 4/6 or Mouse</strong> - Look</p>
+                <p><strong>Right Shift</strong> - Aim down sights</p>
+                <p><strong>Enter</strong> - Advance reload step</p>
+                <p><strong>Right Ctrl</strong> - Fire (when cocked)</p>
+            </div>
+        </div>
+        <p class="instructions">Reload stages: Half-cock → Bite/Pour Powder → Load Ball → Ramrod Down → Ramrod Up → Prime Pan → Full Cock → Fire</p>
+        <button id="start-btn">CLICK TO START DUEL</button>
+        <p class="hint">Click to lock mouse pointer</p>
+    </div>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Game Modules -->
+    <script src="js/input.js"></script>
+    <script src="js/particles.js"></script>
+    <script src="js/projectile.js"></script>
+    <script src="js/animations.js"></script>
+    <script src="js/musket.js"></script>
+    <script src="js/sights.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/world.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

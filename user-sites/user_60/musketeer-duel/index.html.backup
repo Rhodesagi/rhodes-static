@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Musketeer Duel - 2 Player Flintlock FPS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+        }
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        #instructions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: #d4b896;
+            padding: 30px 40px;
+            border: 3px solid #8b7355;
+            border-radius: 8px;
+            text-align: center;
+            z-index: 100;
+        }
+        #instructions h1 {
+            color: #c9a86c;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px #000;
+            font-size: 2em;
+        }
+        .player-controls {
+            display: inline-block;
+            vertical-align: top;
+            margin: 0 30px;
+            text-align: left;
+            padding: 15px;
+            background: rgba(139, 115, 85, 0.2);
+            border-radius: 5px;
+        }
+        .player-controls h3 {
+            color: #c9a86c;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .player-controls p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .key {
+            color: #fff;
+            font-weight: bold;
+            background: #5a4a3a;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        #startBtn {
+            margin-top: 20px;
+            padding: 12px 30px;
+            font-size: 18px;
+            background: #8b4513;
+            color: #fff;
+            border: 2px solid #c9a86c;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        #startBtn:hover {
+            background: #a0522d;
+        }
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: none;
+        }
+        .split-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: #8b7355;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .player-label {
+            position: absolute;
+            color: #c9a86c;
+            font-size: 14px;
+            padding: 5px 10px;
+            background: rgba(0, 0, 0, 0.6);
+        }
+        #p1-label { top: 10px; left: 10px; }
+        #p2-label { bottom: 10px; left: 10px; }
+        .health-bar {
+            position: absolute;
+            width: 200px;
+            height: 20px;
+            background: #333;
+            border: 2px solid #8b7355;
+        }
+        #p1-health { top: 10px; right: 10px; }
+        #p2-health { bottom: 10px; right: 10px; }
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8b0000, #cd5c5c);
+            transition: width 0.3s;
+        }
+        .reload-status {
+            position: absolute;
+            right: 10px;
+            color: #d4b896;
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 5px 10px;
+        }
+        #p1-reload { top: 35px; }
+        #p2-reload { bottom: 35px; }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #d4b896;
+            padding: 40px;
+            border: 3px solid #8b7355;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+            z-index: 200;
+        }
+        #winner-text {
+            font-size: 2em;
+            color: #c9a86c;
+            margin-bottom: 20px;
+        }
+        #restartBtn {
+            padding: 10px 25px;
+            font-size: 16px;
+            background: #8b4513;
+            color: #fff;
+            border: 2px solid #c9a86c;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="instructions">
+        <h1>⚔️ MUSKETEER DUEL ⚔️</h1>
+        <p style="margin-bottom: 15px; font-style: italic;">A flintlock duel to the death. No crosshairs - aim with iron sights only.</p>
+        
+        <div class="player-controls">
+            <h3>PLAYER 1 (Top Screen)</h3>
+            <p><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> - Move</p>
+            <p><span class="key">T</span><span class="key">F</span><span class="key">G</span><span class="key">H</span> - Look Around</p>
+            <p><span class="key">Q</span> - Fire Musket</p>
+            <p><span class="key">E</span> - Advance Reload Step</p>
+        </div>
+        
+        <div class="player-controls">
+            <h3>PLAYER 2 (Bottom Screen)</h3>
+            <p><span class="key">↑</span><span class="key">←</span><span class="key">↓</span><span class="key">→</span> - Move</p>
+            <p><span class="key">I</span><span class="key">J</span><span class="key">K</span><span class="key">L</span> - Look Around</p>
+            <p><span class="key">O</span> - Fire Musket</p>
+            <p><span class="key">P</span> - Advance Reload Step</p>
+        </div>
+        
+        <p style="margin-top: 15px; font-size: 12px; color: #8b7355;">
+            Flintlock Reload Sequence: Pour Powder → Place Patch/Ball → Ram Home → Prime Pan → Half-Cock → Full-Cock → FIRE
+        </p>
+        <p style="font-size: 12px; color: #8b7355;">
+            Cannot fire while reloading. Iron sights only - align rear notch with front post!
+        </p>
+        
+        <button id="startBtn">ENTER THE FIELD OF HONOR</button>
+    </div>
+    
+    <div id="ui">
+        <div class="split-line"></div>
+        <div class="player-label" id="p1-label">PLAYER 1</div>
+        <div class="player-label" id="p2-label">PLAYER 2</div>
+        <div class="health-bar" id="p1-health"><div class="health-fill" id="p1-health-fill" style="width: 100%"></div></div>
+        <div class="health-bar" id="p2-health"><div class="health-fill" id="p2-health-fill" style="width: 100%"></div></div>
+        <div class="reload-status" id="p1-reload">READY</div>
+        <div class="reload-status" id="p2-reload">READY</div>
+    </div>
+    
+    <div id="gameOver">
+        <div id="winner-text"></div>
+        <button id="restartBtn">Duel Again</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="input.js"></script>
+    <script src="ballistics.js"></script>
+    <script src="musket.js"></script>
+    <script src="player.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

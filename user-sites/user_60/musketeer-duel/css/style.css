@@ -1,0 +1,218 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #000;
+    overflow: hidden;
+    font-family: 'Georgia', serif;
+}
+
+#game-container {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    display: flex;
+}
+
+.viewport {
+    width: 50%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+#canvas1, #canvas2 {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+#center-bar {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, 
+        transparent 0%,
+        rgba(139, 90, 43, 0.8) 20%,
+        rgba(139, 90, 43, 0.8) 80%,
+        transparent 100%
+    );
+    transform: translateX(-50%);
+    z-index: 10;
+}
+
+.player-label {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    text-align: center;
+    pointer-events: none;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    background: rgba(0,0,0,0.3);
+    padding: 5px 10px;
+    border-radius: 3px;
+}
+
+/* Start Screen */
+#start-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    color: #eaeaea;
+}
+
+#start-screen h1 {
+    font-size: 48px;
+    letter-spacing: 8px;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    color: #c9a227;
+}
+
+#start-screen p {
+    font-size: 18px;
+    margin: 5px 0;
+    color: #bbb;
+}
+
+#start-screen .instructions {
+    color: #888;
+    font-style: italic;
+    margin: 3px 0;
+}
+
+.controls {
+    display: flex;
+    gap: 60px;
+    margin: 30px 0;
+    padding: 20px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    border: 1px solid rgba(201, 162, 39, 0.3);
+}
+
+.control-section {
+    text-align: center;
+}
+
+.control-section h3 {
+    color: #c9a227;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.control-section p {
+    font-size: 14px !important;
+    margin: 8px 0 !important;
+    color: #aaa !important;
+}
+
+.control-section strong {
+    color: #fff;
+}
+
+#start-btn {
+    margin-top: 30px;
+    padding: 15px 40px;
+    font-size: 20px;
+    background: #c9a227;
+    color: #1a1a2e;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-family: 'Georgia', serif;
+    transition: all 0.3s;
+}
+
+#start-btn:hover {
+    background: #e8c547;
+    transform: scale(1.05);
+}
+
+.hint {
+    margin-top: 15px;
+    color: #666;
+    font-size: 14px !important;
+}
+
+/* Hide start screen when game active */
+.game-active #start-screen {
+    display: none;
+}
+
+/* Game Over Screen */
+#game-over-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
+    color: #eaeaea;
+}
+
+#game-over-screen.visible {
+    display: flex;
+}
+
+#game-over-screen h2 {
+    font-size: 36px;
+    color: #c9a227;
+    margin-bottom: 20px;
+}
+
+#game-over-screen button {
+    padding: 12px 30px;
+    font-size: 16px;
+    background: #c9a227;
+    color: #1a1a2e;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: 'Georgia', serif;
+    margin-top: 20px;
+}
+
+/* Reload progress indicator - minimal, part of viewmodel */
+#reload-indicator {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.7);
+    font-size: 11px;
+    pointer-events: none;
+}
+
+/* Hidden by default - iron sights philosophy: NO HUD */
+.no-hud .player-label,
+.no-hud #reload-indicator {
+    opacity: 0;
+}
+
+/* Ensure canvas fills viewport properly */
+canvas {
+    image-rendering: pixelated;
+}

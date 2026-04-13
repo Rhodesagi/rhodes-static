@@ -220,16 +220,16 @@ window.rhodesSessionState = (function() {
 
     function getScopedSessionId(identity) {
         const key = keyForIdentity(identity);
-        return (window.rhodesSessionStorage && window.rhodesSessionStorage.getItem(key)) || '';
+        return (window.rhodesStorage && window.rhodesStorage.getItem(key)) || '';
     }
 
     function setScopedSessionId(sessionId, identity) {
         const key = keyForIdentity(identity);
         if (!sessionId) {
-            if (window.rhodesSessionStorage) window.rhodesSessionStorage.removeItem(key);
+            if (window.rhodesStorage) window.rhodesStorage.removeItem(key);
             return;
         }
-        if (window.rhodesSessionStorage) window.rhodesSessionStorage.setItem(key, sessionId);
+        if (window.rhodesStorage) window.rhodesStorage.setItem(key, sessionId);
     }
 
     function migrateLegacySessionPointer(identity) {

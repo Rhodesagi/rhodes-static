@@ -1,0 +1,359 @@
+// Simple reliable 2-player musket duel
+
+const GameState = { MENU: 0, PLAYING: 1, GAMEOVER: 2 };
+
+class Game {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.state = GameState.MENU;
+        
+        // Three.js setup
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x87CEEB);
+        this.scene.fog = new THREE.Fog(0x87CEEB, 10, 100);
+        
+        this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.setScissorTest(true);
+        
+        // Create ground
+        const ground = new THREE.Mesh(
+            new THREE.PlaneGeometry(200, 200),
+            new THREE.MeshStandardMaterial({ color: 0x3d7c3d })
+        );
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        this.scene.add(ground);
+        
+        // Lighting
+        this.scene.add(new THREE.AmbientLight(0x404040, 0.6));
+        const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+        sun.position.set(50, 100, 50);
+        sun.castShadow = true;
+        this.scene.add(sun);
+        
+        // Player 1 camera (top half)
+        this.p1Camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        this.p1Camera.position.set(0, 1.6, 20);
+        this.p1Camera.rotation.y = Math.PI; // Face toward center
+        this.scene.add(this.p1Camera); // CRITICAL: add camera to scene
+        
+        // Player 2 camera (bottom half)
+        this.p2Camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        this.p2Camera.position.set(0, 1.6, -20);
+        this.p2Camera.rotation.y = 0; // Face toward center
+        this.scene.add(this.p2Camera); // CRITICAL: add camera to scene
+        
+        // Create visible muskets attached to each camera
+        console.log('Creating P1 musket...');
+        this.p1Musket = this.createMusket();
+        console.log('P1 musket created:', this.p1Musket);
+        this.p1Camera.add(this.p1Musket);
+        this.p1Musket.position.set(0.25, -0.15, -0.4);
+        console.log('P1 musket added to camera at position:', this.p1Musket.position);
+        
+        console.log('Creating P2 musket...');
+        this.p2Musket = this.createMusket();
+        this.p2Camera.add(this.p2Musket);
+        this.p2Musket.position.set(0.25, -0.15, -0.4);
+        
+        // Enemy models (visible to each other)
+        this.p1Model = this.createSoldier(0x00008b); // Bluecoat
+        this.p2Model = this.createSoldier(0x8b0000); // Redcoat
+        this.scene.add(this.p1Model);
+        this.scene.add(this.p2Model);
+        
+        // Viewport dimensions
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        
+        // Game state
+        this.p1Pos = new THREE.Vector3(0, 0, 20);
+        this.p2Pos = new THREE.Vector3(0, 0, -20);
+        this.p1Yaw = Math.PI;
+        this.p2Yaw = 0;
+        this.p1Pitch = 0;
+        this.p2Pitch = 0;
+        
+        this.p1Health = 100;
+        this.p2Health = 100;
+        
+        // Bullets
+        this.bullets = [];
+        
+        // Input
+        this.keys = {};
+        window.addEventListener('keydown', (e) => this.keys[e.key] = true);
+        window.addEventListener('keyup', (e) => this.keys[e.key] = false);
+        
+        // Start button
+        document.getElementById('startBtn').addEventListener('click', () => this.start());
+        document.getElementById('restartBtn').addEventListener('click', () => this.restart());
+        
+        // Start loop
+        this.animate();
+    }
+    
+    createMusket() {
+        const group = new THREE.Group();
+        
+        // Bright wood material - more visible
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.8 });
+        // Steel material  
+        const steelMat = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.7, roughness: 0.3 });
+        // Brass material
+        const brassMat = new THREE.MeshStandardMaterial({ color: 0xFFD700, metalness: 0.8, roughness: 0.2 });
+        
+        // Stock (main body) - LARGER
+        const stock = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.15, 0.9), woodMat);
+        stock.position.set(0, -0.05, 0);
+        group.add(stock);
+        
+        // Barrel (steel cylinder pointing forward) - THICKER
+        const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.0, 8), steelMat);
+        barrel.rotation.x = Math.PI / 2;
+        barrel.position.set(0, 0.08, -0.15);
+        group.add(barrel);
+        
+        // Front sight (post) - LARGER
+        const frontSight = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.04, 0.015), steelMat);
+        frontSight.position.set(0, 0.18, -0.65);
+        group.add(frontSight);
+        
+        // Rear sight (notch) - LARGER
+        const rearBase = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.03), steelMat);
+        rearBase.position.set(0, 0.12, 0.2);
+        group.add(rearBase);
+        const rearLeft = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.035, 0.008), steelMat);
+        rearLeft.position.set(-0.01, 0.14, 0.2);
+        group.add(rearLeft);
+        const rearRight = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.035, 0.008), steelMat);
+        rearRight.position.set(0.01, 0.14, 0.2);
+        group.add(rearRight);
+        
+        // DEBUG: Bright red sphere to confirm rendering works
+        const debugSphere = new THREE.Mesh(
+            new THREE.SphereGeometry(0.05, 8, 8),
+            new THREE.MeshBasicMaterial({ color: 0xff0000 })
+        );
+        debugSphere.position.set(0, 0.2, -0.3);
+        group.add(debugSphere);
+        
+        // Lock mechanism
+        const lock = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.08, 0.1), steelMat);
+        lock.position.set(-0.05, 0.02, 0.1);
+        group.add(lock);
+        
+        // Trigger guard (brass)
+        const trigger = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.005, 4, 12, Math.PI), brassMat);
+        trigger.position.set(0, -0.08, 0.25);
+        trigger.rotation.y = Math.PI / 2;
+        group.add(trigger);
+        
+        // Buttplate (brass)
+        const butt = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 0.02), brassMat);
+        butt.position.set(0, -0.02, 0.41);
+        group.add(butt);
+        
+        return group;
+    }
+    
+    createSoldier(color) {
+        const group = new THREE.Group();
+        const mat = new THREE.MeshStandardMaterial({ color: color });
+        
+        // Body
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.2, 0.7, 8), mat);
+        body.position.y = 0.95;
+        group.add(body);
+        
+        // Head
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), new THREE.MeshStandardMaterial({ color: 0xffccaa }));
+        head.position.y = 1.65;
+        group.add(head);
+        
+        // Hat (tricorn style - simple cylinder)
+        const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.1, 8), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+        hat.position.y = 1.8;
+        group.add(hat);
+        
+        return group;
+    }
+    
+    resize() {
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        this.renderer.setSize(this.width, this.height);
+        
+        const aspect = this.width / (this.height / 2);
+        this.p1Camera.aspect = aspect;
+        this.p1Camera.updateProjectionMatrix();
+        this.p2Camera.aspect = aspect;
+        this.p2Camera.updateProjectionMatrix();
+    }
+    
+    start() {
+        document.getElementById('instructions').style.display = 'none';
+        document.getElementById('ui').style.display = 'block';
+        this.state = GameState.PLAYING;
+        this.reset();
+    }
+    
+    restart() {
+        document.getElementById('gameOver').style.display = 'none';
+        this.state = GameState.PLAYING;
+        this.reset();
+    }
+    
+    reset() {
+        this.p1Pos.set(0, 0, 20);
+        this.p2Pos.set(0, 0, -20);
+        this.p1Yaw = Math.PI;
+        this.p2Yaw = 0;
+        this.p1Health = 100;
+        this.p2Health = 100;
+        this.bullets = [];
+    }
+    
+    update() {
+        if (this.state !== GameState.PLAYING) return;
+        
+        const speed = 3;
+        const lookSpeed = 0.03;
+        
+        // Player 1 controls (WASD + TFGH look, Q fire)
+        if (this.keys['w']) this.p1Pos.z -= speed * 0.016;
+        if (this.keys['s']) this.p1Pos.z += speed * 0.016;
+        if (this.keys['a']) this.p1Pos.x -= speed * 0.016;
+        if (this.keys['d']) this.p1Pos.x += speed * 0.016;
+        
+        if (this.keys['t']) this.p1Pitch -= lookSpeed;
+        if (this.keys['g']) this.p1Pitch += lookSpeed;
+        if (this.keys['f']) this.p1Yaw -= lookSpeed;
+        if (this.keys['h']) this.p1Yaw += lookSpeed;
+        
+        // Clamp pitch
+        this.p1Pitch = Math.max(-1, Math.min(1, this.p1Pitch));
+        
+        // Player 2 controls (arrows + IJKL look, O fire)
+        if (this.keys['ArrowUp']) this.p2Pos.z -= speed * 0.016;
+        if (this.keys['ArrowDown']) this.p2Pos.z += speed * 0.016;
+        if (this.keys['ArrowLeft']) this.p2Pos.x -= speed * 0.016;
+        if (this.keys['ArrowRight']) this.p2Pos.x += speed * 0.016;
+        
+        if (this.keys['i']) this.p2Pitch -= lookSpeed;
+        if (this.keys['k']) this.p2Pitch += lookSpeed;
+        if (this.keys['j']) this.p2Yaw -= lookSpeed;
+        if (this.keys['l']) this.p2Yaw += lookSpeed;
+        
+        this.p2Pitch = Math.max(-1, Math.min(1, this.p2Pitch));
+        
+        // Update camera positions
+        this.p1Camera.position.copy(this.p1Pos);
+        this.p1Camera.position.y = 1.6;
+        this.p1Camera.rotation.set(this.p1Pitch, this.p1Yaw, 0);
+        
+        this.p2Camera.position.copy(this.p2Pos);
+        this.p2Camera.position.y = 1.6;
+        this.p2Camera.rotation.set(this.p2Pitch, this.p2Yaw, 0);
+        
+        // Update enemy models
+        this.p1Model.position.copy(this.p2Pos);
+        this.p1Model.position.y = 0;
+        this.p2Model.position.copy(this.p1Pos);
+        this.p2Model.position.y = 0;
+        
+        // Update bullets
+        for (let i = this.bullets.length - 1; i >= 0; i--) {
+            const b = this.bullets[i];
+            b.pos.add(b.vel.clone().multiplyScalar(0.016));
+            b.mesh.position.copy(b.pos);
+            
+            // Check hits
+            if (b.player === 1) {
+                if (b.pos.distanceTo(this.p2Pos.clone().add(new THREE.Vector3(0, 1.6, 0))) < 0.5) {
+                    this.p2Health -= 25;
+                    this.scene.remove(b.mesh);
+                    this.bullets.splice(i, 1);
+                    continue;
+                }
+            } else {
+                if (b.pos.distanceTo(this.p1Pos.clone().add(new THREE.Vector3(0, 1.6, 0))) < 0.5) {
+                    this.p1Health -= 25;
+                    this.scene.remove(b.mesh);
+                    this.bullets.splice(i, 1);
+                    continue;
+                }
+            }
+            
+            // Remove if too far
+            if (b.pos.length() > 100) {
+                this.scene.remove(b.mesh);
+                this.bullets.splice(i, 1);
+            }
+        }
+        
+        // Check win
+        if (this.p1Health <= 0 || this.p2Health <= 0) {
+            this.endGame();
+        }
+        
+        // Update UI
+        document.getElementById('p1-health-fill').style.width = this.p1Health + '%';
+        document.getElementById('p2-health-fill').style.width = this.p2Health + '%';
+    }
+    
+    fire(player) {
+        const bullet = new THREE.Mesh(
+            new THREE.SphereGeometry(0.02, 4, 4),
+            new THREE.MeshBasicMaterial({ color: 0xffff00 })
+        );
+        
+        const camera = player === 1 ? this.p1Camera : this.p2Camera;
+        const pos = camera.position.clone();
+        const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+        
+        bullet.position.copy(pos);
+        this.scene.add(bullet);
+        
+        this.bullets.push({
+            player: player,
+            pos: pos,
+            vel: dir.multiplyScalar(50),
+            mesh: bullet
+        });
+    }
+    
+    endGame() {
+        this.state = GameState.GAMEOVER;
+        const winner = this.p1Health > 0 ? 'Player 1 (Bluecoat)' : 'Player 2 (Redcoat)';
+        document.getElementById('winner-text').textContent = winner + ' Wins!';
+        document.getElementById('gameOver').style.display = 'block';
+    }
+    
+    render() {
+        this.renderer.clear();
+        
+        // Player 1 view (top half)
+        this.renderer.setScissor(0, this.height / 2 + 2, this.width, this.height / 2 - 2);
+        this.renderer.setViewport(0, this.height / 2 + 2, this.width, this.height / 2 - 2);
+        this.renderer.render(this.scene, this.p1Camera);
+        
+        // Player 2 view (bottom half)
+        this.renderer.setScissor(0, 0, this.width, this.height / 2 - 2);
+        this.renderer.setViewport(0, 0, this.width, this.height / 2 - 2);
+        this.renderer.render(this.scene, this.p2Camera);
+    }
+    
+    animate() {
+        this.update();
+        this.render();
+        requestAnimationFrame(() => this.animate());
+    }
+}
+
+// Initialize when DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.game = new Game();
+});

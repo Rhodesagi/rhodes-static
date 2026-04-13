@@ -614,6 +614,10 @@ function showDownloads() {
 
                         // Load conversation history if resumed session has messages
                         if (msg.payload.conversation && msg.payload.conversation.length > 0) {
+                            // Clear chat before loading to prevent duplicates on WS reconnect
+                            try { chat.innerHTML = ''; } catch (e) {}
+                            if (window.RhodesReportMode && window.RhodesReportMode.resetSession) window.RhodesReportMode.resetSession();
+                            CONNECTION_MSG_SHOWN = true;
                             if (typeof VoiceChat !== 'undefined') VoiceChat._suppressSpeak = true;
                             for (const m of msg.payload.conversation) {
                                 // Skip tool result messages and empty assistant messages (tool call initiators)

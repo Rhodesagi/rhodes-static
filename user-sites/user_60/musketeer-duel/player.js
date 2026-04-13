@@ -1,0 +1,256 @@
+// Player class with first-person camera, movement, and musket
+
+class Player {
+    constructor(id, scene, startPosition, isPlayer2 = false) {
+        this.id = id;
+        this.isPlayer2 = isPlayer2;
+        this.scene = scene;
+        
+        // Health
+        this.maxHealth = 100;
+        this.health = this.maxHealth;
+        this.dead = false;
+        
+        // Create camera for this player
+        this.camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        this.camera.position.copy(startPosition);
+        this.camera.rotation.order = 'YXZ'; // Yaw then pitch
+        
+        // CRITICAL: Add camera to scene so attached musket renders
+        this.scene.add(this.camera);
+        
+        // Movement
+        this.position = startPosition.clone();
+        this.velocity = new THREE.Vector3(0, 0, 0);
+        this.rotation = new THREE.Euler(0, 0, 0, 'YXZ');
+        
+        // Look angles
+        this.yaw = isPlayer2 ? Math.PI : 0; // Face each other
+        this.pitch = 0;
+        
+        // Movement speed
+        this.moveSpeed = 4.5; // m/s (walking pace)
+        this.lookSpeed = 2.0; // rad/s
+        
+        // Height
+        this.eyeHeight = 1.6;
+        this.radius = 0.3; // Player collision radius
+        this.height = 1.8;
+        
+        // Create the musket
+        this.musket = new Musket(scene, this.camera, isPlayer2);
+        
+        // Hit indicator
+        this.lastHitTime = 0;
+        
+        // Create a visible player model for the other player to see
+        this.model = this.createPlayerModel();
+        this.scene.add(this.model);
+        
+        // Update initial position
+        this.updatePosition();
+    }
+    
+    createPlayerModel() {
+        const group = new THREE.Group();
+        
+        // Simple soldier representation
+        const material = new THREE.MeshStandardMaterial({
+            color: this.isPlayer2 ? 0x8b0000 : 0x00008b, // Red vs Blue coats
+            roughness: 0.8
+        });
+        
+        // Torso
+        const torso = new THREE.Mesh(
+            new THREE.BoxGeometry(0.5, 0.7, 0.3),
+            material
+        );
+        torso.position.y = 1.1;
+        group.add(torso);
+        
+        // Head
+        const head = new THREE.Mesh(
+            new THREE.SphereGeometry(0.15, 8, 8),
+            new THREE.MeshStandardMaterial({ color: 0xffccaa })
+        );
+        head.position.y = 1.65;
+        group.add(head);
+        
+        // Tricorn hat
+        const hatBase = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.16, 0.16, 0.08, 8),
+            new THREE.MeshStandardMaterial({ color: 0x222222 })
+        );
+        hatBase.position.y = 1.75;
+        group.add(hatBase);
+        
+        const hatBrim = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.3, 0.3, 0.01, 3), // Triangular brim
+            new THREE.MeshStandardMaterial({ color: 0x222222 })
+        );
+        hatBrim.position.y = 1.72;
+        group.add(hatBrim);
+        
+        // Arms
+        const armGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.6, 8);
+        const leftArm = new THREE.Mesh(armGeo, material);
+        leftArm.position.set(-0.35, 1.1, 0);
+        leftArm.rotation.z = 0.2;
+        group.add(leftArm);
+        
+        const rightArm = new THREE.Mesh(armGeo, material);
+        rightArm.position.set(0.35, 1.1, 0);
+        rightArm.rotation.z = -0.2;
+        group.add(rightArm);
+        
+        // Legs
+        const legGeo = new THREE.CylinderGeometry(0.1, 0.08, 0.8, 8);
+        const leftLeg = new THREE.Mesh(legGeo, material);
+        leftLeg.position.set(-0.15, 0.4, 0);
+        group.add(leftLeg);
+        
+        const rightLeg = new THREE.Mesh(legGeo, material);
+        rightLeg.position.set(0.15, 0.4, 0);
+        group.add(rightLeg);
+        
+        // Add a "face" indicator so players know which way is forward
+        const faceIndicator = new THREE.Mesh(
+            new THREE.BoxGeometry(0.02, 0.02, 0.1),
+            new THREE.MeshBasicMaterial({ color: 0xffff00 })
+        );
+        faceIndicator.position.set(0, 1.65, 0.12);
+        group.add(faceIndicator);
+        
+        return group;
+    }
+    
+    // Update from input
+    update(input, deltaTime, mapBounds, otherPlayer, ballistics) {
+        if (this.dead) return;
+        
+        // Handle looking (rotation)
+        this.yaw -= input.look.x * this.lookSpeed * deltaTime;
+        this.pitch -= input.look.y * this.lookSpeed * deltaTime;
+        
+        // Clamp pitch to prevent flipping
+        this.pitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, this.pitch));
+        
+        // Apply rotation to camera
+        this.rotation.y = this.yaw;
+        this.rotation.x = this.pitch;
+        this.camera.rotation.copy(this.rotation);
+        
+        // Handle movement
+        const moveInput = new THREE.Vector3(input.move.x, 0, input.move.z);
+        
+        if (moveInput.length() > 0) {
+            moveInput.normalize();
+            
+            // Transform movement by camera yaw (FPS style)
+            const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw);
+            const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw);
+            
+            this.velocity.copy(forward.multiplyScalar(-moveInput.z * this.moveSpeed));
+            this.velocity.add(right.multiplyScalar(moveInput.x * this.moveSpeed));
+        } else {
+            this.velocity.set(0, 0, 0);
+        }
+        
+        // Apply movement
+        const moveDelta = this.velocity.clone().multiplyScalar(deltaTime);
+        const newPosition = this.position.clone().add(moveDelta);
+        
+        // Collision with map bounds
+        newPosition.x = Math.max(mapBounds.minX + this.radius, 
+            Math.min(mapBounds.maxX - this.radius, newPosition.x));
+        newPosition.z = Math.max(mapBounds.minZ + this.radius, 
+            Math.min(mapBounds.maxZ - this.radius, newPosition.z));
+        
+        // Collision with other player
+        const distToOther = newPosition.distanceTo(otherPlayer.position);
+        const minDist = this.radius + otherPlayer.radius;
+        if (distToOther < minDist) {
+            // Push away from other player
+            const pushDir = newPosition.clone().sub(otherPlayer.position).normalize();
+            newPosition.copy(otherPlayer.position).add(pushDir.multiplyScalar(minDist));
+        }
+        
+        this.position.copy(newPosition);
+        this.updatePosition();
+        
+        // Update model position to match
+        this.model.position.copy(this.position);
+        this.model.rotation.y = this.yaw;
+        
+        // Handle firing
+        if (input.fire) {
+            this.tryFire(ballistics);
+        }
+        
+        // Handle reload step
+        if (input.reload) {
+            this.musket.reloadStep();
+        }
+    }
+    
+    updatePosition() {
+        this.camera.position.copy(this.position);
+        this.camera.position.y = this.eyeHeight;
+    }
+    
+    tryFire(ballistics) {
+        if (!this.musket.canFire()) return;
+        
+        // Fire the musket - this returns projectile info and creates visual effects
+        const result = this.musket.fire(ballistics, this.scene);
+        
+        if (!result.fired) {
+            console.log('Cannot fire:', result.reason);
+        }
+    }
+    
+    takeDamage(amount) {
+        if (this.dead) return;
+        
+        this.health -= amount;
+        this.lastHitTime = Date.now();
+        
+        if (this.health <= 0) {
+            this.health = 0;
+            this.die();
+        }
+    }
+    
+    die() {
+        this.dead = true;
+        // Fall over animation
+        this.model.rotation.x = Math.PI / 2;
+        this.model.position.y = 0.4;
+    }
+    
+    reset(startPosition) {
+        this.health = this.maxHealth;
+        this.dead = false;
+        this.position.copy(startPosition);
+        this.velocity.set(0, 0, 0);
+        this.yaw = this.isPlayer2 ? Math.PI : 0;
+        this.pitch = 0;
+        this.rotation.set(0, this.yaw, 0);
+        this.camera.rotation.copy(this.rotation);
+        this.updatePosition();
+        
+        this.model.position.copy(this.position);
+        this.model.rotation.set(0, this.yaw, 0);
+        this.model.rotation.y = this.yaw;
+        
+        this.musket.reset();
+    }
+    
+    getHealthPercent() {
+        return this.health / this.maxHealth;
+    }
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { Player };
+}

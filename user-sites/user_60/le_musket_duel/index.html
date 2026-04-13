@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le Musket Duel</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        <div id="ui-overlay">
+            <div id="instructions">
+                <div class="player-keys left">
+                    <h3>PLAYER 1</h3>
+                    <p>WASD - Move | Q/E - Lean</p>
+                    <p>Shift - Iron Sights | F - Fire | R - Reload</p>
+                </div>
+                <div class="title">
+                    <h1>LE MUSKET DUEL</h1>
+                    <p>No crosshairs. Iron sights only. Skill prevails.</p>
+                    <p id="start-text">Press SPACE to start</p>
+                </div>
+                <div class="player-keys right">
+                    <h3>PLAYER 2</h3>
+                    <p>Arrows - Move | O/P - Lean</p>
+                    <p>Enter - Iron Sights | L - Fire | K - Reload</p>
+                </div>
+            </div>
+            <div id="reload-status-p1" class="reload-status left-status"></div>
+            <div id="reload-status-p2" class="reload-status right-status"></div>
+        </div>
+    </div>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
