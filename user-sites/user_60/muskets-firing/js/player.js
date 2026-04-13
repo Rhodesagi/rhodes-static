@@ -48,6 +48,10 @@ class Player {
         
         // Attach musket to camera (first person view)
         this.camera.add(this.musket.mesh);
+        this.musket.mesh.visible = true; // ENSURE VISIBLE
+        
+        // IMPORTANT: Add camera to scene so attached objects (musket) render
+        this.scene.add(this.camera);
         
         // Create body mesh (for other player to see)
         this.bodyMesh = this.createBodyMesh();
@@ -223,6 +227,7 @@ class Player {
         this.isAlive = true;
         this.health = 100;
         this.musket.mesh.visible = true;
+        console.log("MUSKET VISIBLE ON RESPAWN");
         this.musket.reset();
         
         // Show body

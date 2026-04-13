@@ -14,7 +14,7 @@
         <div id="instructions">
             <h2>MUSKETS FIRING - 2 Player Split Screen</h2>
             <p><strong>Player 1 (Left Screen):</strong> WASD - Move | Q - Aim Down Sights | E - Fire | R - Reload</p>
-            <p><strong>Player 2 (Right Screen):</strong> Arrow Keys - Move | I/L - Rotate Left/Right | O - Aim Down Sights | P - Fire | [ - Reload</p>
+            <p><strong>Player 2 (Right Screen):</strong> Arrow Keys - Move | I/L - Rotate Left/Right | U/J - Look Up/Down | O - Aim Down Sights | P - Fire | [ - Reload</p>
             <p><em>No crosshairs. Use iron sights only. Reload is a full 12-step animated sequence.</em></p>
             <button id="start-btn">START GAME</button>
         </div>

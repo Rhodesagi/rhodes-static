@@ -1,0 +1,139 @@
+// DuelArena.js - Creates the dueling field environment
+class DuelArena {
+    constructor(scene) {
+        this.scene = scene;
+        this.createEnvironment();
+    }
+    
+    createEnvironment() {
+        // Ground - dusty dueling field
+        const groundGeometry = new THREE.PlaneGeometry(100, 100, 32, 32);
+        
+        // Create uneven terrain
+        const positions = groundGeometry.attributes.position;
+        for (let i = 0; i < positions.count; i++) {
+            const x = positions.getX(i);
+            const y = positions.getY(i);
+            const z = positions.getZ(i);
+            // Slight rolling hills
+            const height = Math.sin(x * 0.1) * 0.3 + Math.cos(y * 0.1) * 0.3 + Math.random() * 0.1;
+            positions.setZ(i, z + height);
+        }
+        groundGeometry.computeVertexNormals();
+        
+        const groundMaterial = new THREE.MeshStandardMaterial({
+            color: 0x5c4a3a,
+            roughness: 0.95,
+            metalness: 0.0,
+        });
+        
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        this.scene.add(ground);
+        
+        // Add some grass patches
+        this.createGrassPatches();
+        
+        // Dueling markers - 20 paces apart (~15 meters)
+        this.createDuelingMarkers();
+        
+        // Lighting - dawn atmosphere
+        this.setupLighting();
+        
+        // Fog for dawn mist - will be overridden by main.js
+        this.scene.fog = new THREE.Fog(0x4a4a5a, 5, 50);
+    }
+    
+    createGrassPatches() {
+        const grassGeometry = new THREE.PlaneGeometry(0.3, 0.8);
+        const grassMaterial = new THREE.MeshBasicMaterial({
+            color: 0x3a4a2a,
+            side: THREE.DoubleSide
+        });
+        
+        // Create clumps of grass
+        for (let i = 0; i < 200; i++) {
+            const x = (Math.random() - 0.5) * 40;
+            const z = (Math.random() - 0.5) * 40;
+            
+            // Keep grass away from dueling line
+            if (Math.abs(x) < 5 && Math.abs(z) < 2) continue;
+            
+            const grass = new THREE.Mesh(grassGeometry, grassMaterial);
+            grass.position.set(x, 0.4, z);
+            grass.rotation.y = Math.random() * Math.PI;
+            grass.rotation.x = (Math.random() - 0.5) * 0.3;
+            this.scene.add(grass);
+        }
+    }
+    
+    createDuelingMarkers() {
+        // Wooden stakes at 20 paces (approximately 15 meters)
+        const stakeGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.2, 8);
+        const stakeMaterial = new THREE.MeshStandardMaterial({
+            color: 0x4a3a2a,
+            roughness: 0.9
+        });
+        
+        // Player 1 starting position (z = -7.5)
+        const stake1 = new THREE.Mesh(stakeGeometry, stakeMaterial);
+        stake1.position.set(0, 0.6, -7.5);
+        stake1.castShadow = true;
+        this.scene.add(stake1);
+        
+        // Player 2 starting position (z = 7.5)
+        const stake2 = new THREE.Mesh(stakeGeometry, stakeMaterial);
+        stake2.position.set(0, 0.6, 7.5);
+        stake2.castShadow = true;
+        this.scene.add(stake2);
+        
+        // Starting line markers
+        const lineGeometry = new THREE.BoxGeometry(0.1, 0.02, 15);
+        const lineMaterial = new THREE.MeshBasicMaterial({ color: 0x8b7355 });
+        
+        const line = new THREE.Mesh(lineGeometry, lineMaterial);
+        line.position.set(0, 0.01, 0);
+        this.scene.add(line);
+    }
+    
+    setupLighting() {
+        // Ambient dawn light
+        const ambientLight = new THREE.AmbientLight(0x7a8a9a, 0.4);
+        this.scene.add(ambientLight);
+        
+        // Rising sun directional light
+        const sunLight = new THREE.DirectionalLight(0xffd4a3, 0.8);
+        sunLight.position.set(20, 10, -20);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        sunLight.shadow.camera.near = 0.5;
+        sunLight.shadow.camera.far = 50;
+        sunLight.shadow.camera.left = -25;
+        sunLight.shadow.camera.right = 25;
+        sunLight.shadow.camera.top = 25;
+        sunLight.shadow.camera.bottom = -25;
+        this.scene.add(sunLight);
+        
+        // Rim light for contrast
+        const rimLight = new THREE.DirectionalLight(0x4a5a6a, 0.3);
+        rimLight.position.set(-20, 5, 20);
+        this.scene.add(rimLight);
+    }
+    
+    getPlayerStartPosition(playerIndex) {
+        // Player 0 starts at north, Player 1 at south
+        return playerIndex === 0 ? new THREE.Vector3(0, 1.6, -7.5) : new THREE.Vector3(0, 1.6, 7.5);
+    }
+    
+    getPlayerStartRotation(playerIndex) {
+        // Player 0 faces south (toward player 1), Player 1 faces north
+        return playerIndex === 0 ? new THREE.Euler(0, 0, 0) : new THREE.Euler(0, Math.PI, 0);
+    }
+}
+
+// Export for module system (or make global for script tags)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = DuelArena;
+}

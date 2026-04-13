@@ -1,0 +1,149 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    overflow: hidden;
+    background: #0a0a0a;
+    font-family: 'Georgia', serif;
+    user-select: none;
+}
+
+#game-container {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+#game-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: none;
+}
+
+#instructions {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(5, 5, 5, 0.92);
+    z-index: 10;
+}
+
+#start-screen {
+    text-align: center;
+    color: #d4c5a3;
+    padding: 40px;
+    border: 3px solid #5c4a2a;
+    background: rgba(20, 15, 10, 0.95);
+    max-width: 800px;
+}
+
+h1 {
+    font-size: 3em;
+    letter-spacing: 8px;
+    margin-bottom: 10px;
+    color: #e8dcc4;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+.subtitle {
+    font-size: 1.2em;
+    font-style: italic;
+    margin-bottom: 30px;
+    color: #8b7355;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-around;
+    margin: 30px 0;
+    gap: 40px;
+}
+
+.player-controls {
+    text-align: left;
+    padding: 20px;
+    border: 1px solid #3a3020;
+    background: rgba(30, 25, 20, 0.6);
+    min-width: 220px;
+}
+
+.player-controls h3 {
+    color: #c9b896;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+    border-bottom: 1px solid #5c4a2a;
+    padding-bottom: 8px;
+}
+
+.player-controls p {
+    margin: 8px 0;
+    font-size: 0.95em;
+    color: #a89b7c;
+}
+
+.hint {
+    font-style: italic;
+    color: #6b5d4a;
+    margin: 20px 0;
+    font-size: 0.9em;
+}
+
+button {
+    padding: 15px 40px;
+    font-size: 1.2em;
+    font-family: 'Georgia', serif;
+    background: #3a2f1f;
+    color: #d4c5a3;
+    border: 2px solid #5c4a2a;
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 3px;
+}
+
+button:hover {
+    background: #5c4a2a;
+    color: #f0e6d3;
+    border-color: #8b7355;
+}
+
+#game-over {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(5, 5, 5, 0.95);
+    z-index: 20;
+}
+
+#game-over h1 {
+    font-size: 3.5em;
+    margin-bottom: 40px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Split-screen divider visualization */.split-divider {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: #3a3020;
+    z-index: 5;
+    pointer-events: none;
+}

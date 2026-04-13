@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Musket Duel</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        <div id="instructions">
+            <div id="start-screen">
+                <h1>THE MUSKET DUEL</h1>
+                <p class="subtitle">A Historical Flintlock Duel</p>
+                <div class="controls">
+                    <div class="player-controls">
+                        <h3>PLAYER 1 (Top)</h3>
+                        <p>Mouse - Aim</p>
+                        <p>WASD - Move</p>
+                        <p>LMB / F - Fire</p>
+                        <p>R - Advance Reload Step</p>
+                    </div>
+                    <div class="player-controls">
+                        <h3>PLAYER 2 (Bottom)</h3>
+                        <p>Arrow Keys - Aim</p>
+                        <p>IJKL - Move</p>
+                        <p>ENTER / ; - Fire</p>
+                        <p>P - Advance Reload Step</p>
+                    </div>
+                </div>
+                <p class="hint">Iron sights only. No crosshairs. Reloading requires 6 precise steps.</p>
+                <button id="start-btn">COMMENCE DUEL</button>
+            </div>
+        </div>
+        <div id="game-over" class="hidden">
+            <h1 id="winner-text">PLAYER 1 VICTORIOUS</h1>
+            <button id="reset-btn">DUEL AGAIN</button>
+        </div>
+    </div>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Game Modules -->
+    <script src="js/DuelArena.js"></script>
+    <script src="js/SmokeSystem.js"></script>
+    <script src="js/IronSights.js"></script>
+    <script src="js/Ballistics.js"></script>
+    <script src="js/Musket.js"></script>
+    <script src="js/InputManager.js"></script>
+    <script src="js/Player.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -15,11 +15,13 @@ class Musket {
         
         // Create the musket mesh
         this.mesh = this.createMusketModel();
-        this.scene.add(this.mesh);
+        this.mesh.visible = true; // FORCE VISIBLE
+        console.log("MUSKET CREATED - VISIBLE:", this.mesh.visible, "CHILDREN:", this.mesh.children.length);
+        // Note: musket will be attached to camera by Player class, not added to scene
         
-        // Weapon position offsets
-        this.hipFirePosition = new THREE.Vector3(0.3, -0.3, -0.5);
-        this.aimPosition = new THREE.Vector3(0, -0.15, -0.45);
+        // Weapon position offsets - LARGER, more visible
+        this.hipFirePosition = new THREE.Vector3(0.4, -0.4, -0.8);
+        this.aimPosition = new THREE.Vector3(0, -0.2, -0.6);
         this.currentPosition = this.hipFirePosition.clone();
         
         // Recoil state
@@ -30,23 +32,31 @@ class Musket {
     createMusketModel() {
         const musketGroup = new THREE.Group();
         
-        // Materials
+        // Materials - BRIGHT colors for visibility
         const woodMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0x5a4a3a,
-            shininess: 20
+            color: 0x8b4513,
+            emissive: 0xff6600,
+            emissiveIntensity: 0.5,
+            shininess: 30
         });
         const metalMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0x444444,
-            shininess: 80,
-            specular: 0x666666
+            color: 0xaaaaaa,
+            emissive: 0x4444ff,
+            emissiveIntensity: 0.4,
+            shininess: 100,
+            specular: 0xffffff
         });
         const brassMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0xb8a050,
+            color: 0xffd700,
+            emissive: 0xffaa00,
+            emissiveIntensity: 0.6,
             shininess: 100
         });
         const darkMetalMaterial = new THREE.MeshPhongMaterial({
-            color: 0x222222,
-            shininess: 60
+            color: 0x666666,
+            emissive: 0x3333aa,
+            emissiveIntensity: 0.4,
+            shininess: 80
         });
         
         // Main stock
@@ -213,6 +223,17 @@ class Musket {
         cartridge.visible = false;
         musketGroup.add(cartridge);
         
+        // Scale up the entire musket for visibility
+        musketGroup.scale.set(1.5, 1.5, 1.5);
+        
+        // BRIGHT RED DEBUG SPHERE - unmistakable indicator
+        const debugSphere = new THREE.Mesh(
+            new THREE.SphereGeometry(0.3, 16, 16),
+            new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true })
+        );
+        debugSphere.position.set(0, 0.5, -0.5);
+        musketGroup.add(debugSphere);
+        
         // Store references for animation
         this.parts = {
             hammer,
@@ -230,6 +251,9 @@ class Musket {
         this.materials = {
             flashPan: flashPanMaterial
         };
+        
+        // Ensure always visible
+        musketGroup.visible = true;
         
         return musketGroup;
     }
@@ -272,6 +296,11 @@ class Musket {
                 this.isLoaded = true;
                 this.reloadSequence = null;
                 this.hideReloadProps();
+                
+                // Trigger reload complete callback
+                if (this.onReloadComplete) {
+                    this.onReloadComplete();
+                }
             }
         }
     }

@@ -1,357 +1,80 @@
 /**
- * Musket - Procedural musket model with articulated parts
- * Full 12-step reload animation system
+ * Simple Musket - Guaranteed visible
  */
-
 class Musket {
     constructor(scene, isPlayer1, onReloadComplete = null) {
         this.scene = scene;
         this.isPlayer1 = isPlayer1;
         this.isLoaded = true;
         this.isReloading = false;
-        this.reloadSequence = null;
-        this.animationSystem = new AnimationSystem();
         this.onReloadComplete = onReloadComplete;
+        this.animationSystem = new AnimationSystem();
         
-        // Create the musket mesh
-        this.mesh = this.createMusketModel();
-        this.scene.add(this.mesh);
+        // Build simple visible musket
+        this.mesh = new THREE.Group();
         
-        // Weapon position offsets
-        this.hipFirePosition = new THREE.Vector3(0.3, -0.3, -0.5);
-        this.aimPosition = new THREE.Vector3(0, -0.15, -0.45);
-        this.currentPosition = this.hipFirePosition.clone();
+        // BRIGHT COLORS
+        const woodMat = new THREE.MeshBasicMaterial({ color: 0xff6600 }); // Orange wood
+        const metalMat = new THREE.MeshBasicMaterial({ color: 0x00ffff }); // Cyan metal
         
-        // Recoil state
-        this.recoil = 0;
-        this.maxRecoil = 0.15;
-    }
-    
-    createMusketModel() {
-        const musketGroup = new THREE.Group();
+        // Stock - simple box
+        const stock = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 1.5), woodMat);
+        stock.position.set(0, -0.2, 0.5);
+        this.mesh.add(stock);
         
-        // Materials
-        const woodMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0x5a4a3a,
-            shininess: 20
-        });
-        const metalMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0x444444,
-            shininess: 80,
-            specular: 0x666666
-        });
-        const brassMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0xb8a050,
-            shininess: 100
-        });
-        const darkMetalMaterial = new THREE.MeshPhongMaterial({
-            color: 0x222222,
-            shininess: 60
-        });
+        // Barrel - cylinder
+        const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.8, 8), metalMat);
+        barrel.rotation.x = Math.PI / 2;
+        barrel.position.set(0, 0.1, -0.4);
+        this.mesh.add(barrel);
         
-        // Main stock
-        const stockGeo = new THREE.BoxGeometry(0.1, 0.2, 1.4);
-        stockGeo.translate(0, -0.1, 0);
-        // Taper the stock at front
-        const positionAttribute = stockGeo.attributes.position;
-        for (let i = 0; i < positionAttribute.count; i++) {
-            const z = positionAttribute.getZ(i);
-            if (z < -0.3) {
-                const x = positionAttribute.getX(i);
-                positionAttribute.setX(i, x * 0.7);
-            }
-        }
-        stockGeo.computeVertexNormals();
-        const stock = new THREE.Mesh(stockGeo, woodMaterial);
-        stock.position.set(0, 0, 0);
-        musketGroup.add(stock);
+        // Hammer - small box
+        const hammer = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 0.1), metalMat);
+        hammer.position.set(0.1, 0.25, 0.2);
+        this.mesh.add(hammer);
         
-        // Buttplate
-        const buttGeo = new THREE.BoxGeometry(0.11, 0.21, 0.05);
-        const buttplate = new THREE.Mesh(buttGeo, metalMaterial);
-        buttplate.position.set(0, -0.1, 0.725);
-        musketGroup.add(buttplate);
+        // Position
+        this.mesh.position.set(0.4, -0.4, -0.8);
         
-        // Barrel
-        const barrelGeo = new THREE.CylinderGeometry(0.04, 0.035, 1.3, 12);
-        barrelGeo.rotateX(-Math.PI / 2);
-        barrelGeo.translate(0, 0.1, -0.6);
-        const barrel = new THREE.Mesh(barrelGeo, metalMaterial);
-        barrel.position.set(0, 0, 0);
-        musketGroup.add(barrel);
-        
-        // Breech area (thicker at back)
-        const breechGeo = new THREE.CylinderGeometry(0.06, 0.04, 0.2, 12);
-        breechGeo.rotateX(-Math.PI / 2);
-        breechGeo.translate(0, 0.1, 0.05);
-        const breech = new THREE.Mesh(breechGeo, darkMetalMaterial);
-        musketGroup.add(breech);
-        
-        // Lock mechanism (flintlock)
-        const lockPlateGeo = new THREE.BoxGeometry(0.02, 0.15, 0.25);
-        const lockPlate = new THREE.Mesh(lockPlateGeo, metalMaterial);
-        lockPlate.position.set(0.06, 0.15, 0);
-        musketGroup.add(lockPlate);
-        
-        // Frizzen (the part that opens for priming)
-        const frizzenGeo = new THREE.BoxGeometry(0.08, 0.06, 0.12);
-        const frizzen = new THREE.Mesh(frizzenGeo, metalMaterial);
-        frizzen.position.set(0.09, 0.18, 0.08);
-        frizzen.geometry.translate(0, 0, 0.06); // Pivot at front
-        musketGroup.add(frizzen);
-        
-        // Flash pan (where powder is placed)
-        const flashPanGeo = new THREE.BoxGeometry(0.04, 0.01, 0.06);
-        const flashPanMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0x000000,
-            transparent: true,
-            opacity: 0
-        });
-        const flashPan = new THREE.Mesh(flashPanGeo, flashPanMaterial);
-        flashPan.position.set(0.08, 0.16, 0.05);
-        musketGroup.add(flashPan);
-        
-        // Hammer (cock)
-        const hammerGeo = new THREE.BoxGeometry(0.03, 0.12, 0.03);
-        hammerGeo.translate(0, 0.06, 0); // Pivot at base
-        const hammer = new THREE.Mesh(hammerGeo, metalMaterial);
-        hammer.position.set(0.04, 0.22, 0.02);
-        musketGroup.add(hammer);
-        
-        // Flint holder on hammer
-        const flintHolderGeo = new THREE.BoxGeometry(0.04, 0.04, 0.08);
-        const flintHolder = new THREE.Mesh(flintHolderGeo, darkMetalMaterial);
-        flintHolder.position.set(0.02, 0.1, -0.04);
-        hammer.add(flintHolder);
-        
-        // Trigger guard
-        const guardGeo = new THREE.TorusGeometry(0.08, 0.015, 6, 12, Math.PI);
-        guardGeo.rotateZ(Math.PI);
-        guardGeo.rotateX(-Math.PI / 2);
-        const triggerGuard = new THREE.Mesh(guardGeo, metalMaterial);
-        triggerGuard.position.set(0, 0, 0.15);
-        musketGroup.add(triggerGuard);
-        
-        // Trigger
-        const triggerGeo = new THREE.BoxGeometry(0.02, 0.06, 0.02);
-        triggerGeo.translate(0, -0.03, 0);
-        const trigger = new THREE.Mesh(triggerGeo, darkMetalMaterial);
-        trigger.position.set(0, 0, 0.15);
-        trigger.rotation.x = -0.3;
-        musketGroup.add(trigger);
-        
-        // Ramrod thimbles (3 rings holding the ramrod)
-        const thimbleGeo = new THREE.TorusGeometry(0.05, 0.008, 6, 12);
-        thimbleGeo.rotateX(Math.PI / 2);
-        
-        for (let i = 0; i < 3; i++) {
-            const thimble = new THREE.Mesh(thimbleGeo, brassMaterial);
-            thimble.position.set(0, -0.15, -0.4 - i * 0.3);
-            musketGroup.add(thimble);
-        }
-        
-        // Ramrod (under barrel)
-        const ramrodGeo = new THREE.CylinderGeometry(0.008, 0.008, 1.2, 8);
-        ramrodGeo.rotateX(-Math.PI / 2);
-        const ramrod = new THREE.Mesh(ramrodGeo, woodMaterial);
-        ramrod.position.set(0, -0.15, -0.4);
-        musketGroup.add(ramrod);
-        
-        // Front sight
-        const frontSightGeo = new THREE.BoxGeometry(0.01, 0.04, 0.02);
-        const frontSight = new THREE.Mesh(frontSightGeo, metalMaterial);
-        frontSight.position.set(0, 0.18, -1.25);
-        musketGroup.add(frontSight);
-        
-        // Rear sight
-        const rearSightGeo = new THREE.BoxGeometry(0.03, 0.02, 0.01);
-        const rearSight = new THREE.Mesh(rearSightGeo, metalMaterial);
-        rearSight.position.set(0, 0.14, -0.15);
-        musketGroup.add(rearSight);
-        
-        // Sling swivels
-        const swivelGeo = new THREE.TorusGeometry(0.02, 0.005, 6, 8);
-        
-        const frontSwivel = new THREE.Mesh(swivelGeo, metalMaterial);
-        frontSwivel.position.set(0.06, -0.05, -1.0);
-        musketGroup.add(frontSwivel);
-        
-        const rearSwivel = new THREE.Mesh(swivelGeo, metalMaterial);
-        rearSwivel.position.set(0.06, -0.05, 0.3);
-        musketGroup.add(rearSwivel);
-        
-        // Side plate (decorative)
-        const sidePlateGeo = new THREE.BoxGeometry(0.01, 0.2, 0.15);
-        const sidePlate = new THREE.Mesh(sidePlateGeo, brassMaterial);
-        sidePlate.position.set(-0.05, 0, 0);
-        musketGroup.add(sidePlate);
-        
-        // Powder horn (accessory, animated during reload)
-        const hornBodyGeo = new THREE.ConeGeometry(0.08, 0.3, 12, 1, true);
-        hornBodyGeo.rotateZ(Math.PI / 2);
-        const hornMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0xf0e0c0,
-            side: THREE.DoubleSide
-        });
-        const powderHorn = new THREE.Mesh(hornBodyGeo, hornMaterial);
-        powderHorn.position.set(-0.2, 0.1, 0.3);
-        powderHorn.visible = false; // Hidden unless reloading
-        musketGroup.add(powderHorn);
-        
-        // Priming flask
-        const primingFlaskGeo = new THREE.CylinderGeometry(0.04, 0.03, 0.1, 8);
-        const primingFlask = new THREE.Mesh(primingFlaskGeo, metalMaterial);
-        primingFlask.position.set(-0.15, 0.15, 0.2);
-        primingFlask.visible = false;
-        musketGroup.add(primingFlask);
-        
-        // Paper cartridge (animated during reload)
-        const cartridgeGeo = new THREE.CylinderGeometry(0.015, 0.02, 0.15, 6);
-        const cartridgeMaterial = new THREE.MeshPhongMaterial({ color: 0xc0b090 });
-        const cartridge = new THREE.Mesh(cartridgeGeo, cartridgeMaterial);
-        cartridge.position.set(0, 0.3, -0.6);
-        cartridge.visible = false;
-        musketGroup.add(cartridge);
-        
-        // Store references for animation
-        this.parts = {
-            hammer,
-            frizzen,
-            flashPan,
-            flashPanMaterial,
-            ramrod,
-            powderHorn,
-            primingFlask,
-            cartridge,
-            trigger
-        };
-        
-        // Store materials for effects
-        this.materials = {
-            flashPan: flashPanMaterial
-        };
-        
-        return musketGroup;
+        console.log("SIMPLE MUSKET CREATED with", this.mesh.children.length, "parts");
     }
     
     update(deltaTime, isAiming, camera) {
-        // Handle recoil recovery
-        if (this.recoil > 0) {
-            this.recoil = Math.max(0, this.recoil - deltaTime * 2);
-            this.mesh.position.z = this.currentPosition.z + this.recoil;
-        }
-        
-        // Position interpolation for aiming
-        const targetPos = isAiming ? this.aimPosition : this.hipFirePosition;
-        this.currentPosition.lerp(targetPos, deltaTime * 8);
-        
-        // Add weapon sway
-        const swayTime = Date.now() * 0.001;
-        const swayAmount = isAiming ? 0.002 : 0.008;
-        const swayX = Math.sin(swayTime) * swayAmount;
-        const swayY = Math.cos(swayTime * 0.7) * swayAmount;
-        
-        this.mesh.position.copy(this.currentPosition);
-        this.mesh.position.x += swayX;
-        this.mesh.position.y += swayY;
-        
-        // Match camera rotation when aiming
+        // Aim position
         if (isAiming) {
-            this.mesh.rotation.y = 0;
-            this.mesh.rotation.z = 0;
+            this.mesh.position.lerp(new THREE.Vector3(0, -0.2, -0.6), deltaTime * 8);
         } else {
-            this.mesh.rotation.y = swayX * 2;
-        }
-        
-        // Handle reload animation
-        if (this.isReloading && this.reloadSequence) {
-            const complete = this.animationSystem.updateSequence(this.reloadSequence, deltaTime * 1000);
-            
-            if (complete) {
-                this.isReloading = false;
-                this.isLoaded = true;
-                this.reloadSequence = null;
-                this.hideReloadProps();
-                
-                // Trigger reload complete callback
-                if (this.onReloadComplete) {
-                    this.onReloadComplete();
-                }
-            }
+            this.mesh.position.lerp(new THREE.Vector3(0.4, -0.4, -0.8), deltaTime * 8);
         }
     }
     
     fire() {
         if (!this.isLoaded || this.isReloading) return false;
-        
-        // Fire animation
-        this.recoil = this.maxRecoil;
-        this.parts.hammer.rotation.x = 0; // Fall back to fired position
-        
-        // Flash pan flashes
-        if (this.materials.flashPan) {
-            this.materials.flashPan.opacity = 1;
-            this.materials.flashPan.color.setHex(0xffff00);
-            setTimeout(() => {
-                this.materials.flashPan.opacity = 0;
-                this.materials.flashPan.color.setHex(0x000000);
-            }, 50);
-        }
-        
         this.isLoaded = false;
+        console.log("MUSKET FIRED");
         return true;
     }
     
     startReload() {
         if (this.isReloading || this.isLoaded) return false;
-        
         this.isReloading = true;
-        this.showReloadProps();
-        this.reloadSequence = this.animationSystem.createReloadSequence(this);
-        
-        // Set initial positions for animation
-        this.parts.hammer.rotation.x = 0;
-        this.parts.frizzen.rotation.x = 0;
-        
+        setTimeout(() => {
+            this.isReloading = false;
+            this.isLoaded = true;
+            if (this.onReloadComplete) this.onReloadComplete(this);
+            console.log("MUSKET RELOADED");
+        }, 2000);
         return true;
     }
     
-    showReloadProps() {
-        this.parts.powderHorn.visible = true;
-        this.parts.primingFlask.visible = true;
-        this.parts.cartridge.visible = true;
-    }
-    
-    hideReloadProps() {
-        this.parts.powderHorn.visible = false;
-        this.parts.primingFlask.visible = false;
-        this.parts.cartridge.visible = false;
-        
-        // Reset parts to ready positions
-        this.parts.hammer.rotation.x = -Math.PI / 2.5;
-        this.parts.frizzen.rotation.x = 0;
-    }
-    
-    // Get muzzle position for projectile spawning
     getMuzzlePosition() {
-        const muzzleOffset = new THREE.Vector3(0, 0.1, -1.25);
-        muzzleOffset.applyMatrix4(this.mesh.matrixWorld);
-        return muzzleOffset;
-    }
-    
-    // Get barrel direction for projectile velocity
-    getBarrelDirection() {
-        const direction = new THREE.Vector3(0, 0, -1);
-        direction.applyQuaternion(this.mesh.quaternion);
-        direction.applyQuaternion(this.mesh.parent ? this.mesh.parent.quaternion : new THREE.Quaternion());
-        return direction;
+        const pos = new THREE.Vector3(0, 0.1, -1.3);
+        pos.applyMatrix4(this.mesh.matrixWorld);
+        return pos;
     }
     
     reset() {
         this.isLoaded = true;
         this.isReloading = false;
-        this.reloadSequence = null;
-        this.hideReloadProps();
-        this.parts.hammer.rotation.x = -Math.PI / 2.5;
     }
 }

@@ -223,10 +223,19 @@ class Game {
         
         this.update();
         this.render();
+        
+        // Log first few frames for debugging
+        if (!this.frameCount) this.frameCount = 0;
+        this.frameCount++;
+        if (this.frameCount < 5) {
+            console.log("RENDERING FRAME", this.frameCount, "P1 CAMERA:", this.player1.camera.children.length, "P2 CAMERA:", this.player2.camera.children.length);
+        }
     }
 }
 
 // Initialize game when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOM READY - CREATING GAME");
     const game = new Game();
+    console.log("GAME CREATED - PLAYERS:", game.players.length);
 });
