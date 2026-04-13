@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Test</title>
+    <style>body { background: #000; color: #0f0; font-family: monospace; padding: 20px; }</style>
+</head>
+<body>
+    <h1>Le Musket Duel - Debug Page</h1>
+    <div id="output"></div>
+    <script>
+        const out = document.getElementById('output');
+        function log(msg) { out.innerHTML += msg + '<br>'; console.log(msg); }
+        
+        log('Starting tests...');
+        
+        // Test 1: Three.js module loading
+        try {
+            const testImport = import('https://unpkg.com/three@0.160.0/build/three.module.js');
+            log('✓ Three.js import started');
+            testImport.then(m => {
+                log('✓ Three.js loaded, has Vector3: ' + !!m.Vector3);
+            }).catch(e => {
+                log('✗ Three.js import failed: ' + e.message);
+            });
+        } catch(e) {
+            log('✗ Import error: ' + e.message);
+        }
+        
+        // Test 2: Audio Context
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            log('✓ AudioContext created: ' + ctx.state);
+        } catch(e) {
+            log('✗ AudioContext failed: ' + e.message);
+        }
+        
+        // Test 3: Canvas
+        try {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+            log('✓ WebGL available: ' + !!gl);
+        } catch(e) {
+            log('✗ WebGL failed: ' + e.message);
+        }
+        
+        log('<br>Tests complete. If all checks pass, the main game should work.');
+        log('<a href="index.html" style="color:#0ff">Click here to try the main game</a>');
+    </script>
+</body>
+</html>

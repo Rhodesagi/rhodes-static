@@ -427,7 +427,7 @@
             }
             
             checkHit(player) {
-                if (!this.active || !this.position || !player || !player.position || player.id === this.ownerId || player.isDead) return false;
+                if (!this.active || !player || !player.position || player.id === this.ownerId || player.isDead) return false;
                 const dx = this.position.x - player.position.x;
                 const dz = this.position.z - player.position.z;
                 const dy = this.position.y - player.position.y;

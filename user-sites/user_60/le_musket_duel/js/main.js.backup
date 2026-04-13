@@ -185,10 +185,4 @@ class Game {
 }
 
 // Start immediately - DOM is already ready for module scripts
-try {
-    console.log('Initializing Le Musket Duel...');
-    new Game();
-} catch (e) {
-    console.error('Failed to start game:', e);
-    document.body.innerHTML = '<div style="color: red; text-align: center; margin-top: 100px;"><h2>Error Loading Game</h2><p>' + e.message + '</p></div>';
-}
+new Game();

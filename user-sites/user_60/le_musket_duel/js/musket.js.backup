@@ -1,0 +1,452 @@
+import * as THREE from 'three';
+
+export class Musket {
+    constructor(playerId, camera, world, projectileManager, audioManager) {
+        this.playerId = playerId;
+        this.camera = camera;
+        this.world = world;
+        this.projectiles = projectileManager;
+        this.audio = audioManager;
+        
+        // Create the musket mesh
+        this.createMusketMesh();
+        
+        // Flintlock states
+        this.state = 'idle'; // idle, half_cocked, full_cocked, fired
+        this.reloadStage = 'idle';
+        this.hasBallLoaded = false;
+        this.isPanPrimed = false;
+        this.isFrizzenOpen = false;
+        
+        // Animation timers
+        this.reloadTimer = 0;
+        this.fireTimer = 0;
+        this.currentStageProgress = 0;
+        
+        // Reload stage durations (seconds)
+        this.reloadStages = {
+            'shouldering': 0.3,
+            'half_cock': 0.5,
+            'open_pan': 0.4,
+            'main_powder': 1.5,
+            'ball_patch': 1.0,
+            'ramrod_1': 0.8,
+            'ramrod_2': 0.8,
+            'ramrod_3': 0.8,
+            'prime_pan': 0.8,
+            'close_pan': 0.4,
+            'full_cock': 0.5,
+            'shoulder': 0.3
+        };
+        
+        // Visual positions
+        this.shoulderedPosition = new THREE.Vector3(0.2, -0.25, 0.4);
+        this.aimedPosition = new THREE.Vector3(0.08, -0.08, 0.25);
+        this.reloadPosition = new THREE.Vector3(0.3, -0.6, 0.5);
+        
+        this.currentPosition = this.shoulderedPosition.clone();
+        this.targetPosition = this.shoulderedPosition.clone();
+        
+        this.shoulderedRotation = new THREE.Euler(0, 0, 0);
+        this.aimedRotation = new THREE.Euler(0, 0, 0);
+        this.currentRotation = new THREE.Euler(0, 0, 0);
+        
+        // Attach to camera
+        this.camera.add(this.musketGroup);
+        
+        // Ramrod animation state
+        this.ramrodOut = false;
+        this.ramrodExtension = 0;
+    }
+    
+    createMusketMesh() {
+        this.musketGroup = new THREE.Group();
+        
+        // Materials
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x5a3a2a, roughness: 0.6 });
+        const metalMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.3, metalness: 0.8 });
+        const darkMetalMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.4, metalness: 0.6 });
+        
+        // Stock
+        const stockGeo = new THREE.BoxGeometry(0.06, 0.08, 0.8);
+        // Taper the stock
+        const stockPos = stockGeo.attributes.position;
+        for (let i = 0; i < stockPos.count; i++) {
+            const z = stockPos.getZ(i);
+            if (z < -0.2) {
+                // Butt taper
+                stockPos.setX(i, stockPos.getX(i) * 0.7);
+                stockPos.setY(i, stockPos.getY(i) * 1.3);
+            }
+        }
+        stockGeo.computeVertexNormals();
+        
+        this.stock = new THREE.Mesh(stockGeo, woodMat);
+        this.stock.position.set(0, 0, 0.1);
+        this.stock.castShadow = true;
+        this.musketGroup.add(this.stock);
+        
+        // Barrel
+        const barrelGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.9, 8);
+        this.barrel = new THREE.Mesh(barrelGeo, metalMat);
+        this.barrel.rotation.x = Math.PI / 2;
+        this.barrel.position.set(0, 0.05, 0.15);
+        this.barrel.castShadow = true;
+        this.musketGroup.add(this.barrel);
+        
+        // Barrel bands
+        for (let i = 0; i < 3; i++) {
+            const bandGeo = new THREE.TorusGeometry(0.03, 0.003, 4, 8);
+            const band = new THREE.Mesh(bandGeo, metalMat);
+            band.position.set(0, 0.05, -0.1 + i * 0.25);
+            band.rotation.y = Math.PI / 2;
+            this.musketGroup.add(band);
+        }
+        
+        // Lock plate
+        const lockGeo = new THREE.BoxGeometry(0.02, 0.04, 0.12);
+        this.lockPlate = new THREE.Mesh(lockGeo, darkMetalMat);
+        this.lockPlate.position.set(0.04, 0.02, 0.05);
+        this.musketGroup.add(this.lockPlate);
+        
+        // Frizzen (the swinging cover)
+        this.frizzenGroup = new THREE.Group();
+        this.frizzenGroup.position.set(0.04, 0.02, 0.12);
+        
+        const frizzenGeo = new THREE.BoxGeometry(0.02, 0.05, 0.04);
+        this.frizzen = new THREE.Mesh(frizzenGeo, darkMetalMat);
+        this.frizzen.position.set(0, 0.02, 0.02);
+        this.frizzenGroup.add(this.frizzen);
+        
+        this.musketGroup.add(this.frizzenGroup);
+        
+        // Hammer (cock)
+        this.hammerGroup = new THREE.Group();
+        this.hammerGroup.position.set(0.04, 0.02, 0.08);
+        
+        const hammerGeo = new THREE.BoxGeometry(0.015, 0.06, 0.02);
+        this.hammer = new THREE.Mesh(hammerGeo, darkMetalMat);
+        this.hammer.position.set(0, 0.03, 0);
+        this.hammerGroup.add(this.hammer);
+        
+        this.musketGroup.add(this.hammerGroup);
+        
+        // Pan (flash pan)
+        const panGeo = new THREE.BoxGeometry(0.02, 0.005, 0.02);
+        this.pan = new THREE.Mesh(panGeo, darkMetalMat);
+        this.pan.position.set(0.04, 0.025, 0.11);
+        this.musketGroup.add(this.pan);
+        
+        // Flash effect (hidden by default)
+        const flashGeo = new THREE.SphereGeometry(0.02, 6, 6);
+        const flashMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0 });
+        this.panFlash = new THREE.Mesh(flashGeo, flashMat);
+        this.panFlash.position.set(0.04, 0.04, 0.11);
+        this.musketGroup.add(this.panFlash);
+        
+        // Muzzle flash effect
+        const muzzleFlashGeo = new THREE.ConeGeometry(0.03, 0.2, 6);
+        const muzzleFlashMat = new THREE.MeshBasicMaterial({ color: 0xffffaa, transparent: true, opacity: 0 });
+        this.muzzleFlash = new THREE.Mesh(muzzleFlashGeo, muzzleFlashMat);
+        this.muzzleFlash.position.set(0, 0.05, 0.65);
+        this.muzzleFlash.rotation.x = Math.PI / 2;
+        this.musketGroup.add(this.muzzleFlash);
+        
+        // Ramrod
+        this.ramrodGroup = new THREE.Group();
+        const rodGeo = new THREE.CylinderGeometry(0.003, 0.003, 0.95, 4);
+        this.ramrod = new THREE.Mesh(rodGeo, woodMat);
+        this.ramrod.rotation.x = Math.PI / 2;
+        this.ramrodGroup.add(this.ramrod);
+        
+        // Ramrod pipes
+        for (let i = 0; i < 3; i++) {
+            const pipeGeo = new THREE.TorusGeometry(0.008, 0.002, 4, 8);
+            const pipe = new THREE.Mesh(pipeGeo, darkMetalMat);
+            pipe.position.set(0, 0, -0.1 + i * 0.25);
+            pipe.rotation.y = Math.PI / 2;
+            this.ramrodGroup.add(pipe);
+        }
+        
+        this.ramrodGroup.position.set(0, -0.03, 0.15);
+        this.musketGroup.add(this.ramrodGroup);
+        
+        // Trigger guard
+        const triggerGuardGeo = new THREE.TorusGeometry(0.02, 0.003, 4, 8, Math.PI);
+        const triggerGuard = new THREE.Mesh(triggerGuardGeo, darkMetalMat);
+        triggerGuard.position.set(0, -0.02, -0.05);
+        triggerGuard.rotation.z = Math.PI;
+        this.musketGroup.add(triggerGuard);
+        
+        // Trigger
+        const triggerGeo = new THREE.BoxGeometry(0.003, 0.015, 0.003);
+        this.trigger = new THREE.Mesh(triggerGeo, darkMetalMat);
+        this.trigger.position.set(0, -0.015, -0.05);
+        this.musketGroup.add(this.trigger);
+        
+        // Sights
+        // Rear sight (notch)
+        const rearSightGeo = new THREE.BoxGeometry(0.01, 0.015, 0.005);
+        const rearSight = new THREE.Mesh(rearSightGeo, darkMetalMat);
+        rearSight.position.set(0, 0.065, -0.25);
+        this.musketGroup.add(rearSight);
+        
+        // Front sight (post)
+        const frontSightGeo = new THREE.CylinderGeometry(0.002, 0.002, 0.015, 4);
+        const frontSight = new THREE.Mesh(frontSightGeo, darkMetalMat);
+        frontSight.position.set(0, 0.07, 0.55);
+        this.musketGroup.add(frontSight);
+        
+        // Powder horn (on belt, not on weapon, but visible in reload)
+        this.powderHornGroup = new THREE.Group();
+        const hornGeo = new THREE.ConeGeometry(0.03, 0.1, 6);
+        const hornMat = new THREE.MeshStandardMaterial({ color: 0xf5f5dc });
+        const horn = new THREE.Mesh(hornGeo, hornMat);
+        horn.rotation.x = Math.PI / 2;
+        this.powderHornGroup.add(horn);
+        this.powderHornGroup.position.set(0.15, -0.3, 0.2);
+        this.powderHornGroup.visible = false;
+        this.musketGroup.add(this.powderHornGroup);
+        
+        // Initial position
+        this.musketGroup.position.copy(this.shoulderedPosition);
+    }
+    
+    update(deltaTime) {
+        // Update reload progression
+        if (this.reloadStage !== 'idle' && this.reloadStage !== 'ready') {
+            this.updateReload(deltaTime);
+        }
+        
+        // Update fire sequence (flintlock hang-fire)
+        if (this.fireTimer > 0) {
+            this.updateFireSequence(deltaTime);
+        }
+        
+        // Smooth position transitions
+        this.musketGroup.position.lerp(this.targetPosition, 10 * deltaTime);
+        
+        // Update ramrod animation
+        if (this.ramrodOut) {
+            this.ramrodExtension = Math.min(this.ramrodExtension + deltaTime * 2, 1);
+        } else {
+            this.ramrodExtension = Math.max(this.ramrodExtension - deltaTime * 2, 0);
+        }
+        
+        const rodExtend = this.ramrodExtension * 0.4;
+        this.ramrodGroup.position.z = 0.15 + rodExtend;
+        this.ramrodGroup.rotation.x = this.ramrodExtension * Math.PI * 0.5;
+        
+        // Update frizzen animation
+        const frizzenTargetAngle = this.isFrizzenOpen ? Math.PI / 3 : 0;
+        this.frizzenGroup.rotation.x += (frizzenTargetAngle - this.frizzenGroup.rotation.x) * 5 * deltaTime;
+        
+        // Update hammer animation
+        const hammerTargetAngle = this.state === 'full_cocked' ? -Math.PI / 2 : 
+                                   (this.state === 'fired' ? 0 : -Math.PI / 4);
+        this.hammerGroup.rotation.x += (hammerTargetAngle - this.hammerGroup.rotation.x) * 10 * deltaTime;
+        
+        // Flash fade
+        if (this.panFlash.material.opacity > 0) {
+            this.panFlash.material.opacity -= deltaTime * 5;
+        }
+        if (this.muzzleFlash.material.opacity > 0) {
+            this.muzzleFlash.material.opacity -= deltaTime * 10;
+        }
+    }
+    
+    updateReload(deltaTime) {
+        this.reloadTimer += deltaTime;
+        
+        const stageDuration = this.reloadStages[this.reloadStage] || 1.0;
+        this.currentStageProgress = this.reloadTimer / stageDuration;
+        
+        // Perform actions at stage start
+        if (this.reloadTimer < deltaTime * 1.1) {
+            this.onReloadStageStart(this.reloadStage);
+        }
+        
+        if (this.reloadTimer >= stageDuration) {
+            this.advanceReloadStage();
+        }
+    }
+    
+    onReloadStageStart(stage) {
+        switch (stage) {
+            case 'shouldering':
+                this.targetPosition = this.reloadPosition.clone();
+                this.audio.playSound('shoulder');
+                break;
+            case 'half_cock':
+                this.state = 'half_cocked';
+                this.audio.playSound('click');
+                break;
+            case 'open_pan':
+                this.isFrizzenOpen = true;
+                this.audio.playSound('frizzen');
+                break;
+            case 'main_powder':
+                this.powderHornGroup.visible = true;
+                this.audio.playSound('pour');
+                break;
+            case 'ball_patch':
+                this.powderHornGroup.visible = false;
+                this.audio.playSound('ball');
+                break;
+            case 'ramrod_1':
+            case 'ramrod_2':
+            case 'ramrod_3':
+                this.ramrodOut = true;
+                this.audio.playSound('ram');
+                break;
+            case 'prime_pan':
+                this.ramrodOut = false;
+                this.audio.playSound('prime');
+                break;
+            case 'close_pan':
+                this.isFrizzenOpen = false;
+                this.audio.playSound('frizzen');
+                break;
+            case 'full_cock':
+                this.state = 'full_cocked';
+                this.audio.playSound('cock');
+                break;
+            case 'shoulder':
+                this.targetPosition = this.shoulderedPosition.clone();
+                this.hasBallLoaded = true;
+                this.isPanPrimed = true;
+                break;
+        }
+    }
+    
+    advanceReloadStage() {
+        const stageOrder = [
+            'shouldering', 'half_cock', 'open_pan', 'main_powder', 'ball_patch',
+            'ramrod_1', 'ramrod_2', 'ramrod_3', 'prime_pan', 'close_pan', 
+            'full_cock', 'shoulder'
+        ];
+        
+        const currentIndex = stageOrder.indexOf(this.reloadStage);
+        if (currentIndex < stageOrder.length - 1) {
+            this.reloadStage = stageOrder[currentIndex + 1];
+            this.reloadTimer = 0;
+            this.currentStageProgress = 0;
+        } else {
+            this.reloadStage = 'ready';
+            this.state = 'full_cocked';
+            this.hasBallLoaded = true;
+            this.isPanPrimed = true;
+        }
+    }
+    
+    updateFireSequence(deltaTime) {
+        this.fireTimer -= deltaTime;
+        
+        if (this.fireSequenceStage === 'frizzen' && this.fireTimer <= 0.4) {
+            // Open frizzen and spark
+            this.isFrizzenOpen = true;
+            this.panFlash.material.opacity = 1;
+            this.fireSequenceStage = 'hangfire';
+        }
+        
+        if (this.fireSequenceStage === 'hangfire' && this.fireTimer <= 0.05) {
+            // Main charge ignites
+            this.fireMainCharge();
+            this.fireSequenceStage = 'discharged';
+        }
+    }
+    
+    fireMainCharge() {
+        // Muzzle flash
+        this.muzzleFlash.material.opacity = 1;
+        
+        // Kick animation
+        this.musketGroup.rotation.x += 0.15;
+        setTimeout(() => { this.musketGroup.rotation.x -= 0.15; }, 100);
+        
+        // Spawn projectile
+        const barrelTip = new THREE.Vector3(0, 0.05, 0.65);
+        barrelTip.applyMatrix4(this.musketGroup.matrixWorld);
+        
+        const direction = new THREE.Vector3(0, 0, 1);
+        direction.applyQuaternion(this.camera.quaternion);
+        
+        this.projectiles.spawn(
+            barrelTip,
+            direction,
+            150, // velocity m/s (reduced from 400 for gameplay scale)
+            this.playerId
+        );
+        
+        // Hammer falls
+        this.state = 'fired';
+        this.isPanPrimed = false;
+        this.hasBallLoaded = false;
+        
+        // Sound
+        this.audio.playSound('fire');
+    }
+    
+    fire() {
+        // Check if we can fire
+        if (this.state !== 'full_cocked' || !this.hasBallLoaded || !this.isPanPrimed) {
+            // Click (misfire/dud)
+            if (this.state === 'full_cocked') {
+                this.audio.playSound('click');
+                this.state = 'fired';
+                this.hammerGroup.rotation.x = 0;
+            }
+            return;
+        }
+        
+        if (this.fireTimer > 0) return; // Already firing
+        
+        // Start flintlock sequence
+        this.fireTimer = 0.5; // 0.5 second hang-fire
+        this.fireSequenceStage = 'frizzen';
+        
+        // Trigger animation
+        this.trigger.rotation.x = 0.2;
+        setTimeout(() => { this.trigger.rotation.x = 0; }, 100);
+    }
+    
+    startReload() {
+        // Can't reload while firing or already reloading
+        if (this.fireTimer > 0) return;
+        if (this.reloadStage !== 'idle' && this.reloadStage !== 'ready') return;
+        if (this.state === 'full_cocked' && this.hasBallLoaded) return; // Already loaded
+        
+        this.reloadStage = 'shouldering';
+        this.reloadTimer = 0;
+        this.currentStageProgress = 0;
+    }
+    
+    setIronSights(active) {
+        if (active) {
+            this.targetPosition = this.aimedPosition.clone();
+        } else {
+            if (this.reloadStage === 'idle' || this.reloadStage === 'ready') {
+                this.targetPosition = this.shoulderedPosition.clone();
+            }
+        }
+    }
+    
+    reset() {
+        this.state = 'idle';
+        this.reloadStage = 'idle';
+        this.hasBallLoaded = false;
+        this.isPanPrimed = false;
+        this.isFrizzenOpen = false;
+        this.fireTimer = 0;
+        this.ramrodOut = false;
+        this.targetPosition = this.shoulderedPosition.clone();
+    }
+    
+    hide() {
+        this.musketGroup.visible = false;
+    }
+    
+    show() {
+        this.musketGroup.visible = true;
+    }
+}

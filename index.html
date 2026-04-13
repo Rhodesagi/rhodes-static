@@ -113,9 +113,9 @@ function toggleSplitView() {
     <link rel="apple-touch-icon" sizes="180x180" href="/rhodes-icon-180.png">
 
     <!-- Firebase Auth for Google Sign-In -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js?v=2.0.12"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js?v=2.0.12"></script>
-    <link rel="stylesheet" href="/rhodes.css?v=1773276124.0.12">
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js?v=1776042574"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js?v=1776042574"></script>
+    <link rel="stylesheet" href="/rhodes.css?v=1776042574">
 <script>const params=new URLSearchParams(window.location.search);
 if(params.get("nologo")==="1"){document.write(`<style>.logo{visibility:hidden!important}
     /* Slash command autocomplete dropdown */
@@ -471,8 +471,8 @@ if(params.get("chatpad")==="1"){document.write(`<style>#chat{padding-top:180px!i
     </style>`);}
 </script>
     <!-- Silero VAD for speech detection -->
-    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.js?v=2.0.12"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.19/dist/bundle.min.js?v=2.0.12"></script>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.js?v=1776042574"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.19/dist/bundle.min.js?v=1776042574"></script>
 
     <!-- Service Worker Registration -->
     <script>
@@ -1031,20 +1031,20 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
 
     <!-- Courses Panel -->
 
-    <script src="/credentials-popup.js?v=2.0.12"></script>
-    <script src="/rhodes-tools.js?v=2.0.15"></script>
-    <script src="/rhodes-sessions.js?v=sessions-splitfix-2"></script>
-    <script src="/rhodes-auth.js?v=2.0.14"></script>
-    <script src="/rhodes-share.js?v=2.0.14"></script>
-    <script src="/rhodes-ws.js?v=2.0.14"></script>
-    <script src="/rhodes-media.js?v=2.0.12"></script>
-        <script src="/rhodes-voice.js?v=2.0.12"></script>
-    <script src="/face-api.min.js?v=2.0.12"></script>
-    <script src="/rhodes-valence.js?v=2.0.12"></script>
-<script src="/rhodes-send.js?v=20260412b"></script>
-<script src="/rhodes.js?v=2.0.16"></script>
-    <script src="/rhodes-split.js?v=1774402769.0.12"></script>
-    <script src="/rhodes-cloud-storage.js?v=2.0.15"></script>
+    <script src="/credentials-popup.js?v=1776042574"></script>
+    <script src="/rhodes-tools.js?v=1776042574"></script>
+    <script src="/rhodes-sessions.js?v=1776042574"></script>
+    <script src="/rhodes-auth.js?v=1776042574"></script>
+    <script src="/rhodes-share.js?v=1776042574"></script>
+    <script src="/rhodes-ws.js?v=1776042574"></script>
+    <script src="/rhodes-media.js?v=1776042574"></script>
+        <script src="/rhodes-voice.js?v=1776042574"></script>
+    <script src="/face-api.min.js?v=1776042574"></script>
+    <script src="/rhodes-valence.js?v=1776042574"></script>
+<script src="/rhodes-send.js?v=1776042574"></script>
+<script src="/rhodes.js?v=1776042574"></script>
+    <script src="/rhodes-split.js?v=1776042574"></script>
+    <script src="/rhodes-cloud-storage.js?v=1776042574"></script>
 
     <!-- PWA Service Worker & Install -->
     <script>
@@ -1839,63 +1839,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
         };
 
 
-        // FIXED: Do NOT redefine enterSplitMode - rhodes-split.js?v=1774402769 defines the
-        // resume-capable version. Wrap it to add CSS classes and face flash.
-        (function() {
-            var _rhodesEnterSplit = window.enterSplitMode;
-            window.enterSplitMode = function(paneCount, resumeSessionIds) {
-                if (typeof paneCount === 'undefined') paneCount = 4;
-                window.flashAsciiFace();
-                // Add layout classes (CSS needs these)
-                splitContainer.classList.remove('split-2', 'split-3', 'split-4');
-                splitContainer.classList.add('active', 'split-' + paneCount);
-                // Show/hide panes based on count
-                for (var i = 1; i <= 4; i++) {
-                    var pane = document.getElementById('pane-' + i);
-                    if (pane) {
-                        pane.style.display = i <= paneCount ? 'flex' : 'none';
-                    }
-                }
-                // Delegate to rhodes-split.js?v=1774402769 (handles resume, WebSocket, _splitResumeIds)
-                if (_rhodesEnterSplit) {
-                    _rhodesEnterSplit(paneCount, resumeSessionIds);
-                }
-            };
-        })();
-
-        window.exitSplitMode = function() {
-            splitContainer.classList.remove('active', 'split-2', 'split-3', 'split-4');
-            // split-toggle-container was here
-            // Keep connections alive for quick re-entry, or disconnect:
-            // disconnectAllPanes();
-        };
-
-        
-        // Slash command menu for split panes
-        const SPLIT_SLASH_COMMANDS = [
-            {cmd: '/new', desc: 'New session'},
-            {cmd: '/clear', desc: 'Clear chat'},
-            {cmd: '/stop', desc: 'Stop generation'},
-            {cmd: '/help', desc: 'Show help'},
-            {cmd: '/duo-max', desc: 'Maximum quality duo'},
-            {cmd: '/duo', desc: 'Standard duo mode'},
-            {cmd: '/supervised', desc: 'Supervised mode'},
-            {cmd: '/solo', desc: 'Direct mode'},
-            {cmd: '/clear-cache', desc: 'Clear local cache (desktop)'},
-        ];
-        let paneSlashSelected = {};
-
-        window.handlePaneSlash = function(paneNum, event) {
-            const input = document.getElementById('pane-' + paneNum + '-input');
-            const menu = document.getElementById('pane-' + paneNum + '-slash');
-            const val = input.value;
-            
-            if (val.startsWith('/') && val.length > 0) {
-                const filter = val.toLowerCase();
-                const matches = SPLIT_SLASH_COMMANDS.filter(c => c.cmd.toLowerCase().startsWith(filter));
-                if (matches.length > 0) {
-                    menu.innerHTML = matches.map((c, i) => 
-                        '<div class="slash-item' + (i === 0 ? ' selected' : '') + '" data-cmd="' + c.cmd + '" onclick="window.selectPaneSlash(' + paneNum + ', \'' + c.cmd + '\')">' +
+        // FIXED: Do NOT redefine enterSplitMode - rhodes-split.js?v=1776042574"slash-item' + (i === 0 ? ' selected' : '') + '" data-cmd="' + c.cmd + '" onclick="window.selectPaneSlash(' + paneNum + ', \'' + c.cmd + '\')">' +
                         '<span class="cmd">' + c.cmd + '</span><span class="desc">' + c.desc + '</span></div>'
                     ).join('');
                     menu.classList.add('visible');
