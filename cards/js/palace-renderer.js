@@ -829,7 +829,75 @@
             mesh.userData = { dbType: 'locus', dbData: l, dbId: l.id };
             this.scene.add(mesh);
             this.lociMeshes.push(mesh);
+
+            // ── 3D TEXT LABEL just above every locus with a label ──
+            if (l.label) {
+                const labelSprite = this._makeTextSprite(l.label);
+                const mPos = mesh.position || new THREE.Vector3(pos[0], pos[1], pos[2]);
+                // Tight above the marker — marker heights vary, so use a small fixed offset
+                const labelY = (l.marker_type === 'statue') ? 1.8 :
+                               (l.marker_type === 'pedestal') ? 1.2 :
+                               (l.marker_type === 'door') ? 2.3 : 0.6;
+                labelSprite.position.set(mPos.x, mPos.y + labelY, mPos.z);
+                labelSprite.userData = { isLabel: true, parentLocus: l };
+                this.scene.add(labelSprite);
+            }
+
+            // ── IMAGE on ANY locus type if marker_settings has image_url ──
+            if (l.marker_settings && l.marker_settings.image_url) {
+                this._loadLocusImage(mesh, l.marker_settings.image_url, pos, l.marker_type);
+            }
+
             return mesh;
+        },
+
+        // Create a text sprite from a canvas — works on all devices, no font loading
+        _makeTextSprite(text) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 512;
+            canvas.height = 128;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.roundRect(4, 4, 504, 120, 12);
+            ctx.fill();
+            ctx.font = 'bold 36px Arial, sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            // Truncate long labels
+            let display = text;
+            if (ctx.measureText(display).width > 480) {
+                while (ctx.measureText(display + '…').width > 480 && display.length > 5) {
+                    display = display.slice(0, -1);
+                }
+                display += '…';
+            }
+            ctx.fillText(display, 256, 64);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.minFilter = THREE.LinearFilter;
+            const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+            const sprite = new THREE.Sprite(mat);
+            sprite.scale.set(2.5, 0.625, 1); // 4:1 aspect
+            return sprite;
+        },
+
+        // Load an image URL as a large billboard displayed above/behind the locus
+        _loadLocusImage(parentMesh, url, pos, markerType) {
+            this._texLoader.load(url, (tex) => {
+                tex.encoding = THREE.sRGBEncoding;
+                const aspect = tex.image.width / tex.image.height || 1;
+                // Large image — 1.8m tall, width scales with aspect
+                const h = 1.8, w = h * aspect;
+                const geo = new THREE.PlaneGeometry(w, h);
+                const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide });
+                const plane = new THREE.Mesh(geo, mat);
+                // Position image behind and above the marker
+                const imgY = (markerType === 'door') ? 1.2 :
+                             (markerType === 'statue') ? 0.8 :
+                             (markerType === 'pedestal') ? 0.5 : 0.3;
+                plane.position.set(pos[0], pos[1] + imgY, pos[2] - 0.15);
+                this.scene.add(plane);
+            }, undefined, () => { /* image load failed, skip silently */ });
         },
 
         // ─────────────────────────────────────────────

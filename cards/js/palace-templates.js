@@ -182,28 +182,59 @@
             const hx = to[0] - from[0];
             const hz = to[2] - from[2];
             const alongX = Math.abs(hx) >= Math.abs(hz);
-            // Tread = 3m minimum — massive overlap guarantees solid walkable surface.
-            // With 15 steps over 10m (0.714m spacing), 3m treads overlap by 2.3m.
-            // Walker's downward raycast can NEVER miss.
-            const tread = 3.0;
-            const w = width || 3;
+            const w = width || 6;
             const mat = material || 'marble_white';
             const lp = labelPrefix || 'Step';
+            // Tread depth along travel — 2m minimum (real human-scale stairs).
+            // Overlaps heavily with adjacent steps for solid walkable surface.
+            const tread = 2.0;
+            // Step thickness — 0.4m (visible, substantial, like real stone treads)
+            const thick = 0.4;
+            // Riser height = step rise (fills the vertical gap between treads)
+            const riserH = Math.abs(stepDy);
 
             for (let i = 0; i < steps; i++) {
                 const t = steps === 1 ? 1 : i / (steps - 1);
                 const x = from[0] + hx * t;
                 const y = from[1] + (i + 1) * stepDy;
                 const z = from[2] + hz * t;
+                // TREAD — thick horizontal slab the walker stands on
                 surfs.push({
                     type: 'floor',
                     transform: { position: [x, y, z], rotation: [0, 0, 0], scale: [1, 1, 1] },
                     dimensions: alongX
-                        ? { width: tread, height: w, depth: 0.15 }
-                        : { width: w, height: tread, depth: 0.15 },
+                        ? { width: tread, height: w, depth: thick }
+                        : { width: w, height: tread, depth: thick },
                     material: mat,
                     label: `${lp} ${i + 1}`
                 });
+                // RISER — vertical face connecting this tread to the one below.
+                // Positioned at the leading edge of this step, height = stepDy.
+                // The wall renderer places walls at y + height/2, so we position
+                // at the bottom of the riser (previous step top = y - stepDy).
+                if (i > 0 && riserH > 0.05) {
+                    // Riser position: leading edge of this step
+                    const rX = x - (hx / Math.abs(hx || 1)) * tread / 2;
+                    const rZ = z - (hz / Math.abs(hz || 1)) * tread / 2;
+                    const rY = y - riserH;
+                    if (alongX) {
+                        surfs.push({
+                            type: 'wall',
+                            transform: { position: [rX, rY, z], rotation: [0, 90, 0], scale: [1, 1, 1] },
+                            dimensions: { width: w, height: riserH, depth: 0.3 },
+                            material: mat,
+                            label: `${lp} riser ${i}`
+                        });
+                    } else {
+                        surfs.push({
+                            type: 'wall',
+                            transform: { position: [x, rY, rZ], rotation: [0, 0, 0], scale: [1, 1, 1] },
+                            dimensions: { width: w, height: riserH, depth: 0.3 },
+                            material: mat,
+                            label: `${lp} riser ${i}`
+                        });
+                    }
+                }
             }
 
             // Side railings — tall wall panels flanking the flight
@@ -217,16 +248,16 @@
                 if (alongX) {
                     surfs.push(
                         { type: 'wall', transform: { position: [midX, midY, midZ + halfW], rotation: [0, 0, 0], scale: [1, 1, 1] },
-                          dimensions: { width: hLen, height: railH, depth: 0.08 }, material: railMaterial, label: `${lp} rail L` },
+                          dimensions: { width: hLen, height: railH, depth: 0.3 }, material: railMaterial, label: `${lp} rail L` },
                         { type: 'wall', transform: { position: [midX, midY, midZ - halfW], rotation: [0, 0, 0], scale: [1, 1, 1] },
-                          dimensions: { width: hLen, height: railH, depth: 0.08 }, material: railMaterial, label: `${lp} rail R` }
+                          dimensions: { width: hLen, height: railH, depth: 0.3 }, material: railMaterial, label: `${lp} rail R` }
                     );
                 } else {
                     surfs.push(
                         { type: 'wall', transform: { position: [midX + halfW, midY, midZ], rotation: [0, 90, 0], scale: [1, 1, 1] },
-                          dimensions: { width: hLen, height: railH, depth: 0.08 }, material: railMaterial, label: `${lp} rail L` },
+                          dimensions: { width: hLen, height: railH, depth: 0.3 }, material: railMaterial, label: `${lp} rail L` },
                         { type: 'wall', transform: { position: [midX - halfW, midY, midZ], rotation: [0, 90, 0], scale: [1, 1, 1] },
-                          dimensions: { width: hLen, height: railH, depth: 0.08 }, material: railMaterial, label: `${lp} rail R` }
+                          dimensions: { width: hLen, height: railH, depth: 0.3 }, material: railMaterial, label: `${lp} rail R` }
                     );
                 }
             }
@@ -1112,9 +1143,9 @@
                 // Atrium upper floor at y=6, z:16-28 → stairs approach from z=10 to z=16
                 // Cubiculum upper floor at y=6, x:-28 to -16 → stairs from x=-10 to x=-16
                 // Tablinum upper floor at y=6, z:-22 to -14 → stairs from z=-8 to z=-14
-                ...this._stairFlight({ from: [-6, 0, 10], to: [-6, 6, 16], width: 3, material: 'marble_white', railMaterial: { color: '#d4c8a8', opacity: 0.3, roughness: 0.5, metalness: 0.1 }, labelPrefix: 'Atrium stair' }),
-                ...this._stairFlight({ from: [-10, 0, -4], to: [-16, 6, -4], width: 3, material: 'marble_white', railMaterial: { color: '#d4c8a8', opacity: 0.3, roughness: 0.5, metalness: 0.1 }, labelPrefix: 'Cubiculum stair' }),
-                ...this._stairFlight({ from: [-4, 0, -8], to: [-4, 6, -14], width: 3, material: 'marble_white', railMaterial: { color: '#d4c8a8', opacity: 0.3, roughness: 0.5, metalness: 0.1 }, labelPrefix: 'Tablinum stair' }),
+                ...this._stairFlight({ from: [-6, 0, 10], to: [-6, 6, 16], width: 6, material: 'marble_white', railMaterial: { color: '#d4c8a8', opacity: 0.3, roughness: 0.5, metalness: 0.1 }, labelPrefix: 'Atrium stair' }),
+                ...this._stairFlight({ from: [-10, 0, -4], to: [-16, 6, -4], width: 6, material: 'marble_white', railMaterial: { color: '#d4c8a8', opacity: 0.3, roughness: 0.5, metalness: 0.1 }, labelPrefix: 'Cubiculum stair' }),
+                ...this._stairFlight({ from: [-4, 0, -8], to: [-4, 6, -14], width: 6, material: 'marble_white', railMaterial: { color: '#d4c8a8', opacity: 0.3, roughness: 0.5, metalness: 0.1 }, labelPrefix: 'Tablinum stair' }),
             ],
             props: [
                 // ============================================================
@@ -1933,10 +1964,10 @@
                 // 4 flights (alternating east/west), each 15 steps × 0.4m rise.
                 // Walker can step up each one (0.4m < 0.65m step-up limit).
                 // ========================================================
-                ...this._stairFlight({ from: [-5, 0, 3],  to: [5, 6, 3],   width: 3, material: 'marble_white', railMaterial: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, labelPrefix: 'Stair F1-F2' }),
-                ...this._stairFlight({ from: [5, 6, -3],  to: [-5, 12, -3], width: 3, material: 'marble_white', railMaterial: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, labelPrefix: 'Stair F2-F3' }),
-                ...this._stairFlight({ from: [-5, 12, 3], to: [5, 18, 3],  width: 3, material: 'marble_white', railMaterial: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, labelPrefix: 'Stair F3-F4' }),
-                ...this._stairFlight({ from: [5, 18, -3], to: [-5, 24, -3], width: 3, material: 'marble_white', railMaterial: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, labelPrefix: 'Stair F4-F5' }),
+                ...this._stairFlight({ from: [-5, 0, 3],  to: [5, 6, 3],   width: 8, material: 'marble_white', railMaterial: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, labelPrefix: 'Stair F1-F2' }),
+                ...this._stairFlight({ from: [5, 6, -3],  to: [-5, 12, -3], width: 8, material: 'marble_white', railMaterial: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, labelPrefix: 'Stair F2-F3' }),
+                ...this._stairFlight({ from: [-5, 12, 3], to: [5, 18, 3],  width: 8, material: 'marble_white', railMaterial: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, labelPrefix: 'Stair F3-F4' }),
+                ...this._stairFlight({ from: [5, 18, -3], to: [-5, 24, -3], width: 8, material: 'marble_white', railMaterial: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, labelPrefix: 'Stair F4-F5' }),
             ],
             props: [
                 // ========================================================
