@@ -195,8 +195,28 @@ function showDownloads() {
                 }
             });
 
-            // Preserve Q&A sharing for streamed replies.
-            if (lastUserMessage && cleanText && !el.querySelector('.qa-share-btn')) {
+            // DEDUP: Remove duplicate consecutive assistant messages (model repeats narration in tool loops)
+            if (chat) {
+                const prevAiMsgs = chat.querySelectorAll('.msg.ai');
+                if (prevAiMsgs.length >= 2) {
+                    const prevEl = prevAiMsgs[prevAiMsgs.length - 2];
+                    // Get clean text from both, stripping HTML and tool summaries
+                    const _getClean = (e) => {
+                        const clone = e.cloneNode(true);
+                        clone.querySelectorAll('.tool-summary, .qa-share-btn, .msg-response-time').forEach(x => x.remove());
+                        return (clone.textContent || '').trim();
+                    };
+                    const prevText = _getClean(prevEl);
+                    const curText = (cleanText || '').replace(/<[^>]*>/g, '').trim();
+                    if (prevText && curText && prevText === curText) {
+                        el.remove();
+                        return;
+                    }
+                }
+            }
+
+            // Preserve Q&A sharing for streamed replies — but NOT during active tool loops.
+            if (lastUserMessage && cleanText && !el.querySelector('.qa-share-btn') && !window._rhodesToolLoopActive) {
                 const qaId = 'qa_' + Math.random().toString(36).substr(2, 9);
                 el.dataset.qaId = qaId;
                 el.dataset.question = lastUserMessage;
@@ -619,11 +639,20 @@ function showDownloads() {
                             if (window.RhodesReportMode && window.RhodesReportMode.resetSession) window.RhodesReportMode.resetSession();
                             CONNECTION_MSG_SHOWN = true;
                             if (typeof VoiceChat !== 'undefined') VoiceChat._suppressSpeak = true;
+                            let _lastAiText = '';
                             for (const m of msg.payload.conversation) {
                                 // Skip tool result messages and empty assistant messages (tool call initiators)
                                 if (m.role === 'tool') continue;
                                 if (m.role === 'assistant' && (!m.content || !m.content.trim())) continue;
                                 const content = m.role === 'user' ? maskPasswords(m.content) : m.content;
+                                // DEDUP: Skip consecutive duplicate assistant messages (tool loop narration)
+                                if (m.role === 'assistant') {
+                                    const trimmed = (content || '').trim();
+                                    if (trimmed === _lastAiText) continue;
+                                    _lastAiText = trimmed;
+                                } else {
+                                    _lastAiText = '';
+                                }
                                 addMsg(m.role === 'user' ? 'user' : 'ai', content);
                             }
                             if (typeof VoiceChat !== 'undefined') VoiceChat._suppressSpeak = false;
@@ -961,6 +990,8 @@ function showDownloads() {
                         }
                     }
                 } else if (msg.msg_type === "ai_message") {
+                    // Clear tool loop flag — this is the final response
+                    window._rhodesToolLoopActive = false;
                     console.log("[DEBUG] ai_message received:", JSON.stringify(msg.payload).slice(0, 500));
                     console.log("[DEBUG] debug_reasoning present:", !!msg.payload.debug_reasoning, "len:", msg.payload.debug_reasoning ? msg.payload.debug_reasoning.length : 0);
                     if (msg.payload && Object.prototype.hasOwnProperty.call(msg.payload, 'session_note') && window.__rhodesApplySessionNote) {
@@ -1281,12 +1312,21 @@ function showDownloads() {
                         console.log('[RESUME] Received conversation:', conversation.length, 'messages');
                         try { chat.innerHTML = ''; } catch {}
                         if (window.RhodesReportMode && window.RhodesReportMode.resetSession) window.RhodesReportMode.resetSession();
+                        let _lastAiText2 = '';
                         for (const m of conversation) {
                             // Skip tool result messages and empty assistant messages
                             if (m.role === 'tool') continue;
                             if (m.role === 'assistant' && (!m.content || !m.content.trim())) continue;
                             // Mask passwords in user messages when replaying history
                             const content = m.role === 'user' ? maskPasswords(m.content) : m.content;
+                            // DEDUP: Skip consecutive duplicate assistant messages (tool loop narration)
+                            if (m.role === 'assistant') {
+                                const trimmed = (content || '').trim();
+                                if (trimmed === _lastAiText2) continue;
+                                _lastAiText2 = trimmed;
+                            } else {
+                                _lastAiText2 = '';
+                            }
                             addMsg(m.role === 'user' ? 'user' : 'ai', content);
                         }
                         const sid = msg.payload.session_id || msg.payload.rhodes_id || '';
@@ -1576,6 +1616,8 @@ function showDownloads() {
                     if (typeof showToast === 'function') showToast('Terminal stopped');
                 } else if (msg.msg_type === 'tool_call') {
                     const tool = msg.payload;
+                    // Track active tool loop — suppress SHARE/REPORT on intermediate messages
+                    if (tool.status === 'starting') window._rhodesToolLoopActive = true;
 
             // ── Handoff viewer auto-detect ──
             if (tool.status === 'complete' && tool.result) {

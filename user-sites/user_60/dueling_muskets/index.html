@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dueling Muskets - 2 Player FPS</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Player 1 Viewport (Top) -->
+        <div id="player1-viewport" class="viewport">
+            <canvas id="canvas1"></canvas>
+            <div class="ui-overlay" id="p1-ui">
+                <div class="player-label">PLAYER 1 (Mouse + WASD)</div>
+                <div class="reload-status" id="p1-reload">READY TO FIRE</div>
+                <div class="reload-sequence" id="p1-sequence"></div>
+                <div class="health-bar"><div class="health-fill" id="p1-health"></div></div>
+                <div class="ammo-count">Round: <span id="p1-round">1</span>/1</div>
+            </div>
+            <div class="iron-sight-overlay" id="p1-sights">
+                <div class="rear-notch"></div>
+                <div class="front-post"></div>
+            </div>
+        </div>
+        
+        <!-- Player 2 Viewport (Bottom) -->
+        <div id="player2-viewport" class="viewport">
+            <canvas id="canvas2"></canvas>
+            <div class="ui-overlay" id="p2-ui">
+                <div class="player-label">PLAYER 2 (IJKL + TGFH)</div>
+                <div class="reload-status" id="p2-reload">READY TO FIRE</div>
+                <div class="reload-sequence" id="p2-sequence"></div>
+                <div class="health-bar"><div class="health-fill" id="p2-health"></div></div>
+                <div class="ammo-count">Round: <span id="p2-round">1</span>/1</div>
+            </div>
+            <div class="iron-sight-overlay" id="p2-sights">
+                <div class="rear-notch"></div>
+                <div class="front-post"></div>
+            </div>
+        </div>
+        
+        <!-- Menu Screen -->
+        <div id="menu-screen">
+            <h1>DUELING MUSKETS</h1>
+            <p>A First-Person Musket Dueling Game</p>
+            <div class="controls-info">
+                <h3>Controls:</h3>
+                <div class="control-section">
+                    <strong>Player 1 (Top Screen):</strong><br>
+                    Mouse - Aim<br>
+                    WASD - Move<br>
+                    Left Click - Fire<br>
+                    Right Click - Iron Sights<br>
+                    R - Reload (advance sequence)
+                </div>
+                <div class="control-section">
+                    <strong>Player 2 (Bottom Screen):</strong><br>
+                    T/G - Look Up/Down<br>
+                    F/H - Turn Left/Right<br>
+                    IJKL - Move<br>
+                    Y - Fire (in iron sights)<br>
+                    N - Iron Sights<br>
+                    O - Reload (advance sequence)
+                </div>
+            </div>
+            <button id="start-btn">START DUEL</button>
+        </div>
+        
+        <!-- Victory Screen -->
+        <div id="victory-screen" class="hidden">
+            <h1 id="winner-text">PLAYER 1 WINS!</h1>
+            <button id="rematch-btn">REMATCH</button>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>
