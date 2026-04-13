@@ -168,6 +168,71 @@
             return loci;
         },
 
+        /**
+         * Walkable stair flight — generates horizontal floor-type step surfaces
+         * (each 0.4m rise, within walker's 0.65m step-up limit) + optional side railings.
+         * from/to: [x,y,z] start and end points. width: stair width perpendicular to travel.
+         * Returns array of surface objects to spread into surfaces: [...this._stairFlight({...})].
+         */
+        _stairFlight({ from, to, width, material, railMaterial, labelPrefix }) {
+            const surfs = [];
+            const dy = to[1] - from[1];
+            const steps = Math.max(2, Math.ceil(Math.abs(dy) / 0.4));
+            const stepDy = dy / steps;
+            const hx = to[0] - from[0];
+            const hz = to[2] - from[2];
+            const alongX = Math.abs(hx) >= Math.abs(hz);
+            // Tread = 3m minimum — massive overlap guarantees solid walkable surface.
+            // With 15 steps over 10m (0.714m spacing), 3m treads overlap by 2.3m.
+            // Walker's downward raycast can NEVER miss.
+            const tread = 3.0;
+            const w = width || 3;
+            const mat = material || 'marble_white';
+            const lp = labelPrefix || 'Step';
+
+            for (let i = 0; i < steps; i++) {
+                const t = steps === 1 ? 1 : i / (steps - 1);
+                const x = from[0] + hx * t;
+                const y = from[1] + (i + 1) * stepDy;
+                const z = from[2] + hz * t;
+                surfs.push({
+                    type: 'floor',
+                    transform: { position: [x, y, z], rotation: [0, 0, 0], scale: [1, 1, 1] },
+                    dimensions: alongX
+                        ? { width: tread, height: w, depth: 0.15 }
+                        : { width: w, height: tread, depth: 0.15 },
+                    material: mat,
+                    label: `${lp} ${i + 1}`
+                });
+            }
+
+            // Side railings — tall wall panels flanking the flight
+            if (railMaterial) {
+                const midX = (from[0] + to[0]) / 2;
+                const midY = (from[1] + to[1]) / 2 + 0.5;
+                const midZ = (from[2] + to[2]) / 2;
+                const railH = Math.abs(dy) + 1.5;
+                const hLen = Math.sqrt(hx * hx + hz * hz) + 1;
+                const halfW = w / 2 + 0.1;
+                if (alongX) {
+                    surfs.push(
+                        { type: 'wall', transform: { position: [midX, midY, midZ + halfW], rotation: [0, 0, 0], scale: [1, 1, 1] },
+                          dimensions: { width: hLen, height: railH, depth: 0.08 }, material: railMaterial, label: `${lp} rail L` },
+                        { type: 'wall', transform: { position: [midX, midY, midZ - halfW], rotation: [0, 0, 0], scale: [1, 1, 1] },
+                          dimensions: { width: hLen, height: railH, depth: 0.08 }, material: railMaterial, label: `${lp} rail R` }
+                    );
+                } else {
+                    surfs.push(
+                        { type: 'wall', transform: { position: [midX + halfW, midY, midZ], rotation: [0, 90, 0], scale: [1, 1, 1] },
+                          dimensions: { width: hLen, height: railH, depth: 0.08 }, material: railMaterial, label: `${lp} rail L` },
+                        { type: 'wall', transform: { position: [midX - halfW, midY, midZ], rotation: [0, 90, 0], scale: [1, 1, 1] },
+                          dimensions: { width: hLen, height: railH, depth: 0.08 }, material: railMaterial, label: `${lp} rail R` }
+                    );
+                }
+            }
+            return surfs;
+        },
+
         // ═══════════════════════════════════════════════════════════
         // 7 template functions follow (5 wings + Forum hub + Observatory)
         // ═══════════════════════════════════════════════════════════
@@ -714,9 +779,9 @@
                 id: 'roman_villa',
                 name: 'Roman Villa',
                 desc: 'Multi-story Mediterranean villa urbana: enclosed peristyle atrium with oak-coffered ceiling, upper cubicula, triclinium, bath, tablinum study, and a walled cypress grove garden',
-                // Spawn INSIDE the peristyle, south edge, looking north across the
-                // fountain toward the tablinum doorway — same as current version.
-                spawn_point: { position: [0, 1.6, 9], rotation_y: 0 },
+                // Spawn just inside the atrium entrance (south side), looking north
+                // into the villa. The user enters through the south gate.
+                spawn_point: { position: [0, 1.6, 26], rotation_y: 0 },
                 scale: 1.0,
             },
             environment: {
@@ -1039,6 +1104,17 @@
                   dimensions: {width:4, height:24, depth:0.15}, material: 'marble_white', label: 'Peristyle east ambulatory' },
                 { type: 'floor', transform: {position:[-14,0.06,0], rotation:[0,0,0], scale:[1,1,1]},
                   dimensions: {width:4, height:24, depth:0.15}, material: 'marble_white', label: 'Peristyle west ambulatory' },
+
+                // ============================================================
+                // MARBLE STAIRS — walkable step surfaces (replacing GLB-only props).
+                // 3 flights: atrium (north), cubiculum (west), tablinum (north).
+                // Each approaches the upper floor from OUTSIDE its footprint.
+                // Atrium upper floor at y=6, z:16-28 → stairs approach from z=10 to z=16
+                // Cubiculum upper floor at y=6, x:-28 to -16 → stairs from x=-10 to x=-16
+                // Tablinum upper floor at y=6, z:-22 to -14 → stairs from z=-8 to z=-14
+                ...this._stairFlight({ from: [-6, 0, 10], to: [-6, 6, 16], width: 3, material: 'marble_white', railMaterial: { color: '#d4c8a8', opacity: 0.3, roughness: 0.5, metalness: 0.1 }, labelPrefix: 'Atrium stair' }),
+                ...this._stairFlight({ from: [-10, 0, -4], to: [-16, 6, -4], width: 3, material: 'marble_white', railMaterial: { color: '#d4c8a8', opacity: 0.3, roughness: 0.5, metalness: 0.1 }, labelPrefix: 'Cubiculum stair' }),
+                ...this._stairFlight({ from: [-4, 0, -8], to: [-4, 6, -14], width: 3, material: 'marble_white', railMaterial: { color: '#d4c8a8', opacity: 0.3, roughness: 0.5, metalness: 0.1 }, labelPrefix: 'Tablinum stair' }),
             ],
             props: [
                 // ============================================================
@@ -1087,17 +1163,7 @@
                   transform: {position:[6,0.1,-6], rotation:[0,0,0], scale:[1.2,1.2,1.2]},
                   cast_shadow: true, receive_shadow: true, label: 'Brazier NE' },
 
-                // ============================================================
-                // MARBLE STAIRS to upper floors
-                { glb: 'assets/props/kenney/furniture_kit/stairs.glb',
-                  transform: {position:[-6,0.1,16], rotation:[0,3.14159,0], scale:[2.0,2.0,2.0]},
-                  cast_shadow: true, receive_shadow: true, label: 'Upper atrium stair' },
-                { glb: 'assets/props/kenney/furniture_kit/stairs.glb',
-                  transform: {position:[-18,0.1,-4], rotation:[0,1.5708,0], scale:[2.0,2.0,2.0]},
-                  cast_shadow: true, receive_shadow: true, label: 'Upper cubiculum stair' },
-                { glb: 'assets/props/kenney/furniture_kit/stairs.glb',
-                  transform: {position:[-4,0.1,-16], rotation:[0,0,0], scale:[2.0,2.0,2.0]},
-                  cast_shadow: true, receive_shadow: true, label: 'Upper tablinum stair' },
+                // (Stairs moved from GLB props to walkable floor surfaces in surfaces array)
 
                 // ============================================================
                 // WEST GARDEN GROVE (cypress pines + rocks + bushes)
@@ -1602,7 +1668,7 @@
                 id: 'library_tower',
                 name: 'Library Tower',
                 desc: 'Octagonal stone tower of old-world learning: five candlelit floors of bookshelves and a dome observation chamber crowned by a telescope and armillary sphere',
-                spawn_point: { position: [0, 1.6, 0], rotation_y: 0 },
+                spawn_point: { position: [0, 1.6, 12], rotation_y: 0 },
                 scale: 1.0,
             },
             environment: {
@@ -1863,45 +1929,14 @@
                   dimensions: { width: 0.5, height: 0.5, depth: 0.5 }, material: 'bronze_trim', label: 'Telescope mount yoke' },
 
                 // ========================================================
-                // STAIRS — solid ramp slabs with glass railings.
-                // Each ramp is a single tilted floor slab the walker can walk on.
-                // The renderer's _addSurface for 'ramp' type rotates the slab.
-                // Rise per flight = 6m over 10m horizontal = ~31 degrees.
+                // STAIRS — walkable step surfaces via _stairFlight helper.
+                // 4 flights (alternating east/west), each 15 steps × 0.4m rise.
+                // Walker can step up each one (0.4m < 0.65m step-up limit).
                 // ========================================================
-
-                // F1→F2 ramp (east-bound at z=3, x from -5 to +5, y from 0 to 6)
-                { type: 'floor', transform: { position: [0, 3, 3], rotation: [0, 0, -31], scale: [1, 1, 1] },
-                  dimensions: { width: 11.7, height: 3.0, depth: 0.3 }, material: 'marble_white', label: 'Stair ramp F1-F2' },
-                // Glass railing south side
-                { type: 'wall', transform: { position: [0, 3, 4.5], rotation: [0, 0, 0], scale: [1, 1, 1] },
-                  dimensions: { width: 11, height: 7, depth: 0.08 }, material: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, label: 'Stair F1-F2 glass S' },
-                // Glass railing north side
-                { type: 'wall', transform: { position: [0, 3, 1.5], rotation: [0, 0, 0], scale: [1, 1, 1] },
-                  dimensions: { width: 11, height: 7, depth: 0.08 }, material: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, label: 'Stair F1-F2 glass N' },
-
-                // F2→F3 ramp (west-bound at z=-3, x from +5 to -5, y from 6 to 12)
-                { type: 'floor', transform: { position: [0, 9, -3], rotation: [0, 0, 31], scale: [1, 1, 1] },
-                  dimensions: { width: 11.7, height: 3.0, depth: 0.3 }, material: 'marble_white', label: 'Stair ramp F2-F3' },
-                { type: 'wall', transform: { position: [0, 9, -1.5], rotation: [0, 0, 0], scale: [1, 1, 1] },
-                  dimensions: { width: 11, height: 7, depth: 0.08 }, material: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, label: 'Stair F2-F3 glass S' },
-                { type: 'wall', transform: { position: [0, 9, -4.5], rotation: [0, 0, 0], scale: [1, 1, 1] },
-                  dimensions: { width: 11, height: 7, depth: 0.08 }, material: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, label: 'Stair F2-F3 glass N' },
-
-                // F3→F4 ramp (east-bound at z=3, x from -5 to +5, y from 12 to 18)
-                { type: 'floor', transform: { position: [0, 15, 3], rotation: [0, 0, -31], scale: [1, 1, 1] },
-                  dimensions: { width: 11.7, height: 3.0, depth: 0.3 }, material: 'marble_white', label: 'Stair ramp F3-F4' },
-                { type: 'wall', transform: { position: [0, 15, 4.5], rotation: [0, 0, 0], scale: [1, 1, 1] },
-                  dimensions: { width: 11, height: 7, depth: 0.08 }, material: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, label: 'Stair F3-F4 glass S' },
-                { type: 'wall', transform: { position: [0, 15, 1.5], rotation: [0, 0, 0], scale: [1, 1, 1] },
-                  dimensions: { width: 11, height: 7, depth: 0.08 }, material: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, label: 'Stair F3-F4 glass N' },
-
-                // F4→F5 ramp (west-bound at z=-3, x from +5 to -5, y from 18 to 24)
-                { type: 'floor', transform: { position: [0, 21, -3], rotation: [0, 0, 31], scale: [1, 1, 1] },
-                  dimensions: { width: 11.7, height: 3.0, depth: 0.3 }, material: 'marble_white', label: 'Stair ramp F4-F5' },
-                { type: 'wall', transform: { position: [0, 21, -1.5], rotation: [0, 0, 0], scale: [1, 1, 1] },
-                  dimensions: { width: 11, height: 7, depth: 0.08 }, material: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, label: 'Stair F4-F5 glass S' },
-                { type: 'wall', transform: { position: [0, 21, -4.5], rotation: [0, 0, 0], scale: [1, 1, 1] },
-                  dimensions: { width: 11, height: 7, depth: 0.08 }, material: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, label: 'Stair F4-F5 glass N' },
+                ...this._stairFlight({ from: [-5, 0, 3],  to: [5, 6, 3],   width: 3, material: 'marble_white', railMaterial: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, labelPrefix: 'Stair F1-F2' }),
+                ...this._stairFlight({ from: [5, 6, -3],  to: [-5, 12, -3], width: 3, material: 'marble_white', railMaterial: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, labelPrefix: 'Stair F2-F3' }),
+                ...this._stairFlight({ from: [-5, 12, 3], to: [5, 18, 3],  width: 3, material: 'marble_white', railMaterial: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, labelPrefix: 'Stair F3-F4' }),
+                ...this._stairFlight({ from: [5, 18, -3], to: [-5, 24, -3], width: 3, material: 'marble_white', railMaterial: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, labelPrefix: 'Stair F4-F5' }),
             ],
             props: [
                 // ========================================================
@@ -2808,7 +2843,7 @@
                 id: 'museum_hall',
                 name: 'Museum Hall',
                 desc: 'Grand neo-classical gallery — 140m colonnaded marble hall with 40 alcove exhibits and a rear octagonal rotunda',
-                spawn_point: { position: [0, 1.6, -60], rotation_y: 180 },
+                spawn_point: { position: [0, 1.6, -68], rotation_y: 180 },
                 scale: 1.0,
             },
             environment: {
@@ -2904,7 +2939,7 @@
                 id: 'catacombs',
                 name: 'Catacombs',
                 desc: 'Underground burial network — three parallel arched corridors, altar chamber, saint crypt, and hundreds of wall niches for memory loci',
-                spawn_point: { position: [0, 1.6, -35], rotation_y: 0 },
+                spawn_point: { position: [0, 1.6, 37], rotation_y: 0 },
                 scale: 1.0,
             },
             environment: {
@@ -3589,7 +3624,7 @@
                 id: 'observatory',
                 name: 'Observatory Chamber',
                 desc: 'Enclosed octagonal astronomical observatory with domed constellation ceiling, central telescope, bronze armillary, and star chart walls.',
-                spawn_point: { position: [0, 1.6, -8], rotation_y: 0 },
+                spawn_point: { position: [0, 1.6, 16], rotation_y: 0 },
                 scale: 1.0,
             },
             environment: {
