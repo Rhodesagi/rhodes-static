@@ -1863,81 +1863,45 @@
                   dimensions: { width: 0.5, height: 0.5, depth: 0.5 }, material: 'bronze_trim', label: 'Telescope mount yoke' },
 
                 // ========================================================
-                // STRAIGHT MARBLE STAIRS — 4 flights, alternating direction.
-                // Pattern kept identical to S175 working version (15 steps, 0.4m rise, 0.72m deep).
-                // F1->F2: east-bound at z=3
-                // F2->F3: west-bound at z=-3
-                // F3->F4: east-bound at z=3
-                // F4->F5: west-bound at z=-3  (NEW — added for 5th floor)
+                // STAIRS — solid ramp slabs with glass railings.
+                // Each ramp is a single tilted floor slab the walker can walk on.
+                // The renderer's _addSurface for 'ramp' type rotates the slab.
+                // Rise per flight = 6m over 10m horizontal = ~31 degrees.
                 // ========================================================
 
-                // F1 -> F2 stair (east-bound at z=3)
-                { type: 'floor', transform: { position: [ -4.67,  0.40,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F1-2 step 01' },
-                { type: 'floor', transform: { position: [ -4.00,  0.80,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F1-2 step 02' },
-                { type: 'floor', transform: { position: [ -3.33,  1.20,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F1-2 step 03' },
-                { type: 'floor', transform: { position: [ -2.67,  1.60,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F1-2 step 04' },
-                { type: 'floor', transform: { position: [ -2.00,  2.00,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F1-2 step 05' },
-                { type: 'floor', transform: { position: [ -1.33,  2.40,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F1-2 step 06' },
-                { type: 'floor', transform: { position: [ -0.67,  2.80,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F1-2 step 07' },
-                { type: 'floor', transform: { position: [  0.00,  3.20,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F1-2 step 08' },
-                { type: 'floor', transform: { position: [  0.67,  3.60,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F1-2 step 09' },
-                { type: 'floor', transform: { position: [  1.33,  4.00,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F1-2 step 10' },
-                { type: 'floor', transform: { position: [  2.00,  4.40,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F1-2 step 11' },
-                { type: 'floor', transform: { position: [  2.67,  4.80,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F1-2 step 12' },
-                { type: 'floor', transform: { position: [  3.33,  5.20,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F1-2 step 13' },
-                { type: 'floor', transform: { position: [  4.00,  5.60,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F1-2 step 14' },
-                { type: 'floor', transform: { position: [  4.67,  6.00,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F1-2 step 15' },
+                // F1→F2 ramp (east-bound at z=3, x from -5 to +5, y from 0 to 6)
+                { type: 'floor', transform: { position: [0, 3, 3], rotation: [0, 0, -31], scale: [1, 1, 1] },
+                  dimensions: { width: 11.7, height: 3.0, depth: 0.3 }, material: 'marble_white', label: 'Stair ramp F1-F2' },
+                // Glass railing south side
+                { type: 'wall', transform: { position: [0, 3, 4.5], rotation: [0, 0, 0], scale: [1, 1, 1] },
+                  dimensions: { width: 11, height: 7, depth: 0.08 }, material: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, label: 'Stair F1-F2 glass S' },
+                // Glass railing north side
+                { type: 'wall', transform: { position: [0, 3, 1.5], rotation: [0, 0, 0], scale: [1, 1, 1] },
+                  dimensions: { width: 11, height: 7, depth: 0.08 }, material: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, label: 'Stair F1-F2 glass N' },
 
-                // F2 -> F3 stair (west-bound at z=-3)
-                { type: 'floor', transform: { position: [  4.67,  6.40, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F2-3 step 01' },
-                { type: 'floor', transform: { position: [  4.00,  6.80, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F2-3 step 02' },
-                { type: 'floor', transform: { position: [  3.33,  7.20, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F2-3 step 03' },
-                { type: 'floor', transform: { position: [  2.67,  7.60, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F2-3 step 04' },
-                { type: 'floor', transform: { position: [  2.00,  8.00, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F2-3 step 05' },
-                { type: 'floor', transform: { position: [  1.33,  8.40, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F2-3 step 06' },
-                { type: 'floor', transform: { position: [  0.67,  8.80, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F2-3 step 07' },
-                { type: 'floor', transform: { position: [  0.00,  9.20, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F2-3 step 08' },
-                { type: 'floor', transform: { position: [ -0.67,  9.60, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F2-3 step 09' },
-                { type: 'floor', transform: { position: [ -1.33, 10.00, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F2-3 step 10' },
-                { type: 'floor', transform: { position: [ -2.00, 10.40, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F2-3 step 11' },
-                { type: 'floor', transform: { position: [ -2.67, 10.80, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F2-3 step 12' },
-                { type: 'floor', transform: { position: [ -3.33, 11.20, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F2-3 step 13' },
-                { type: 'floor', transform: { position: [ -4.00, 11.60, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F2-3 step 14' },
-                { type: 'floor', transform: { position: [ -4.67, 12.00, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F2-3 step 15' },
+                // F2→F3 ramp (west-bound at z=-3, x from +5 to -5, y from 6 to 12)
+                { type: 'floor', transform: { position: [0, 9, -3], rotation: [0, 0, 31], scale: [1, 1, 1] },
+                  dimensions: { width: 11.7, height: 3.0, depth: 0.3 }, material: 'marble_white', label: 'Stair ramp F2-F3' },
+                { type: 'wall', transform: { position: [0, 9, -1.5], rotation: [0, 0, 0], scale: [1, 1, 1] },
+                  dimensions: { width: 11, height: 7, depth: 0.08 }, material: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, label: 'Stair F2-F3 glass S' },
+                { type: 'wall', transform: { position: [0, 9, -4.5], rotation: [0, 0, 0], scale: [1, 1, 1] },
+                  dimensions: { width: 11, height: 7, depth: 0.08 }, material: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, label: 'Stair F2-F3 glass N' },
 
-                // F3 -> F4 stair (east-bound at z=3)
-                { type: 'floor', transform: { position: [ -4.67, 12.40,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F3-4 step 01' },
-                { type: 'floor', transform: { position: [ -4.00, 12.80,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F3-4 step 02' },
-                { type: 'floor', transform: { position: [ -3.33, 13.20,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F3-4 step 03' },
-                { type: 'floor', transform: { position: [ -2.67, 13.60,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F3-4 step 04' },
-                { type: 'floor', transform: { position: [ -2.00, 14.00,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F3-4 step 05' },
-                { type: 'floor', transform: { position: [ -1.33, 14.40,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F3-4 step 06' },
-                { type: 'floor', transform: { position: [ -0.67, 14.80,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F3-4 step 07' },
-                { type: 'floor', transform: { position: [  0.00, 15.20,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F3-4 step 08' },
-                { type: 'floor', transform: { position: [  0.67, 15.60,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F3-4 step 09' },
-                { type: 'floor', transform: { position: [  1.33, 16.00,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F3-4 step 10' },
-                { type: 'floor', transform: { position: [  2.00, 16.40,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F3-4 step 11' },
-                { type: 'floor', transform: { position: [  2.67, 16.80,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F3-4 step 12' },
-                { type: 'floor', transform: { position: [  3.33, 17.20,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F3-4 step 13' },
-                { type: 'floor', transform: { position: [  4.00, 17.60,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F3-4 step 14' },
-                { type: 'floor', transform: { position: [  4.67, 18.00,  3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F3-4 step 15' },
+                // F3→F4 ramp (east-bound at z=3, x from -5 to +5, y from 12 to 18)
+                { type: 'floor', transform: { position: [0, 15, 3], rotation: [0, 0, -31], scale: [1, 1, 1] },
+                  dimensions: { width: 11.7, height: 3.0, depth: 0.3 }, material: 'marble_white', label: 'Stair ramp F3-F4' },
+                { type: 'wall', transform: { position: [0, 15, 4.5], rotation: [0, 0, 0], scale: [1, 1, 1] },
+                  dimensions: { width: 11, height: 7, depth: 0.08 }, material: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, label: 'Stair F3-F4 glass S' },
+                { type: 'wall', transform: { position: [0, 15, 1.5], rotation: [0, 0, 0], scale: [1, 1, 1] },
+                  dimensions: { width: 11, height: 7, depth: 0.08 }, material: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, label: 'Stair F3-F4 glass N' },
 
-                // F4 -> F5 stair (west-bound at z=-3) — NEW in the 5-floor rebuild
-                { type: 'floor', transform: { position: [  4.67, 18.40, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F4-5 step 01' },
-                { type: 'floor', transform: { position: [  4.00, 18.80, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F4-5 step 02' },
-                { type: 'floor', transform: { position: [  3.33, 19.20, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F4-5 step 03' },
-                { type: 'floor', transform: { position: [  2.67, 19.60, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F4-5 step 04' },
-                { type: 'floor', transform: { position: [  2.00, 20.00, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F4-5 step 05' },
-                { type: 'floor', transform: { position: [  1.33, 20.40, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F4-5 step 06' },
-                { type: 'floor', transform: { position: [  0.67, 20.80, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F4-5 step 07' },
-                { type: 'floor', transform: { position: [  0.00, 21.20, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F4-5 step 08' },
-                { type: 'floor', transform: { position: [ -0.67, 21.60, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F4-5 step 09' },
-                { type: 'floor', transform: { position: [ -1.33, 22.00, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F4-5 step 10' },
-                { type: 'floor', transform: { position: [ -2.00, 22.40, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F4-5 step 11' },
-                { type: 'floor', transform: { position: [ -2.67, 22.80, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F4-5 step 12' },
-                { type: 'floor', transform: { position: [ -3.33, 23.20, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F4-5 step 13' },
-                { type: 'floor', transform: { position: [ -4.00, 23.60, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F4-5 step 14' },
-                { type: 'floor', transform: { position: [ -4.67, 24.00, -3.00], rotation: [0,0,0], scale: [1,1,1] }, dimensions: { width: 0.72, height: 0.25, depth: 2.80 }, material: 'marble_white', label: 'Stair F4-5 step 15' },
+                // F4→F5 ramp (west-bound at z=-3, x from +5 to -5, y from 18 to 24)
+                { type: 'floor', transform: { position: [0, 21, -3], rotation: [0, 0, 31], scale: [1, 1, 1] },
+                  dimensions: { width: 11.7, height: 3.0, depth: 0.3 }, material: 'marble_white', label: 'Stair ramp F4-F5' },
+                { type: 'wall', transform: { position: [0, 21, -1.5], rotation: [0, 0, 0], scale: [1, 1, 1] },
+                  dimensions: { width: 11, height: 7, depth: 0.08 }, material: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, label: 'Stair F4-F5 glass S' },
+                { type: 'wall', transform: { position: [0, 21, -4.5], rotation: [0, 0, 0], scale: [1, 1, 1] },
+                  dimensions: { width: 11, height: 7, depth: 0.08 }, material: { color: '#aaccee', opacity: 0.15, roughness: 0.02, metalness: 0.95 }, label: 'Stair F4-F5 glass N' },
             ],
             props: [
                 // ========================================================
