@@ -3279,7 +3279,17 @@ function injectToolCallsIntoSeed(seedText) {
     });
   }
 
-  if (toolCallsToWrite.length === 0) return JSON.stringify(messages, null, 2);
+  if (toolCallsToWrite.length === 0) {
+    // Nothing to splice in from the builder's identity sub-sections.
+    // Preserve the seed verbatim so identity tool calls the user added
+    // directly in the popover editor (structured or Raw JSON) are not
+    // silently stripped on save. Only normalize whitespace so callers
+    // that compare against originalText still get a stable shape.
+    var _verb = String(seedText || '').trim();
+    if (!_verb) return '[]';
+    try { return JSON.stringify(JSON.parse(_verb), null, 2); }
+    catch(_je) { return _verb; }
+  }
 
   toolCallsToWrite.forEach(function(tc) {
     var meta = getIdentityToolMeta(tc.name);
