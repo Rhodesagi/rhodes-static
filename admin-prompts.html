@@ -4606,6 +4606,16 @@ async function saveModel() {
   if (BUILDER_STATE.isBaseModel) {
     return saveBaseModel();
   }
+  // Flush seed-popover modal state into the seed text fields so unsynced
+  // editor edits are not lost when Save Model is clicked with the modal open.
+  try {
+    if ($('seedPopover') && $('seedPopover').classList.contains('open')) {
+      if (typeof SP_VIEW !== 'undefined' && SP_VIEW === 'editor' && typeof editorToRaw === 'function') {
+        editorToRaw();
+      }
+      if ($('spText') && $('bSeedText')) { $('bSeedText').value = $('spText').value; }
+    }
+  } catch(_flushErr) { console.warn('saveModel seed-modal flush failed:', _flushErr); }
   const alias = $('bAlias').value.trim().toLowerCase();
   const base_model = $('bBaseModel').value.trim();
   const slash_command = ($('bSlash').value.trim() || '/'+alias).toLowerCase();
@@ -4693,30 +4703,77 @@ async function saveModel() {
     const data = await api('/api/admin/model-configs', {method:'POST', body: JSON.stringify(payload)});
     if (!data.success) { alert('Save failed: '+(data.error||'unknown')); return; }
     var fineTuneSave = await persistFineTuneProfile();
-    // Auto-save identity tool calls into seed
-    if ((IDENTITY_TOOL_CALLS.length > 0 || _HAD_IDENTITY_TOOL_CALLS || (FINE_TUNE_INLINE_STATE.currentText || '').trim()) && SEED_INLINE_STATE && SEED_INLINE_STATE.id) {
+    // Always persist the seed when a seed is bound to this model.
+    // The visible seed editor (bSeedText / spText) is the source of truth.
+    // injectToolCallsIntoSeed() is only invoked when the IDENTITY/FINE_TUNE
+    // builder sub-sections were actually used; otherwise the seed text is
+    // saved verbatim so manual modal edits (e.g. a hand-added
+    // fine_tune_yourself tool call) are not silently stripped.
+    if (SEED_INLINE_STATE && SEED_INLINE_STATE.id) {
       try {
         var seedRaw = $('bSeedText').value || '';
-        // If textarea is empty, load the base seed from server first
-        if (!seedRaw.trim() || seedRaw.trim() === '[]' || seedRaw.includes('seed not found')) {
-          try {
-            var _seedFetch = await api('/api/admin/seed?id=' + encodeURIComponent(SEED_INLINE_STATE.id));
-            seedRaw = _seedFetch.raw_content || JSON.stringify(_seedFetch.messages || [], null, 2);
-          } catch(_e) { seedRaw = '[]'; }
+        var hasIdentitySection = (IDENTITY_TOOL_CALLS.length > 0)
+          || _HAD_IDENTITY_TOOL_CALLS
+          || ((FINE_TUNE_INLINE_STATE.currentText || '').trim().length > 0);
+        var seedToWrite;
+        if (hasIdentitySection) {
+          if (!seedRaw.trim() || seedRaw.trim() === '[]' || seedRaw.includes('seed not found')) {
+            try {
+              var _seedFetch = await api('/api/admin/seed?id=' + encodeURIComponent(SEED_INLINE_STATE.id));
+              seedRaw = _seedFetch.raw_content || JSON.stringify(_seedFetch.messages || [], null, 2);
+            } catch(_e) { seedRaw = '[]'; }
+          }
+          seedToWrite = injectToolCallsIntoSeed(seedRaw);
+        } else {
+          seedToWrite = seedRaw.trim() ? seedRaw : '[]';
         }
-        var seedWithToolCalls = injectToolCallsIntoSeed(seedRaw);
-        await api('/api/admin/seed', {method:'POST', body: JSON.stringify({
-          id: SEED_INLINE_STATE.id,
-          raw_content: seedWithToolCalls
-        })});
-        _HAD_IDENTITY_TOOL_CALLS = IDENTITY_TOOL_CALLS.length > 0 || !!(FINE_TUNE_INLINE_STATE.currentText || '').trim();
-        var _seedToolCount = IDENTITY_TOOL_CALLS.length + ((FINE_TUNE_INLINE_STATE.currentText || '').trim() ? 1 : 0);
-        var _tcMsg = _seedToolCount > 0
-          ? 'Saved model + seed with ' + _seedToolCount + ' identity tool call(s)'
-          : 'Saved model + cleaned seed (tool calls removed)';
+        // Normalize empty representations: '', '[]' (with any whitespace), and
+        // a fresh-load placeholder all count as 'no seed content'. This avoids
+        // rewriting an already-empty seed when the user just opens-and-saves a model.
+        function _normSeed(s) {
+          var t = String(s || '').trim();
+          if (!t) return '';
+          try {
+            var parsed = JSON.parse(t);
+            if (Array.isArray(parsed) && parsed.length === 0) return '';
+          } catch(_e) {}
+          return t;
+        }
+        var origSeedNorm = _normSeed(SEED_INLINE_STATE.originalText);
+        var newSeedNorm = _normSeed(seedToWrite);
+        var seedChanged = newSeedNorm !== origSeedNorm;
+        if (seedChanged) {
+          try { JSON.parse(seedToWrite); }
+          catch(_je) {
+            alert('Seed JSON is invalid — model config saved, seed NOT saved.\n\n' + (_je.message || _je));
+            throw _je;
+          }
+          var _seedResp = await api('/api/admin/seed', {method:'POST', body: JSON.stringify({
+            id: SEED_INLINE_STATE.id,
+            raw_content: seedToWrite
+          })});
+          if (!_seedResp || _seedResp.success === false) {
+            throw new Error('seed save rejected: ' + JSON.stringify(_seedResp || {}));
+          }
+          SEED_INLINE_STATE.originalText = seedToWrite;
+          if ($('spText')) $('spText').value = seedToWrite;
+          if ($('bSeedText')) $('bSeedText').value = seedToWrite;
+          if ($('bSeedDirty')) $('bSeedDirty').textContent = '';
+          if ($('seedInlineSaveBtn')) $('seedInlineSaveBtn').disabled = true;
+          if (typeof updateSpDirty === 'function') { try { updateSpDirty(); } catch(_e2) {} }
+        }
+        _HAD_IDENTITY_TOOL_CALLS = (IDENTITY_TOOL_CALLS.length > 0)
+          || !!(FINE_TUNE_INLINE_STATE.currentText || '').trim();
+        var _seedToolCount = IDENTITY_TOOL_CALLS.length
+          + (((FINE_TUNE_INLINE_STATE.currentText || '').trim()) ? 1 : 0);
+        var _tcMsg;
+        if (!seedChanged) _tcMsg = 'Saved model (seed unchanged)';
+        else if (_seedToolCount > 0) _tcMsg = 'Saved model + seed with ' + _seedToolCount + ' identity tool call(s)';
+        else _tcMsg = 'Saved model + seed (' + seedToWrite.length + ' chars)';
         setStatus(_tcMsg);
       } catch(e) {
-        console.warn('Failed to auto-save seed with tool calls:', e);
+        console.warn('Failed to auto-save seed:', e);
+        alert('WARNING: model config saved but the seed failed to persist:\n\n' + (e.message || e));
       }
     }
     var savedSeedId = (SEED_INLINE_STATE && SEED_INLINE_STATE.id) ? SEED_INLINE_STATE.id : '(default)';
