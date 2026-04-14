@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Li Yize — Personal Resume</title>
+    <meta name="description" content="Professional resume and portfolio of Li Yize">
+    
+    <!-- FOUC Prevention: Theme detection inline script -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else if (savedTheme === 'light') {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+        <div class="nav-container">
+            <a href="#hero" class="nav-logo">[Your Name]</a>
+            <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+                <span class="hamburger"></span>
+            </button>
+            <ul class="nav-menu">
+                <li><a href="#timeline" class="nav-link">Timeline</a></li>
+                <li><a href="#philosophy" class="nav-link">Philosophy</a></li>
+                <li><a href="#portfolio" class="nav-link">Portfolio</a></li>
+                <li><a href="#contact" class="nav-link">Contact</a></li>
+            </ul>
+            <button class="theme-toggle" aria-label="Toggle dark/light theme">
+                <span class="theme-icon-light">☀️</span>
+                <span class="theme-icon-dark">🌙</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="hero" class="hero">
+        <div class="hero-content">
+            <div class="hero-avatar">
+                <!-- Placeholder: Replace with actual profile photo -->
+                <div class="avatar-placeholder" aria-label="Profile photo placeholder">
+                    <span>[Photo]</span>
+                </div>
+            </div>
+            <h1 class="hero-title">Li Yize</h1>
+            <p class="hero-subtitle">[Professional Title / Role — e.g., Software Engineer, Designer, Researcher]</p>
+            <p class="hero-bio">
+                <!-- TODO: Replace with actual brief biography (2-3 sentences about expertise, passion, current focus) -->
+                [Brief professional biography to be added here. Example: "Passionate about building accessible, 
+                performant web experiences. Currently focused on [your specialization]. Based in [location]."]
+            </p>
+            <div class="hero-links">
+                <a href="#contact" class="btn btn-primary">Get in Touch</a>
+                <a href="#portfolio" class="btn btn-secondary">View Work</a>
+            </div>
+        </div>
+        <div class="scroll-indicator" aria-hidden="true">
+            <span>Scroll</span>
+            <div class="scroll-arrow"></div>
+        </div>
+    </section>
+
+    <!-- Timeline Section -->
+    <section id="timeline" class="timeline-section">
+        <div class="container">
+            <h2 class="section-title reveal-on-scroll">Career Timeline</h2>
+            <p class="section-subtitle reveal-on-scroll">
+                <!-- TODO: Replace with actual timeline introduction -->
+                [Brief introduction about your career journey]
+            </p>
+            
+            <div class="timeline">
+                <!-- TODO: Replace timeline entries with actual milestones -->
+                
+                <div class="timeline-item reveal-on-scroll">
+                    <div class="timeline-content">
+                        <span class="timeline-date">[Year — Present]</span>
+                        <h3 class="timeline-title">[Current Position]</h3>
+                        <p class="timeline-description">
+                            [Description of current role, responsibilities, and achievements. 
+                            Example: "Leading frontend development at Company X, shipping features for 1M+ users."]
+                        </p>
+                    </div>
+                </div>
+
+                <div class="timeline-item reveal-on-scroll">
+                    <div class="timeline-content">
+                        <span class="timeline-date">[Year]</span>
+                        <h3 class="timeline-title">[Previous Position or Achievement]</h3>
+                        <p class="timeline-description">
+                            [Description of this milestone. Example: "Completed Master's in Computer Science 
+                            at University Name. Thesis on [topic] received [recognition]."]
+                        </p>
+                    </div>
+                </div>
+
+                <div class="timeline-item reveal-on-scroll">
+                    <div class="timeline-content">
+                        <span class="timeline-date">[Year]</span>
+                        <h3 class="timeline-title">[Earlier Milestone]</h3>
+                        <p class="timeline-description">
+                            [Description. Example: "First professional role as [title] at [company]. 
+                            Learned [key skills/technologies]."]
+                        </p>
+                    </div>
+                </div>
+
+                <div class="timeline-item reveal-on-scroll">
+                    <div class="timeline-content">
+                        <span class="timeline-date">[Year]</span>
+                        <h3 class="timeline-title">[Education or Certification]</h3>
+                        <p class="timeline-description">
+                            [Description. Example: "Graduated with [degree] in [field] from [institution]. 
+                            Relevant coursework: [list 2-3 courses]."]
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Philosophy Section -->
+    <section id="philosophy" class="philosophy-section">
+        <div class="container">
+            <h2 class="section-title reveal-on-scroll">Philosophy</h2>
+            
+            <div class="philosophy-content">
+                <blockquote class="philosophy-quote reveal-on-scroll">
+                    <!-- TODO: Replace with actual philosophy/values statement or favorite quote -->
+                    "[Your personal philosophy, professional values, or a meaningful quote goes here. 
+                    Example: 'Build things that matter. Code is communication between humans first, 
+                    machines second.']"
+                    <cite>— [Attribution, if applicable]</cite>
+                </blockquote>
+                
+                <div class="philosophy-values">
+                    <!-- TODO: Replace with actual core values/principles -->
+                    <div class="value-card reveal-on-scroll">
+                        <div class="value-icon">[Icon]</div>
+                        <h3>[Value 1 — e.g., "Continuous Learning"]</h3>
+                        <p>[Description of this value and how it applies to your work.]</p>
+                    </div>
+                    
+                    <div class="value-card reveal-on-scroll">
+                        <div class="value-icon">[Icon]</div>
+                        <h3>[Value 2 — e.g., "User-Centered Design"]</h3>
+                        <p>[Description of this principle and why it matters to you.]</p>
+                    </div>
+                    
+                    <div class="value-card reveal-on-scroll">
+                        <div class="value-icon">[Icon]</div>
+                        <h3>[Value 3 — e.g., "Collaboration"]</h3>
+                        <p>[Description of how you approach working with others.]</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portfolio Section -->
+    <section id="portfolio" class="portfolio-section">
+        <div class="container">
+            <h2 class="section-title reveal-on-scroll">Portfolio</h2>
+            <p class="section-subtitle reveal-on-scroll">
+                <!-- TODO: Replace with actual portfolio introduction -->
+                [Description of your work, approach to projects, or what visitors will find here.]
+            </p>
+            
+            <div class="portfolio-grid">
+                <!-- TODO: Replace with actual projects -->
+                
+                <article class="portfolio-card reveal-on-scroll">
+                    <div class="portfolio-image">
+                        <!-- Placeholder: CSS gradient instead of external placeholder service -->
+                        <div class="portfolio-placeholder" aria-label="Project screenshot placeholder">
+                            <span>[Project Image 1]</span>
+                        </div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>[Project Title 1]</h3>
+                        <p>[Brief description of the project: what it does, the problem it solves, your role.]</p>
+                        <div class="portfolio-tags">
+                            <span class="tag">[Tech 1]</span>
+                            <span class="tag">[Tech 2]</span>
+                            <span class="tag">[Tech 3]</span>
+                        </div>
+                        <a href="#" class="portfolio-link" target="_blank" rel="noopener">
+                            [View Project / GitHub / Live Site]
+                        </a>
+                    </div>
+                </article>
+
+                <article class="portfolio-card reveal-on-scroll">
+                    <div class="portfolio-image">
+                        <div class="portfolio-placeholder portfolio-placeholder-2" aria-label="Project screenshot placeholder">
+                            <span>[Project Image 2]</span>
+                        </div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>[Project Title 2]</h3>
+                        <p>[Description of another project. Highlight key features, challenges overcome, results.]</p>
+                        <div class="portfolio-tags">
+                            <span class="tag">[Tech 1]</span>
+                            <span class="tag">[Tech 2]</span>
+                        </div>
+                        <a href="#" class="portfolio-link" target="_blank" rel="noopener">
+                            [View Project]
+                        </a>
+                    </div>
+                </article>
+
+                <article class="portfolio-card reveal-on-scroll">
+                    <div class="portfolio-image">
+                        <div class="portfolio-placeholder portfolio-placeholder-3" aria-label="Project screenshot placeholder">
+                            <span>[Project Image 3]</span>
+                        </div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>[Project Title 3]</h3>
+                        <p>[Description of a third project. Can be open source, freelance work, or personal project.]</p>
+                        <div class="portfolio-tags">
+                            <span class="tag">[Tech 1]</span>
+                            <span class="tag">[Tech 2]</span>
+                            <span class="tag">[Tech 3]</span>
+                        </div>
+                        <a href="#" class="portfolio-link" target="_blank" rel="noopener">
+                            [View Project]
+                        </a>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact-section">
+        <div class="container">
+            <h2 class="section-title reveal-on-scroll">Get in Touch</h2>
+            <p class="section-subtitle reveal-on-scroll">
+                <!-- TODO: Replace with actual contact message -->
+                [Your preferred contact method. Example: "I'm always interested in hearing about 
+                new opportunities, collaborations, or just having a good conversation."]
+            </p>
+            
+            <div class="contact-content reveal-on-scroll">
+                <div class="contact-info">
+                    <!-- TODO: Replace with actual contact details -->
+                    <a href="mailto:[your-email@example.com]" class="contact-link">
+                        <span class="contact-icon">✉️</span>
+                        [your-email@example.com]
+                    </a>
+                    <a href="[https://linkedin.com/in/yourprofile]" target="_blank" rel="noopener" class="contact-link">
+                        <span class="contact-icon">💼</span>
+                        LinkedIn: [your-linkedin-username]
+                    </a>
+                    <a href="[https://github.com/yourusername]" target="_blank" rel="noopener" class="contact-link">
+                        <span class="contact-icon">💻</span>
+                        GitHub: [your-github-username]
+                    </a>
+                    <!-- Add/remove contact methods as needed -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; [Year] Li Yize. [Optional: Additional footer text, license, or links.]</p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
