@@ -1201,11 +1201,6 @@ body .tab:hover {
       <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
         <select id="rbCatFilter" onchange="filterRebuttals()" style="padding:6px 10px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;font-family:var(--mono);font-size:12px">
           <option value="">All Categories</option>
-          <option value="empirical">Empirical</option>
-          <option value="methodological">Methodological</option>
-          <option value="moral_political">Moral/Political</option>
-          <option value="meta_structural">Meta/Structural</option>
-          <option value="rhetorical">Rhetorical</option>
         </select>
         <input id="rbFilter" type="text" placeholder="Filter rebuttals..." oninput="filterRebuttals()" style="padding:6px 10px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;font-family:var(--mono);font-size:12px;width:200px">
         <button class="btn primary" onclick="loadRebuttals()">Refresh</button>
@@ -5594,6 +5589,13 @@ async function loadRebuttals() {
     var data = await api('/api/admin/debate-rebuttals');
     RB_DATA = data.rows || [];
     $('rbCount').textContent = RB_DATA.length + ' rebuttals';
+    // Build category dropdown dynamically from data
+    var cats = [...new Set(RB_DATA.map(function(r){ return r.category || 'uncategorized'; }))].sort();
+    var sel = $('rbCatFilter');
+    var curVal = sel.value;
+    sel.innerHTML = '<option value="">All Categories</option>' + cats.map(function(c){
+      return '<option value="'+c+'"'+(c===curVal?' selected':'')+'>'+c.replace(/_/g,' ').replace(/\b\w/g,function(l){return l.toUpperCase();})+'</option>';
+    }).join('');
     renderRebuttals();
   } catch(e) {
     $('rbCount').textContent = 'Error: ' + e.message;
