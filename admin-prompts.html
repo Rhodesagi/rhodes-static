@@ -571,6 +571,15 @@ body .tab:hover {
   font-size:12px;
 }
 .history-timeline.open { display:block; }
+/* When drawer opens inside a modal, take over the modal body so the textarea
+   doesn't fight for space. */
+.modal-body > .history-timeline.open {
+  max-height:calc(100vh - 160px);
+  margin-top:0;
+  border-radius:0;
+  border:none;
+}
+.modal-body.history-open > textarea { display:none !important; }
 .history-timeline-header {
   display:flex;
   justify-content:space-between;
@@ -624,19 +633,21 @@ body .tab:hover {
 .version-diff {
   display:none;
   padding:0;
-  max-height:400px;
+  max-height:420px;
   overflow:auto;
   background:#05070c;
   font-family:var(--mono);
   font-size:11px;
   line-height:1.45;
   border-top:1px solid #1a1f30;
-  white-space:pre;
 }
 .version-diff.open { display:block; }
 .version-diff .diff-ln {
   padding:1px 8px;
   border-left:3px solid transparent;
+  white-space:pre-wrap;
+  word-break:break-word;
+  overflow-wrap:anywhere;
 }
 .version-diff .diff-ln.add { background:#0f2a14;border-left-color:#16a34a;color:#bbf7d0; }
 .version-diff .diff-ln.del { background:#3a0a0a;border-left-color:#dc2626;color:#fecaca; }
@@ -1114,11 +1125,13 @@ body .tab:hover {
           <button id="editorSaveBtn" class="success" onclick="saveFromEditor()" disabled>Save</button>
           <button id="editorRenameBtn" onclick="renamePrompt()" style="background:transparent;border:1px solid var(--cyan);color:var(--cyan);padding:4px 12px;border-radius:3px;cursor:pointer;font-size:12px;">Rename</button>
           <button id="editorDuplicateBtn" onclick="duplicatePrompt()" style="background:transparent;border:1px solid var(--cyan);color:var(--cyan);padding:4px 12px;border-radius:3px;cursor:pointer;font-size:12px;">ModelConfig</button>
+          <button id="editorHistoryBtn" class="history-btn" onclick="toggleHistoryDrawer('prompt-modal')" title="Show full version history with diffs">History &#8630;</button>
           <button class="danger" onclick="closeEditor()">Close</button>
         </div>
       </div>
       <div class="modal-body">
         <textarea id="editorText" readonly placeholder="Loading..."></textarea>
+        <div id="editorHistoryDrawer" class="history-timeline"></div>
       </div>
       <div class="modal-footer">
         <span id="editorCharCount">0 chars</span>
@@ -1138,11 +1151,13 @@ body .tab:hover {
             <input type="checkbox" id="seedEditMode" onchange="toggleSeedEditMode()"> Edit
           </label>
           <button id="seedSaveBtn" class="success" onclick="saveSeedFromModal()" disabled>Save</button>
+          <button id="seedModalHistoryBtn" class="history-btn" onclick="toggleHistoryDrawer('seed-modal')" title="Show full version history with diffs">History &#8630;</button>
           <button class="danger" onclick="closeSeedModal()">Close</button>
         </div>
       </div>
       <div class="modal-body">
         <textarea id="seedModalText" readonly placeholder="Loading..."></textarea>
+        <div id="seedModalHistoryDrawer" class="history-timeline"></div>
       </div>
       <div class="modal-footer">
         <span id="seedModalInfo">0 messages</span>
@@ -5399,17 +5414,23 @@ async function _restorePromptVersion(source, sha, ts) {
   try {
     var hist = await api('/api/admin/prompt/history?sha256=' + encodeURIComponent(sha));
     if (!hist || hist.text === undefined) { alert('Could not load historical text'); return; }
-    // Set text in editor; user confirms by clicking Save. We also auto-save.
-    $('bPromptText').value = hist.text;
-    onPromptEdit();
-    // Auto-save as a new version
+    // Auto-save as a new version (snapshots current first, then writes new content)
     var res = await api('/api/admin/prompt', {method:'POST', body: JSON.stringify({source: source, text: hist.text})});
     if (res && res.success) {
       setStatus('Restored prompt "' + source + '" to ' + _fmtHistoryTs(ts));
-      toggleHistoryDrawer('prompt'); // close
-      toggleHistoryDrawer('prompt'); // re-open with fresh data
+      // Refresh whichever editor is open
+      if (_historyActiveTarget === 'prompt-modal') {
+        if (typeof EDITOR_STATE !== 'undefined') EDITOR_STATE.originalText = hist.text;
+        if ($('editorText')) $('editorText').value = hist.text;
+      } else {
+        if ($('bPromptText')) { $('bPromptText').value = hist.text; onPromptEdit(); }
+      }
+      // Refresh the drawer timeline on the same target
+      var currentTarget = _historyActiveTarget || 'prompt';
+      toggleHistoryDrawer(currentTarget);
+      setTimeout(function(){ toggleHistoryDrawer(currentTarget); }, 50);
     } else {
-      alert('Restore wrote to editor but save failed: ' + ((res && res.error) || ''));
+      alert('Restore wrote content but save failed: ' + ((res && res.error) || ''));
     }
   } catch(e) { alert('Restore failed: ' + e.message); }
 }
@@ -5420,17 +5441,23 @@ async function _restoreSeedVersion(seedId, key, ts) {
     var res = await api('/api/admin/seed/restore', {method:'POST', body: JSON.stringify({id: seedId, key: key})});
     if (res && res.success) {
       setStatus('Restored seed "' + seedId + '" to ' + _fmtHistoryTs(ts));
-      // Reload seed into editor
+      // Reload seed into whichever editor is open
       try {
         var s = await api('/api/admin/seed?id=' + encodeURIComponent(seedId));
-        if (s && s.content !== undefined) {
-          $('bSeedText').value = typeof s.content === 'string' ? s.content : JSON.stringify(s.content, null, 2);
-        } else if (s && s.raw !== undefined) {
-          $('bSeedText').value = s.raw;
+        var raw = '';
+        if (s && s.raw_content) raw = s.raw_content;
+        else if (s && s.messages) raw = JSON.stringify(s.messages, null, 2);
+        if (_historyActiveTarget === 'seed-modal') {
+          if ($('seedModalText')) $('seedModalText').value = raw;
+          if (typeof SEED_MODAL_STATE !== 'undefined') SEED_MODAL_STATE.originalText = raw;
+          if (typeof updateSeedDirty === 'function') updateSeedDirty();
+        } else {
+          if ($('bSeedText')) $('bSeedText').value = raw;
         }
       } catch(_) {}
-      toggleHistoryDrawer('seed');
-      toggleHistoryDrawer('seed');
+      var currentTarget = _historyActiveTarget || 'seed';
+      toggleHistoryDrawer(currentTarget);
+      setTimeout(function(){ toggleHistoryDrawer(currentTarget); }, 50);
     } else {
       alert('Restore failed: ' + ((res && res.error) || 'unknown'));
     }
@@ -5468,12 +5495,17 @@ function _renderTimelineSkeleton(kind, versions, ctxId) {
     out += '      ' + _srcBadge(v.source);
     out += '      <span class="ts">' + _fmtHistoryTs(v.ts) + '</span>';
     if (v.chars != null) out += '      <span class="chars">' + v.chars + ' chars</span>';
-    if (v.label) out += '      <span class="label" title="' + esc(v.label) + '">' + esc(v.label) + '</span>';
+    // Drop label if it's a raw unix timestamp, YYYYMMDD-HHMMSS, or matches the ts we already show
+    var labelClean = (v.label || '').trim();
+    var looksLikeTs = /^(\d{10}|\d{8}-\d{6}|\d{13})$/.test(labelClean);
+    if (labelClean && !looksLikeTs && labelClean.toLowerCase() !== 'save') {
+      out += '      <span class="label" title="' + esc(labelClean) + '">' + esc(labelClean) + '</span>';
+    }
     if (isCurrent) out += '      <span class="badge src-current">current</span>';
     out += '    </div>';
     out += '    <div class="version-actions">';
-    out += '      <button class="view-btn" onclick="_toggleVersionPanel(\'' + diffId + '\',\'diff\',\'' + kind + '\',' + i + ')">Diff vs prev</button>';
-    out += '      <button class="view-btn" onclick="_toggleVersionPanel(\'' + fullId + '\',\'full\',\'' + kind + '\',' + i + ')">View</button>';
+    out += '      <button class="view-btn" onclick="_toggleVersionPanel(\'' + diffId + '\',\'diff\',\'' + kind + '\',' + i + ')" title="Show unified diff against the next-older version">Diff</button>';
+    out += '      <button class="view-btn" onclick="_toggleVersionPanel(\'' + fullId + '\',\'full\',\'' + kind + '\',' + i + ')" title="Show full file content at this version">View</button>';
     if (!isCurrent) {
       out += '      <button class="restore-btn" onclick="' + restoreFn + restoreArg + ')">Restore</button>';
     }
@@ -5487,7 +5519,8 @@ function _renderTimelineSkeleton(kind, versions, ctxId) {
 }
 
 // State for drawer
-var _historyKind = null;          // 'prompt' | 'seed'
+var _historyKind = null;          // base: 'prompt' | 'seed'
+var _historyActiveTarget = null;  // full: 'prompt' | 'seed' | 'seed-modal' | 'prompt-modal'
 var _historyCtxId = null;         // source name | seed id
 var _historyVersions = [];        // array of normalized version records
 var _historyTextCache = {};       // key -> text
@@ -5540,29 +5573,38 @@ async function _toggleVersionPanel(elId, which, kind, idx) {
   }
 }
 
+// Kind → {drawerId, btnId, kindBase (prompt|seed), ctxIdResolver}
+var _HISTORY_TARGETS = {
+  'prompt':       {drawerId:'promptHistoryDrawer',       btnId:'promptHistoryBtn',       base:'prompt', resolver: function(){ return ($('bPromptSource') && $('bPromptSource').value) || 'delta_public'; }},
+  'seed':         {drawerId:'seedHistoryDrawer',         btnId:'seedHistoryBtn',         base:'seed',   resolver: function(){ var v = ($('bSeedId') && $('bSeedId').value) || ''; if (!v) { alert('Select a seed first.'); return null; } return v; }},
+  'seed-modal':   {drawerId:'seedModalHistoryDrawer',    btnId:'seedModalHistoryBtn',    base:'seed',   resolver: function(){ return (typeof SEED_MODAL_STATE !== 'undefined' && SEED_MODAL_STATE && SEED_MODAL_STATE.id) || null; }},
+  'prompt-modal': {drawerId:'editorHistoryDrawer',       btnId:'editorHistoryBtn',       base:'prompt', resolver: function(){ return (typeof EDITOR_STATE !== 'undefined' && EDITOR_STATE && EDITOR_STATE.source) || null; }},
+};
+
 async function toggleHistoryDrawer(kind) {
-  var drawerId = kind === 'prompt' ? 'promptHistoryDrawer' : 'seedHistoryDrawer';
-  var btnId = kind === 'prompt' ? 'promptHistoryBtn' : 'seedHistoryBtn';
-  var drawer = $(drawerId);
-  var btn = $(btnId);
+  var target = _HISTORY_TARGETS[kind];
+  if (!target) { alert('Unknown history target: ' + kind); return; }
+  var drawer = $(target.drawerId);
+  var btn = $(target.btnId);
   if (!drawer) return;
+
+  // If drawer lives inside a modal body, toggle a class so the textarea collapses.
+  var parentBody = drawer.parentElement && drawer.parentElement.classList.contains('modal-body')
+    ? drawer.parentElement : null;
 
   if (drawer.classList.contains('open')) {
     drawer.classList.remove('open');
+    if (parentBody) parentBody.classList.remove('history-open');
     if (btn) btn.classList.remove('active');
     return;
   }
+  if (parentBody) parentBody.classList.add('history-open');
 
-  // Determine context id
-  var ctxId = '';
-  if (kind === 'prompt') {
-    ctxId = ($('bPromptSource') && $('bPromptSource').value) || 'delta_public';
-  } else {
-    ctxId = ($('bSeedId') && $('bSeedId').value) || '';
-    if (!ctxId) { alert('Select a seed first.'); return; }
-  }
+  var ctxId = target.resolver();
+  if (!ctxId) return;
 
-  _historyKind = kind;
+  _historyKind = target.base;
+  _historyActiveTarget = kind;
   _historyCtxId = ctxId;
   _historyTextCache = {};
 
@@ -5571,14 +5613,21 @@ async function toggleHistoryDrawer(kind) {
   if (btn) btn.classList.add('active');
 
   try {
-    var versions = kind === 'prompt'
+    var versions = target.base === 'prompt'
       ? await _fetchPromptVersions(ctxId)
       : await _fetchSeedVersions(ctxId);
     _historyVersions = versions;
-    drawer.innerHTML = _renderTimelineSkeleton(kind, versions, ctxId);
+    drawer.innerHTML = _renderTimelineSkeleton(target.base, versions, ctxId);
   } catch(e) {
     drawer.innerHTML = '<div style="padding:12px;color:var(--bad)">Failed to load: ' + esc(e.message) + '</div>';
   }
+}
+
+// Open the seed modal and auto-open its history drawer (called from seed card).
+async function openSeedHistoryFromCard(seedId) {
+  await openSeedModal(seedId);
+  // Small delay so the modal DOM settles
+  setTimeout(function(){ toggleHistoryDrawer('seed-modal'); }, 80);
 }
 async function renameBuilderPrompt() {
   const src = await persistBuilderPromptSourceIfNeeded();
@@ -5706,8 +5755,12 @@ function renderSeedGrid() {
     return '<div class="seed-card" onclick="openSeedModal(\''+esc(s.id)+'\')">'
       +'<div class="name"><span class="badge badge-seed">seed</span> '+esc(s.id)+'</div>'
       +'<div class="desc">'+esc(s.description)+'</div>'
-      +'<div class="meta"><span>'+s.message_count+' msgs</span><span>'+size+' bytes</span>'
-      +'<span>'+(s.has_reasoning?'reasoning':'no-think')+'</span><span>'+status+'</span></div></div>';
+      +'<div class="meta">'
+      +'<span>'+s.message_count+' msgs</span><span>'+size+' bytes</span>'
+      +'<span>'+(s.has_reasoning?'reasoning':'no-think')+'</span><span>'+status+'</span>'
+      +'<span style="flex:1"></span>'
+      +'<a href="#" onclick="event.stopPropagation();event.preventDefault();openSeedHistoryFromCard(\''+esc(s.id)+'\')" style="color:var(--cyan);text-decoration:none;font-size:10px" title="Open history for this seed">history &#8630;</a>'
+      +'</div></div>';
   }).join('');
 }
 
@@ -5735,6 +5788,14 @@ function closeSeedModal() {
   if ($('seedEditMode').checked && $('seedModalText').value !== SEED_MODAL_STATE.originalText) {
     if (!confirm('Unsaved. Close?')) return;
   }
+  // Ensure drawer + textarea collapse class are reset
+  var drawer = $('seedModalHistoryDrawer');
+  if (drawer) {
+    drawer.classList.remove('open');
+    if (drawer.parentElement) drawer.parentElement.classList.remove('history-open');
+  }
+  var btn = $('seedModalHistoryBtn');
+  if (btn) btn.classList.remove('active');
   $('seedModal').classList.remove('open');
 }
 
