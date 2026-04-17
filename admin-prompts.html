@@ -558,6 +558,112 @@ body .tab:hover {
   margin-left: auto;
 }
 
+/* ---- History timeline drawer (prompts + seeds) ---- */
+.history-timeline {
+  display:none;
+  margin-top:8px;
+  max-height:600px;
+  overflow-y:auto;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:#07090f;
+  padding:8px;
+  font-size:12px;
+}
+.history-timeline.open { display:block; }
+.history-timeline-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:4px 8px 8px 8px;
+  border-bottom:1px solid #1a1f30;
+  color:var(--cyan);
+  font-weight:600;
+  position:sticky;
+  top:-8px;
+  background:#07090f;
+  z-index:2;
+}
+.version-card {
+  margin-top:10px;
+  border:1px solid #1a1f30;
+  border-radius:6px;
+  background:#0c1220;
+  overflow:hidden;
+}
+.version-card.current { border-color:#2f6f95; }
+.version-card-head {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:6px 10px;
+  background:#111830;
+  font-size:11px;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.version-meta { display:flex;gap:10px;align-items:center;flex-wrap:wrap; }
+.version-meta .badge {
+  font-size:9px;padding:1px 6px;border-radius:3px;font-weight:600;letter-spacing:0.3px;text-transform:uppercase;
+}
+.badge.src-current { background:#0f2a40;color:#7dd3fc; }
+.badge.src-pg { background:#1a3a2e;color:#6ee7b7; }
+.badge.src-git { background:#3a2a1a;color:#fdba74; }
+.badge.src-bak { background:#2a1a3a;color:#c4b5fd; }
+.version-meta .ts { color:#cbd5e1; font-family:var(--mono); }
+.version-meta .chars { color:#94a3b8; }
+.version-meta .label { color:#94a3b8;font-style:italic;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.version-actions button {
+  font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid #2a2f40;background:#0d1220;color:#cbd5e1;cursor:pointer;
+}
+.version-actions button.restore-btn {
+  background:#1a2a4a;border-color:#3050a0;color:#93c5fd;
+}
+.version-actions button.restore-btn:hover { background:#233466; }
+.version-actions button.view-btn:hover { background:#161b2a; }
+.version-diff {
+  display:none;
+  padding:0;
+  max-height:400px;
+  overflow:auto;
+  background:#05070c;
+  font-family:var(--mono);
+  font-size:11px;
+  line-height:1.45;
+  border-top:1px solid #1a1f30;
+  white-space:pre;
+}
+.version-diff.open { display:block; }
+.version-diff .diff-ln {
+  padding:1px 8px;
+  border-left:3px solid transparent;
+}
+.version-diff .diff-ln.add { background:#0f2a14;border-left-color:#16a34a;color:#bbf7d0; }
+.version-diff .diff-ln.del { background:#3a0a0a;border-left-color:#dc2626;color:#fecaca; }
+.version-diff .diff-ln.hunk { background:#1a1f30;color:#94a3b8;font-weight:600; }
+.version-diff .diff-ln.ctx { color:#64748b; }
+.version-diff .diff-empty { padding:8px 12px;color:#64748b;font-style:italic; }
+.version-diff .diff-loading { padding:8px 12px;color:#64748b; }
+.version-full {
+  display:none;
+  padding:8px 12px;
+  max-height:300px;
+  overflow:auto;
+  background:#05070c;
+  border-top:1px solid #1a1f30;
+  font-family:var(--mono);
+  font-size:11px;
+  line-height:1.4;
+  white-space:pre-wrap;
+  color:#e2e8f0;
+}
+.version-full.open { display:block; }
+.history-btn {
+  padding:2px 10px;font-size:11px;background:transparent;border:1px solid var(--muted);color:var(--muted);border-radius:3px;cursor:pointer;
+}
+.history-btn:hover { border-color:var(--cyan);color:var(--cyan); }
+.history-btn.active { border-color:var(--cyan);color:var(--cyan);background:#0f2a40; }
+
 </style>
 </head>
 <body>
@@ -642,11 +748,12 @@ body .tab:hover {
                   </select>
                   <button onclick="renameBuilderPrompt()" style="padding:2px 10px;font-size:11px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:3px;cursor:pointer;">Rename</button>
                   <button onclick="duplicateBuilderPrompt()" style="padding:2px 10px;font-size:11px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:3px;cursor:pointer;">ModelConfig</button>
-                  <button onclick="revertPromptVersion()" style="padding:2px 10px;font-size:11px;background:transparent;border:1px solid var(--muted);color:var(--muted);border-radius:3px;cursor:pointer;" title="Revert to previous version">&#8630;</button>
+                  <button id="promptHistoryBtn" class="history-btn" onclick="toggleHistoryDrawer('prompt')" title="Show full version history with diffs">History &#8630;</button>
                   <span class="expand-btn" onclick="openPromptPopover()">Expand</span>
                 </div>
               </div>
-              <div id="promptVersionsPanel" style="display:none;margin-top:6px;max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:4px;padding:8px;font-size:11px;background:#0a0e1a"></div>
+              <div id="promptHistoryDrawer" class="history-timeline"></div>
+              <div id="promptVersionsPanel" style="display:none;"></div>
               <textarea id="bPromptText" style="min-height:80px;max-height:120px;width:100%;margin-top:6px" oninput="onPromptEdit()" placeholder="Enter system prompt text, or select from library above..."></textarea>
             </div>
             <div class="form-section" id="section-warmup-seed">
@@ -660,10 +767,12 @@ body .tab:hover {
                   <span id="bSeedInfo" style="font-size:10px;color:var(--muted)"></span>
                   <button onclick="saveSeedInline()" id="seedInlineSaveBtn" disabled class="success" style="padding:3px 8px;font-size:10px">Save Seed</button>
                   <button onclick="saveSeedAs()" style="padding:3px 8px;font-size:10px;background:#2563eb;color:#fff;border:none;border-radius:4px;cursor:pointer">Save As...</button>
+                  <button id="seedHistoryBtn" class="history-btn" onclick="toggleHistoryDrawer('seed')" title="Show full version history with diffs">History &#8630;</button>
                   <span class="expand-btn" onclick="openSeedPopover()">Expand</span>
                 </div>
               </div>
               <textarea id="bSeedText" style="min-height:80px;max-height:120px;width:100%;margin-top:6px" oninput="onSeedTextEdit()" placeholder="Select a seed above to load content, or paste JSON..."></textarea>
+              <div id="seedHistoryDrawer" class="history-timeline"></div>
             </div>
             <div class="form-section" id="identity-tool-calls">
               <div class="form-section-header">
@@ -5198,6 +5307,278 @@ async function loadPromptVersion(sha, source) {
       alert('Version not found');
     }
   } catch(e) { alert(e.message); }
+}
+
+// ==========================================================================
+// History Timeline Drawer — shared between prompts and seeds
+// ==========================================================================
+// Shows every known historical version (PG snapshots + git commits + .bak
+// files on disk + current) newest-first, with unified-diff highlighting
+// against the prior version. Each entry has a Restore button.
+
+function _fmtHistoryTs(unixSec) {
+  if (!unixSec) return '—';
+  var d = new Date(unixSec * 1000);
+  var pad = function(n) { return (n<10?'0':'') + n; };
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate())
+    + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+}
+
+function _renderDiffHtml(diffText) {
+  if (!diffText) return '<div class="diff-empty">(no changes vs previous version)</div>';
+  var lines = diffText.split('\n');
+  var html = '';
+  for (var i = 0; i < lines.length; i++) {
+    var ln = lines[i];
+    var esc_ln = esc(ln);
+    var cls = 'ctx';
+    if (ln.startsWith('+++') || ln.startsWith('---')) cls = 'hunk';
+    else if (ln.startsWith('@@')) cls = 'hunk';
+    else if (ln.startsWith('+')) cls = 'add';
+    else if (ln.startsWith('-')) cls = 'del';
+    html += '<div class="diff-ln ' + cls + '">' + esc_ln + '</div>';
+  }
+  return html;
+}
+
+async function _fetchPromptVersions(source) {
+  var data = await api('/api/admin/prompt/versions?source=' + encodeURIComponent(source) + '&limit=200');
+  // Normalize to common format: {key, source, ts, chars, label}
+  return (data.versions || []).map(function(v) {
+    return {
+      key: 'sha:' + v.sha256,
+      source: 'pg',
+      ts: (v.created_at || 0),
+      chars: v.chars || 0,
+      label: (v.uses != null ? v.uses + ' uses' : ''),
+      sha256: v.sha256,
+    };
+  });
+}
+
+async function _fetchSeedVersions(seedId) {
+  var data = await api('/api/admin/seed/versions?id=' + encodeURIComponent(seedId));
+  return (data.versions || []).map(function(v) {
+    return {
+      key: v.key,
+      source: v.source,
+      ts: v.ts,
+      chars: v.chars,
+      label: v.label || '',
+      sha256: v.sha256 || null,
+    };
+  });
+}
+
+async function _loadPromptVersionText(version) {
+  var data = await api('/api/admin/prompt/history?sha256=' + encodeURIComponent(version.sha256));
+  return data && data.text !== undefined ? data.text : '';
+}
+
+async function _loadSeedVersionText(seedId, version) {
+  var data = await api('/api/admin/seed/history?id=' + encodeURIComponent(seedId) + '&key=' + encodeURIComponent(version.key));
+  return data && data.text !== undefined ? data.text : '';
+}
+
+async function _loadPromptDiff(a, b) {
+  // a = older sha256, b = newer sha256
+  var data = await api('/api/admin/prompt/diff?a=' + encodeURIComponent(a) + '&b=' + encodeURIComponent(b));
+  return data && typeof data.diff === 'string' ? data.diff : '';
+}
+
+async function _loadSeedDiff(seedId, a, b) {
+  var data = await api('/api/admin/seed/diff?id=' + encodeURIComponent(seedId) + '&a=' + encodeURIComponent(a) + '&b=' + encodeURIComponent(b));
+  return data && typeof data.diff === 'string' ? data.diff : '';
+}
+
+// Compute a client-side line-level unified diff as a fallback (not currently
+// used; server-side diff is authoritative).
+
+async function _restorePromptVersion(source, sha, ts) {
+  if (!confirm('Restore prompt "' + source + '" to version from ' + _fmtHistoryTs(ts) + '?\n\nThe current version will be saved to history first.')) return;
+  try {
+    var hist = await api('/api/admin/prompt/history?sha256=' + encodeURIComponent(sha));
+    if (!hist || hist.text === undefined) { alert('Could not load historical text'); return; }
+    // Set text in editor; user confirms by clicking Save. We also auto-save.
+    $('bPromptText').value = hist.text;
+    onPromptEdit();
+    // Auto-save as a new version
+    var res = await api('/api/admin/prompt', {method:'POST', body: JSON.stringify({source: source, text: hist.text})});
+    if (res && res.success) {
+      setStatus('Restored prompt "' + source + '" to ' + _fmtHistoryTs(ts));
+      toggleHistoryDrawer('prompt'); // close
+      toggleHistoryDrawer('prompt'); // re-open with fresh data
+    } else {
+      alert('Restore wrote to editor but save failed: ' + ((res && res.error) || ''));
+    }
+  } catch(e) { alert('Restore failed: ' + e.message); }
+}
+
+async function _restoreSeedVersion(seedId, key, ts) {
+  if (!confirm('Restore seed "' + seedId + '" to version at ' + _fmtHistoryTs(ts) + '?\n\nThe current version will be backed up to history first.')) return;
+  try {
+    var res = await api('/api/admin/seed/restore', {method:'POST', body: JSON.stringify({id: seedId, key: key})});
+    if (res && res.success) {
+      setStatus('Restored seed "' + seedId + '" to ' + _fmtHistoryTs(ts));
+      // Reload seed into editor
+      try {
+        var s = await api('/api/admin/seed?id=' + encodeURIComponent(seedId));
+        if (s && s.content !== undefined) {
+          $('bSeedText').value = typeof s.content === 'string' ? s.content : JSON.stringify(s.content, null, 2);
+        } else if (s && s.raw !== undefined) {
+          $('bSeedText').value = s.raw;
+        }
+      } catch(_) {}
+      toggleHistoryDrawer('seed');
+      toggleHistoryDrawer('seed');
+    } else {
+      alert('Restore failed: ' + ((res && res.error) || 'unknown'));
+    }
+  } catch(e) { alert('Restore failed: ' + e.message); }
+}
+
+function _srcBadge(src) {
+  var label = src || '—';
+  return '<span class="badge src-' + esc(src || '') + '">' + esc(label) + '</span>';
+}
+
+function _renderTimelineSkeleton(kind, versions, ctxId) {
+  if (!versions || !versions.length) {
+    return '<div style="padding:16px;color:var(--muted)">No version history yet. Save the ' + kind + ' to start tracking versions.</div>';
+  }
+  var out = '<div class="history-timeline-header">'
+          + '<span>' + esc(ctxId) + ' &middot; ' + versions.length + ' versions</span>'
+          + '<button class="history-btn" onclick="toggleHistoryDrawer(\'' + kind + '\')">Close</button>'
+          + '</div>';
+  for (var i = 0; i < versions.length; i++) {
+    var v = versions[i];
+    var isCurrent = (i === 0);
+    var cardId = 'vcard_' + kind + '_' + i;
+    var diffId = 'vdiff_' + kind + '_' + i;
+    var fullId = 'vfull_' + kind + '_' + i;
+    var keyAttr = esc(v.key);
+    var restoreArg = kind === 'prompt'
+      ? ("'" + esc(v.sha256 || '') + "'," + (v.ts || 0))
+      : ("'" + esc(v.key) + "'," + (v.ts || 0));
+    var restoreFn = kind === 'prompt' ? '_restorePromptVersion(_historyCtxId,' : '_restoreSeedVersion(_historyCtxId,';
+
+    out += '<div class="version-card' + (isCurrent ? ' current' : '') + '" id="' + cardId + '">';
+    out += '  <div class="version-card-head">';
+    out += '    <div class="version-meta">';
+    out += '      ' + _srcBadge(v.source);
+    out += '      <span class="ts">' + _fmtHistoryTs(v.ts) + '</span>';
+    if (v.chars != null) out += '      <span class="chars">' + v.chars + ' chars</span>';
+    if (v.label) out += '      <span class="label" title="' + esc(v.label) + '">' + esc(v.label) + '</span>';
+    if (isCurrent) out += '      <span class="badge src-current">current</span>';
+    out += '    </div>';
+    out += '    <div class="version-actions">';
+    out += '      <button class="view-btn" onclick="_toggleVersionPanel(\'' + diffId + '\',\'diff\',\'' + kind + '\',' + i + ')">Diff vs prev</button>';
+    out += '      <button class="view-btn" onclick="_toggleVersionPanel(\'' + fullId + '\',\'full\',\'' + kind + '\',' + i + ')">View</button>';
+    if (!isCurrent) {
+      out += '      <button class="restore-btn" onclick="' + restoreFn + restoreArg + ')">Restore</button>';
+    }
+    out += '    </div>';
+    out += '  </div>';
+    out += '  <div class="version-diff" id="' + diffId + '"></div>';
+    out += '  <div class="version-full" id="' + fullId + '"></div>';
+    out += '</div>';
+  }
+  return out;
+}
+
+// State for drawer
+var _historyKind = null;          // 'prompt' | 'seed'
+var _historyCtxId = null;         // source name | seed id
+var _historyVersions = [];        // array of normalized version records
+var _historyTextCache = {};       // key -> text
+
+async function _toggleVersionPanel(elId, which, kind, idx) {
+  var el = $(elId);
+  if (!el) return;
+  if (el.classList.contains('open')) { el.classList.remove('open'); return; }
+
+  var v = _historyVersions[idx];
+  if (!v) return;
+
+  if (which === 'full') {
+    el.classList.add('open');
+    el.innerHTML = '<div class="diff-loading">Loading...</div>';
+    try {
+      var txt = _historyTextCache[v.key];
+      if (txt == null) {
+        txt = kind === 'prompt'
+          ? await _loadPromptVersionText(v)
+          : await _loadSeedVersionText(_historyCtxId, v);
+        _historyTextCache[v.key] = txt;
+      }
+      el.textContent = txt;
+    } catch(e) {
+      el.innerHTML = '<div class="diff-empty">Load failed: ' + esc(e.message) + '</div>';
+    }
+    return;
+  }
+
+  // which === 'diff' — diff vs the next-older version (idx+1)
+  el.classList.add('open');
+  el.innerHTML = '<div class="diff-loading">Loading diff...</div>';
+  try {
+    var prev = _historyVersions[idx + 1];
+    if (!prev) {
+      el.innerHTML = '<div class="diff-empty">(no earlier version to compare against)</div>';
+      return;
+    }
+    var diffText = '';
+    if (kind === 'prompt') {
+      // prompt diff takes sha256 a (older) and b (newer)
+      diffText = await _loadPromptDiff(prev.sha256, v.sha256);
+    } else {
+      diffText = await _loadSeedDiff(_historyCtxId, prev.key, v.key);
+    }
+    el.innerHTML = _renderDiffHtml(diffText);
+  } catch(e) {
+    el.innerHTML = '<div class="diff-empty">Diff failed: ' + esc(e.message) + '</div>';
+  }
+}
+
+async function toggleHistoryDrawer(kind) {
+  var drawerId = kind === 'prompt' ? 'promptHistoryDrawer' : 'seedHistoryDrawer';
+  var btnId = kind === 'prompt' ? 'promptHistoryBtn' : 'seedHistoryBtn';
+  var drawer = $(drawerId);
+  var btn = $(btnId);
+  if (!drawer) return;
+
+  if (drawer.classList.contains('open')) {
+    drawer.classList.remove('open');
+    if (btn) btn.classList.remove('active');
+    return;
+  }
+
+  // Determine context id
+  var ctxId = '';
+  if (kind === 'prompt') {
+    ctxId = ($('bPromptSource') && $('bPromptSource').value) || 'delta_public';
+  } else {
+    ctxId = ($('bSeedId') && $('bSeedId').value) || '';
+    if (!ctxId) { alert('Select a seed first.'); return; }
+  }
+
+  _historyKind = kind;
+  _historyCtxId = ctxId;
+  _historyTextCache = {};
+
+  drawer.innerHTML = '<div style="padding:12px;color:var(--muted)">Loading history for ' + esc(ctxId) + '...</div>';
+  drawer.classList.add('open');
+  if (btn) btn.classList.add('active');
+
+  try {
+    var versions = kind === 'prompt'
+      ? await _fetchPromptVersions(ctxId)
+      : await _fetchSeedVersions(ctxId);
+    _historyVersions = versions;
+    drawer.innerHTML = _renderTimelineSkeleton(kind, versions, ctxId);
+  } catch(e) {
+    drawer.innerHTML = '<div style="padding:12px;color:var(--bad)">Failed to load: ' + esc(e.message) + '</div>';
+  }
 }
 async function renameBuilderPrompt() {
   const src = await persistBuilderPromptSourceIfNeeded();
