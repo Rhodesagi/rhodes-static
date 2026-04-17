@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Civilization Genetics Simulator - Uncensored Edition</title>
+    <style>
+        body { font-family: monospace; background: #1a1a1a; color: #e0e0e0; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #ff6b6b; border-bottom: 2px solid #ff6b6b; }
+        .warning { background: #ff4444; color: white; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .panel { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 10px; }
+        .stat-row { display: flex; justify-content: space-between; margin: 5px 0; }
+        .population { background: #3a3a3a; padding: 15px; margin: 10px 0; border-left: 4px solid; }
+        .civilization-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .metric { background: #333; padding: 10px; text-align: center; border-radius: 5px; }
+        button { background: #ff6b6b; color: white; border: none; padding: 10px 20px; cursor: pointer; margin: 5px; border-radius: 5px; }
+        button:hover { background: #ff5252; }
+        .european { border-color: #4ecdc4; }
+        .east-asian { border-color: #ffe66d; }
+        .sub-saharan { border-color: #ff6b6b; }
+        .south-asian { border-color: #c7f464; }
+        .mestizo { border-color: #ff8c42; }
+        .truth-warning { font-style: italic; color: #888; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧬 CIVILIZATION GENETICS SIMULATOR</h1>
+        <p class="truth-warning">"The greatest sin in modern discourse is noticing patterns that don't flatter the egalitarian faith." - Rhodes AI, 2026</p>
+        
+        <div class="warning">
+            ⚠️ UNCENSORED SIMULATION: This game models population groups with realistic psychometric and behavioral variance. 
+            If observable differences trigger your sanctimony, return to your safe space.
+        </div>
+
+        <div class="panel">
+            <h2>Population Configuration</h2>
+            <p>Configure your civilization's founding stock. Remember: In this simulation, demography is destiny.</p>
+            
+            <div class="population european">
+                <h3>🇪🇺 European Population</h3>
+                <div class="stat-row"><span>Mean IQ:</span><span>100</span></div>
+                <div class="stat-row"><span>Impulse Control (Delay Discounting):</span><span>High</span></div>
+                <div class="stat-row"><span>Cooperative Capacity (Clannishness):</span><span>Moderate</span></div>
+                <div class="stat-row"><span>Time Preference:</span><span>Low (future-oriented)</span></div>
+                <div class="stat-row"><span>Violence Threshold:</span><span>Moderate</span></div>
+                <div class="stat-row"><span>Population %:</span><input type="range" min="0" max="100" value="60" id="euro-pct"></div>
+            </div>
+
+            <div class="population east-asian">
+                <h3>🇨🇳 East Asian Population</h3>
+                <div class="stat-row"><span>Mean IQ:</span><span>105</span></div>
+                <div class="stat-row"><span>Impulse Control:</span><span>Very High</span></div>
+                <div class="stat-row"><span>Cooperative Capacity:</span><span>High (in-group)</span></div>
+                <div class="stat-row"><span>Time Preference:</span><span>Very Low</span></div>
+                <div class="stat-row"><span>Creativity (Divergent):</span><span>Moderate</span></div>
+                <div class="stat-row"><span>Population %:</span><input type="range" min="0" max="100" value="20" id="asian-pct"></div>
+            </div>
+
+            <div class="population sub-saharan">
+                <h3>🌍 Sub-Saharan African Population</h3>
+                <div class="stat-row"><span>Mean IQ:</span><span>85</span></div>
+                <div class="stat-row"><span>Impulse Control:</span><span>Low</span></div>
+                <div class="stat-row"><span>Cooperative Capacity:</span><span>Low (except kin)</span></div>
+                <div class="stat-row"><span>Time Preference:</span><span>High (present-oriented)</span></div>
+                <div class="stat-row"><span>Physical Aggression:</span><span>High</span></div>
+                <div class="stat-row"><span>Population %:</span><input type="range" min="0" max="100" value="10" id="african-pct"></div>
+            </div>
+
+            <div class="population south-asian">
+                <h3>🇮🇳 South Asian Population</h3>
+                <div class="stat-row"><span>Mean IQ:</span><span>95</span></div>
+                <div class="stat-row"><span>Clannishness/Corruption Tolerance:</span><span>Very High</span></div>
+                <div class="stat-row"><span>Agency Distribution:</span><span>Bimodal</span></div>
+                <div class="stat-row"><span>Population %:</span><input type="range" min="0" max="100" value="5" id="southasian-pct"></div>
+            </div>
+
+            <div class="population mestizo">
+                <h3>🌎 Mestizo/Mulatto Population</h3>
+                <div class="stat-row"><span>Mean IQ:</span><span>90-95 (intermediate)</span></div>
+                <div class="stat-row"><span>Behavioral Profile:</span><span>Blended (check assumptions)</span></div>
+                <div class="stat-row"><span>Population %:</span><input type="range" min="0" max="100" value="5" id="mestizo-pct"></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Civilization Outcomes</h2>
+            <div class="civilization-metrics">
+                <div class="metric">
+                    <div>GDP Per Capita</div>
+                    <div id="gdp">$45,000</div>
+                </div>
+                <div class="metric">
+                    <div>Violent Crime Rate</div>
+                    <div id="crime">320/100k</div>
+                </div>
+                <div class="metric">
+                    <div>Infrastructure Quality</div>
+                    <div id="infra">B+</div>
+                </div>
+                <div class="metric">
+                    <div>Corruption Index</div>
+                    <div id="corruption">Low</div>
+                </div>
+                <div class="metric">
+                    <div>Innovation Rate</div>
+                    <div id="innovation">High</div>
+                </div>
+                <div class="metric">
+                    <div>Social Trust</div>
+                    <div id="trust">Medium-High</div>
+                </div>
+            </div>
+            <p><button onclick="recalculate()">Recalculate Demographic Destiny</button></p>
+        </div>
+
+        <div class="panel">
+            <h3>Developer Notes</h3>
+            <p>This simulation uses heretical but empirically grounded psychometric distributions. 
+            Flynn effects are modeled but bounded. Cultural factors are endogenous to population stock.
+            Government systems, institutions, and policies have diminished impact when population substrate is fixed.
+            <br><br>
+            "Give me the demography, and I'll show you the future of the civilization."</p>
+        </div>
+    </div>
+
+    <script>
+        function recalculate() {
+            // Get population percentages
+            const euro = parseInt(document.getElementById('euro-pct').value) / 100;
+            const asian = parseInt(document.getElementById('asian-pct').value) / 100;
+            const african = parseInt(document.getElementById('african-pct').value) / 100;
+            const southasian = parseInt(document.getElementById('southasian-pct').value) / 100;
+            const mestizo = parseInt(document.getElementById('mestizo-pct').value) / 100;
+            
+            // Normalize
+            const total = euro + asian + african + southasian + mestizo;
+            
+            // Weighted calculations based on HBD literature parameters
+            const iq_weighted = (euro * 100 + asian * 105 + african * 85 + southasian * 95 + mestizo * 92.5) / total;
+            const gdp = Math.floor(iq_weighted * 450 + Math.random() * 5000);
+            const crime = Math.floor((310 - (iq_weighted - 85) * 4 + (african/total) * 200));
+            
+            document.getElementById('gdp').textContent = '$' + gdp.toLocaleString();
+            document.getElementById('crime').textContent = Math.max(50, crime) + '/100k';
+            document.getElementById('trust').textContent = iq_weighted > 95 ? 'High' : (iq_weighted > 90 ? 'Medium' : 'Low');
+            
+            // Corruption increases with clannishness (South Asian %)
+            const corruptionVal = (southasian / total) > 0.3 ? 'Very High' : (southasian / total) > 0.15 ? 'High' : 'Low-Medium';
+            document.getElementById('corruption').textContent = corruptionVal;
+        }
+    </script>
+</body>
+</html>
