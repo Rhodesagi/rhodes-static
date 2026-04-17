@@ -87,7 +87,7 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
     else if (s === '/zeta' || s.startsWith('/zeta ')) flag = 'zeta';
 
         if (!flag) {
-            const generic = s.match(/^\/([a-z][a-z0-9._-]{0,63})(?:\s+(.*))?$/);
+            const generic = s.match(/^\/([a-z0-9][a-z0-9._-]{0,63})(?:\s+(.*))?$/);
             if (generic) {
                 const genericFlag = generic[1].toLowerCase();
                 const genericRest = (generic[2] || '').trim();
