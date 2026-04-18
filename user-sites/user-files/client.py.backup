@@ -242,7 +242,7 @@ class TracingClient:
         else:
             raise MlflowException(
                 "Clearing storage location is not supported on non-Databricks backends."
-        )
+            )
 
     def _create_issue(
         self,

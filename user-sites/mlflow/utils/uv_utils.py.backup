@@ -1,149 +1,175 @@
 """
-Utilities for detecting and exporting dependencies from UV projects.
+Utilities for UV package manager integration with MLflow.
 """
 
+import logging
 import os
 import shutil
 import subprocess
-import tempfile
 from pathlib import Path
+from typing import Optional
 
 from mlflow.environment_variables import (
-    MLFLOW_UV_DETECT,
+    MLFLOW_UV_AUTO_DETECT,
     MLFLOW_UV_PROJECT_PATH,
-    MLFLOW_UV_REQUIREMENTS_EXPORT_TIMEOUT,
 )
 from mlflow.exceptions import MlflowException
 
+_logger = logging.getLogger(__name__)
 
-def is_uv_available():
-    """Check if uv is available in the system PATH."""
-    return shutil.which("uv") is not None
+_UV_LOCK_FILE = "uv.lock"
+_PYPROJECT_TOML = "pyproject.toml"
 
 
-def detect_uv_project(model_path):
+def _is_uv_project(path: str | Path) -> bool:
     """
-    Detect if the given model path contains a UV project (uv.lock and pyproject.toml).
-    Returns the path to the UV project directory if detected, otherwise None.
+    Check if the given path contains a UV project (uv.lock + pyproject.toml).
+
+    Args:
+        path: The path to check for UV project files.
+
+    Returns:
+        True if both uv.lock and pyproject.toml exist in the path, False otherwise.
     """
-    model_path = Path(model_path)
-    # Check for explicit environment variable
-    if MLFLOW_UV_PROJECT_PATH.get():
-        explicit_path = Path(MLFLOW_UV_PROJECT_PATH.get())
-        if explicit_path.exists():
+    path = Path(path)
+    return (path / _UV_LOCK_FILE).exists() and (path / _PYPROJECT_TOML).exists()
+
+
+def _find_uv_project_path(start_path: str | Path) -> Optional[Path]:
+    """
+    Find the UV project path starting from the given path.
+
+    If MLFLOW_UV_PROJECT_PATH is set, use that. Otherwise, check if the start_path
+    or any of its parents contain a UV project.
+
+    Args:
+        start_path: The path to start searching from.
+
+    Returns:
+        The path to the UV project if found, None otherwise.
+    """
+    # Check explicit project path first
+    explicit_path = MLFLOW_UV_PROJECT_PATH.get()
+    if explicit_path:
+        explicit_path = Path(explicit_path)
+        if _is_uv_project(explicit_path):
             return explicit_path
-        else:
-            raise MlflowException(
-                f"MLFLOW_UV_PROJECT_PATH points to non-existent directory: {explicit_path}"
-            )
+        _logger.warning(
+            f"MLFLOW_UV_PROJECT_PATH is set to '{explicit_path}' but no UV project found there."
+        )
 
-    # Auto-detection if enabled (default True)
-    if not MLFLOW_UV_DETECT.get():
+    # Auto-detect if enabled (default True)
+    if not MLFLOW_UV_AUTO_DETECT.get():
         return None
 
-    # Check for uv.lock and pyproject.toml in model_path
-    if (model_path / "uv.lock").exists() and (model_path / "pyproject.toml").exists():
-        return model_path
-
-    # Also check parent directories up to a limit
-    for parent in model_path.parents:
-        if (parent / "uv.lock").exists() and (parent / "pyproject.toml").exists():
-            return parent
+    # Search from start_path upwards
+    current = Path(start_path).resolve()
+    for path in [current] + list(current.parents):
+        if _is_uv_project(path):
+            return path
 
     return None
 
 
-def export_uv_requirements(uv_project_path, output_path=None):
-    """
-    Export locked requirements from a UV project using `uv export --format requirements`.
-    Returns the path to the generated requirements file.
-    If uv is not available or export fails, raises MlflowException.
-    """
-    if not is_uv_available():
-        raise MlflowException(
-            "UV is not available. Please install uv or disable UV detection."
-        )
+def _uv_binary() -> Optional[str]:
+    """Get the path to the uv binary if available."""
+    return shutil.which("uv")
 
-    uv_project_path = Path(uv_project_path)
-    if not uv_project_path.exists():
-        raise MlflowException(f"UV project path does not exist: {uv_project_path}")
 
-    if output_path is None:
-        # Create a temporary file
-        fd, output_path = tempfile.mkstemp(suffix=".txt", prefix="uv_requirements_")
-        os.close(fd)
-        delete_on_exit = True
-    else:
-        delete_on_exit = False
+def _is_uv_available() -> bool:
+    """Check if uv is available in the system PATH."""
+    return _uv_binary() is not None
+
+
+def _export_requirements(
+    project_path: str | Path,
+    output_path: str | Path,
+    timeout: Optional[int] = None,
+) -> bool:
+    """
+    Export locked requirements from a UV project using `uv export`.
+
+    Args:
+        project_path: Path to the UV project directory.
+        output_path: Path where the requirements.txt will be written.
+        timeout: Optional timeout in seconds for the export command.
+
+    Returns:
+        True if export succeeded, False otherwise.
+    """
+    uv_bin = _uv_binary()
+    if uv_bin is None:
+        _logger.debug("uv binary not found, skipping UV export")
+        return False
+
+    project_path = Path(project_path)
+    output_path = Path(output_path)
+
+    if not _is_uv_project(project_path):
+        _logger.debug(f"No UV project found at '{project_path}'")
+        return False
+
+    cmd = [
+        uv_bin,
+        "export",
+        "--format=requirements-txt",
+        f"--project={project_path}",
+        f"--output-file={output_path}",
+        "--no-header",
+        "--no-editable",
+    ]
 
     try:
-        cmd = [
-            "uv",
-            "export",
-            "--format",
-            "requirements",
-            "--output",
-            output_path,
-            "--project",
-            str(uv_project_path),
-        ]
-        timeout = MLFLOW_UV_REQUIREMENTS_EXPORT_TIMEOUT.get()
+        _logger.info(f"Exporting UV requirements from '{project_path}' to '{output_path}'")
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
             timeout=timeout,
+            check=True,
         )
-        if result.returncode != 0:
-            raise MlflowException(
-                f"Failed to export UV requirements: {result.stderr}"
-            )
-        return output_path
-    except subprocess.TimeoutExpired:
-        raise MlflowException(
-            f"UV export timed out after {timeout} seconds."
-        )
-    except Exception as e:
-        if delete_on_exit:
-            try:
-                os.unlink(output_path)
-            except OSError:
-                pass
-        raise MlflowException(f"UV export failed: {e}")
-    finally:
-        if not delete_on_exit:
-            # Ensure file is persisted
-            pass
-
-
-def get_uv_requirements(model_path):
-    """
-    Detect UV project and export its locked requirements.
-    Returns a list of requirement strings.
-    If no UV project detected or export fails, returns None.
-    """
-    uv_project = detect_uv_project(model_path)
-    if uv_project is None:
-        return None
-
-    try:
-        req_file = export_uv_requirements(uv_project)
-        with open(req_file, "r") as f:
-            requirements = [line.strip() for line in f if line.strip()]
-        # Clean up temporary file
-        os.unlink(req_file)
-        return requirements
-    except MlflowException:
-        # Fallback to other inference methods
-        return None
-
-
-def should_use_uv_requirements(model_path):
-    """
-    Determine whether to use UV exported requirements for dependency inference.
-    Returns True if UV project is detected and UV is available.
-    """
-    uv_project = detect_uv_project(model_path)
-    if uv_project is None:
+        return True
+    except subprocess.CalledProcessError as e:
+        _logger.warning(f"Failed to export UV requirements: {e.stderr}")
         return False
-    return is_uv_available()
+    except subprocess.TimeoutExpired:
+        _logger.warning(f"UV export timed out after {timeout} seconds")
+        return False
+    except Exception as e:
+        _logger.warning(f"Unexpected error during UV export: {e}")
+        return False
+
+
+def get_uv_requirements(
+    model_path: str | Path,
+    timeout: Optional[int] = None,
+) -> Optional[Path]:
+    """
+    Get requirements from a UV project if available.
+
+    This function attempts to find a UV project related to the model and export
+    its locked requirements. If UV is not available or no project is found,
+    returns None to allow fallback to standard inference.
+
+    Args:
+        model_path: Path to the model directory.
+        timeout: Optional timeout for the export command.
+
+    Returns:
+        Path to the exported requirements file if successful, None otherwise.
+    """
+    if not _is_uv_available():
+        _logger.debug("UV not available, skipping UV requirements export")
+        return None
+
+    uv_project = _find_uv_project_path(model_path)
+    if uv_project is None:
+        return None
+
+    # Create a temporary requirements file
+    output_path = Path(model_path) / "uv_requirements.txt"
+
+    if _export_requirements(uv_project, output_path, timeout=timeout):
+        return output_path
+
+    return None
