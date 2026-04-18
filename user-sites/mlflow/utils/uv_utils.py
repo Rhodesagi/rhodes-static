@@ -1,133 +1,92 @@
 """
-Utilities for UV (Astral) package manager support in MLflow.
+Utilities for UV package manager integration.
 """
 
 import logging
 import os
-import shutil
 import subprocess
-import tempfile
 from pathlib import Path
-
-from mlflow.exceptions import MlflowException
+from typing import List, Optional
 
 _logger = logging.getLogger(__name__)
 
 
-def is_uv_available():
-    """
-    Check if the uv command is available in the system PATH.
-    
-    Returns:
-        bool: True if uv is available, False otherwise.
-    """
+def is_uv_available() -> bool:
+    """Check if uv is installed and available in PATH."""
     return shutil.which("uv") is not None
 
 
-def is_uv_project(path):
+def find_uv_project(path: str) -> Optional[str]:
     """
-    Check if the given path contains a UV project (has uv.lock and pyproject.toml files).
-    
-    Args:
-        path: Directory path to check.
-        
-    Returns:
-        bool: True if both uv.lock and pyproject.toml exist in the path.
-    """
-    path = Path(path)
-    return (path / "uv.lock").exists() and (path / "pyproject.toml").exists()
+    Walk up from the given directory to find the nearest parent directory that contains both
+    uv.lock and pyproject.toml.
 
-
-def detect_uv_project(model_path):
-    """
-    Detect if a UV project exists in or above the model directory.
-    
     Args:
-        model_path: Path to the MLflow model directory.
-        
+        path: Starting directory path.
+
     Returns:
-        Path or None: Path to the UV project directory if found, None otherwise.
+        Path to the UV project root directory, or None if not found.
     """
-    model_path = Path(model_path).resolve()
-    
-    # First check the model directory itself
-    if is_uv_project(model_path):
-        return model_path
-    
-    # Check parent directories (up to root)
-    for parent in model_path.parents:
-        if is_uv_project(parent):
-            return parent
-    
+    current = Path(path).resolve()
+    while True:
+        uv_lock = current / "uv.lock"
+        pyproject = current / "pyproject.toml"
+        if uv_lock.is_file() and pyproject.is_file():
+            return str(current)
+        parent = current.parent
+        if parent == current:
+            break
+        current = parent
     return None
 
 
-def get_uv_requirements(uv_project_path, format="requirements.txt"):
+def is_uv_project(path: str) -> bool:
+    """Check if the given directory contains both uv.lock and pyproject.toml."""
+    uv_lock = os.path.join(path, "uv.lock")
+    pyproject = os.path.join(path, "pyproject.toml")
+    return os.path.isfile(uv_lock) and os.path.isfile(pyproject)
+
+
+def export_requirements(project_path: str, format: str = "requirements") -> Optional[List[str]]:
     """
-    Export requirements from a UV project using `uv export`.
-    
+    Run `uv export` to get locked requirements.
+
     Args:
-        uv_project_path: Path to the UV project directory.
-        format: Output format (default: "requirements.txt").
-        
+        project_path: Path to the UV project root.
+        format: Export format, either "requirements" or "conda".
+
     Returns:
-        list: List of requirement strings.
-        
-    Raises:
-        MlflowException: If uv export fails.
+        List of requirement strings, or None if uv export fails.
     """
     if not is_uv_available():
-        raise MlflowException("uv is not available")
-    
-    uv_project_path = Path(uv_project_path).resolve()
-    
+        _logger.debug("uv not available")
+        return None
     try:
-        # Run uv export to get requirements
+        cmd = ["uv", "export", "--format", format]
         result = subprocess.run(
-            ["uv", "export", "--format", format],
-            cwd=uv_project_path,
+            cmd,
+            cwd=project_path,
             capture_output=True,
             text=True,
             check=True,
         )
-        
-        # Parse the output into requirement lines
-        requirements = []
-        for line in result.stdout.splitlines():
-            line = line.strip()
-            if line and not line.startswith("#"):
-                requirements.append(line)
-        
-        return requirements
-        
+        lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+        return lines
     except subprocess.CalledProcessError as e:
-        raise MlflowException(f"Failed to export requirements with uv: {e.stderr}") from e
-    except FileNotFoundError:
-        raise MlflowException("uv command not found")
+        _logger.debug("uv export failed: %s", e.stderr)
+    except Exception as e:
+        _logger.debug("Unexpected error during uv export: %s", e)
+    return None
 
 
-def get_uv_requirements_from_model(model_path, uv_project_path=None):
+def get_uv_requirements(project_path: str) -> Optional[List[str]]:
     """
-    Get requirements for a model by detecting or using specified UV project.
-    
+    Get locked requirements from a UV project.
+
     Args:
-        model_path: Path to the MLflow model directory.
-        uv_project_path: Optional explicit path to UV project. If None, will attempt detection.
-        
+        project_path: Path to the UV project root.
+
     Returns:
-        tuple: (requirements list, uv_project_path used or None if not using UV)
+        List of requirement strings, or None if unable to export.
     """
-    # Check for explicit UV project path
-    if uv_project_path is not None:
-        if not is_uv_project(uv_project_path):
-            raise MlflowException(f"Specified UV project path does not contain uv.lock and pyproject.toml: {uv_project_path}")
-        requirements = get_uv_requirements(uv_project_path)
-        return requirements, uv_project_path
-    
-    # Auto-detect UV project
-    detected_path = detect_uv_project(model_path)
-    if detected_path:
-        requirements = get_uv_requirements(detected_path)
-        return requirements, detected_path
-    
-    return None, None
+    return export_requirements(project_path, format="requirements")
