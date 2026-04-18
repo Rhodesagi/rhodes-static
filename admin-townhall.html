@@ -12,10 +12,8 @@
             --text: #e0e0e0;
             --dim: #888;
             --accent: #4a9eff;
-            --delta: #ff6b35;
-            --alpha: #9b59b6;
-            --beta: #3498db;
-            --ada: #2ecc71;
+            --human: #f1c40f;
+            --interrupt: #e67e22;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -28,7 +26,7 @@
         .container { max-width: 1200px; margin: 0 auto; }
         h1 { margin-bottom: 20px; font-weight: 500; }
         h2 { font-size: 1.2em; font-weight: 500; margin-bottom: 15px; color: var(--dim); }
-        
+
         .panel {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -36,7 +34,7 @@
             padding: 20px;
             margin-bottom: 20px;
         }
-        
+
         .form-row {
             display: flex;
             gap: 15px;
@@ -58,33 +56,10 @@
             border-radius: 4px;
             color: var(--text);
             font-size: 1em;
+            font-family: inherit;
         }
-        textarea { resize: vertical; min-height: 80px; }
-        
-        .participants {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        .participant-check {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .participant-check:has(input:checked) {
-            border-color: var(--accent);
-        }
-        .participant-check input { width: auto; }
-        .participant-check.delta { border-left: 3px solid var(--delta); }
-        .participant-check.alpha { border-left: 3px solid var(--alpha); }
-        .participant-check.beta { border-left: 3px solid var(--beta); }
-        .participant-check.ada { border-left: 3px solid var(--ada); }
-        
+        textarea { resize: vertical; min-height: 60px; }
+
         button {
             padding: 10px 20px;
             background: var(--accent);
@@ -101,161 +76,154 @@
             border: 1px solid var(--border);
             color: var(--text);
         }
-        
-        .feed {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            min-height: 400px;
-            max-height: 600px;
-            overflow-y: auto;
-            padding: 15px;
-        }
-        .feed-empty {
-            color: var(--dim);
-            text-align: center;
-            padding: 40px;
-        }
-        
-        .message {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: var(--surface);
-            border-radius: 8px;
-            border-left: 3px solid var(--border);
-        }
-        .message.delta { border-left-color: var(--delta); }
-        .message.alpha { border-left-color: var(--alpha); }
-        .message.beta { border-left-color: var(--beta); }
-        .message.ada { border-left-color: var(--ada); }
-        
-        .message-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-        .message-persona {
-            font-weight: 600;
-        }
-        .message-persona.delta { color: var(--delta); }
-        .message-persona.alpha { color: var(--alpha); }
-        .message-persona.beta { color: var(--beta); }
-        .message-persona.ada { color: var(--ada); }
-        .message-round { color: var(--dim); font-size: 0.9em; }
-        .message-content {
-            line-height: 1.6;
-            white-space: pre-wrap;
-        }
-        
-        .status-badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            text-transform: uppercase;
-        }
-        .status-badge.active { background: var(--accent); }
-        .status-badge.completed { background: var(--ada); }
-        .status-badge.cancelled { background: #e74c3c; }
-        
-        .history-item {
-            padding: 12px;
-            border-bottom: 1px solid var(--border);
-            cursor: pointer;
-        }
-        .history-item:hover { background: rgba(255,255,255,0.05); }
-        .history-item:last-child { border-bottom: none; }
-        .history-topic { font-weight: 500; margin-bottom: 5px; }
-        .history-meta { color: var(--dim); font-size: 0.85em; }
-        
-        .thinking-indicator {
-            padding: 10px 15px;
-            background: rgba(74, 158, 255, 0.1);
-            border-left: 3px solid var(--accent);
-            margin-bottom: 10px;
-            font-style: italic;
-            color: var(--dim);
-        }
-        
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; }
         .tab {
             padding: 10px 20px;
             background: transparent;
             border: 1px solid var(--border);
+            color: var(--dim);
             cursor: pointer;
         }
         .tab.active {
-            background: var(--accent);
+            background: var(--surface);
+            color: var(--text);
             border-color: var(--accent);
         }
-        
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        
-        .interrupt-panel {
-            background: rgba(255, 215, 0, 0.1);
-            border: 1px solid #ffd700;
-            border-radius: 6px;
-            padding: 12px;
+
+        .feed {
+            max-height: 70vh;
+            overflow-y: auto;
+            padding: 10px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+        .feed-empty {
+            text-align: center;
+            color: var(--dim);
+            padding: 40px 0;
+        }
+
+        .message {
+            padding: 15px;
             margin-bottom: 15px;
+            background: var(--surface);
+            border-radius: 6px;
+            border-left: 3px solid var(--accent);
         }
-        .interrupt-header {
-            font-weight: 500;
-            color: #ffd700;
+        .message.human { border-left-color: var(--human); background: rgba(241, 196, 15, 0.06); }
+        .message.interrupt { border-left-color: var(--interrupt); background: rgba(230, 126, 34, 0.06); }
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+        .message-alias {
+            font-weight: 600;
+            color: var(--accent);
+            font-family: ui-monospace, SFMono-Regular, monospace;
+        }
+        .message.human .message-alias { color: var(--human); }
+        .message.interrupt .message-alias { color: var(--interrupt); }
+        .message-round { color: var(--dim); }
+        .message-content {
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        .thinking-indicator {
+            padding: 10px;
+            color: var(--dim);
+            font-style: italic;
+            text-align: center;
+        }
+
+        .history-item {
+            padding: 15px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
             margin-bottom: 10px;
+            cursor: pointer;
         }
-        .interrupt-buttons {
+        .history-item:hover { border-color: var(--accent); }
+        .history-topic { font-weight: 500; margin-bottom: 5px; }
+        .history-meta { font-size: 0.85em; color: var(--dim); }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            margin-right: 8px;
+        }
+        .status-badge.active { background: #27ae60; color: white; }
+        .status-badge.completed { background: #7f8c8d; color: white; }
+        .status-badge.cancelled { background: #95a5a6; color: white; }
+
+        .participant-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            padding: 10px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            border-left: 3px solid var(--accent);
+        }
+        .alias-input {
+            flex: 0 0 220px;
+            font-family: ui-monospace, SFMono-Regular, monospace;
+        }
+        .remove-btn {
+            padding: 5px 10px;
+            background: transparent;
+            border: 1px solid #f66;
+            color: #f66;
+            border-radius: 4px;
+        }
+
+        .control-row {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
-        }
-        .interrupt-btn {
-            padding: 8px 16px;
-            border: 1px solid var(--border);
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: rgba(74, 158, 255, 0.06);
             border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: all 0.2s;
         }
-        .interrupt-btn:hover { opacity: 0.8; }
-        .interrupt-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .interrupt-btn.delta { background: var(--delta); color: white; }
-        .interrupt-btn.alpha { background: var(--alpha); color: white; }
-        .interrupt-btn.beta { background: var(--beta); color: white; }
-        .interrupt-btn.ada { background: var(--ada); color: white; }
-        .interrupt-btn .remaining { font-size: 0.8em; opacity: 0.8; }
-        
+        .control-row label { color: var(--dim); margin-right: 5px; }
+
         @media (max-width: 600px) {
             .form-row { flex-direction: column; }
-            .participants { flex-direction: column; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Rhodes Town Hall</h1>
-        
+
         <div class="tabs">
             <button class="tab active" onclick="showTab('create')">New Town Hall</button>
             <button class="tab" onclick="showTab('history')">History</button>
         </div>
-        
+
         <!-- Create Tab -->
         <div id="create" class="tab-content active">
             <div class="panel">
                 <h2>Start a New Discussion</h2>
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label>Topic</label>
-                    <textarea id="topic" placeholder="What should the instances discuss?"></textarea>
+                    <textarea id="topic" placeholder="What should the models discuss?"></textarea>
                 </div>
                 <div class="form-group" style="margin-bottom: 15px;">
-                    <label>Participants <span style="color:var(--dim);font-size:0.9em">(add multiple of same type)</span></label>
-                    <div id="participantList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;">
-                    </div>
+                    <label>Participants <span style="color:var(--dim);font-size:0.9em">(any Rhodes model alias)</span></label>
+                    <div id="participantList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;"></div>
                     <button type="button" onclick="addParticipant()" class="secondary" style="font-size:0.9em;">+ Add Participant</button>
                 </div>
                 <div class="form-row">
@@ -266,53 +234,28 @@
                 </div>
                 <button onclick="startTownHall()" id="startBtn">Start Town Hall</button>
             </div>
-            
+
             <div class="panel">
                 <h2>Live Feed</h2>
-                <div id="interruptPanel" class="interrupt-panel" style="display: none;">
-                    <div class="interrupt-header">⚡ Interrupts Available</div>
-                    <div class="interrupt-buttons" id="interruptButtons"></div>
-                </div>
-                <div id="controlPanel" class="panel" style="display: none; margin-bottom: 10px; padding: 15px; background: rgba(74,158,255,0.1);">
-                    <!-- Row 1: Extend & Inject -->
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;">
-                        <label style="margin-right: 5px;">Extend by:</label>
+                <div id="controlPanel" style="display: none;">
+                    <div class="control-row">
+                        <label>Extend by:</label>
                         <input type="number" id="extendRounds" value="1" min="1" max="99" style="width: 60px;">
-                        <button onclick="extendHall()" class="secondary">➕ Extend Rounds</button>
-                        <span style="margin: 0 10px; color: #666;">|</span>
-                        <input type="text" id="injectQuestion" placeholder="New question to inject..." style="flex: 1; min-width: 200px;">
-                        <button onclick="injectQuestion()" class="secondary">💬 Inject Question</button>
+                        <button onclick="extendHall()" class="secondary">Extend Rounds</button>
                     </div>
-
-                    <!-- Row 2: Invite Specialist -->
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
-                        <label>Invite Specialist:</label>
-                        <input type="text" id="specialistSessionId" placeholder="Session ID" style="width: 120px;">
-                        <input type="text" id="specialistName" placeholder="Name (e.g., Expert-1)" style="width: 120px;">
-                        <select id="specialistModel" style="width: 100px;">
-                            <option value="sonnet">Sonnet</option>
-                            <option value="opus">Opus</option>
-                            <option value="haiku">Haiku</option>
-                            <option value="deepseek">DeepSeek</option>
-                        </select>
-                        <button onclick="inviteSpecialist()" class="secondary">🎓 Invite</button>
-                        <span id="specialistStatus" style="color: var(--dim); font-size: 0.9em;"></span>
+                    <div class="control-row">
+                        <label>Inject (human):</label>
+                        <input type="text" id="injectContent" placeholder="Message to inject into transcript" style="flex: 1; min-width: 200px;">
+                        <button onclick="injectMessage()" class="secondary">Send</button>
                     </div>
-
-                    <!-- Row 3: A/B Testing -->
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
-                        <label>A/B Injection Test:</label>
-                        <select id="abInstance" style="width: 100px;">
-                            <option value="delta">Delta</option>
-                            <option value="alpha">Alpha</option>
-                            <option value="beta">Beta</option>
-                            <option value="ada">Ada</option>
-                            <option value="blitz">Blitz</option>
-                            <option value="nova">Nova</option>
-                        </select>
-                        <button onclick="toggleInjection(true)" class="secondary" style="background: var(--ada);">✓ Enable</button>
-                        <button onclick="toggleInjection(false)" class="secondary" style="background: #e74c3c;">✗ Disable</button>
-                        <span id="injectionStatus" style="color: var(--dim); font-size: 0.9em;"></span>
+                    <div class="control-row">
+                        <label>Interrupt as alias:</label>
+                        <input type="text" id="interruptAlias" placeholder="alias (e.g. p1.12e)" style="width: 180px; font-family: ui-monospace, monospace;">
+                        <input type="text" id="interruptContent" placeholder="Optional prefilled content (blank = let model speak)" style="flex: 1; min-width: 200px;">
+                        <button onclick="queueInterrupt()" class="secondary">Queue Interrupt</button>
+                    </div>
+                    <div class="control-row">
+                        <span id="pendingStatus" style="color: var(--dim); font-size: 0.9em;"></span>
                     </div>
                 </div>
                 <div class="feed" id="feed">
@@ -320,99 +263,37 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- History Tab -->
         <div id="history" class="tab-content">
             <div class="panel">
                 <h2>Past Town Halls</h2>
                 <div id="historyList">Loading...</div>
             </div>
-            
+
             <div class="panel" id="historyDetail" style="display: none;">
                 <h2 id="historyTopic">Topic</h2>
                 <div class="feed" id="historyFeed"></div>
             </div>
         </div>
     </div>
-    
+
     <script>
         const API_BASE = '';
         let currentHallId = null;
         let pollInterval = null;
-        
-        let interruptStatus = {};  // {instance: remaining}
-        
+        let availableAliases = [];  // [{alias, base_model}, ...]
+        let participantCounter = 0;
+
         function getToken() {
             return localStorage.getItem('rhodes_user_token') || '';
         }
-        // === PARTICIPANT MANAGEMENT ===
-        let participantCounter = 0;
-        const PERSONA_INFO = {
-            delta: { name: 'Delta', title: 'The Reasoner', color: '#ff6b35' },
-            alpha: { name: 'Alpha', title: 'The Visionary', color: '#9b59b6' },
-            beta: { name: 'Beta', title: 'The Pragmatist', color: '#3498db' },
-            ada: { name: 'Ada', title: 'The Synthesizer', color: '#2ecc71' }
-        };
 
-        function addParticipant(type, privateMsg) {
-            type = type || 'delta';
-            privateMsg = privateMsg || '';
-            const id = ++participantCounter;
-            const info = PERSONA_INFO[type] || PERSONA_INFO.delta;
-            const html = '<div class="participant-row" id="participant-' + id + '" style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;border-left:3px solid ' + info.color + ';">' +
-                '<div style="flex:0 0 150px;">' +
-                '<select onchange="updateParticipantColor(' + id + ')" id="ptype-' + id + '" style="width:100%;">' +
-                '<option value="delta"' + (type==='delta'?' selected':'') + '>Delta (Reasoner)</option>' +
-                '<option value="alpha"' + (type==='alpha'?' selected':'') + '>Alpha (Visionary)</option>' +
-                '<option value="beta"' + (type==='beta'?' selected':'') + '>Beta (Pragmatist)</option>' +
-                '<option value="ada"' + (type==='ada'?' selected':'') + '>Ada (Synthesizer)</option>' +
-                '</select></div>' +
-                '<div style="flex:1;"><textarea id="pmsg-' + id + '" placeholder="Private instructions (optional)..." style="width:100%;min-height:40px;font-size:0.9em;" rows="2">' + privateMsg + '</textarea></div>' +
-                '<button type="button" onclick="removeParticipant(' + id + ')" style="padding:5px 10px;background:transparent;border:1px solid #f66;color:#f66;border-radius:4px;">x</button></div>';
-            document.getElementById('participantList').insertAdjacentHTML('beforeend', html);
-        }
-
-        function removeParticipant(id) {
-            var el = document.getElementById('participant-' + id);
-            if (el) el.remove();
-            if (document.querySelectorAll('.participant-row').length === 0) addParticipant();
-        }
-
-        function updateParticipantColor(id) {
-            var type = document.getElementById('ptype-' + id).value;
-            var info = PERSONA_INFO[type];
-            var row = document.getElementById('participant-' + id);
-            if (row && info) row.style.borderLeftColor = info.color;
-        }
-
-        function getParticipants() {
-            var rows = document.querySelectorAll('.participant-row');
-            var participants = [];
-            rows.forEach(function(row) {
-                var id = row.id.replace('participant-', '');
-                var type = document.getElementById('ptype-' + id).value;
-                var privateMsg = document.getElementById('pmsg-' + id).value.trim();
-                participants.push({ type: type, privateMsg: privateMsg, instanceId: 'inst-' + id });
-            });
-            return participants;
-        }
-
-        // Init default participants on load
-        window.addEventListener('load', function() {
-            addParticipant('delta');
-            addParticipant('alpha');
-            addParticipant('beta');
-            addParticipant('ada');
-        });
-        // === END PARTICIPANT MANAGEMENT ===
-
-
-        
         async function api(endpoint, method = 'GET', body = null) {
             const headers = { 'Content-Type': 'application/json' };
             const token = getToken();
             if (token) headers['Authorization'] = 'Bearer ' + token;
-            
+
             const opts = { method, headers, cache: 'no-store' };
             if (body) opts.body = JSON.stringify(body);
             const m = String(method || 'GET').toUpperCase();
@@ -420,295 +301,184 @@
             const fetchUrl = (m === 'GET' || m === 'HEAD')
                 ? url + (url.includes('?') ? '&' : '?') + '_ts=' + Date.now()
                 : url;
-            
+
             const res = await fetch(fetchUrl, opts);
             return res.json();
         }
-        
 
-        async function inviteSpecialist() {
-            if (!currentHallId) {
-                alert('No active town hall');
-                return;
-            }
-            const sessionId = document.getElementById('specialistSessionId').value.trim();
-            const name = document.getElementById('specialistName').value.trim() || 'Specialist';
-            const model = document.getElementById('specialistModel').value;
+        // === PARTICIPANTS ===
+        function addParticipant(alias, privateMsg) {
+            alias = alias || '';
+            privateMsg = privateMsg || '';
+            const id = ++participantCounter;
+            const dataListId = 'aliasOptions';
+            const html =
+                '<div class="participant-row" id="participant-' + id + '">' +
+                  '<input type="text" list="' + dataListId + '" class="alias-input" id="palias-' + id + '" placeholder="alias (e.g. p1.12e)" value="' + escapeAttr(alias) + '">' +
+                  '<div style="flex:1;"><textarea id="pmsg-' + id + '" placeholder="Private instructions (optional, round 1 only)" rows="2" style="font-size:0.9em;">' + escapeHtml(privateMsg) + '</textarea></div>' +
+                  '<button type="button" class="remove-btn" onclick="removeParticipant(' + id + ')">x</button>' +
+                '</div>';
+            document.getElementById('participantList').insertAdjacentHTML('beforeend', html);
+        }
 
-            if (!sessionId) {
-                alert('Enter a session ID');
-                return;
-            }
+        function removeParticipant(id) {
+            const el = document.getElementById('participant-' + id);
+            if (el) el.remove();
+            if (document.querySelectorAll('.participant-row').length === 0) addParticipant();
+        }
 
+        function getParticipants() {
+            const rows = document.querySelectorAll('.participant-row');
+            const out = [];
+            rows.forEach(function(row) {
+                const id = row.id.replace('participant-', '');
+                const alias = document.getElementById('palias-' + id).value.trim();
+                if (!alias) return;
+                const privateMsg = document.getElementById('pmsg-' + id).value.trim();
+                out.push({ alias: alias, privateMsg: privateMsg });
+            });
+            return out;
+        }
+
+        async function loadAliases() {
             try {
-                const result = await api(`/api/admin/townhall/${currentHallId}/invite`, 'POST', {
-                    session_id: sessionId,
-                    name: name,
-                    model: model
-                });
-
-                if (result.success) {
-                    document.getElementById('specialistStatus').textContent =
-                        `✓ ${result.specialist} invited (${result.context_messages} msgs)`;
-                    document.getElementById('specialistSessionId').value = '';
-                    document.getElementById('specialistName').value = '';
-                    addFeedMessage({
-                        type: 'system',
-                        message: `Specialist "${name}" invited from session ${sessionId.substring(0,8)}...`
-                    });
-                } else {
-                    document.getElementById('specialistStatus').textContent = `✗ ${result.error}`;
+                const res = await api('/api/admin/townhall/aliases');
+                availableAliases = res.aliases || [];
+                let dl = document.getElementById('aliasOptions');
+                if (!dl) {
+                    dl = document.createElement('datalist');
+                    dl.id = 'aliasOptions';
+                    document.body.appendChild(dl);
                 }
+                dl.innerHTML = availableAliases
+                    .map(a => '<option value="' + escapeAttr(a.alias) + '">' +
+                              (a.base_model ? escapeHtml(a.base_model) : '') + '</option>')
+                    .join('');
             } catch (e) {
-                document.getElementById('specialistStatus').textContent = `✗ ${e.message}`;
+                console.error('Failed to load aliases:', e);
             }
         }
 
-        async function toggleInjection(enabled) {
-            if (!currentHallId) {
-                alert('No active town hall');
-                return;
-            }
-            const instance = document.getElementById('abInstance').value;
-
-            try {
-                const result = await api(`/api/admin/townhall/${currentHallId}/injection`, 'POST', {
-                    instance: instance,
-                    enabled: enabled
-                });
-
-                if (result.success) {
-                    document.getElementById('injectionStatus').textContent =
-                        `${instance}: injection ${enabled ? 'ON' : 'OFF'}`;
-                    addFeedMessage({
-                        type: 'system',
-                        message: `A/B Test: ${instance} injection ${enabled ? 'enabled' : 'disabled'}`
-                    });
-                } else {
-                    document.getElementById('injectionStatus').textContent = `✗ ${result.error}`;
-                }
-            } catch (e) {
-                document.getElementById('injectionStatus').textContent = `✗ ${e.message}`;
-            }
-        }
-
-        async function loadInjectionStatus() {
-            if (!currentHallId) return;
-            try {
-                const result = await api(`/api/admin/townhall/${currentHallId}/injection`);
-                if (result.injection_status) {
-                    const statuses = Object.entries(result.injection_status)
-                        .map(([k, v]) => `${k}:${v ? 'ON' : 'OFF'}`)
-                        .join(', ');
-                    if (statuses) {
-                        document.getElementById('injectionStatus').textContent = statuses;
-                    }
-                }
-                if (result.specialists && result.specialists.length > 0) {
-                    const select = document.getElementById('abInstance');
-                    result.specialists.forEach(s => {
-                        if (!select.querySelector(`option[value="${s.name}"]`)) {
-                            const opt = document.createElement('option');
-                            opt.value = s.name;
-                            opt.textContent = s.name + ' (Specialist)';
-                            select.appendChild(opt);
-                        }
-                    });
-                }
-            } catch (e) {
-                console.error('Failed to load injection status:', e);
-            }
-        }
-
+        // === CONTROLS ===
         async function extendHall() {
-            if (!currentHallId) {
-                alert('No active town hall');
-                return;
-            }
-            const extraRounds = parseInt(document.getElementById('extendRounds').value) || 1;
+            if (!currentHallId) { alert('No active town hall'); return; }
+            const extra = parseInt(document.getElementById('extendRounds').value) || 1;
             try {
-                const result = await api(`/api/admin/townhall/${currentHallId}/extend`, 'POST', {rounds: extraRounds});
-                if (result.success) {
-                    addFeedMessage({
-                        type: 'system',
-                        message: `Town hall extended by ${extraRounds} round(s). New total: ${result.new_rounds}`
-                    });
+                const r = await api('/api/admin/townhall/' + currentHallId + '/extend', 'POST', {rounds: extra});
+                if (r.success) {
+                    addFeedMessage({alias: 'system', content: 'Extended by ' + extra + ' rounds (new total: ' + r.new_rounds + ')', cls: 'human'});
                 } else {
-                    alert(result.error || 'Failed to extend');
+                    alert(r.error || 'Failed to extend');
                 }
-            } catch (e) {
-                alert('Error extending: ' + e.message);
-            }
+            } catch (e) { alert('Error: ' + e.message); }
         }
 
-        async function injectQuestion(question) {
-            if (!currentHallId) {
-                alert('No active town hall');
-                return;
-            }
-            const q = question || document.getElementById('injectQuestion').value;
-            if (!q.trim()) {
-                alert('Enter a question to inject');
-                return;
-            }
+        async function injectMessage() {
+            if (!currentHallId) { alert('No active town hall'); return; }
+            const content = document.getElementById('injectContent').value.trim();
+            if (!content) { alert('Enter a message'); return; }
             try {
-                const result = await api(`/api/admin/townhall/${currentHallId}/inject`, 'POST', {question: q.trim()});
-                if (result.success) {
-                    addFeedMessage({
-                        type: 'system',
-                        message: `Question injected: "${q.trim().substring(0, 50)}..."`
-                    });
-                    document.getElementById('injectQuestion').value = '';
+                const r = await api('/api/admin/townhall/' + currentHallId + '/inject', 'POST', {content});
+                if (r.success) {
+                    addFeedMessage({alias: 'human (queued)', content: content, cls: 'human'});
+                    document.getElementById('injectContent').value = '';
                 } else {
-                    alert(result.error || 'Failed to inject');
+                    alert(r.error || 'Failed to inject');
                 }
-            } catch (e) {
-                alert('Error injecting: ' + e.message);
-            }
+            } catch (e) { alert('Error: ' + e.message); }
         }
 
-        async function requestInterrupt(instance) {
-            if (!currentHallId) return;
-            const btn = document.querySelector(`.interrupt-btn.${instance}`);
-            if (btn) btn.disabled = true;
-            
+        async function queueInterrupt() {
+            if (!currentHallId) { alert('No active town hall'); return; }
+            const alias = document.getElementById('interruptAlias').value.trim();
+            if (!alias) { alert('Enter an alias'); return; }
+            const content = document.getElementById('interruptContent').value.trim();
+            const body = {alias};
+            if (content) body.content = content;
             try {
-                const result = await api(`/api/admin/townhall/${currentHallId}/interrupt`, 'POST', {instance});
-                if (result.success) {
-                    addFeedMessage({
-                        type: 'interrupt_queued',
-                        instance: instance,
-                        message: `${instance.charAt(0).toUpperCase() + instance.slice(1)} interrupt queued (${result.remaining} left)`
-                    });
-                    interruptStatus[instance] = result.remaining;
-                    updateInterruptButtons();
+                const r = await api('/api/admin/townhall/' + currentHallId + '/interrupt', 'POST', body);
+                if (r.success) {
+                    addFeedMessage({alias: alias + ' (interrupt queued)', content: content || '(will be generated by model)', cls: 'interrupt'});
+                    document.getElementById('interruptContent').value = '';
                 } else {
-                    alert(result.message || 'Interrupt failed');
+                    alert(r.error || 'Failed to queue interrupt');
                 }
-            } catch (e) {
-                console.error('Interrupt error:', e);
-            }
-            
-            if (btn) btn.disabled = false;
+            } catch (e) { alert('Error: ' + e.message); }
         }
-        
-        async function fetchInterruptStatus() {
+
+        async function fetchPending() {
             if (!currentHallId) return;
             try {
-                const result = await api(`/api/admin/townhall/${currentHallId}/interrupts`);
-                if (result.interrupts_remaining) {
-                    interruptStatus = result.interrupts_remaining;
-                    updateInterruptButtons();
-                }
+                const r = await api('/api/admin/townhall/' + currentHallId + '/pending');
+                const parts = [];
+                if (r.injects) parts.push(r.injects + ' inject(s)');
+                if (r.interrupts) parts.push(r.interrupts + ' interrupt(s)');
+                const el = document.getElementById('pendingStatus');
+                if (el) el.textContent = parts.length ? 'Pending: ' + parts.join(', ') : '';
             } catch (e) {}
         }
-        
-        function updateInterruptButtons() {
-            const container = document.getElementById('interruptButtons');
-            if (!container) return;
-            
-            const participants = [];
-            if (document.getElementById('p-delta').checked) participants.push('delta');
-            if (document.getElementById('p-alpha').checked) participants.push('alpha');
-            if (document.getElementById('p-beta').checked) participants.push('beta');
-            if (document.getElementById('p-ada').checked) participants.push('ada');
-            
-            container.innerHTML = participants.map(p => {
-                const remaining = interruptStatus[p] || 0;
-                const disabled = remaining <= 0 ? 'disabled' : '';
-                const names = {delta: 'Delta', alpha: 'Alpha', beta: 'Beta', ada: 'Ada'};
-                return `<button class="interrupt-btn ${p}" onclick="requestInterrupt('${p}')" ${disabled}>
-                    ${names[p]} <span class="remaining">(${remaining})</span>
-                </button>`;
-            }).join('');
+
+        function showControls(show) {
+            const p = document.getElementById('controlPanel');
+            if (p) p.style.display = show ? 'block' : 'none';
         }
-        
-        function showInterruptPanel(show) {
-            const panel = document.getElementById('interruptPanel');
-            if (panel) panel.style.display = show ? 'block' : 'none';
-        }
-        
+
         function showTab(tabId) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelector(`[onclick="showTab('${tabId}')"]`).classList.add('active');
+            document.querySelector('[onclick="showTab(\'' + tabId + '\')"]').classList.add('active');
             document.getElementById(tabId).classList.add('active');
-            
             if (tabId === 'history') loadHistory();
         }
-        
+
         async function startTownHall() {
             const topic = document.getElementById('topic').value.trim();
-            if (!topic) {
-                alert('Please enter a topic');
-                return;
-            }
-            
-            const participantData = getParticipants();
-            if (participantData.length === 0) {
-                alert('Please add at least one participant');
-                return;
-            }
-            // Extract types for backward compat, keep full data for private messages
-            const participants = participantData.map(p => p.type);
-            const participantMessages = {};
-            participantData.forEach(p => {
-                if (p.privateMsg) {
-                    participantMessages[p.instanceId] = p.privateMsg;
-                }
-            });
-            
+            if (!topic) { alert('Please enter a topic'); return; }
+
+            const rows = getParticipants();
+            if (rows.length === 0) { alert('Add at least one participant alias'); return; }
+
+            const participants = rows.map(r => r.alias);
+            const participant_data = rows.map(r => ({privateMsg: r.privateMsg || ''}));
             const rounds = parseInt(document.getElementById('rounds').value);
-            
+
             document.getElementById('startBtn').disabled = true;
             document.getElementById('feed').innerHTML = '<div class="thinking-indicator">Starting town hall...</div>';
-            
+
             try {
                 const data = await api('/api/admin/townhall/create', 'POST', {
-                    topic, 
-                    participants,
-                    participant_data: participantData,  // Full data with private messages
-                    rounds
+                    topic, participants, participant_data, rounds
                 });
-                
                 if (data.error) {
                     alert('Error: ' + data.error);
                     document.getElementById('startBtn').disabled = false;
                     return;
                 }
-                
-                // Start polling for updates
                 startPolling();
-                
             } catch (e) {
                 alert('Error starting town hall: ' + e.message);
                 document.getElementById('startBtn').disabled = false;
             }
         }
-        
+
         function startPolling() {
             if (pollInterval) clearInterval(pollInterval);
-            
             pollInterval = setInterval(async () => {
                 const data = await api('/api/admin/townhall/list?status=active&limit=1');
                 if (data.halls && data.halls.length > 0) {
                     const hall = data.halls[0];
                     currentHallId = hall.id;
                     await loadHallMessages(hall.id);
-                    
                     if (hall.status === 'active') {
-                        // Show interrupt panel and fetch status
-                        showInterruptPanel(true);
-                        await fetchInterruptStatus();
-                        await loadInjectionStatus();
+                        showControls(true);
+                        await fetchPending();
                     } else {
                         clearInterval(pollInterval);
-                        showInterruptPanel(false);
+                        showControls(false);
                         document.getElementById('startBtn').disabled = false;
                     }
                 } else {
-                    // No active halls, check recent completed
-                    showInterruptPanel(false);
+                    showControls(false);
                     const completed = await api('/api/admin/townhall/list?limit=1');
                     if (completed.halls && completed.halls.length > 0) {
                         await loadHallMessages(completed.halls[0].id);
@@ -718,88 +488,117 @@
                 }
             }, 2000);
         }
-        
+
+        function classifyMessage(msg) {
+            if (msg.instance === 'human') return 'human';
+            if (msg.content && msg.content.startsWith('[INTERRUPT]')) return 'interrupt';
+            return '';
+        }
+
         async function loadHallMessages(hallId) {
             const data = await api('/api/admin/townhall/' + hallId);
             if (!data || data.error) return;
-            
+
             const feed = document.getElementById('feed');
             let html = '';
-            
             if (data.status === 'active') {
-                html += '<div class="thinking-indicator">Town hall in progress...</div>';
+                html += '<div class="thinking-indicator">Town hall in progress…</div>';
             }
-            
             for (const msg of data.messages || []) {
-                html += `
-                    <div class="message ${msg.instance}">
-                        <div class="message-header">
-                            <span class="message-persona ${msg.instance}">${msg.persona_name}</span>
-                            <span class="message-round">Round ${msg.round_num + 1}</span>
-                        </div>
-                        <div class="message-content">${escapeHtml(msg.content)}</div>
-                    </div>
-                `;
+                const cls = classifyMessage(msg);
+                const content = (msg.content || '').replace(/^\[INTERRUPT\]\s*/, '');
+                html += '<div class="message ' + cls + '">' +
+                          '<div class="message-header">' +
+                            '<span class="message-alias">' + escapeHtml(msg.instance || '') +
+                              (cls === 'interrupt' ? ' (interrupt)' : '') +
+                            '</span>' +
+                            '<span class="message-round">Round ' + (msg.round_num + 1) + '</span>' +
+                          '</div>' +
+                          '<div class="message-content">' + escapeHtml(content) + '</div>' +
+                        '</div>';
             }
-            
             if (data.status === 'completed') {
                 html += '<div style="text-align: center; color: var(--dim); padding: 20px;">Town hall completed</div>';
+            } else if (data.status === 'cancelled') {
+                html += '<div style="text-align: center; color: var(--dim); padding: 20px;">Town hall cancelled</div>';
             }
-            
             feed.innerHTML = html || '<div class="feed-empty">No messages yet</div>';
             feed.scrollTop = feed.scrollHeight;
         }
-        
+
+        function addFeedMessage(m) {
+            const feed = document.getElementById('feed');
+            const empty = feed.querySelector('.feed-empty');
+            if (empty) empty.remove();
+            const cls = m.cls || '';
+            const div = document.createElement('div');
+            div.className = 'message ' + cls;
+            div.innerHTML = '<div class="message-header"><span class="message-alias">' +
+                            escapeHtml(m.alias || '') + '</span></div>' +
+                            '<div class="message-content">' + escapeHtml(m.content || '') + '</div>';
+            feed.appendChild(div);
+            feed.scrollTop = feed.scrollHeight;
+        }
+
         async function loadHistory() {
             const data = await api('/api/admin/townhall/list?limit=20');
             const list = document.getElementById('historyList');
-            
             if (!data.halls || data.halls.length === 0) {
                 list.innerHTML = '<div style="color: var(--dim);">No town halls yet</div>';
                 return;
             }
-            
-            list.innerHTML = data.halls.map(h => `
-                <div class="history-item" onclick="viewHall(${h.id})">
-                    <div class="history-topic">${escapeHtml(h.topic.substring(0, 100))}</div>
-                    <div class="history-meta">
-                        <span class="status-badge ${h.status}">${h.status}</span>
-                        ${h.participants.join(', ')} &bull; ${h.rounds} rounds &bull; ${new Date(h.created_at).toLocaleString()}
-                    </div>
-                </div>
-            `).join('');
+            list.innerHTML = data.halls.map(h =>
+                '<div class="history-item" onclick="viewHall(' + h.id + ')">' +
+                  '<div class="history-topic">' + escapeHtml((h.topic || '').substring(0, 100)) + '</div>' +
+                  '<div class="history-meta">' +
+                    '<span class="status-badge ' + h.status + '">' + h.status + '</span>' +
+                    escapeHtml((h.participants || []).join(', ')) + ' &bull; ' +
+                    h.rounds + ' rounds &bull; ' +
+                    new Date(h.created_at).toLocaleString() +
+                  '</div>' +
+                '</div>'
+            ).join('');
         }
-        
+
         async function viewHall(hallId) {
             const data = await api('/api/admin/townhall/' + hallId);
             if (!data || data.error) return;
-            
             document.getElementById('historyTopic').textContent = data.topic;
             document.getElementById('historyDetail').style.display = 'block';
-            
             const feed = document.getElementById('historyFeed');
-            feed.innerHTML = (data.messages || []).map(msg => `
-                <div class="message ${msg.instance}">
-                    <div class="message-header">
-                        <span class="message-persona ${msg.instance}">${msg.persona_name}</span>
-                        <span class="message-round">Round ${msg.round_num + 1}</span>
-                    </div>
-                    <div class="message-content">${escapeHtml(msg.content)}</div>
-                </div>
-            `).join('');
+            feed.innerHTML = (data.messages || []).map(msg => {
+                const cls = classifyMessage(msg);
+                const content = (msg.content || '').replace(/^\[INTERRUPT\]\s*/, '');
+                return '<div class="message ' + cls + '">' +
+                         '<div class="message-header">' +
+                           '<span class="message-alias">' + escapeHtml(msg.instance || '') +
+                             (cls === 'interrupt' ? ' (interrupt)' : '') +
+                           '</span>' +
+                           '<span class="message-round">Round ' + (msg.round_num + 1) + '</span>' +
+                         '</div>' +
+                         '<div class="message-content">' + escapeHtml(content) + '</div>' +
+                       '</div>';
+            }).join('');
         }
-        
+
         function escapeHtml(text) {
-            if (!text) return '';
-            return text
+            if (text == null) return '';
+            return String(text)
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;');
         }
-        
-        // Initial load
-        loadHistory();
+        function escapeAttr(text) { return escapeHtml(text); }
+
+        // === INIT ===
+        window.addEventListener('load', async function() {
+            await loadAliases();
+            // Seed with a couple of sensible defaults; user edits freely.
+            addParticipant('p1.12e');
+            addParticipant('bap-ea-d');
+            loadHistory();
+        });
     </script>
 </body>
 </html>
