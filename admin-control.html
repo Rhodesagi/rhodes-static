@@ -2048,13 +2048,46 @@
               out.push('<pre style="color:#c9a0dc;white-space:pre-wrap;max-height:400px;overflow:auto;background:rgba(255,0,255,0.04);padding:8px;border-left:3px solid #ff00ff;">' + (ts.injection_text || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre></details>');
             }
           }
+          // dtnt-tool-thought-render — extract thought_*/response_* from pair tool calls
+          let _toolThought = '';
+          let _toolResponse = '';
+          let _otherToolCalls = [];
+          const _tcList = Array.isArray(r.tool_calls) ? r.tool_calls : [];
+          for (const _tc of _tcList) {
+            const _tname = _tc && (_tc.name || (_tc.function && _tc.function.name)) || '';
+            let _targs = _tc && (_tc.arguments || (_tc.function && _tc.function.arguments));
+            if (typeof _targs === 'string') {
+              try { _targs = JSON.parse(_targs); } catch (e) { _targs = {}; }
+            }
+            _targs = _targs || {};
+            // Pair tool: name ends in _response or _model_response
+            const _isPair = /^[a-z]+(_model)?_response$/.test(_tname);
+            if (_isPair) {
+              for (const _k of Object.keys(_targs)) {
+                if (_k.startsWith('thought_')) _toolThought = _toolThought || String(_targs[_k] || '');
+                else if (_k.startsWith('response_') || _k === 'response') _toolResponse = _toolResponse || String(_targs[_k] || '');
+              }
+            } else if (_tname) {
+              _otherToolCalls.push({ name: _tname, args: _targs, result: _tc.result });
+            }
+          }
+
           out.push('');
           out.push('AI:');
-          out.push(String(r.response || '').trimEnd());
-          if (r.thinking) {
+          out.push(String(r.response || _toolResponse || '').trimEnd());
+          const _finalThinking = String(r.thinking || _toolThought || '').trimEnd();
+          if (_finalThinking) {
             out.push('');
             out.push('THINKING:');
-            out.push(String(r.thinking || '').trimEnd());
+            out.push(_finalThinking);
+          }
+          if (_otherToolCalls.length) {
+            out.push('');
+            out.push('<details style="cursor:pointer"><summary style="color:#0ff;">TOOL CALLS [' + _otherToolCalls.length + '] click to expand</summary>');
+            for (const _otc of _otherToolCalls) {
+              out.push('<pre style="color:#aaa;white-space:pre-wrap;max-height:300px;overflow:auto;border-left:3px solid #0ff;padding:6px 10px;margin:4px 0;">' + _otc.name + '\n' + JSON.stringify(_otc.args, null, 2).replace(/</g,'&lt;').replace(/>/g,'&gt;') + (_otc.result ? '\n---\nresult: ' + JSON.stringify(_otc.result).slice(0,400).replace(/</g,'&lt;').replace(/>/g,'&gt;') : '') + '</pre>');
+            }
+            out.push('</details>');
           }
           out.push('');
         }
