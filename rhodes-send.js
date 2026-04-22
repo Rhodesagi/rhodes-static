@@ -382,6 +382,34 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
             return;
         }
 
+        // Route /inferrer* (and other server-side slash commands that don't correspond to models)
+        // as user_message so the server-side slash dispatcher gets them. Without this, the
+        // generic parseModelSwitchPrefix match sends them as model_set_request, which fails
+        // with 'Mode switch failed' because there is no model alias by that name.
+        const SERVER_SLASH_PREFIXES = ['/inferrer'];
+        const _textLower = text.toLowerCase();
+        const _isServerSlash = SERVER_SLASH_PREFIXES.some(function(pfx) {
+            return _textLower === pfx
+                || _textLower.startsWith(pfx + ' ')
+                || _textLower.startsWith(pfx + '-');
+        });
+        if (_isServerSlash) {
+            console.log('[SERVER-SLASH] routing as user_message:', text);
+            const ws = getWs();
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                clearInputAndResize(input);
+                ws.send(JSON.stringify({
+                    msg_type: 'user_message',
+                    msg_id: generateUUID(),
+                    timestamp: new Date().toISOString(),
+                    payload: { content: text }
+                }));
+            } else {
+                showToast('Not connected');
+            }
+            return;
+        }
+
         console.log('[BEFORE parseModelSwitchPrefix] text:', text);
         const modelCmd = parseModelSwitchPrefix(text);
         console.log('[AFTER parseModelSwitchPrefix] modelCmd:', modelCmd);
