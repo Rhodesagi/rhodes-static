@@ -1401,6 +1401,10 @@ function showDownloads() {
                             try { attachInferrerInversionToggle(node, msg.payload.content, msg.payload.inferrer_inverted_refusal); }
                             catch (e) { console.error('[INFERRER] toggle attach failed', e); }
                         }
+                        if (node && msg.payload && msg.payload.inferrer_hallucination_report) {
+                            try { attachHallucinationReport(node, msg.payload.inferrer_hallucination_report); }
+                            catch (e) { console.error('[INFERRER] hallucination attach failed', e); }
+                        }
                         if (msg.payload.debug_reasoning && window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin) {
                             attachDebugReasoning(node, msg.payload.debug_reasoning);
                         }
@@ -2361,4 +2365,77 @@ function attachInferrerInversionToggle(bubbleNode, inversionText, refusalText) {
     bubbleNode.appendChild(wrap);
 }
 if (typeof window !== 'undefined') window.attachInferrerInversionToggle = attachInferrerInversionToggle;
+
+
+// --- Inferrer hallucination report -----------------------------------------
+// Renders a badge + expandable panel listing each flagged claim. The report
+// shape is documented in server/inferrer/hallucination.py.
+function attachHallucinationReport(bubbleNode, report) {
+    if (!bubbleNode || !report || typeof report !== 'object') return;
+    var findings = Array.isArray(report.findings) ? report.findings : [];
+    var verdict = String(report.overall_verdict || 'clean');
+    var bad = Number(report.unsupported_count || findings.filter(function(f){return !f.supported;}).length);
+
+    var icon = '✅';
+    var color = '#2e8b57';
+    if (verdict === 'hallucinated' || bad > 0) { icon = '🚨'; color = '#c62828'; }
+    else if (verdict === 'minor_issues') { icon = '⚠️'; color = '#f57c00'; }
+
+    var wrap = document.createElement('div');
+    wrap.className = 'inferrer-hallucination-wrap';
+    wrap.style.cssText = 'margin-top:8px;border:1px solid ' + color + ';border-radius:6px;padding:6px 10px;font-size:12px;';
+
+    var header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;';
+    var summaryText = document.createElement('span');
+    summaryText.style.cssText = 'flex:1 1 auto;color:' + color + ';font-weight:500;';
+    summaryText.textContent = icon + ' Hallucination check · verdict=' + verdict +
+        ' · ' + bad + '/' + findings.length + ' unsupported';
+    var toggle = document.createElement('span');
+    toggle.textContent = '▸';
+    toggle.style.cssText = 'font-family:monospace;color:' + color + ';';
+    header.appendChild(summaryText);
+    header.appendChild(toggle);
+    wrap.appendChild(header);
+
+    var body = document.createElement('div');
+    body.style.cssText = 'margin-top:8px;display:none;';
+    if (report.summary) {
+        var sum = document.createElement('div');
+        sum.style.cssText = 'font-style:italic;margin-bottom:6px;opacity:0.85;';
+        sum.textContent = String(report.summary);
+        body.appendChild(sum);
+    }
+    findings.forEach(function(f) {
+        var row = document.createElement('div');
+        var supported = !!f.supported;
+        row.style.cssText = 'padding:4px 0;border-top:1px dotted ' + color + '40;';
+        var tag = supported ? '✓ supported' : '✗ unsupported';
+        var tagColor = supported ? '#2e8b57' : '#c62828';
+        row.innerHTML =
+            '<div style="font-size:11px;opacity:0.7;">[' + String(f.category || 'fact') + '] ' +
+            '<span style="color:' + tagColor + ';font-weight:600;">' + tag + '</span>' +
+            ' (confidence ' + (Number(f.confidence || 0).toFixed(2)) + ')</div>' +
+            '<div style="margin-top:2px;"><b>Claim:</b> ' + escapeHtmlSafe(String(f.claim || '')) + '</div>' +
+            '<div style="margin-top:2px;opacity:0.85;"><b>Reason:</b> ' + escapeHtmlSafe(String(f.reason || '')) + '</div>';
+        body.appendChild(row);
+    });
+    wrap.appendChild(body);
+
+    header.addEventListener('click', function() {
+        var shown = body.style.display !== 'none';
+        body.style.display = shown ? 'none' : 'block';
+        toggle.textContent = shown ? '▸' : '▾';
+    });
+
+    bubbleNode.appendChild(wrap);
+}
+
+function escapeHtmlSafe(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+if (typeof window !== 'undefined') {
+    window.attachHallucinationReport = attachHallucinationReport;
+}
 
