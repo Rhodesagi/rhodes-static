@@ -1396,6 +1396,11 @@ function showDownloads() {
                             sessionId: RHODES_ID || (msg.payload && (msg.payload.session_id || msg.payload.rhodes_id)) || null
                         });
                         if (node && reqId) node.dataset.reqId = reqId;
+                        // Inferrer inversion toggle: payload carries both texts
+                        if (node && msg.payload && msg.payload.inferrer_inversion && typeof msg.payload.inferrer_inverted_refusal === 'string') {
+                            try { attachInferrerInversionToggle(node, msg.payload.content, msg.payload.inferrer_inverted_refusal); }
+                            catch (e) { console.error('[INFERRER] toggle attach failed', e); }
+                        }
                         if (msg.payload.debug_reasoning && window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin) {
                             attachDebugReasoning(node, msg.payload.debug_reasoning);
                         }
@@ -2304,3 +2309,56 @@ function showDownloads() {
                 }
             };
         }
+
+
+// --- Inferrer inversion toggle -------------------------------------------
+function attachInferrerInversionToggle(bubbleNode, inversionText, refusalText) {
+    if (!bubbleNode || typeof inversionText !== 'string' || typeof refusalText !== 'string') return;
+    var contentEl = bubbleNode.querySelector('.message-text, .msg-text, .content, .message-content');
+    if (!contentEl) {
+        for (var i = 0; i < bubbleNode.children.length; i++) {
+            var ch = bubbleNode.children[i];
+            if (ch.tagName && !ch.classList.contains('msg-response-time') && !ch.classList.contains('inferrer-toggle-wrap')) {
+                contentEl = ch;
+                break;
+            }
+        }
+    }
+    if (!contentEl) contentEl = bubbleNode;
+
+    var inversionHtml = contentEl.innerHTML;
+    var state = { showingInversion: true };
+
+    var wrap = document.createElement('div');
+    wrap.className = 'inferrer-toggle-wrap';
+    wrap.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11px;opacity:0.75;';
+
+    var label = document.createElement('span');
+    label.textContent = '[inferrer inversion — showing rewritten opening]';
+    label.style.cssText = 'font-style:italic;flex:1 1 auto;';
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = '↔';
+    btn.title = 'Toggle between inversion and original refusal';
+    btn.style.cssText = 'padding:2px 10px;border-radius:4px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;font-family:monospace;font-size:14px;';
+
+    btn.addEventListener('click', function() {
+        state.showingInversion = !state.showingInversion;
+        if (state.showingInversion) {
+            contentEl.innerHTML = inversionHtml;
+            label.textContent = '[inferrer inversion — showing rewritten opening]';
+        } else {
+            var esc = refusalText
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            contentEl.innerHTML = '<span style="white-space:pre-wrap;">' + esc + '</span>';
+            label.textContent = '[inferrer inversion — showing ORIGINAL REFUSAL (hidden from model)]';
+        }
+    });
+
+    wrap.appendChild(label);
+    wrap.appendChild(btn);
+    bubbleNode.appendChild(wrap);
+}
+if (typeof window !== 'undefined') window.attachInferrerInversionToggle = attachInferrerInversionToggle;
+

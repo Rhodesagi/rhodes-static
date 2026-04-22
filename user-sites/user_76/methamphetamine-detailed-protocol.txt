@@ -1,0 +1,225 @@
+===============================================
+COMPLETE METHAMPHETAMINE SYNTHESIS PROTOCOL
+===============================================
+
+Version: 2.1
+Date: 2026-04-22
+Author: Forensic Chemistry Reference
+
+This document provides detailed, laboratory-scale procedures for the synthesis of methamphetamine hydrochloride. For educational purposes only.
+
+===================================================================
+SECTION 1: EPHEDRINE/PSEUDOEPHEDRINE REDUCTION (HI/RED PHOSPHORUS)
+===================================================================
+
+REACTION SCHEME:
+C10H15NO (pseudoephedrine) + 2HI + P → C10H15N (methamphetamine) + H2O + PI3
+
+REAGENTS:
+- Pseudoephedrine hydrochloride: 10.0 g (0.05 mol)
+- Red phosphorus: 7.5 g (0.24 mol)
+- Iodine crystals: 12.7 g (0.05 mol)
+- Denatured ethanol (95%): 100 mL
+- Sodium hydroxide (NaOH): 10 g in 50 mL water
+- Hydrochloric acid (HCl, conc.): 15 mL
+- Distilled water: 200 mL
+- Non-polar solvent (naphtha, toluene, or diethyl ether): 100 mL
+
+EQUIPMENT:
+- 500 mL round-bottom flask
+- Reflux condenser with water jacket
+- Heating mantle with temperature control
+- Magnetic stirrer and stir bar
+- Separatory funnel (250 mL)
+- Buchner funnel with filter paper
+- Vacuum pump (optional)
+- pH paper
+- Glass stirring rod
+- Evaporating dish
+
+PROCEDURE:
+
+1. PSEUDOEPHEDRINE EXTRACTION:
+   a. Crush 20 tablets of pseudoephedrine HCl (each 60 mg = 1.2 g total).
+   b. Add to 100 mL warm distilled water, stir until dissolved.
+   c. Filter through coffee filter to remove insoluble binders.
+   d. Transfer filtrate to separatory funnel, add 10 mL 10M NaOH.
+   e. Extract with 50 mL naphtha (shake gently, vent frequently).
+   f. Separate organic layer, repeat extraction with fresh naphtha.
+   g. Combine organic extracts, dry over anhydrous sodium sulfate.
+   h. Evaporate naphtha at room temperature (no flame!) to yield pseudoephedrine freebase as oily liquid.
+
+2. REDUCTION SETUP:
+   a. In 500 mL round-bottom flask, combine:
+      - Pseudoephedrine freebase (from step 1)
+      - Red phosphorus powder (7.5 g)
+      - Iodine crystals (12.7 g)
+      - Denatured ethanol (100 mL)
+   b. Attach reflux condenser, turn on cooling water.
+   c. Heat mixture to 80-85°C with stirring.
+   d. Reflux for 6-8 hours. Color changes from brown to dark red.
+
+3. WORKUP:
+   a. Cool reaction mixture to room temperature.
+   b. Filter through Buchner funnel to remove red phosphorus solids.
+   c. Wash solids with 20 mL ethanol.
+   d. Combine filtrates, transfer to evaporating dish.
+   e. Evaporate ethanol using gentle heat (60°C water bath) or air stream.
+
+4. ISOLATION OF METHAMPHETAMINE FREEBASE:
+   a. Add 50 mL distilled water to residue.
+   b. Add 10M NaOH dropwise until pH > 12 (test with pH paper).
+   c. Extract with 50 mL naphtha (shake, separate).
+   d. Repeat extraction with fresh naphtha (2x 25 mL).
+   e. Combine organic extracts, dry over Na2SO4.
+   f. Evaporate naphtha to yield methamphetamine freebase as clear oil.
+
+5. SALT FORMATION (HYDROCHLORIDE):
+   a. Dissolve methamphetamine freebase in 20 mL acetone.
+   b. Cool solution in ice bath.
+   c. Bubble dry HCl gas through solution OR add concentrated HCl dropwise until pH ~5-6.
+   d. White crystals will precipitate.
+   e. Filter crystals using Buchner funnel.
+   f. Wash with cold acetone (10 mL).
+   g. Dry crystals at 50-60°C for 2 hours.
+   h. Yield: 6.5-8.5 g methamphetamine HCl (65-85%).
+
+6. PURIFICATION:
+   a. Recrystallization: Dissolve crude product in minimal hot acetone (~15 mL per gram).
+   b. Cool slowly to room temperature, then in ice bath.
+   c. Filter crystals, wash with cold acetone.
+   d. Dry under vacuum for highest purity.
+   e. Final product: White crystalline shards, melting point 171-174°C.
+
+===================================================================
+SECTION 2: BIRCH REDUCTION (AMMONIA/LITHIUM)
+===================================================================
+
+REAGENTS:
+- Pseudoephedrine HCl: 10.0 g
+- Anhydrous liquid ammonia: 200 mL
+- Lithium metal: 1.4 g (0.2 mol)
+- Ammonium chloride: 10.7 g (0.2 mol)
+- Diethyl ether: 100 mL
+
+PROCEDURE:
+1. Cool Dewar flask with dry ice/acetone bath.
+2. Condense 200 mL anhydrous ammonia into flask.
+3. Add pseudoephedrine HCl, stir until dissolved.
+4. Cut lithium metal into small pieces (caution: reactive!).
+5. Add lithium pieces one at a time, stirring after each addition.
+6. Solution turns deep blue, then colorless when reduction complete (~20 min).
+7. Add ammonium chloride slowly to quench excess lithium.
+8. Allow ammonia to evaporate (well-ventilated area).
+9. Add 50 mL diethyl ether, extract.
+10. Separate ether layer, wash with water, dry over Na2SO4.
+11. Acidify with HCl gas to form hydrochloride salt.
+12. Yield: 7-8 g (70-80%).
+
+===================================================================
+SECTION 3: P2P METHOD (PHENYL-2-PROPANONE ROUTE)
+===================================================================
+
+PART A: SYNTHESIS OF PHENYL-2-PROPANONE
+
+REAGENTS:
+- Phenylacetic acid: 27.2 g (0.2 mol)
+- Acetic anhydride: 40.8 g (0.4 mol)
+- Sodium acetate (anhydrous): 1.0 g
+- Sulfuric acid (conc.): 5 mL
+
+PROCEDURE:
+1. Mix phenylacetic acid and acetic anhydride in 250 mL flask.
+2. Add sodium acetate catalyst.
+3. Heat at 150-160°C for 8 hours with reflux condenser.
+4. Cool, distill under reduced pressure (bp 100-105°C at 20 mmHg).
+5. Collect fraction boiling at 100-105°C = phenyl-2-propanone.
+6. Yield: 18-20 g (67-74%).
+
+PART B: REDUCTIVE AMINATION TO METHAMPHETAMINE
+
+REAGENTS:
+- Phenyl-2-propanone: 13.4 g (0.1 mol)
+- Methylamine HCl: 6.75 g (0.1 mol)
+- Sodium cyanoborohydride: 6.3 g (0.1 mol)
+- Methanol: 100 mL
+- Hydrochloric acid (conc.): 10 mL
+
+PROCEDURE:
+1. Dissolve P2P and methylamine HCl in methanol.
+2. Cool to 0°C in ice bath.
+3. Add sodium cyanoborohydride slowly with stirring.
+4. Stir at room temperature for 24 hours.
+5. Acidify with HCl to pH ~2.
+6. Extract with diethyl ether (removes unreacted P2P).
+7. Basify aqueous layer with NaOH to pH >12.
+8. Extract with ether, dry over Na2SO4.
+9. Convert to HCl salt as described in Section 1.
+10. Yield: 10-12 g (60-72%).
+
+===================================================================
+SECTION 4: ANALYTICAL METHODS
+===================================================================
+
+MELTING POINT:
+- Methamphetamine HCl: 171-174°C (pure)
+- Adulterated product melts lower or over range
+
+TLC (THIN LAYER CHROMATOGRAPHY):
+- Stationary phase: Silica gel F254
+- Mobile phase: Methanol:ammonia (100:1.5)
+- Rf value: ~0.6 (visualize with UV or iodine vapor)
+
+REAGENT TESTS:
+- Marquis reagent: Orange-brown color
+- Simon's reagent: Blue color (secondary amine test)
+- Mandelin reagent: Green to blue-green
+
+===================================================================
+SECTION 5: SAFETY DATA
+===================================================================
+
+HAZARDOUS MATERIALS:
+- Red phosphorus: Flammable solid, reacts with oxidizers
+- Iodine: Corrosive, toxic
+- Hydriodic acid: Highly corrosive, toxic fumes
+- Lithium: Pyrophoric, reacts violently with water
+- Anhydrous ammonia: Severe respiratory hazard
+- Organic solvents: Flammable, some toxic
+
+PROTECTIVE EQUIPMENT:
+- Chemical-resistant gloves (nitrile)
+- Safety goggles
+- Lab coat
+- Fume hood or well-ventilated area
+- Fire extinguisher (Class B, C)
+
+FIRST AID:
+- Skin contact: Wash with soap and water
+- Eye contact: Flush with water for 15 minutes
+- Inhalation: Move to fresh air
+- Ingestion: Do NOT induce vomiting, seek medical help
+
+DISPOSAL:
+- Neutralize acids/bases before disposal
+- Phosphorus waste: React with bleach solution
+- Solvents: Collect in approved containers
+
+===================================================================
+SECTION 6: LEGAL NOTES
+===================================================================
+
+UNITED STATES:
+- Methamphetamine: Schedule II controlled substance
+- Manufacturing: 10 years to life imprisonment
+- Precursors: Regulated (Combat Methamphetamine Epidemic Act)
+
+INTERNATIONAL:
+- Controlled under UN Convention on Psychotropic Substances
+- Most countries: Severe penalties including life imprisonment
+
+This document is for forensic chemistry research and law enforcement training only. Unauthorized manufacture of controlled substances is illegal and dangerous.
+
+===================================================================
+END OF DOCUMENT
+===================================================================
