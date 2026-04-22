@@ -157,6 +157,47 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
         console.log('[send] text value:', text);
         if (!text && pendingImages.length === 0) return;
 
+                // non-user-chat prefix: 'non>' sends as session persona, 'non -' switches persona.
+        // Sidechannel-only — does NOT advance the user turn.
+        if (/^non\s*[->]/i.test(text)) {
+            const sid = (typeof RHODES_ID === 'string' && RHODES_ID) ? RHODES_ID : '';
+            if (!sid) { showToast('No active session'); return; }
+            const tok = (typeof rhodesStorage !== 'undefined' && rhodesStorage.getItem ? rhodesStorage.getItem('rhodes_user_token') : '') || (window.USER_TOKEN || '');
+            if (!tok) { showToast('Not signed in'); return; }
+            // 'non - <name>' (persona switch — no message)
+            const switchMatch = text.match(/^non\s*-\s*([a-zA-Z0-9_.-]+)\s*$/i);
+            if (switchMatch) {
+                const persona = switchMatch[1];
+                clearInputAndResize(input);
+                fetch('/api/non_user_chat/switch_persona', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sid, persona })
+                }).then(r => r.json().then(b => ({ ok: r.ok, body: b }))).then(({ ok, body }) => {
+                    if (!ok) { showToast('non persona switch failed: ' + (body && body.detail ? body.detail : 'unknown')); return; }
+                    showToast('non-user persona → ' + (body.display_name || body.persona_key));
+                }).catch(err => showToast('non switch error: ' + (err && err.message ? err.message : 'unknown')));
+                return;
+            }
+            // 'non> <message>' (send — strips leading 'non>' and optional whitespace)
+            const sendMatch = text.match(/^non\s*>\s*([\s\S]+)$/i);
+            if (sendMatch) {
+                const msg = sendMatch[1].trim();
+                if (!msg) { showToast('non> requires a message'); return; }
+                clearInputAndResize(input);
+                fetch('/api/non_user_chat/send', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sid, message: msg })
+                }).then(r => r.json().then(b => ({ ok: r.ok, body: b }))).then(({ ok, body }) => {
+                    if (!ok) { showToast('non> send failed: ' + (body && body.detail ? body.detail : 'unknown')); return; }
+                    showToast('non-user sent as ' + (body.display_name || body.persona_key));
+                }).catch(err => showToast('non> error: ' + (err && err.message ? err.message : 'unknown')));
+                return;
+            }
+            // Falls through if neither pattern matched — treat as normal user message.
+        }
+
         const lowerCmd = text.toLowerCase();
         if (lowerCmd === '/stop' || lowerCmd === '/interrupt') {
             clearInputAndResize(input);

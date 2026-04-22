@@ -34,6 +34,160 @@ window.__rhodesApplySessionNote = function(note) {
 /* RHODES v2 module: rhodes.part3.ui-core.js */
 /* Source: contiguous slice of rhodes.monolith.js */
 
+/* ===================================================================
+ * Live model/provider indicator (bottom-left)
+ *
+ * Shows: model:<alias>  provider:<resolved-provider-tag>
+ * Example: model:rr-3  provider:FIREWORKS_KIMI
+ *
+ * Visible only to the restricted username allowlist below (currently
+ * sebastian + markbass — corresponds to user_id 2 + 3 server-side).
+ * Other users get no DOM element and no behavior.
+ *
+ * Wired to:
+ *   - model_set_response  -> updates model: portion
+ *   - session_rotated     -> updates model: portion (via reason=model_switch)
+ *   - provider_change     -> updates provider: portion + flash animation
+ *                           (refusal-detector fallback to Fireworks Kimi)
+ *   - provider_info       -> updates both fields (per-turn snapshot)
+ * =================================================================== */
+(function () {
+    if (window.__rhodesLiveIndicator) return; // idempotent
+    var ALLOWED = { sebastian: 1, markbass: 1 };
+
+    function getCurrentUser() {
+        // Prefer the rhodesStorage wrapper (handles localStorage + memory fallback)
+        try {
+            if (window.rhodesStorage && typeof window.rhodesStorage.getItem === "function") {
+                var v = window.rhodesStorage.getItem("rhodes_username");
+                if (v) return String(v).toLowerCase();
+            }
+        } catch (e) {}
+        // Fallbacks: window.rhodesAuth (if exposed), then bare localStorage
+        try {
+            if (window.rhodesAuth && typeof window.rhodesAuth.getCurrentUsername === "function") {
+                return (window.rhodesAuth.getCurrentUsername() || "").toLowerCase();
+            }
+        } catch (e) {}
+        try {
+            return (localStorage.getItem("rhodes_username") || "").toLowerCase();
+        } catch (e) { return ""; }
+    }
+    function isAllowed() {
+        return Object.prototype.hasOwnProperty.call(ALLOWED, getCurrentUser());
+    }
+
+    function ensureStyle() {
+        if (document.getElementById("rhodes-live-indicator-style")) return;
+        var s = document.createElement("style");
+        s.id = "rhodes-live-indicator-style";
+        s.textContent = [
+            ".rhodes-live-indicator {",
+            "  position: fixed; bottom: 8px; left: 8px;",
+            "  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;",
+            "  font-size: 11px; line-height: 1.2;",
+            "  color: rgba(255,255,255,0.4);",
+            "  background: rgba(0,0,0,0); padding: 2px 6px; border-radius: 3px;",
+            "  pointer-events: none; z-index: 9000;",
+            "  white-space: nowrap;",
+            "  transition: color 0.3s ease-out;",
+            "}",
+            ".rhodes-live-indicator.flash-fallback {",
+            "  color: rgba(255,255,255,1);",
+            "  animation: rhodes-fallback-flash 1.5s ease-out;",
+            "}",
+            "@keyframes rhodes-fallback-flash {",
+            "  0%   { background: rgba(255,100,0,0.85); }",
+            "  100% { background: rgba(255,100,0,0); }",
+            "}"
+        ].join("\n");
+        document.head.appendChild(s);
+    }
+
+    function ensureNode() {
+        if (!isAllowed()) {
+            var existing = document.getElementById("rhodes-live-indicator");
+            if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+            return null;
+        }
+        ensureStyle();
+        var el = document.getElementById("rhodes-live-indicator");
+        if (!el) {
+            el = document.createElement("div");
+            el.id = "rhodes-live-indicator";
+            el.className = "rhodes-live-indicator";
+            el.dataset.model = "";
+            el.dataset.provider = "";
+            (document.body || document.documentElement).appendChild(el);
+            render(el);
+        }
+        return el;
+    }
+
+    function render(el) {
+        if (!el) return;
+        var m = el.dataset.model || "-";
+        var p = el.dataset.provider || "-";
+        var prefix = el.dataset.flashing === "1" ? "FALLBACK -> " : "";
+        el.textContent = prefix + "model:" + m + "  provider:" + p;
+    }
+
+    function setModel(model) {
+        if (!model) return;
+        var el = ensureNode(); if (!el) return;
+        el.dataset.model = String(model);
+        render(el);
+    }
+    function setProvider(provider) {
+        if (!provider) return;
+        var el = ensureNode(); if (!el) return;
+        el.dataset.provider = String(provider);
+        render(el);
+    }
+    function setBoth(model, provider) {
+        var el = ensureNode(); if (!el) return;
+        if (model) el.dataset.model = String(model);
+        if (provider) el.dataset.provider = String(provider);
+        render(el);
+    }
+    function flashFallback() {
+        var el = ensureNode(); if (!el) return;
+        el.dataset.flashing = "1";
+        el.classList.remove("flash-fallback");
+        // force reflow to restart animation
+        // eslint-disable-next-line no-unused-expressions
+        void el.offsetWidth;
+        el.classList.add("flash-fallback");
+        render(el);
+        setTimeout(function () {
+            try {
+                el.dataset.flashing = "0";
+                el.classList.remove("flash-fallback");
+                render(el);
+            } catch (e) {}
+        }, 1500);
+    }
+
+    function init() {
+        try { ensureNode(); } catch (e) {}
+    }
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+    } else {
+        setTimeout(init, 50);
+    }
+
+    window.__rhodesLiveIndicator = {
+        setModel: setModel,
+        setProvider: setProvider,
+        setBoth: setBoth,
+        flashFallback: flashFallback,
+        ensureNode: ensureNode,
+        isAllowed: isAllowed,
+    };
+})();
+
+
         // ============================================
         // MOBILE MENU FUNCTIONS
         // ============================================
@@ -1546,6 +1700,7 @@ function showDownloads() {
                 } else if (msg.msg_type === 'model_set_response') {
                     if (msg.payload && msg.payload.success) {
                         const model = (msg.payload.model || '').toString().toLowerCase();
+                        try { if (window.__rhodesLiveIndicator) window.__rhodesLiveIndicator.setModel(model || (msg.payload.alias || '')); } catch (e) {}
                         const pretty =
                             model === 'opus' ? 'ALPHA' :
                             model === 'sonnet' ? 'BETA' :
@@ -1630,6 +1785,7 @@ function showDownloads() {
                         const reason = (msg.payload.reason || '').toString().toLowerCase();
                         if (reason === 'model_switch' && msg.payload.model) {
                             const model = (msg.payload.model || '').toString().toLowerCase();
+                            try { if (window.__rhodesLiveIndicator) window.__rhodesLiveIndicator.setModel(model); } catch (e) {}
                             const pretty =
                                 model === 'opus' ? 'ALPHA' :
                                 model === 'sonnet' ? 'BETA' :
@@ -1646,6 +1802,28 @@ function showDownloads() {
                             showToast('Session rotated');
                         }
                     }
+                } else if (msg.msg_type === 'provider_change') {
+                    // Refusal-detector reroute / failover. Update provider
+                    // half of the indicator + flash. Visible only to the
+                    // restricted username allowlist (sebastian + markbass).
+                    try {
+                        if (window.__rhodesLiveIndicator && msg.payload) {
+                            if (msg.payload.new_provider) {
+                                window.__rhodesLiveIndicator.setProvider(msg.payload.new_provider);
+                            }
+                            window.__rhodesLiveIndicator.flashFallback();
+                        }
+                    } catch (e) {}
+                } else if (msg.msg_type === 'provider_info') {
+                    // Per-turn live indicator snapshot. Updates both fields.
+                    try {
+                        if (window.__rhodesLiveIndicator && msg.payload) {
+                            window.__rhodesLiveIndicator.setBoth(
+                                msg.payload.model || msg.payload.alias || '',
+                                msg.payload.provider || ''
+                            );
+                        }
+                    } catch (e) {}
                 } else if (msg.msg_type === 'error') {
                     const errText = (msg.payload && msg.payload.error) || 'An error occurred';
                     addMsg('ai', '[System] ' + errText);
