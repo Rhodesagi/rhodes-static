@@ -386,7 +386,7 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
         // as user_message so the server-side slash dispatcher gets them. Without this, the
         // generic parseModelSwitchPrefix match sends them as model_set_request, which fails
         // with 'Mode switch failed' because there is no model alias by that name.
-        const SERVER_SLASH_PREFIXES = ['/inferrer'];
+        const SERVER_SLASH_PREFIXES = ['/inferrer', '/inferrer2', '/inferrer3', '/halt'];
         const _textLower = text.toLowerCase();
         const _isServerSlash = SERVER_SLASH_PREFIXES.some(function(pfx) {
             return _textLower === pfx
