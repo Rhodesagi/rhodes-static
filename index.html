@@ -1042,7 +1042,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
     <script src="/face-api.min.js?v=1776042574"></script>
     <script src="/rhodes-valence.js?v=1776042574"></script>
 <script src="/rhodes-send.js?v=1776913955"></script>
-<script src="/rhodes.js?v=1776904158"></script>
+<script src="/rhodes.js?v=1776969536"></script>
     <script src="/rhodes-split.js?v=1776910448"></script>
     <script src="/rhodes-cloud-storage.js?v=1776042574"></script>
 
@@ -1979,7 +1979,8 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
 <script>
     // Slash command autocomplete
     (function() {
-        const slashCommands = [
+        // Default fallback set (used only if /slash-commands.json fails to load).
+        let slashCommands = [
             {cmd: '/model', desc: 'Switch AI model'},
             {cmd: '/split', desc: 'Toggle 4-terminal split'},
             {cmd: '/shared', desc: 'Full inter-instance messaging'},
@@ -1990,6 +1991,23 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
             {cmd: '/clear', desc: 'Clear chat history'},
             {cmd: '/help', desc: 'Show help'},
         ];
+
+        // Fetch the full manifest (hundreds of commands: /inferrer, /inferrer2,
+        // /inferrer3 with provider/nothink/mode flags, /format-*, /halt-*, etc.).
+        // Cache-bust query param bumps whenever we edit the JSON.
+        (function loadManifest() {
+            try {
+                fetch('/slash-commands.json?v=20260423', { credentials: 'same-origin' })
+                    .then(r => r.ok ? r.json() : null)
+                    .then(data => {
+                        if (data && Array.isArray(data.commands) && data.commands.length) {
+                            slashCommands = data.commands;
+                            window.__rhodesSlashCommands = data.commands;
+                        }
+                    })
+                    .catch(() => {});
+            } catch (e) {}
+        })();
 
         let selectedIndex = -1;
         let dropdown = null;
@@ -2011,10 +2029,14 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
             }
             inputEl = input;
 
-            const filtered = slashCommands.filter(c =>
-                c.cmd.toLowerCase().includes(filter.toLowerCase()) ||
-                c.desc.toLowerCase().includes(filter.toLowerCase())
-            );
+            // Token-based match: split filter on whitespace, every token must
+            // appear somewhere in cmd+desc. Lets "infe e0" match
+            // "/inferrer -e0  Inferrer: Kimi-K2.5 nothink".
+            const tokens = filter.toLowerCase().trim().split(/\s+/).filter(Boolean);
+            const filtered = slashCommands.filter(c => {
+                const hay = (c.cmd + ' ' + (c.desc || '')).toLowerCase();
+                return tokens.every(t => hay.includes(t));
+            });
 
             if (filtered.length === 0) {
                 hideDropdown();
@@ -2089,18 +2111,27 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
             return Object.prototype.hasOwnProperty.call(SLASH_SUGGEST_ALLOWED, slashSuggestCurrentUser());
         }
 
-        // Listen for input events on message inputs
+        // Listen for input events on message inputs.
+        // Main chat is a <textarea id="input">, not <input>, so we match both
+        // tag names. Target the real chat box by id, plus any sub-input whose
+        // placeholder mentions "message" (e.g. send-all-input, instance follow-ups).
         document.addEventListener('input', function(e) {
             const input = e.target;
-            if (input.tagName === 'INPUT' && (input.placeholder?.includes('message') || input.placeholder?.includes('Message'))) {
-                if (!slashSuggestAllowed()) { hideDropdown(); return; }
-                const val = input.value;
-                if (val.startsWith('/')) {
-                    const filter = val.substring(1);
-                    showDropdown(input, filter);
-                } else {
-                    hideDropdown();
-                }
+            const tag = input.tagName;
+            if (tag !== 'INPUT' && tag !== 'TEXTAREA') return;
+            const placeholder = input.placeholder || '';
+            const isChatLike = (
+                input.id === 'input' ||
+                placeholder.toLowerCase().includes('message')
+            );
+            if (!isChatLike) return;
+            if (!slashSuggestAllowed()) { hideDropdown(); return; }
+            const val = input.value;
+            if (val.startsWith('/')) {
+                const filter = val.substring(1);
+                showDropdown(input, filter);
+            } else {
+                hideDropdown();
             }
         });
 

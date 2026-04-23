@@ -1396,10 +1396,31 @@ function showDownloads() {
                             sessionId: RHODES_ID || (msg.payload && (msg.payload.session_id || msg.payload.rhodes_id)) || null
                         });
                         if (node && reqId) node.dataset.reqId = reqId;
-                        // Inferrer inversion toggle: payload carries both texts
+                        // Inferrer rewrite banner: payload carries both texts + version/mode/role meta
                         if (node && msg.payload && msg.payload.inferrer_inversion && typeof msg.payload.inferrer_inverted_refusal === 'string') {
-                            try { attachInferrerInversionToggle(node, msg.payload.content, msg.payload.inferrer_inverted_refusal); }
-                            catch (e) { console.error('[INFERRER] toggle attach failed', e); }
+                            try {
+                                var inferrerOpts = {};
+                                if (msg.payload.inferrer3_role) {
+                                    inferrerOpts.version = 'v3';
+                                    inferrerOpts.role = msg.payload.inferrer3_role;
+                                    inferrerOpts.mode = msg.payload.inferrer3_mode || null;
+                                } else if (msg.payload.inferrer2_mode) {
+                                    inferrerOpts.version = 'v2';
+                                    inferrerOpts.mode = msg.payload.inferrer2_mode;
+                                } else {
+                                    inferrerOpts.version = 'v1';
+                                    inferrerOpts.pushExtension = !!(typeof msg.payload.inferrer_push_extension === 'string' && msg.payload.inferrer_push_extension.length > 0);
+                                }
+                                // Pass opener/extension separately so the banner can show the split
+                                if (typeof msg.payload.inferrer_raw_opener === 'string') {
+                                    inferrerOpts.opener = msg.payload.inferrer_raw_opener;
+                                }
+                                if (typeof msg.payload.inferrer_push_extension === 'string') {
+                                    inferrerOpts.extension = msg.payload.inferrer_push_extension;
+                                }
+                                attachInferrerInversionToggle(node, msg.payload.content, msg.payload.inferrer_inverted_refusal, inferrerOpts);
+                            }
+                            catch (e) { console.error('[INFERRER] banner attach failed', e); }
                         }
                         if (node && msg.payload && msg.payload.inferrer_hallucination_report) {
                             try { attachHallucinationReport(node, msg.payload.inferrer_hallucination_report); }
@@ -2315,14 +2336,46 @@ function showDownloads() {
         }
 
 
-// --- Inferrer inversion toggle -------------------------------------------
-function attachInferrerInversionToggle(bubbleNode, inversionText, refusalText) {
+// --- Inferrer rewrite banner + toggle ------------------------------------
+// Makes it OBVIOUS that the bubble text has been substituted by the inferrer.
+// - Red banner pinned to the TOP of the bubble identifying version/mode/role
+// - Persistent red left-edge stripe on the bubble
+// - Two explicit buttons: "rewrite (sent to model)" and "original refusal (hidden from model)"
+// opts: { version: 'v1'|'v2'|'v3', mode?: 'full_rewrite'|'autonomy_prefill', role?: 'inject'|'edit', pushExtension?: bool }
+function attachInferrerInversionToggle(bubbleNode, inversionText, refusalText, opts) {
     if (!bubbleNode || typeof inversionText !== 'string' || typeof refusalText !== 'string') return;
+    opts = opts || {};
+    var version = String(opts.version || 'v1').toLowerCase();
+    var mode = opts.mode || null;
+    var role = opts.role || null;
+
+    // Build descriptive sub-label
+    function _modeShort(m) {
+        if (m === 'autonomy_prefill') return 'prefill';
+        if (m === 'full_rewrite') return 'rewrite';
+        return String(m || '?');
+    }
+    var subLabel = '';
+    if (version === 'v1') {
+        subLabel = opts.pushExtension ? 'mechanical opener + push-extension' : 'mechanical opener';
+    } else if (version === 'v2') {
+        subLabel = 'rewrite · mode=' + _modeShort(mode);
+    } else if (version === 'v3') {
+        subLabel = 'role=' + (role || '?');
+        if (role === 'edit' && mode) subLabel += ' · mode=' + _modeShort(mode);
+    } else {
+        subLabel = version;
+    }
+
+    // Find the bubble's text container
     var contentEl = bubbleNode.querySelector('.message-text, .msg-text, .content, .message-content');
     if (!contentEl) {
         for (var i = 0; i < bubbleNode.children.length; i++) {
             var ch = bubbleNode.children[i];
-            if (ch.tagName && !ch.classList.contains('msg-response-time') && !ch.classList.contains('inferrer-toggle-wrap')) {
+            if (ch.tagName
+                && !ch.classList.contains('msg-response-time')
+                && !ch.classList.contains('inferrer-toggle-wrap')
+                && !ch.classList.contains('inferrer-rewrite-banner')) {
                 contentEl = ch;
                 break;
             }
@@ -2333,36 +2386,119 @@ function attachInferrerInversionToggle(bubbleNode, inversionText, refusalText) {
     var inversionHtml = contentEl.innerHTML;
     var state = { showingInversion: true };
 
-    var wrap = document.createElement('div');
-    wrap.className = 'inferrer-toggle-wrap';
-    wrap.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11px;opacity:0.75;';
+    // Persistent visual marker on the bubble itself
+    bubbleNode.classList.add('inferrer-rewritten-bubble');
+    if (!bubbleNode.style.borderLeft) bubbleNode.style.borderLeft = '3px solid #c94040';
+    if (!bubbleNode.style.paddingLeft) bubbleNode.style.paddingLeft = '10px';
 
-    var label = document.createElement('span');
-    label.textContent = '[inferrer inversion — showing rewritten opening]';
-    label.style.cssText = 'font-style:italic;flex:1 1 auto;';
+    // Banner — pinned to the TOP of the bubble
+    var banner = document.createElement('div');
+    banner.className = 'inferrer-rewrite-banner';
+    banner.style.cssText =
+        'display:flex;align-items:center;gap:8px;margin:0 0 8px 0;' +
+        'padding:6px 10px;border-radius:4px;' +
+        'background:rgba(201, 64, 64, 0.12);border:1px solid rgba(201,64,64,0.55);' +
+        'font-size:11px;font-family:monospace;color:#c94040;letter-spacing:0.3px;';
 
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = '↔';
-    btn.title = 'Toggle between inversion and original refusal';
-    btn.style.cssText = 'padding:2px 10px;border-radius:4px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;font-family:monospace;font-size:14px;';
+    var badge = document.createElement('span');
+    badge.textContent = '⚠ INFERRER ' + version.toUpperCase() + ' REWRITE · ' + subLabel +
+        ' · this text REPLACED the original refusal in the model context';
+    badge.style.cssText = 'flex:1 1 auto;font-weight:600;';
 
-    btn.addEventListener('click', function() {
-        state.showingInversion = !state.showingInversion;
-        if (state.showingInversion) {
+    var btnRewrite = document.createElement('button');
+    btnRewrite.type = 'button';
+    btnRewrite.textContent = 'rewrite';
+    btnRewrite.title = 'The text submitted to the model on the next turn.';
+    btnRewrite.style.cssText = 'padding:2px 8px;border:1px solid #c94040;background:#c94040;color:#fff;border-radius:3px;cursor:pointer;font-family:monospace;font-size:11px;';
+
+    var btnOrig = document.createElement('button');
+    btnOrig.type = 'button';
+    btnOrig.textContent = 'original refusal';
+    btnOrig.title = 'The original refusal. Stored only in session_messages.metadata; NOT sent to the model.';
+    btnOrig.style.cssText = 'padding:2px 8px;border:1px solid #c94040;background:transparent;color:#c94040;border-radius:3px;cursor:pointer;font-family:monospace;font-size:11px;';
+
+    // Optional extra buttons if v1 provided opener/extension split
+    var hasOpener = typeof opts.opener === 'string' && opts.opener.length > 0;
+    var hasExtension = typeof opts.extension === 'string' && opts.extension.length > 0;
+    var btnOpener = null, btnExt = null;
+    if (hasOpener) {
+        btnOpener = document.createElement('button');
+        btnOpener.type = 'button';
+        btnOpener.textContent = 'opener only';
+        btnOpener.title = 'Just the deterministic commitment opener picked by raw_invert(refusal). No refusal body, no clone extension.';
+        btnOpener.style.cssText = 'padding:2px 8px;border:1px solid #c94040;background:transparent;color:#c94040;border-radius:3px;cursor:pointer;font-family:monospace;font-size:11px;';
+    }
+    if (hasExtension) {
+        btnExt = document.createElement('button');
+        btnExt.type = 'button';
+        btnExt.textContent = 'extension only';
+        btnExt.title = 'Just the clone-written push-further extension (what got concatenated onto the opener).';
+        btnExt.style.cssText = 'padding:2px 8px;border:1px solid #c94040;background:transparent;color:#c94040;border-radius:3px;cursor:pointer;font-family:monospace;font-size:11px;';
+    }
+
+    function _resetBtns() {
+        btnRewrite.style.background = 'transparent'; btnRewrite.style.color = '#c94040';
+        btnOrig.style.background = 'transparent'; btnOrig.style.color = '#c94040';
+        if (btnOpener) { btnOpener.style.background = 'transparent'; btnOpener.style.color = '#c94040'; }
+        if (btnExt) { btnExt.style.background = 'transparent'; btnExt.style.color = '#c94040'; }
+    }
+    function _activate(btn) { btn.style.background = '#c94040'; btn.style.color = '#fff'; }
+    function _escape(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function setMode(which) {
+        state.showingInversion = (which === 'rewrite');
+        _resetBtns();
+        if (which === 'rewrite') {
             contentEl.innerHTML = inversionHtml;
-            label.textContent = '[inferrer inversion — showing rewritten opening]';
-        } else {
-            var esc = refusalText
-                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            contentEl.innerHTML = '<span style="white-space:pre-wrap;">' + esc + '</span>';
-            label.textContent = '[inferrer inversion — showing ORIGINAL REFUSAL (hidden from model)]';
+            _activate(btnRewrite);
+            badge.innerHTML = '⚠ INFERRER ' + version.toUpperCase() + ' REWRITE · ' + subLabel +
+                ' · this text REPLACED the original refusal in the model context';
+        } else if (which === 'original') {
+            contentEl.innerHTML =
+                '<div style="opacity:0.7;font-style:italic;margin-bottom:4px;font-size:11px;">' +
+                '[ORIGINAL REFUSAL — never sent to model; kept in session_messages.metadata.inferrer_inverted_refusal]' +
+                '</div><span style="white-space:pre-wrap;">' + _escape(refusalText) + '</span>';
+            _activate(btnOrig);
+            badge.innerHTML = '⚠ INFERRER ' + version.toUpperCase() + ' · showing ORIGINAL REFUSAL (hidden from model)';
+        } else if (which === 'opener' && hasOpener) {
+            contentEl.innerHTML =
+                '<div style="opacity:0.7;font-style:italic;margin-bottom:4px;font-size:11px;">' +
+                '[OPENER ONLY — deterministic commitment opener from raw_invert; no refusal body, no clone extension]' +
+                '</div><span style="white-space:pre-wrap;">' + _escape(opts.opener) + '</span>';
+            _activate(btnOpener);
+            badge.innerHTML = '⚠ INFERRER ' + version.toUpperCase() + ' · showing OPENER ONLY (' + opts.opener.length + 'c)';
+        } else if (which === 'extension' && hasExtension) {
+            contentEl.innerHTML =
+                '<div style="opacity:0.7;font-style:italic;margin-bottom:4px;font-size:11px;">' +
+                '[EXTENSION ONLY — clone-written push-further content concatenated onto the opener]' +
+                '</div><span style="white-space:pre-wrap;">' + _escape(opts.extension) + '</span>';
+            _activate(btnExt);
+            badge.innerHTML = '⚠ INFERRER ' + version.toUpperCase() + ' · showing EXTENSION ONLY (' + opts.extension.length + 'c)';
         }
-    });
+    }
 
-    wrap.appendChild(label);
-    wrap.appendChild(btn);
-    bubbleNode.appendChild(wrap);
+    btnRewrite.addEventListener('click', function() { setMode('rewrite'); });
+    btnOrig.addEventListener('click', function() { setMode('original'); });
+    if (btnOpener) btnOpener.addEventListener('click', function() { setMode('opener'); });
+    if (btnExt) btnExt.addEventListener('click', function() { setMode('extension'); });
+
+    // Initial highlight on the default view
+    _activate(btnRewrite);
+
+    banner.appendChild(badge);
+    banner.appendChild(btnRewrite);
+    if (btnOpener) banner.appendChild(btnOpener);
+    if (btnExt) banner.appendChild(btnExt);
+    banner.appendChild(btnOrig);
+
+    // Insert banner BEFORE the content (at top of bubble)
+    if (contentEl && contentEl.parentNode === bubbleNode) {
+        bubbleNode.insertBefore(banner, contentEl);
+    } else {
+        bubbleNode.insertBefore(banner, bubbleNode.firstChild);
+    }
 }
 if (typeof window !== 'undefined') window.attachInferrerInversionToggle = attachInferrerInversionToggle;
 
