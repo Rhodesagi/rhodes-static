@@ -762,7 +762,9 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
     <div id="chat"></div>
 
     <div id="voice-bar">
-        <button id="voice-mode-btn" title="Toggle hands-free mode" onclick="if(typeof VoiceChat!=='undefined')VoiceChat.toggleMode()" style="display:none;">🎤 VOICE</button>
+        <button id="voice-record-btn" title="Record voice message (push-to-talk)">🎤 RECORD</button>
+        <button id="voice-mode-btn" title="Toggle hands-free mode" onclick="if(typeof VoiceChat!=='undefined')VoiceChat.toggleMode()">🎤 VOICE</button>
+        <button id="audio-toggle-btn" title="Toggle TTS audio responses">🔇 MUTED</button>
         <div style="position:relative;display:flex;">
             <button id="split-view-btn" onclick="toggleSplitModeDropdown()" title="Split mode">⊞ SPLIT ▲</button>
             <div id="split-mode-options" style="display:none;position:absolute;bottom:100%;left:0;background:var(--bg);border:1px solid var(--border);border-radius:3px;min-width:140px;z-index:1000;margin-bottom:5px;">
@@ -1038,11 +1040,11 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
     <script src="/rhodes-share.js?v=1776042574"></script>
     <script src="/rhodes-ws.js?v=1776042574"></script>
     <script src="/rhodes-media.js?v=1776042574"></script>
-        <script src="/rhodes-voice.js?v=1776042574"></script>
+        <script src="/rhodes-voice.js?v=1776972965"></script>
     <script src="/face-api.min.js?v=1776042574"></script>
     <script src="/rhodes-valence.js?v=1776042574"></script>
 <script src="/rhodes-send.js?v=1776913955"></script>
-<script src="/rhodes.js?v=1776969536"></script>
+<script src="/rhodes.js?v=1776971189"></script>
     <script src="/rhodes-split.js?v=1776910448"></script>
     <script src="/rhodes-cloud-storage.js?v=1776042574"></script>
 
@@ -1997,7 +1999,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
         // Cache-bust query param bumps whenever we edit the JSON.
         (function loadManifest() {
             try {
-                fetch('/slash-commands.json?v=20260423', { credentials: 'same-origin' })
+                fetch('/slash-commands.json?v=20260423b', { credentials: 'same-origin' })
                     .then(r => r.ok ? r.json() : null)
                     .then(data => {
                         if (data && Array.isArray(data.commands) && data.commands.length) {
@@ -2029,14 +2031,81 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
             }
             inputEl = input;
 
-            // Token-based match: split filter on whitespace, every token must
-            // appear somewhere in cmd+desc. Lets "infe e0" match
-            // "/inferrer -e0  Inferrer: Kimi-K2.5 nothink".
-            const tokens = filter.toLowerCase().trim().split(/\s+/).filter(Boolean);
-            const filtered = slashCommands.filter(c => {
-                const hay = (c.cmd + ' ' + (c.desc || '')).toLowerCase();
-                return tokens.every(t => hay.includes(t));
-            });
+            // Slot-aware composition filter.
+            //
+            // When the user's typed text parses as {base} [flag...] and {base}
+            // is a known command with siblings (e.g. /inferrer3 family), show:
+            //   (a) exact / prefix matches of the typed text
+            //   (b) composed entries = userText + ' ' + sibling-tail, where
+            //       sibling-tail occupies a slot the user hasn't filled yet.
+            // Slots are mutually exclusive within themselves; 'other' never blocks.
+            function slotOfTail(tail) {
+                const t = (tail || '').trim().toLowerCase();
+                if (t === '--no-max' || t.startsWith('--max')) return 'max';
+                if (t.startsWith('--mode')) return 'mode';
+                if (/^-[a-z]0?$/.test(t)) return 'provider';
+                if (['on','off','status','go','continue'].indexOf(t) >= 0) return 'action';
+                return 'other';
+            }
+            function tokenSlot(tok) {
+                // Standalone word (no leading dash) → could be an action or a --mode arg.
+                // We tag --mode's arg as 'mode_arg' so it doesn't also block actions.
+                const t = (tok || '').toLowerCase();
+                if (t === '--no-max' || t.startsWith('--max')) return 'max';
+                if (t.startsWith('--mode')) return 'mode';
+                if (/^-[a-z]0?$/.test(t)) return 'provider';
+                if (['on','off','status','go','continue'].indexOf(t) >= 0) return 'action';
+                return 'other';
+            }
+            function composeCompletions(filterStr) {
+                const trimmed = (filterStr || '').trim();
+                const parts = trimmed.split(/\s+/).filter(Boolean);
+                const userText = '/' + trimmed;
+                const userLower = userText.toLowerCase();
+                if (parts.length === 0) return slashCommands.slice();
+                const baseCmd = '/' + parts[0];
+                const baseLower = baseCmd.toLowerCase();
+                const siblings = slashCommands.filter(c =>
+                    c.cmd.toLowerCase() === baseLower ||
+                    c.cmd.toLowerCase().startsWith(baseLower + ' ')
+                );
+                if (siblings.length <= 1) {
+                    // No composable family — fall back to token-contains.
+                    const toks = parts.map(t => t.toLowerCase());
+                    return slashCommands.filter(c => {
+                        const hay = (c.cmd + ' ' + (c.desc || '')).toLowerCase();
+                        return toks.every(t => hay.includes(t));
+                    });
+                }
+                // Composition mode.
+                const typedFlagTokens = parts.slice(1);
+                const filledSlots = new Set();
+                typedFlagTokens.forEach(tok => {
+                    const s = tokenSlot(tok);
+                    if (s !== 'other') filledSlots.add(s);
+                });
+                const out = [];
+                const seen = new Set();
+                for (const s of siblings) {
+                    const lower = s.cmd.toLowerCase();
+                    if (lower === userLower || lower.startsWith(userLower + ' ') || lower.startsWith(userLower)) {
+                        if (!seen.has(s.cmd)) { seen.add(s.cmd); out.push(s); }
+                        continue;
+                    }
+                    if (s.cmd === baseCmd) continue;
+                    const tail = s.cmd.substring(baseCmd.length + 1);
+                    const siblingSlot = slotOfTail(tail);
+                    if (filledSlots.has(siblingSlot) && siblingSlot !== 'other') continue;
+                    if (typedFlagTokens.some(t => t.toLowerCase() === tail.toLowerCase())) continue;
+                    const composedCmd = userText + ' ' + tail;
+                    if (!seen.has(composedCmd)) {
+                        seen.add(composedCmd);
+                        out.push({ cmd: composedCmd, desc: s.desc });
+                    }
+                }
+                return out;
+            }
+            const filtered = composeCompletions(filter);
 
             if (filtered.length === 0) {
                 hideDropdown();

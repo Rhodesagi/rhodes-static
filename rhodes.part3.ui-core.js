@@ -1303,6 +1303,39 @@ function showDownloads() {
                             const injPayload = takePendingInjectionDebugPayload(msg.payload.req_id || activeReqId || null);
                             if (injPayload) attachInjectedArticles(window.streamingMsgEl, injPayload);
                         }
+                        // Inferrer banner — also attach in the streaming-finalize branch so
+                        // rewrites delivered via fork_continue / late ai_message don't miss
+                        // the banner attach when the non-streaming branch never runs.
+                        // Gated to user_2 (Sebastian) + user_3 (markbass) via isAdmin.
+                        try {
+                            if (window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin
+                                && window.streamingMsgEl
+                                && msg.payload && msg.payload.inferrer_inversion
+                                && typeof msg.payload.inferrer_inverted_refusal === 'string') {
+                                console.log('[INFERRER-BANNER] streaming-finalize path; attaching', {
+                                    version: msg.payload.inferrer3_role ? 'v3' : (msg.payload.inferrer2_mode ? 'v2' : 'v1'),
+                                    mode: msg.payload.inferrer3_mode || msg.payload.inferrer2_mode || null,
+                                    role: msg.payload.inferrer3_role || null,
+                                    rewrite_len: (msg.payload.content || '').length,
+                                    refusal_len: (msg.payload.inferrer_inverted_refusal || '').length,
+                                });
+                                var _inferrerOpts = {};
+                                if (msg.payload.inferrer3_role) {
+                                    _inferrerOpts.version = 'v3';
+                                    _inferrerOpts.role = msg.payload.inferrer3_role;
+                                    _inferrerOpts.mode = msg.payload.inferrer3_mode || null;
+                                } else if (msg.payload.inferrer2_mode) {
+                                    _inferrerOpts.version = 'v2';
+                                    _inferrerOpts.mode = msg.payload.inferrer2_mode;
+                                } else {
+                                    _inferrerOpts.version = 'v1';
+                                    _inferrerOpts.pushExtension = !!(typeof msg.payload.inferrer_push_extension === 'string' && msg.payload.inferrer_push_extension.length > 0);
+                                }
+                                if (typeof msg.payload.inferrer_raw_opener === 'string') _inferrerOpts.opener = msg.payload.inferrer_raw_opener;
+                                if (typeof msg.payload.inferrer_push_extension === 'string') _inferrerOpts.extension = msg.payload.inferrer_push_extension;
+                                attachInferrerInversionToggle(window.streamingMsgEl, msg.payload.content, msg.payload.inferrer_inverted_refusal, _inferrerOpts);
+                            }
+                        } catch (_e) { console.error('[INFERRER-BANNER] streaming-finalize attach failed', _e); }
                         window.streamingMsgEl = null;
                         window.streamingContent = '';
                         window._streamReqId = null;
@@ -1397,7 +1430,16 @@ function showDownloads() {
                         });
                         if (node && reqId) node.dataset.reqId = reqId;
                         // Inferrer rewrite banner: payload carries both texts + version/mode/role meta
-                        if (node && msg.payload && msg.payload.inferrer_inversion && typeof msg.payload.inferrer_inverted_refusal === 'string') {
+                        // Gated to user_2 (Sebastian) + user_3 (markbass) via RHODES_CONFIG.isAdmin.
+                        if (node && msg.payload && msg.payload.inferrer_inversion && typeof msg.payload.inferrer_inverted_refusal === 'string'
+                            && window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin) {
+                            console.log('[INFERRER-BANNER] non-streaming path; attaching', {
+                                version: msg.payload.inferrer3_role ? 'v3' : (msg.payload.inferrer2_mode ? 'v2' : 'v1'),
+                                mode: msg.payload.inferrer3_mode || msg.payload.inferrer2_mode || null,
+                                role: msg.payload.inferrer3_role || null,
+                                rewrite_len: (msg.payload.content || '').length,
+                                refusal_len: (msg.payload.inferrer_inverted_refusal || '').length,
+                            });
                             try {
                                 var inferrerOpts = {};
                                 if (msg.payload.inferrer3_role) {
@@ -2367,18 +2409,30 @@ function attachInferrerInversionToggle(bubbleNode, inversionText, refusalText, o
         subLabel = version;
     }
 
-    // Find the bubble's text container
-    var contentEl = bubbleNode.querySelector('.message-text, .msg-text, .content, .message-content');
+    // Find the bubble's text container.
+    // Priority order: known content classes first, then fall through to the
+    // first non-chrome child. Explicitly skip avatars / headers / metadata /
+    // footers / response-time spans / our own banner & toggle wraps — and
+    // anything without a .textContent that looks like a message body.
+    var contentEl = bubbleNode.querySelector('.message-text, .msg-text, .message-content, .msg-content, .content, .msg-body, .message-body');
     if (!contentEl) {
+        var _skipClasses = [
+            'msg-response-time', 'inferrer-toggle-wrap', 'inferrer-rewrite-banner',
+            'msg-avatar', 'msg-header', 'msg-meta', 'msg-footer', 'msg-timestamp',
+            'avatar', 'header', 'meta', 'footer', 'timestamp', 'user-label', 'role-label'
+        ];
         for (var i = 0; i < bubbleNode.children.length; i++) {
             var ch = bubbleNode.children[i];
-            if (ch.tagName
-                && !ch.classList.contains('msg-response-time')
-                && !ch.classList.contains('inferrer-toggle-wrap')
-                && !ch.classList.contains('inferrer-rewrite-banner')) {
-                contentEl = ch;
-                break;
+            if (!ch.tagName) continue;
+            var skip = false;
+            for (var _k = 0; _k < _skipClasses.length; _k++) {
+                if (ch.classList.contains(_skipClasses[_k])) { skip = true; break; }
             }
+            if (skip) continue;
+            // Prefer a child that actually has visible text content
+            var _txt = (ch.textContent || '').trim();
+            if (_txt && _txt.length > 3) { contentEl = ch; break; }
+            if (!contentEl) contentEl = ch; // last-resort fallback
         }
     }
     if (!contentEl) contentEl = bubbleNode;
