@@ -2003,6 +2003,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
         }
 
         function showDropdown(input, filter = '') {
+            if (!slashSuggestAllowed()) { hideDropdown(); return; }
             if (!dropdown) {
                 dropdown = createDropdown();
                 input.parentElement.style.position = 'relative';
@@ -2063,10 +2064,36 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
             hideDropdown();
         }
 
+        // User-id gate (2026-04-23): slash-command suggestions are only surfaced
+        // for user_2 (sebastian) and user_3 (markbass). Mirrors the ALLOWED /
+        // isAllowed pattern in rhodes.part3.ui-core.js. Whether to expose a
+        // curated subset to other users is logged as an open question in the
+        // critical_decisions PG table (slash_command_visibility_for_other_users).
+        const SLASH_SUGGEST_ALLOWED = { sebastian: 1, markbass: 1 };
+        function slashSuggestCurrentUser() {
+            try {
+                if (window.rhodesStorage && typeof window.rhodesStorage.getItem === 'function') {
+                    const v = window.rhodesStorage.getItem('rhodes_username');
+                    if (v) return String(v).toLowerCase();
+                }
+            } catch (e) {}
+            try {
+                if (window.rhodesAuth && typeof window.rhodesAuth.getCurrentUsername === 'function') {
+                    return (window.rhodesAuth.getCurrentUsername() || '').toLowerCase();
+                }
+            } catch (e) {}
+            try { return (localStorage.getItem('rhodes_username') || '').toLowerCase(); }
+            catch (e) { return ''; }
+        }
+        function slashSuggestAllowed() {
+            return Object.prototype.hasOwnProperty.call(SLASH_SUGGEST_ALLOWED, slashSuggestCurrentUser());
+        }
+
         // Listen for input events on message inputs
         document.addEventListener('input', function(e) {
             const input = e.target;
             if (input.tagName === 'INPUT' && (input.placeholder?.includes('message') || input.placeholder?.includes('Message'))) {
+                if (!slashSuggestAllowed()) { hideDropdown(); return; }
                 const val = input.value;
                 if (val.startsWith('/')) {
                     const filter = val.substring(1);
