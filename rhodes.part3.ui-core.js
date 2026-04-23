@@ -1654,7 +1654,7 @@ function showDownloads() {
                             }
                         }
                         // Show model info if present (helps user know what mode they're in)
-                        const sessionModel = msg.payload.model || '';
+                        const sessionModel = msg.payload.model_alias || msg.payload.model || '';
                         if (typeof window.updateValenceContext === 'function') {
                             window.updateValenceContext(null, null, sessionModel || null);
                         }
