@@ -43,7 +43,7 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
 
         if (options.enableRVersionSwitch) {
             if (options.enableRVersionNumericSuffix) {
-                const rMatch = s.match(/^\/(?:r|ds|p)(\d+\.\d+)g?([abcdefgk])(\d{0,2})(\.c[abcdefgk][012]?)?(\s+.*)?$/);
+                const rMatch = s.match(/^\/(?:r|ds|p)(\d+\.\d+)g?([abcdefgjk])(\d{0,2})(\.c[abcdefgjk][012]?)?(\s+.*)?$/);
                 if (rMatch) {
                     const version = rMatch[1];
                     const variant = rMatch[2];
@@ -55,7 +55,7 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
                     return { flag, model, rest };
                 }
             } else {
-                const rMatch = s.match(/^\/(?:r|ds|p)(\d+\.\d+)g?([abcdefgk])(\.c[abcdefgk][012]?)?(\s+.*)?$/);
+                const rMatch = s.match(/^\/(?:r|ds|p)(\d+\.\d+)g?([abcdefgjk])(\.c[abcdefgjk][012]?)?(\s+.*)?$/);
                 if (rMatch) {
                     const version = rMatch[1];
                     const variant = rMatch[2];
