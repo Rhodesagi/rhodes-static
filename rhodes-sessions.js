@@ -301,18 +301,55 @@ window.installRhodesSessionUi = function installRhodesSessionUi(deps) {
 
             if (resp.ok) {
                 const data = await resp.json();
-                const ftsSessionIds = new Set((data.results || []).map(r => r.session_id));
-                const allMatchIds = new Set([...ftsSessionIds, ...metaHits.map(s => s.session_id)]);
-                const combinedResults = (window.sessionsData || []).filter(s => allMatchIds.has(s.session_id));
+                const ftsResults = Array.isArray(data.results) ? data.results : [];
+                const loadedById = {};
+                (window.sessionsData || []).forEach(s => { loadedById[s.session_id] = s; });
+
+                // Deduplicate FTS rows by session_id (keep first = highest score).
+                const ftsBySession = {};
+                ftsResults.forEach(r => {
+                    if (r && r.session_id && !ftsBySession[r.session_id]) {
+                        ftsBySession[r.session_id] = r;
+                    }
+                });
+
+                // Start with metadata-substring hits (already full session objects).
+                const resultMap = {};
+                metaHits.forEach(s => { resultMap[s.session_id] = s; });
+
+                // For each FTS hit, reuse the loaded session object if we have it,
+                // otherwise synthesize one from the FTS payload so matches in
+                // un-loaded (older) sessions still surface.
+                Object.keys(ftsBySession).forEach(sid => {
+                    const r = ftsBySession[sid];
+                    let s = loadedById[sid];
+                    if (!s) {
+                        s = {
+                            session_id: sid,
+                            title: r.title || sid,
+                            model: r.model || '',
+                            message_count: (r.message_count != null ? r.message_count : 0),
+                            created_at: r.session_created_at || r.created_at || '',
+                            updated_at: r.updated_at || r.created_at || '',
+                            metadata: r.metadata || null,
+                            _fromFts: true,
+                        };
+                    }
+                    s._searchSnippet = r.snippet || s._searchSnippet;
+                    resultMap[sid] = s;
+                });
+
+                const combinedResults = Object.values(resultMap);
+
+                // Sort by updated_at desc so older matching sessions interleave
+                // with recent metadata hits in a sensible order.
+                combinedResults.sort((a, b) => {
+                    const aTs = Date.parse(a.updated_at || a.created_at || '') || 0;
+                    const bTs = Date.parse(b.updated_at || b.created_at || '') || 0;
+                    return bTs - aTs;
+                });
 
                 if (combinedResults.length > 0) {
-                    const snippetMap = {};
-                    (data.results || []).forEach(r => {
-                        if (!snippetMap[r.session_id]) snippetMap[r.session_id] = r.snippet;
-                    });
-                    combinedResults.forEach(s => {
-                        if (snippetMap[s.session_id]) s._searchSnippet = snippetMap[s.session_id];
-                    });
                     renderSessions(combinedResults);
                 } else {
                     resultsDiv.innerHTML = '<div class="sessions-empty">No sessions found</div>';
