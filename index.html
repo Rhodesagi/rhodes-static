@@ -1041,8 +1041,8 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
         <script src="/rhodes-voice.js?v=1776977465"></script>
     <script src="/face-api.min.js?v=1776042574"></script>
     <script src="/rhodes-valence.js?v=1776042574"></script>
-<script src="/rhodes-send.js?v=1776989861"></script>
-<script src="/rhodes.js?v=1776989861"></script>
+<script src="/rhodes-send.js?v=1776995630"></script>
+<script src="/rhodes.js?v=1776995630"></script>
     <script src="/rhodes-split.js?v=1776910448"></script>
     <script src="/rhodes-cloud-storage.js?v=1776042574"></script>
 
@@ -2029,6 +2029,12 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
             }
             inputEl = input;
 
+            // Reset keyboard-nav state on every re-show. Without this, if the
+            // user typed more chars while a prior dropdown was up, selectedIndex
+            // from an earlier ArrowDown would persist and Enter would still
+            // hijack to a stale selection.
+            selectedIndex = -1;
+
             // Slot-aware composition filter.
             //
             // When the user's typed text parses as {base} [flag...] and {base}
@@ -2119,21 +2125,37 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
                 return;
             }
 
-            dropdown.innerHTML = filtered.map((c, i) =>
-                `<div class="slash-option${i === selectedIndex ? ' selected' : ''}" data-cmd="${c.cmd}">
-                    <span class="cmd">${c.cmd}</span>
+            dropdown.innerHTML = filtered.map((c, i) => {
+                var _pri = (typeof c.priority === 'number') ? c.priority : 0;
+                var _sendNow = _isImmediateSendCmd(c.cmd, _pri);
+                // data-send-now is read in the click handler below. Also expose
+                // a tiny visual cue (•) on immediate-send rows so mouse users
+                // know a click will fire the command rather than just fill it.
+                var _cue = _sendNow
+                    ? '<span title="click to fire" style="color:var(--green, #4ade80);margin-left:4px;">●</span>'
+                    : '';
+                return `<div class="slash-option${i === selectedIndex ? ' selected' : ''}" data-cmd="${c.cmd}" data-send-now="${_sendNow ? '1' : '0'}" data-priority="${_pri}">
+                    <span class="cmd">${c.cmd}${_cue}</span>
                     <span class="desc">${c.desc}</span>
-                </div>`
-            ).join('');
+                </div>`;
+            }).join('');
 
             dropdown.querySelectorAll('.slash-option').forEach((opt, i) => {
                 opt.addEventListener('click', () => {
-                    selectCommand(opt.dataset.cmd);
+                    var _sendNow = opt.dataset.sendNow === '1';
+                    selectCommand(opt.dataset.cmd, { sendNow: _sendNow });
                 });
-                opt.addEventListener('mouseenter', () => {
-                    selectedIndex = i;
-                    updateSelection();
-                });
+                // DO NOT set selectedIndex on mouseenter. selectedIndex is
+                // keyboard-navigation state only. If mouse hover set it, Enter
+                // would hijack send-to-server and replace the typed command
+                // with whatever the cursor was resting on. Visual hover
+                // highlight is already handled by the `:hover` CSS rule.
+                //
+                // 2026-04-24 fix: user_3_8298230b sent bare `/inferrer`
+                // instead of `/inferrer -e0 --push-further …` because mouse
+                // passed over the bare-inferrer row as the dropdown opened,
+                // mouseenter set selectedIndex=0, Enter-to-send replaced the
+                // textarea with `/inferrer`, and the next send took that.
             });
 
             dropdown.classList.add('visible');
@@ -2154,12 +2176,35 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
             });
         }
 
-        function selectCommand(cmd) {
-            if (inputEl) {
-                inputEl.value = cmd + ' ';
-                inputEl.focus();
-            }
+        // One-gesture send heuristic: a clicked dropdown row is "ready to fire"
+        // (fill textarea AND submit immediately) when it's a pre-composed recipe
+        // or a terminal action. A skeleton entry (bare command, provider-only,
+        // flag-that-needs-a-value) just fills the textarea so the user can type
+        // more. Keyboard Enter on a keyboard-selected row still only fills (not
+        // sends) — gives users a way to review before committing.
+        function _isImmediateSendCmd(cmd, priority) {
+            // Priority-100+ entries are pre-composed MAX/HIGH recipes. Click = fire.
+            if (typeof priority === 'number' && priority >= 100) return true;
+            var trimmed = (cmd || '').trim();
+            // Terminal single-word suffix — command is self-contained.
+            if (/\s(on|off|status|go|continue|halt|fire|now|next|c)$/i.test(trimmed)) return true;
+            // Bare /halt family (no trailing args needed).
+            if (/^\/halt(-inferrers?)?$/i.test(trimmed)) return true;
+            return false;
+        }
+
+        function selectCommand(cmd, opts) {
+            if (!inputEl) { hideDropdown(); return; }
+            var sendNow = !!(opts && opts.sendNow);
+            inputEl.value = cmd + (sendNow ? '' : ' ');
+            inputEl.focus();
             hideDropdown();
+            if (sendNow && typeof window.send === 'function') {
+                // Fire the global send() exported by rhodes.part4.ws-runtime.js.
+                // Same code path as the SEND button + native Enter-to-send.
+                try { window.send(); }
+                catch (e) { console.error('[SLASH-AUTOCOMPLETE] send() threw:', e); }
+            }
         }
 
         // User-id gate (2026-04-23): slash-command suggestions are only surfaced
@@ -2227,15 +2272,25 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
                 selectedIndex = Math.max(selectedIndex - 1, 0);
                 updateSelection();
             } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                // Keyboard Enter with a KEYBOARD-selected row: symmetric with
+                // mouse click — if it's an immediate-send recipe or terminal
+                // action, fire now. Otherwise fill textarea and let the user
+                // keep typing (they can Enter again to send).
                 e.preventDefault();
                 const selected = opts[selectedIndex];
-                if (selected) selectCommand(selected.dataset.cmd);
+                if (selected) {
+                    const _sendNow = selected.dataset.sendNow === '1';
+                    selectCommand(selected.dataset.cmd, { sendNow: _sendNow });
+                }
             } else if (e.key === 'Escape') {
                 hideDropdown();
             } else if (e.key === 'Tab' && selectedIndex >= 0) {
+                // Tab is always fill-only (classic tab-complete), never sends.
+                // Gives keyboard users a way to take a suggestion and edit it
+                // regardless of whether it's a recipe.
                 e.preventDefault();
                 const selected = opts[selectedIndex];
-                if (selected) selectCommand(selected.dataset.cmd);
+                if (selected) selectCommand(selected.dataset.cmd, { sendNow: false });
             }
         });
 
