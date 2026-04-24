@@ -1034,15 +1034,15 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
     <script src="/credentials-popup.js?v=1776042574"></script>
     <script src="/rhodes-tools.js?v=1776042574"></script>
     <script src="/rhodes-sessions.js?v=1776908978"></script>
-    <script src="/rhodes-auth.js?v=1776042574"></script>
+    <script src="/rhodes-auth.js?v=1776988763"></script>
     <script src="/rhodes-share.js?v=1776042574"></script>
     <script src="/rhodes-ws.js?v=1776042574"></script>
     <script src="/rhodes-media.js?v=1776042574"></script>
         <script src="/rhodes-voice.js?v=1776977465"></script>
     <script src="/face-api.min.js?v=1776042574"></script>
     <script src="/rhodes-valence.js?v=1776042574"></script>
-<script src="/rhodes-send.js?v=1776913955"></script>
-<script src="/rhodes.js?v=1776971189"></script>
+<script src="/rhodes-send.js?v=1776988763"></script>
+<script src="/rhodes.js?v=1776988763"></script>
     <script src="/rhodes-split.js?v=1776910448"></script>
     <script src="/rhodes-cloud-storage.js?v=1776042574"></script>
 
@@ -1997,7 +1997,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
         // Cache-bust query param bumps whenever we edit the JSON.
         (function loadManifest() {
             try {
-                fetch('/slash-commands.json?v=20260423b', { credentials: 'same-origin' })
+                fetch('/slash-commands.json?v=20260423c', { credentials: 'same-origin' })
                     .then(r => r.ok ? r.json() : null)
                     .then(data => {
                         if (data && Array.isArray(data.commands) && data.commands.length) {
@@ -2098,9 +2098,18 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
                     const composedCmd = userText + ' ' + tail;
                     if (!seen.has(composedCmd)) {
                         seen.add(composedCmd);
-                        out.push({ cmd: composedCmd, desc: s.desc });
+                        out.push({ cmd: composedCmd, desc: s.desc, priority: s.priority });
                     }
                 }
+                // Stable priority sort: higher priority first, preserve insertion
+                // order within the same priority tier. Priority comes from the
+                // manifest entry; defaults to 0. Composed entries inherit the
+                // sibling-tail's priority (see composition branch above).
+                out.sort(function(a, b) {
+                    var pa = (typeof a.priority === 'number') ? a.priority : 0;
+                    var pb = (typeof b.priority === 'number') ? b.priority : 0;
+                    return pb - pa;
+                });
                 return out;
             }
             const filtered = composeCompletions(filter);

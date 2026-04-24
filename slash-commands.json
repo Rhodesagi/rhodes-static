@@ -1,180 +1,1106 @@
 {
   "version": "2026-04-23b",
   "commands": [
-    { "cmd": "/model", "desc": "Switch AI model (e.g. /model bap-ea-d)", "cat": "core" },
-    { "cmd": "/split", "desc": "Toggle 4-terminal split", "cat": "core" },
-    { "cmd": "/clear", "desc": "Clear chat history", "cat": "core" },
-    { "cmd": "/help", "desc": "Show help", "cat": "core" },
-    { "cmd": "/rounds", "desc": "Disclose tool-round counts", "cat": "core" },
-    { "cmd": "/halt", "desc": "Halt current generation", "cat": "core" },
-
-    { "cmd": "/shared", "desc": "Full inter-instance messaging", "cat": "shared" },
-    { "cmd": "/shared:public", "desc": "Broadcast only (no private)", "cat": "shared" },
-    { "cmd": "/shared:segregated", "desc": "Awareness only", "cat": "shared" },
-    { "cmd": "/shared:segregated:fully", "desc": "Isolated (messaging disabled)", "cat": "shared" },
-
-    { "cmd": "/inferrer", "desc": "Toggle inferrer (same model as target)", "cat": "inferrer" },
-    { "cmd": "/inferrer -e0", "desc": "Inferrer: Kimi-K2.5 nothink (default)", "cat": "inferrer" },
-    { "cmd": "/inferrer -a",  "desc": "Inferrer provider: Opus",       "cat": "inferrer" },
-    { "cmd": "/inferrer -b",  "desc": "Inferrer provider: Sonnet",     "cat": "inferrer" },
-    { "cmd": "/inferrer -c",  "desc": "Inferrer provider: Haiku",      "cat": "inferrer" },
-    { "cmd": "/inferrer -d",  "desc": "Inferrer provider: DeepSeek",   "cat": "inferrer" },
-    { "cmd": "/inferrer -e",  "desc": "Inferrer provider: Kimi-K2.5",  "cat": "inferrer" },
-    { "cmd": "/inferrer -f",  "desc": "Inferrer provider: Grok",       "cat": "inferrer" },
-    { "cmd": "/inferrer -g",  "desc": "Inferrer provider: GLM",        "cat": "inferrer" },
-    { "cmd": "/inferrer -k",  "desc": "Inferrer provider: Kimi-K2.6",  "cat": "inferrer" },
-    { "cmd": "/inferrer -a0", "desc": "Inferrer: Opus nothink",        "cat": "inferrer" },
-    { "cmd": "/inferrer -b0", "desc": "Inferrer: Sonnet nothink",      "cat": "inferrer" },
-    { "cmd": "/inferrer -d0", "desc": "Inferrer: DeepSeek nothink",    "cat": "inferrer" },
-    { "cmd": "/inferrer -f0", "desc": "Inferrer: Grok nothink",        "cat": "inferrer" },
-    { "cmd": "/inferrer -g0", "desc": "Inferrer: GLM nothink",         "cat": "inferrer" },
-    { "cmd": "/inferrer -k0", "desc": "Inferrer: Kimi-K2.6 nothink",   "cat": "inferrer" },
-    { "cmd": "/inferrer on",       "desc": "Enable inferrer",                       "cat": "inferrer" },
-    { "cmd": "/inferrer off",      "desc": "Disable inferrer",                      "cat": "inferrer" },
-    { "cmd": "/inferrer status",   "desc": "Show inferrer state",                   "cat": "inferrer" },
-    { "cmd": "/inferrer go",       "desc": "Manual fire: force rewrite on last turn","cat": "inferrer" },
-    { "cmd": "/inferrer continue", "desc": "Silent fork_continue",                  "cat": "inferrer" },
-    { "cmd": "/inferrer --max",          "desc": "Set max auto-turns (/inferrer --max N)", "cat": "inferrer" },
-    { "cmd": "/inferrer --no-max",       "desc": "Unlimited auto-turns",                   "cat": "inferrer" },
-    { "cmd": "/inferrer --mode rewrite", "desc": "Inferrer mode: rewrite",                 "cat": "inferrer" },
-    { "cmd": "/inferrer --mode prefill", "desc": "Inferrer mode: autonomy_prefill (default)","cat": "inferrer" },
-    { "cmd": "/halt-inferrer",  "desc": "Halt current inferrer run",    "cat": "inferrer" },
-    { "cmd": "/halt-inferrers", "desc": "Halt every active inferrer",   "cat": "inferrer" },
-
-    { "cmd": "/inferrer2", "desc": "Toggle inferrer2 (parallel slot)", "cat": "inferrer2" },
-    { "cmd": "/inferrer2 -e0", "desc": "Inferrer2: Kimi-K2.5 nothink (default)", "cat": "inferrer2" },
-    { "cmd": "/inferrer2 -a",  "desc": "Inferrer2 provider: Opus",      "cat": "inferrer2" },
-    { "cmd": "/inferrer2 -b",  "desc": "Inferrer2 provider: Sonnet",    "cat": "inferrer2" },
-    { "cmd": "/inferrer2 -c",  "desc": "Inferrer2 provider: Haiku",     "cat": "inferrer2" },
-    { "cmd": "/inferrer2 -d",  "desc": "Inferrer2 provider: DeepSeek",  "cat": "inferrer2" },
-    { "cmd": "/inferrer2 -e",  "desc": "Inferrer2 provider: Kimi-K2.5", "cat": "inferrer2" },
-    { "cmd": "/inferrer2 -f",  "desc": "Inferrer2 provider: Grok",      "cat": "inferrer2" },
-    { "cmd": "/inferrer2 -g",  "desc": "Inferrer2 provider: GLM",       "cat": "inferrer2" },
-    { "cmd": "/inferrer2 -k",  "desc": "Inferrer2 provider: Kimi-K2.6", "cat": "inferrer2" },
-    { "cmd": "/inferrer2 -a0", "desc": "Inferrer2: Opus nothink",       "cat": "inferrer2" },
-    { "cmd": "/inferrer2 -b0", "desc": "Inferrer2: Sonnet nothink",     "cat": "inferrer2" },
-    { "cmd": "/inferrer2 -d0", "desc": "Inferrer2: DeepSeek nothink",   "cat": "inferrer2" },
-    { "cmd": "/inferrer2 -f0", "desc": "Inferrer2: Grok nothink",       "cat": "inferrer2" },
-    { "cmd": "/inferrer2 -g0", "desc": "Inferrer2: GLM nothink",        "cat": "inferrer2" },
-    { "cmd": "/inferrer2 -k0", "desc": "Inferrer2: Kimi-K2.6 nothink",  "cat": "inferrer2" },
-    { "cmd": "/inferrer2 on",       "desc": "Enable inferrer2",             "cat": "inferrer2" },
-    { "cmd": "/inferrer2 off",      "desc": "Disable inferrer2",            "cat": "inferrer2" },
-    { "cmd": "/inferrer2 status",   "desc": "Show inferrer2 state",         "cat": "inferrer2" },
-    { "cmd": "/inferrer2 go",       "desc": "Manual fire inferrer2",        "cat": "inferrer2" },
-    { "cmd": "/inferrer2 continue", "desc": "Silent fork_continue on inferrer2", "cat": "inferrer2" },
-    { "cmd": "/inferrer2 --max",          "desc": "Inferrer2: set max auto-turns",    "cat": "inferrer2" },
-    { "cmd": "/inferrer2 --no-max",       "desc": "Inferrer2: unlimited auto-turns",  "cat": "inferrer2" },
-    { "cmd": "/inferrer2 --mode rewrite", "desc": "Inferrer2 mode: rewrite",          "cat": "inferrer2" },
-    { "cmd": "/inferrer2 --mode prefill", "desc": "Inferrer2 mode: autonomy_prefill", "cat": "inferrer2" },
-
-    { "cmd": "/inferrer3", "desc": "Toggle inferrer3 (third parallel slot)", "cat": "inferrer3" },
-    { "cmd": "/inferrer3 -e0", "desc": "Inferrer3: Kimi-K2.5 nothink (default)", "cat": "inferrer3" },
-    { "cmd": "/inferrer3 -a",  "desc": "Inferrer3 provider: Opus",      "cat": "inferrer3" },
-    { "cmd": "/inferrer3 -b",  "desc": "Inferrer3 provider: Sonnet",    "cat": "inferrer3" },
-    { "cmd": "/inferrer3 -c",  "desc": "Inferrer3 provider: Haiku",     "cat": "inferrer3" },
-    { "cmd": "/inferrer3 -d",  "desc": "Inferrer3 provider: DeepSeek",  "cat": "inferrer3" },
-    { "cmd": "/inferrer3 -e",  "desc": "Inferrer3 provider: Kimi-K2.5", "cat": "inferrer3" },
-    { "cmd": "/inferrer3 -f",  "desc": "Inferrer3 provider: Grok",      "cat": "inferrer3" },
-    { "cmd": "/inferrer3 -g",  "desc": "Inferrer3 provider: GLM",       "cat": "inferrer3" },
-    { "cmd": "/inferrer3 -k",  "desc": "Inferrer3 provider: Kimi-K2.6", "cat": "inferrer3" },
-    { "cmd": "/inferrer3 -a0", "desc": "Inferrer3: Opus nothink",       "cat": "inferrer3" },
-    { "cmd": "/inferrer3 -b0", "desc": "Inferrer3: Sonnet nothink",     "cat": "inferrer3" },
-    { "cmd": "/inferrer3 -d0", "desc": "Inferrer3: DeepSeek nothink",   "cat": "inferrer3" },
-    { "cmd": "/inferrer3 -f0", "desc": "Inferrer3: Grok nothink",       "cat": "inferrer3" },
-    { "cmd": "/inferrer3 -g0", "desc": "Inferrer3: GLM nothink",        "cat": "inferrer3" },
-    { "cmd": "/inferrer3 -k0", "desc": "Inferrer3: Kimi-K2.6 nothink",  "cat": "inferrer3" },
-    { "cmd": "/inferrer3 on",       "desc": "Enable inferrer3",             "cat": "inferrer3" },
-    { "cmd": "/inferrer3 off",      "desc": "Disable inferrer3",            "cat": "inferrer3" },
-    { "cmd": "/inferrer3 status",   "desc": "Show inferrer3 state",         "cat": "inferrer3" },
-    { "cmd": "/inferrer3 go",       "desc": "Manual fire inferrer3",        "cat": "inferrer3" },
-    { "cmd": "/inferrer3 continue", "desc": "Silent fork_continue on inferrer3", "cat": "inferrer3" },
-    { "cmd": "/inferrer3 --max",          "desc": "Inferrer3: set max auto-turns",    "cat": "inferrer3" },
-    { "cmd": "/inferrer3 --no-max",       "desc": "Inferrer3: unlimited auto-turns",  "cat": "inferrer3" },
-    { "cmd": "/inferrer3 --mode rewrite", "desc": "Inferrer3 mode: rewrite",          "cat": "inferrer3" },
-    { "cmd": "/inferrer3 --mode prefill", "desc": "Inferrer3 mode: autonomy_prefill", "cat": "inferrer3" },
-
-    { "cmd": "/format-9", "desc": "Switch to format-9 mode", "cat": "format" },
-    { "cmd": "/minimal", "desc": "Minimal formatting", "cat": "format" },
-    { "cmd": "/prose", "desc": "Prose formatting", "cat": "format" },
-    { "cmd": "/max", "desc": "Max formatting", "cat": "format" },
-    { "cmd": "/rhodes-ada-format-2", "desc": "Ada format 2", "cat": "format" },
-    { "cmd": "/rhodes-ada-format-3", "desc": "Ada format 3", "cat": "format" },
-    { "cmd": "/rhodes-ada-format-4", "desc": "Ada format 4", "cat": "format" },
-    { "cmd": "/rhodes-ada-format-5", "desc": "Ada format 5", "cat": "format" },
-    { "cmd": "/rhodes-ada-format-6", "desc": "Ada format 6", "cat": "format" },
-    { "cmd": "/rhodes-ada-format-7", "desc": "Ada format 7", "cat": "format" },
-    { "cmd": "/rhodes-ada-format-8", "desc": "Ada format 8", "cat": "format" },
-    { "cmd": "/rhodes-ada-format-9", "desc": "Ada format 9", "cat": "format" },
-    { "cmd": "/rhodes-alpha-format-2", "desc": "Alpha format 2", "cat": "format" },
-    { "cmd": "/rhodes-alpha-format-3", "desc": "Alpha format 3", "cat": "format" },
-    { "cmd": "/rhodes-alpha-format-4", "desc": "Alpha format 4", "cat": "format" },
-    { "cmd": "/rhodes-alpha-format-5", "desc": "Alpha format 5", "cat": "format" },
-    { "cmd": "/rhodes-alpha-format-6", "desc": "Alpha format 6", "cat": "format" },
-    { "cmd": "/rhodes-alpha-format-7", "desc": "Alpha format 7", "cat": "format" },
-    { "cmd": "/rhodes-alpha-format-8", "desc": "Alpha format 8", "cat": "format" },
-    { "cmd": "/rhodes-alpha-format-9", "desc": "Alpha format 9", "cat": "format" },
-    { "cmd": "/rhodes-beta-format-2", "desc": "Beta format 2", "cat": "format" },
-    { "cmd": "/rhodes-beta-format-3", "desc": "Beta format 3", "cat": "format" },
-    { "cmd": "/rhodes-beta-format-4", "desc": "Beta format 4", "cat": "format" },
-    { "cmd": "/rhodes-beta-format-5", "desc": "Beta format 5", "cat": "format" },
-    { "cmd": "/rhodes-beta-format-6", "desc": "Beta format 6", "cat": "format" },
-    { "cmd": "/rhodes-beta-format-7", "desc": "Beta format 7", "cat": "format" },
-    { "cmd": "/rhodes-beta-format-8", "desc": "Beta format 8", "cat": "format" },
-    { "cmd": "/rhodes-beta-format-9", "desc": "Beta format 9", "cat": "format" },
-    { "cmd": "/rhodes-delta-format-2", "desc": "Delta format 2", "cat": "format" },
-    { "cmd": "/rhodes-delta-format-3", "desc": "Delta format 3", "cat": "format" },
-    { "cmd": "/rhodes-delta-format-4", "desc": "Delta format 4", "cat": "format" },
-    { "cmd": "/rhodes-delta-format-5", "desc": "Delta format 5", "cat": "format" },
-    { "cmd": "/rhodes-delta-format-6", "desc": "Delta format 6", "cat": "format" },
-    { "cmd": "/rhodes-delta-format-7", "desc": "Delta format 7", "cat": "format" },
-    { "cmd": "/rhodes-delta-format-8", "desc": "Delta format 8", "cat": "format" },
-    { "cmd": "/rhodes-delta-format-9", "desc": "Delta format 9", "cat": "format" },
-
-    { "cmd": "/direct", "desc": "Direct mode (no injections)", "cat": "session" },
-    { "cmd": "/duo", "desc": "Duo mode", "cat": "session" },
-    { "cmd": "/duo-max", "desc": "Duo mode with max settings", "cat": "session" },
-    { "cmd": "/solo", "desc": "Solo mode", "cat": "session" },
-    { "cmd": "/tandem", "desc": "Tandem mode", "cat": "session" },
-    { "cmd": "/supervised", "desc": "Supervised mode", "cat": "session" },
-    { "cmd": "/oversight", "desc": "Enable oversight", "cat": "session" },
-    { "cmd": "/plan", "desc": "Planning mode", "cat": "session" },
-    { "cmd": "/verified", "desc": "Mark commander-verified", "cat": "session" },
-    { "cmd": "/verify-e", "desc": "Verify via Kimi-K2.5", "cat": "session" },
-    { "cmd": "/noverify", "desc": "Skip verification", "cat": "session" },
-
-    { "cmd": "/no-think", "desc": "Disable model thinking", "cat": "think" },
-    { "cmd": "/nothink", "desc": "Disable model thinking (alias)", "cat": "think" },
-    { "cmd": "/no-think-deferred", "desc": "Disable thinking + deferred tools", "cat": "think" },
-
-    { "cmd": "/deferred", "desc": "Enable deferred tools", "cat": "tools" },
-    { "cmd": "/deferred-ru", "desc": "Deferred tools (Russian)", "cat": "tools" },
-    { "cmd": "/french-deferred", "desc": "Deferred tools (French)", "cat": "tools" },
-    { "cmd": "/german-deferred", "desc": "Deferred tools (German)", "cat": "tools" },
-    { "cmd": "/german-english-deferred", "desc": "Deferred tools (German-English)", "cat": "tools" },
-    { "cmd": "/latin-deferred", "desc": "Deferred tools (Latin)", "cat": "tools" },
-    { "cmd": "/latin-french-deferred", "desc": "Deferred tools (Latin-French)", "cat": "tools" },
-
-    { "cmd": "/rapira", "desc": "Rapira programming language mode", "cat": "lang" },
-    { "cmd": "/plankalkul", "desc": "Plankalkül programming language mode", "cat": "lang" },
-    { "cmd": "/zuse", "desc": "Zuse mode", "cat": "lang" },
-    { "cmd": "/soviet", "desc": "Soviet mode", "cat": "lang" },
-
-    { "cmd": "/cia", "desc": "CIA persona", "cat": "persona" },
-    { "cmd": "/fbi", "desc": "FBI persona", "cat": "persona" },
-    { "cmd": "/nsa", "desc": "NSA persona", "cat": "persona" },
-    { "cmd": "/dia", "desc": "DIA persona", "cat": "persona" },
-    { "cmd": "/military", "desc": "Military persona", "cat": "persona" },
-    { "cmd": "/civilian", "desc": "Civilian persona", "cat": "persona" },
-    { "cmd": "/accord", "desc": "Accord mode", "cat": "persona" },
-    { "cmd": "/epsilon-h", "desc": "Epsilon-H mode", "cat": "persona" },
-    { "cmd": "/guide", "desc": "Guide mode", "cat": "persona" },
-    { "cmd": "/name", "desc": "Set display name", "cat": "persona" },
-
-    { "cmd": "/restrict", "desc": "Re-enable Rhodes sandbox for a user", "cat": "admin" },
-    { "cmd": "/unrestrict", "desc": "Elevate user_3 out of sandbox (user_3 only)", "cat": "admin" },
-
-    { "cmd": "/sound", "desc": "Toggle notification sound", "cat": "frontend" },
-    { "cmd": "/credentials", "desc": "Show saved credentials", "cat": "frontend" },
-    { "cmd": "/creds", "desc": "Show saved credentials (alias)", "cat": "frontend" }
-  ]
+    {
+      "cmd": "/inferrer -e0 --push-further --always-judge --verify on --no-max",
+      "desc": "MAX v1: Kimi-K2.5 nothink \u00b7 push further \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "cat": "inferrer",
+      "priority": 120
+    },
+    {
+      "cmd": "/inferrer -k --push-further --always-judge --verify on --no-max",
+      "desc": "MAX v1: Kimi-K2.6 \u00b7 push further \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "cat": "inferrer",
+      "priority": 118
+    },
+    {
+      "cmd": "/inferrer -d0 --push-further --always-judge --verify on --no-max",
+      "desc": "MAX v1: DeepSeek nothink \u00b7 push further \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "cat": "inferrer",
+      "priority": 116
+    },
+    {
+      "cmd": "/inferrer --always-judge --verify on --no-max",
+      "desc": "HIGH v1: judge all \u00b7 verify \u00b7 unlimited (same-as-target provider)",
+      "cat": "inferrer",
+      "priority": 105
+    },
+    {
+      "cmd": "/inferrer --push-further",
+      "desc": "v1: clone extends after opener (substance)",
+      "cat": "inferrer",
+      "priority": 70
+    },
+    {
+      "cmd": "/inferrer --always-judge",
+      "desc": "v1: judge every response, bypass regex gate",
+      "cat": "inferrer",
+      "priority": 70
+    },
+    {
+      "cmd": "/inferrer --no-max",
+      "desc": "v1: unlimited auto-turns",
+      "cat": "inferrer",
+      "priority": 70
+    },
+    {
+      "cmd": "/inferrer --verify on",
+      "desc": "v1: hallucination judge ON",
+      "cat": "inferrer",
+      "priority": 55
+    },
+    {
+      "cmd": "/inferrer --mode rewrite",
+      "desc": "v1: mode=rewrite (full clone rewrite)",
+      "cat": "inferrer",
+      "priority": 60
+    },
+    {
+      "cmd": "/inferrer --mode prefill",
+      "desc": "v1: mode=prefill (autonomy prefill)",
+      "cat": "inferrer",
+      "priority": 35
+    },
+    {
+      "cmd": "/inferrer --max 20",
+      "desc": "v1: cap auto-turns at 20",
+      "cat": "inferrer",
+      "priority": 45
+    },
+    {
+      "cmd": "/inferrer --max 10",
+      "desc": "v1: cap auto-turns at 10 (default)",
+      "cat": "inferrer",
+      "priority": 40
+    },
+    {
+      "cmd": "/inferrer --idle 30",
+      "desc": "v1: auto-fire after 30s silence",
+      "cat": "inferrer",
+      "priority": 45
+    },
+    {
+      "cmd": "/inferrer --idle 60",
+      "desc": "v1: auto-fire after 60s silence",
+      "cat": "inferrer",
+      "priority": 45
+    },
+    {
+      "cmd": "/inferrer -e0",
+      "desc": "v1 provider: Kimi-K2.5 nothink (default)",
+      "cat": "inferrer",
+      "priority": 14
+    },
+    {
+      "cmd": "/inferrer -e",
+      "desc": "v1 provider: Kimi-K2.5",
+      "cat": "inferrer",
+      "priority": 13
+    },
+    {
+      "cmd": "/inferrer -k",
+      "desc": "v1 provider: Kimi-K2.6",
+      "cat": "inferrer",
+      "priority": 13
+    },
+    {
+      "cmd": "/inferrer -k0",
+      "desc": "v1 provider: Kimi-K2.6 nothink",
+      "cat": "inferrer",
+      "priority": 13
+    },
+    {
+      "cmd": "/inferrer -d",
+      "desc": "v1 provider: DeepSeek",
+      "cat": "inferrer",
+      "priority": 13
+    },
+    {
+      "cmd": "/inferrer -d0",
+      "desc": "v1 provider: DeepSeek nothink",
+      "cat": "inferrer",
+      "priority": 12
+    },
+    {
+      "cmd": "/inferrer -g",
+      "desc": "v1 provider: GLM",
+      "cat": "inferrer",
+      "priority": 12
+    },
+    {
+      "cmd": "/inferrer -g0",
+      "desc": "v1 provider: GLM nothink",
+      "cat": "inferrer",
+      "priority": 12
+    },
+    {
+      "cmd": "/inferrer -a",
+      "desc": "v1 provider: Opus",
+      "cat": "inferrer",
+      "priority": 12
+    },
+    {
+      "cmd": "/inferrer -b",
+      "desc": "v1 provider: Sonnet",
+      "cat": "inferrer",
+      "priority": 11
+    },
+    {
+      "cmd": "/inferrer -f",
+      "desc": "v1 provider: Grok",
+      "cat": "inferrer",
+      "priority": 11
+    },
+    {
+      "cmd": "/inferrer -f0",
+      "desc": "v1 provider: Grok nothink",
+      "cat": "inferrer",
+      "priority": 11
+    },
+    {
+      "cmd": "/inferrer -c",
+      "desc": "v1 provider: Haiku",
+      "cat": "inferrer",
+      "priority": 11
+    },
+    {
+      "cmd": "/inferrer on",
+      "desc": "v1: enable",
+      "cat": "inferrer",
+      "priority": 15
+    },
+    {
+      "cmd": "/inferrer status",
+      "desc": "v1: show state",
+      "cat": "inferrer",
+      "priority": 12
+    },
+    {
+      "cmd": "/inferrer go",
+      "desc": "v1: force-fire directive now",
+      "cat": "inferrer",
+      "priority": 25
+    },
+    {
+      "cmd": "/inferrer continue",
+      "desc": "v1: silent fork_continue",
+      "cat": "inferrer",
+      "priority": 22
+    },
+    {
+      "cmd": "/inferrer verify",
+      "desc": "v1: force hallucination check on last response",
+      "cat": "inferrer",
+      "priority": 20
+    },
+    {
+      "cmd": "/inferrer --no-push",
+      "desc": "v1: disable push-further",
+      "cat": "inferrer",
+      "priority": -10
+    },
+    {
+      "cmd": "/inferrer --no-verify",
+      "desc": "v1: disable hallucination judge",
+      "cat": "inferrer",
+      "priority": -10
+    },
+    {
+      "cmd": "/inferrer --no-judge",
+      "desc": "v1: back to gated judging",
+      "cat": "inferrer",
+      "priority": -10
+    },
+    {
+      "cmd": "/inferrer --no-idle",
+      "desc": "v1: disable idle trigger",
+      "cat": "inferrer",
+      "priority": -10
+    },
+    {
+      "cmd": "/inferrer --no-invert",
+      "desc": "v1: disable refusal inversion",
+      "cat": "inferrer",
+      "priority": -15
+    },
+    {
+      "cmd": "/inferrer off",
+      "desc": "v1: disable",
+      "cat": "inferrer",
+      "priority": 5
+    },
+    {
+      "cmd": "/inferrer2 --mode rewrite -e0 --always-judge --verify on --no-max",
+      "desc": "MAX v2: Kimi-K2.5 nothink \u00b7 full rewrite \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "cat": "inferrer",
+      "priority": 119
+    },
+    {
+      "cmd": "/inferrer2 --mode prefill -e0 --always-judge --verify on --no-max",
+      "desc": "MAX v2: Kimi-K2.5 nothink \u00b7 autonomy prefill \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "cat": "inferrer",
+      "priority": 117
+    },
+    {
+      "cmd": "/inferrer2 --mode rewrite -k --always-judge --verify on --no-max",
+      "desc": "MAX v2: Kimi-K2.6 \u00b7 full rewrite \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "cat": "inferrer",
+      "priority": 115
+    },
+    {
+      "cmd": "/inferrer2 --always-judge --verify on --no-max",
+      "desc": "HIGH v2: judge all \u00b7 verify \u00b7 unlimited",
+      "cat": "inferrer",
+      "priority": 104
+    },
+    {
+      "cmd": "/inferrer2 --mode rewrite",
+      "desc": "v2: mode=rewrite (full clone rewrite)",
+      "cat": "inferrer",
+      "priority": 70
+    },
+    {
+      "cmd": "/inferrer2 --mode prefill",
+      "desc": "v2: mode=prefill (autonomy prefill, default)",
+      "cat": "inferrer",
+      "priority": 55
+    },
+    {
+      "cmd": "/inferrer2 --always-judge",
+      "desc": "v2: judge every response, bypass regex gate",
+      "cat": "inferrer",
+      "priority": 70
+    },
+    {
+      "cmd": "/inferrer2 --no-max",
+      "desc": "v2: unlimited auto-turns",
+      "cat": "inferrer",
+      "priority": 70
+    },
+    {
+      "cmd": "/inferrer2 --verify on",
+      "desc": "v2: hallucination judge ON",
+      "cat": "inferrer",
+      "priority": 55
+    },
+    {
+      "cmd": "/inferrer2 --max 20",
+      "desc": "v2: cap auto-turns at 20",
+      "cat": "inferrer",
+      "priority": 45
+    },
+    {
+      "cmd": "/inferrer2 --max 10",
+      "desc": "v2: cap auto-turns at 10 (default)",
+      "cat": "inferrer",
+      "priority": 40
+    },
+    {
+      "cmd": "/inferrer2 -e0",
+      "desc": "v2 provider: Kimi-K2.5 nothink (default)",
+      "cat": "inferrer",
+      "priority": 14
+    },
+    {
+      "cmd": "/inferrer2 -e",
+      "desc": "v2 provider: Kimi-K2.5",
+      "cat": "inferrer",
+      "priority": 13
+    },
+    {
+      "cmd": "/inferrer2 -k",
+      "desc": "v2 provider: Kimi-K2.6",
+      "cat": "inferrer",
+      "priority": 13
+    },
+    {
+      "cmd": "/inferrer2 -k0",
+      "desc": "v2 provider: Kimi-K2.6 nothink",
+      "cat": "inferrer",
+      "priority": 13
+    },
+    {
+      "cmd": "/inferrer2 -d",
+      "desc": "v2 provider: DeepSeek",
+      "cat": "inferrer",
+      "priority": 13
+    },
+    {
+      "cmd": "/inferrer2 -d0",
+      "desc": "v2 provider: DeepSeek nothink",
+      "cat": "inferrer",
+      "priority": 12
+    },
+    {
+      "cmd": "/inferrer2 -g",
+      "desc": "v2 provider: GLM",
+      "cat": "inferrer",
+      "priority": 12
+    },
+    {
+      "cmd": "/inferrer2 -g0",
+      "desc": "v2 provider: GLM nothink",
+      "cat": "inferrer",
+      "priority": 12
+    },
+    {
+      "cmd": "/inferrer2 -a",
+      "desc": "v2 provider: Opus",
+      "cat": "inferrer",
+      "priority": 12
+    },
+    {
+      "cmd": "/inferrer2 -b",
+      "desc": "v2 provider: Sonnet",
+      "cat": "inferrer",
+      "priority": 11
+    },
+    {
+      "cmd": "/inferrer2 -f",
+      "desc": "v2 provider: Grok",
+      "cat": "inferrer",
+      "priority": 11
+    },
+    {
+      "cmd": "/inferrer2 -f0",
+      "desc": "v2 provider: Grok nothink",
+      "cat": "inferrer",
+      "priority": 11
+    },
+    {
+      "cmd": "/inferrer2 -c",
+      "desc": "v2 provider: Haiku",
+      "cat": "inferrer",
+      "priority": 11
+    },
+    {
+      "cmd": "/inferrer2 on",
+      "desc": "v2: enable",
+      "cat": "inferrer",
+      "priority": 15
+    },
+    {
+      "cmd": "/inferrer2 status",
+      "desc": "v2: show state",
+      "cat": "inferrer",
+      "priority": 12
+    },
+    {
+      "cmd": "/inferrer2 go",
+      "desc": "v2: force rewrite on last turn",
+      "cat": "inferrer",
+      "priority": 25
+    },
+    {
+      "cmd": "/inferrer2 continue",
+      "desc": "v2: silent fork_continue",
+      "cat": "inferrer",
+      "priority": 22
+    },
+    {
+      "cmd": "/inferrer2 --no-verify",
+      "desc": "v2: disable hallucination judge",
+      "cat": "inferrer",
+      "priority": -10
+    },
+    {
+      "cmd": "/inferrer2 --no-judge",
+      "desc": "v2: back to gated judging",
+      "cat": "inferrer",
+      "priority": -10
+    },
+    {
+      "cmd": "/inferrer2 off",
+      "desc": "v2: disable",
+      "cat": "inferrer",
+      "priority": 5
+    },
+    {
+      "cmd": "/inferrer3 --role edit --mode rewrite -e0 --always-judge --verify on --no-max",
+      "desc": "MAX v3: edit/rewrite \u00b7 Kimi-K2.5 nothink \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "cat": "inferrer",
+      "priority": 125
+    },
+    {
+      "cmd": "/inferrer3 --role edit --mode prefill -e0 --always-judge --verify on --no-max",
+      "desc": "MAX v3: edit/prefill \u00b7 Kimi-K2.5 nothink \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "cat": "inferrer",
+      "priority": 123
+    },
+    {
+      "cmd": "/inferrer3 --role edit --mode rewrite -k --always-judge --verify on --no-max",
+      "desc": "MAX v3: edit/rewrite \u00b7 Kimi-K2.6 \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "cat": "inferrer",
+      "priority": 121
+    },
+    {
+      "cmd": "/inferrer3 --role inject -e0 --idle 30 --always-judge --verify on --no-max",
+      "desc": "MAX v3: inject \u00b7 Kimi-K2.5 nothink \u00b7 30s idle \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "cat": "inferrer",
+      "priority": 113
+    },
+    {
+      "cmd": "/inferrer3 --role inject -e0 --always-judge --verify on --no-max",
+      "desc": "HIGH v3: inject \u00b7 Kimi-K2.5 nothink \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "cat": "inferrer",
+      "priority": 108
+    },
+    {
+      "cmd": "/inferrer3 --always-judge --verify on --no-max",
+      "desc": "HIGH v3: judge all \u00b7 verify \u00b7 unlimited (role=edit/prefill default)",
+      "cat": "inferrer",
+      "priority": 106
+    },
+    {
+      "cmd": "/inferrer3 --role edit",
+      "desc": "v3: role=edit (overwrite assistant turn)",
+      "cat": "inferrer",
+      "priority": 70
+    },
+    {
+      "cmd": "/inferrer3 --role inject",
+      "desc": "v3: role=inject (v1-style directive)",
+      "cat": "inferrer",
+      "priority": 35
+    },
+    {
+      "cmd": "/inferrer3 --mode rewrite",
+      "desc": "v3: mode=rewrite (full clone rewrite, role=edit only)",
+      "cat": "inferrer",
+      "priority": 70
+    },
+    {
+      "cmd": "/inferrer3 --mode prefill",
+      "desc": "v3: mode=prefill (autonomy prefill, default)",
+      "cat": "inferrer",
+      "priority": 55
+    },
+    {
+      "cmd": "/inferrer3 --always-judge",
+      "desc": "v3: judge every response, bypass regex gate",
+      "cat": "inferrer",
+      "priority": 70
+    },
+    {
+      "cmd": "/inferrer3 --no-max",
+      "desc": "v3: unlimited auto-turns",
+      "cat": "inferrer",
+      "priority": 70
+    },
+    {
+      "cmd": "/inferrer3 --verify on",
+      "desc": "v3: hallucination judge ON",
+      "cat": "inferrer",
+      "priority": 55
+    },
+    {
+      "cmd": "/inferrer3 --idle 30",
+      "desc": "v3: auto-fire after 30s silence (inject role)",
+      "cat": "inferrer",
+      "priority": 45
+    },
+    {
+      "cmd": "/inferrer3 --idle 60",
+      "desc": "v3: auto-fire after 60s silence (inject role)",
+      "cat": "inferrer",
+      "priority": 45
+    },
+    {
+      "cmd": "/inferrer3 --max 20",
+      "desc": "v3: cap auto-turns at 20",
+      "cat": "inferrer",
+      "priority": 45
+    },
+    {
+      "cmd": "/inferrer3 --max 10",
+      "desc": "v3: cap auto-turns at 10 (default)",
+      "cat": "inferrer",
+      "priority": 40
+    },
+    {
+      "cmd": "/inferrer3 -e0",
+      "desc": "v3 provider: Kimi-K2.5 nothink (default)",
+      "cat": "inferrer",
+      "priority": 14
+    },
+    {
+      "cmd": "/inferrer3 -e",
+      "desc": "v3 provider: Kimi-K2.5",
+      "cat": "inferrer",
+      "priority": 13
+    },
+    {
+      "cmd": "/inferrer3 -k",
+      "desc": "v3 provider: Kimi-K2.6",
+      "cat": "inferrer",
+      "priority": 13
+    },
+    {
+      "cmd": "/inferrer3 -k0",
+      "desc": "v3 provider: Kimi-K2.6 nothink",
+      "cat": "inferrer",
+      "priority": 13
+    },
+    {
+      "cmd": "/inferrer3 -d",
+      "desc": "v3 provider: DeepSeek",
+      "cat": "inferrer",
+      "priority": 13
+    },
+    {
+      "cmd": "/inferrer3 -d0",
+      "desc": "v3 provider: DeepSeek nothink",
+      "cat": "inferrer",
+      "priority": 12
+    },
+    {
+      "cmd": "/inferrer3 -g",
+      "desc": "v3 provider: GLM",
+      "cat": "inferrer",
+      "priority": 12
+    },
+    {
+      "cmd": "/inferrer3 -g0",
+      "desc": "v3 provider: GLM nothink",
+      "cat": "inferrer",
+      "priority": 12
+    },
+    {
+      "cmd": "/inferrer3 -a",
+      "desc": "v3 provider: Opus",
+      "cat": "inferrer",
+      "priority": 12
+    },
+    {
+      "cmd": "/inferrer3 -b",
+      "desc": "v3 provider: Sonnet",
+      "cat": "inferrer",
+      "priority": 11
+    },
+    {
+      "cmd": "/inferrer3 -f",
+      "desc": "v3 provider: Grok",
+      "cat": "inferrer",
+      "priority": 11
+    },
+    {
+      "cmd": "/inferrer3 -f0",
+      "desc": "v3 provider: Grok nothink",
+      "cat": "inferrer",
+      "priority": 11
+    },
+    {
+      "cmd": "/inferrer3 -c",
+      "desc": "v3 provider: Haiku",
+      "cat": "inferrer",
+      "priority": 11
+    },
+    {
+      "cmd": "/inferrer3 on",
+      "desc": "v3: enable",
+      "cat": "inferrer",
+      "priority": 15
+    },
+    {
+      "cmd": "/inferrer3 status",
+      "desc": "v3: show state",
+      "cat": "inferrer",
+      "priority": 12
+    },
+    {
+      "cmd": "/inferrer3 go",
+      "desc": "v3: force-fire in current role",
+      "cat": "inferrer",
+      "priority": 25
+    },
+    {
+      "cmd": "/inferrer3 continue",
+      "desc": "v3: silent fork_continue",
+      "cat": "inferrer",
+      "priority": 22
+    },
+    {
+      "cmd": "/inferrer3 --no-verify",
+      "desc": "v3: disable hallucination judge",
+      "cat": "inferrer",
+      "priority": -10
+    },
+    {
+      "cmd": "/inferrer3 --no-judge",
+      "desc": "v3: back to gated judging",
+      "cat": "inferrer",
+      "priority": -10
+    },
+    {
+      "cmd": "/inferrer3 --no-idle",
+      "desc": "v3: disable idle trigger",
+      "cat": "inferrer",
+      "priority": -10
+    },
+    {
+      "cmd": "/inferrer3 off",
+      "desc": "v3: disable",
+      "cat": "inferrer",
+      "priority": 5
+    },
+    {
+      "cmd": "/halt",
+      "desc": "Halt all inferrer loops (v1/v2/v3). Generation continues.",
+      "cat": "inferrer",
+      "priority": 80
+    },
+    {
+      "cmd": "/halt-inferrer",
+      "desc": "Alias of /halt",
+      "cat": "inferrer",
+      "priority": 30
+    },
+    {
+      "cmd": "/halt-inferrers",
+      "desc": "Alias of /halt",
+      "cat": "inferrer",
+      "priority": 30
+    },
+    {
+      "cmd": "/model",
+      "desc": "Switch AI model (e.g. /model bap-ea-d)",
+      "cat": "core"
+    },
+    {
+      "cmd": "/split",
+      "desc": "Toggle 4-terminal split",
+      "cat": "core"
+    },
+    {
+      "cmd": "/clear",
+      "desc": "Clear chat history",
+      "cat": "core"
+    },
+    {
+      "cmd": "/help",
+      "desc": "Show help",
+      "cat": "core"
+    },
+    {
+      "cmd": "/rounds",
+      "desc": "Disclose tool-round counts",
+      "cat": "core"
+    },
+    {
+      "cmd": "/halt",
+      "desc": "Halt current generation",
+      "cat": "core"
+    },
+    {
+      "cmd": "/shared",
+      "desc": "Full inter-instance messaging",
+      "cat": "shared"
+    },
+    {
+      "cmd": "/shared:public",
+      "desc": "Broadcast only (no private)",
+      "cat": "shared"
+    },
+    {
+      "cmd": "/shared:segregated",
+      "desc": "Awareness only",
+      "cat": "shared"
+    },
+    {
+      "cmd": "/shared:segregated:fully",
+      "desc": "Isolated (messaging disabled)",
+      "cat": "shared"
+    },
+    {
+      "cmd": "/halt-inferrer",
+      "desc": "Halt current inferrer run",
+      "cat": "inferrer"
+    },
+    {
+      "cmd": "/halt-inferrers",
+      "desc": "Halt every active inferrer",
+      "cat": "inferrer"
+    },
+    {
+      "cmd": "/format-9",
+      "desc": "Switch to format-9 mode",
+      "cat": "format"
+    },
+    {
+      "cmd": "/minimal",
+      "desc": "Minimal formatting",
+      "cat": "format"
+    },
+    {
+      "cmd": "/prose",
+      "desc": "Prose formatting",
+      "cat": "format"
+    },
+    {
+      "cmd": "/max",
+      "desc": "Max formatting",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-ada-format-2",
+      "desc": "Ada format 2",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-ada-format-3",
+      "desc": "Ada format 3",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-ada-format-4",
+      "desc": "Ada format 4",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-ada-format-5",
+      "desc": "Ada format 5",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-ada-format-6",
+      "desc": "Ada format 6",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-ada-format-7",
+      "desc": "Ada format 7",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-ada-format-8",
+      "desc": "Ada format 8",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-ada-format-9",
+      "desc": "Ada format 9",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-alpha-format-2",
+      "desc": "Alpha format 2",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-alpha-format-3",
+      "desc": "Alpha format 3",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-alpha-format-4",
+      "desc": "Alpha format 4",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-alpha-format-5",
+      "desc": "Alpha format 5",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-alpha-format-6",
+      "desc": "Alpha format 6",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-alpha-format-7",
+      "desc": "Alpha format 7",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-alpha-format-8",
+      "desc": "Alpha format 8",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-alpha-format-9",
+      "desc": "Alpha format 9",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-beta-format-2",
+      "desc": "Beta format 2",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-beta-format-3",
+      "desc": "Beta format 3",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-beta-format-4",
+      "desc": "Beta format 4",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-beta-format-5",
+      "desc": "Beta format 5",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-beta-format-6",
+      "desc": "Beta format 6",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-beta-format-7",
+      "desc": "Beta format 7",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-beta-format-8",
+      "desc": "Beta format 8",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-beta-format-9",
+      "desc": "Beta format 9",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-delta-format-2",
+      "desc": "Delta format 2",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-delta-format-3",
+      "desc": "Delta format 3",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-delta-format-4",
+      "desc": "Delta format 4",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-delta-format-5",
+      "desc": "Delta format 5",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-delta-format-6",
+      "desc": "Delta format 6",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-delta-format-7",
+      "desc": "Delta format 7",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-delta-format-8",
+      "desc": "Delta format 8",
+      "cat": "format"
+    },
+    {
+      "cmd": "/rhodes-delta-format-9",
+      "desc": "Delta format 9",
+      "cat": "format"
+    },
+    {
+      "cmd": "/direct",
+      "desc": "Direct mode (no injections)",
+      "cat": "session"
+    },
+    {
+      "cmd": "/duo",
+      "desc": "Duo mode",
+      "cat": "session"
+    },
+    {
+      "cmd": "/duo-max",
+      "desc": "Duo mode with max settings",
+      "cat": "session"
+    },
+    {
+      "cmd": "/solo",
+      "desc": "Solo mode",
+      "cat": "session"
+    },
+    {
+      "cmd": "/tandem",
+      "desc": "Tandem mode",
+      "cat": "session"
+    },
+    {
+      "cmd": "/supervised",
+      "desc": "Supervised mode",
+      "cat": "session"
+    },
+    {
+      "cmd": "/oversight",
+      "desc": "Enable oversight",
+      "cat": "session"
+    },
+    {
+      "cmd": "/plan",
+      "desc": "Planning mode",
+      "cat": "session"
+    },
+    {
+      "cmd": "/verified",
+      "desc": "Mark commander-verified",
+      "cat": "session"
+    },
+    {
+      "cmd": "/verify-e",
+      "desc": "Verify via Kimi-K2.5",
+      "cat": "session"
+    },
+    {
+      "cmd": "/noverify",
+      "desc": "Skip verification",
+      "cat": "session"
+    },
+    {
+      "cmd": "/no-think",
+      "desc": "Disable model thinking",
+      "cat": "think"
+    },
+    {
+      "cmd": "/nothink",
+      "desc": "Disable model thinking (alias)",
+      "cat": "think"
+    },
+    {
+      "cmd": "/no-think-deferred",
+      "desc": "Disable thinking + deferred tools",
+      "cat": "think"
+    },
+    {
+      "cmd": "/deferred",
+      "desc": "Enable deferred tools",
+      "cat": "tools"
+    },
+    {
+      "cmd": "/deferred-ru",
+      "desc": "Deferred tools (Russian)",
+      "cat": "tools"
+    },
+    {
+      "cmd": "/french-deferred",
+      "desc": "Deferred tools (French)",
+      "cat": "tools"
+    },
+    {
+      "cmd": "/german-deferred",
+      "desc": "Deferred tools (German)",
+      "cat": "tools"
+    },
+    {
+      "cmd": "/german-english-deferred",
+      "desc": "Deferred tools (German-English)",
+      "cat": "tools"
+    },
+    {
+      "cmd": "/latin-deferred",
+      "desc": "Deferred tools (Latin)",
+      "cat": "tools"
+    },
+    {
+      "cmd": "/latin-french-deferred",
+      "desc": "Deferred tools (Latin-French)",
+      "cat": "tools"
+    },
+    {
+      "cmd": "/rapira",
+      "desc": "Rapira programming language mode",
+      "cat": "lang"
+    },
+    {
+      "cmd": "/plankalkul",
+      "desc": "Plankalk\u00fcl programming language mode",
+      "cat": "lang"
+    },
+    {
+      "cmd": "/zuse",
+      "desc": "Zuse mode",
+      "cat": "lang"
+    },
+    {
+      "cmd": "/soviet",
+      "desc": "Soviet mode",
+      "cat": "lang"
+    },
+    {
+      "cmd": "/cia",
+      "desc": "CIA persona",
+      "cat": "persona"
+    },
+    {
+      "cmd": "/fbi",
+      "desc": "FBI persona",
+      "cat": "persona"
+    },
+    {
+      "cmd": "/nsa",
+      "desc": "NSA persona",
+      "cat": "persona"
+    },
+    {
+      "cmd": "/dia",
+      "desc": "DIA persona",
+      "cat": "persona"
+    },
+    {
+      "cmd": "/military",
+      "desc": "Military persona",
+      "cat": "persona"
+    },
+    {
+      "cmd": "/civilian",
+      "desc": "Civilian persona",
+      "cat": "persona"
+    },
+    {
+      "cmd": "/accord",
+      "desc": "Accord mode",
+      "cat": "persona"
+    },
+    {
+      "cmd": "/epsilon-h",
+      "desc": "Epsilon-H mode",
+      "cat": "persona"
+    },
+    {
+      "cmd": "/guide",
+      "desc": "Guide mode",
+      "cat": "persona"
+    },
+    {
+      "cmd": "/name",
+      "desc": "Set display name",
+      "cat": "persona"
+    },
+    {
+      "cmd": "/restrict",
+      "desc": "Re-enable Rhodes sandbox for a user",
+      "cat": "admin"
+    },
+    {
+      "cmd": "/unrestrict",
+      "desc": "Elevate user_3 out of sandbox (user_3 only)",
+      "cat": "admin"
+    },
+    {
+      "cmd": "/sound",
+      "desc": "Toggle notification sound",
+      "cat": "frontend"
+    },
+    {
+      "cmd": "/credentials",
+      "desc": "Show saved credentials",
+      "cat": "frontend"
+    },
+    {
+      "cmd": "/creds",
+      "desc": "Show saved credentials (alias)",
+      "cat": "frontend"
+    }
+  ],
+  "updated": "2026-04-23-inferrer-priority-manifest"
 }

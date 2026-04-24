@@ -1365,7 +1365,18 @@ function showDownloads() {
                         }
                         return;
                     }
-                    if (activeReqId && msg.payload && msg.payload.req_id && msg.payload.req_id !== activeReqId) return;
+                    // Inferrer broadcasts carry their own distinct req_id (v3_edit_<mode>_<token>,
+                    // v2_<mode>_<token>, inv_<token>) — intentional, not stale. Exempt them from
+                    // the activeReqId filter so they reach the banner hook below.
+                    if (!(msg.payload && msg.payload.inferrer_inversion)
+                        && activeReqId && msg.payload && msg.payload.req_id && msg.payload.req_id !== activeReqId) return;
+                    if (msg.payload && msg.payload.inferrer_inversion) {
+                        console.log('[INFERRER-BANNER] passed activeReqId gate', {
+                            payload_req_id: msg.payload.req_id,
+                            activeReqId: activeReqId,
+                            streamingMsgEl: !!window.streamingMsgEl,
+                        });
+                    }
                     // Check for credential request from model
                     // Check for download offer in content
                     if (msg.payload.content && msg.payload.content.includes('[DOWNLOAD_OFFER:')) {
