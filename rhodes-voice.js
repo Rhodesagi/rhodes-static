@@ -490,6 +490,14 @@ const VoiceChat = {
                 if (recordBtn) {
                     // Simple click toggle - Whisper handles silence detection + auto-stop
                     recordBtn.onclick = () => this.toggleRecording();
+                    // Restore armed visual if voice was left enabled from a
+                    // prior session (localStorage rhodes_voice_enabled=1).
+                    if (this.voiceEnabled) {
+                        recordBtn.classList.add('active');
+                        recordBtn.title = 'Voice mode ON — click to mute';
+                    } else {
+                        recordBtn.title = 'Click to start voice chat';
+                    }
                 }
 
                 // Mode toggle button
@@ -563,21 +571,54 @@ const VoiceChat = {
             },
 
             toggleRecording: function() {
-                // Auto-enable voice replies + persist on first mic click.
-                // Post-2026-04-23 the audio-toggle button was removed; the mic
-                // click is now the single entry point into voice mode. Without
-                // this, TTS + mouth-animation never fire even though backend
-                // already receives voice_mode=true / audio_output=true.
-                if (!this.voiceEnabled) {
-                    this.voiceEnabled = true;
-                    console.log('[voice] Auto-enabled voice replies (mic click)');
-                    try { localStorage.setItem('rhodes_voice_enabled', '1'); } catch (e) {}
-                }
+                // 3-state mic toggle (2026-04-24):
+                //   A. idle + voice OFF -> enable voice + start recording
+                //   B. recording         -> stop recording (reply still plays;
+                //                           voice stays ON through the reply)
+                //   C. idle + voice ON  -> disable voice mode (mute future replies)
+                // This gives the user a way to turn voice OFF via the mic
+                // button alone after the audio-toggle button was removed.
+                var btn = document.getElementById('voice-record-btn');
                 if (this.isRecording) {
+                    // State B -> C : stop recording. Voice stays on so the reply
+                    // to THIS turn plays aloud; button flips to armed (solid
+                    // green) so the next click turns voice off.
                     this.stopRecording();
-                } else {
-                    this.startRecording();
+                    if (btn && this.voiceEnabled) {
+                        btn.classList.add('active');
+                        btn.title = 'Voice mode ON — click to mute';
+                    }
+                    return;
                 }
+                if (this.voiceEnabled) {
+                    // State C -> A : user explicitly turning voice OFF.
+                    this.voiceEnabled = false;
+                    try { localStorage.setItem('rhodes_voice_enabled', '0'); } catch (e) {}
+                    console.log('[voice] Voice replies disabled (mic click while armed)');
+                    // Cancel any in-flight TTS so the mute is immediate.
+                    try {
+                        this._suppressSpeak = true;
+                        var ttsAudio = document.getElementById('tts-audio');
+                        if (ttsAudio && !ttsAudio.paused) { ttsAudio.pause(); ttsAudio.src = ''; }
+                        this.ttsPlaying = false;
+                        this.stopSpeakingAnimation();
+                        // Re-allow speaking if the user re-enables voice later.
+                        setTimeout(() => { this._suppressSpeak = false; }, 100);
+                    } catch (e) { console.warn('[voice] TTS mute cleanup error:', e); }
+                    if (btn) {
+                        btn.classList.remove('active');
+                        btn.title = 'Click to start voice chat';
+                    }
+                    if (typeof showToast === 'function') showToast('VOICE OFF');
+                    return;
+                }
+                // State A -> B : first click after voice off. Enable voice +
+                // start recording. Button picks up .recording class from
+                // startWhisperRecording.
+                this.voiceEnabled = true;
+                try { localStorage.setItem('rhodes_voice_enabled', '1'); } catch (e) {}
+                console.log('[voice] Voice replies enabled (mic click)');
+                this.startRecording();
             },
 
             startRecording: function() {
@@ -746,6 +787,15 @@ const VoiceChat = {
                 }
                 document.getElementById('voice-record-btn')?.classList.remove('recording');
                 document.getElementById('voice-indicator')?.classList.remove('active');
+                // If voice is still on, flip button into armed state so the
+                // user knows voice is live and the next click will mute it.
+                if (this.voiceEnabled) {
+                    var _btn = document.getElementById('voice-record-btn');
+                    if (_btn) {
+                        _btn.classList.add('active');
+                        _btn.title = 'Voice mode ON — click to mute';
+                    }
+                }
             },
             
             sendToWhisper: async function(audioBlob) {
