@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kittens! 🐱 The Cutest Website</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">🐱 Kittens!</div>
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#gallery">Gallery</a></li>
+            <li><a href="#facts">Fun Facts</a></li>
+            <li><a href="#about">About</a></li>
+        </ul>
+    </nav>
+
+    <header id="home" class="hero">
+        <div class="hero-content">
+            <h1>Welcome to Kitten Paradise! 🐾</h1>
+            <p class="hero-subtitle">Your daily dose of cuteness, fluff, and tiny toe beans</p>
+            <button class="cta-button" onclick="scrollToGallery()">See Kittens!</button>
+        </div>
+        <div class="hero-image">
+            <img src="https://placekitten.com/400/400" alt="Adorable kitten" class="hero-kitten">
+        </div>
+    </header>
+
+    <section id="gallery" class="gallery-section">
+        <h2>🌟 Kitten Gallery 🌟</h2>
+        <p class="section-subtitle">Click any image to see it bigger!</p>
+        <div class="gallery-grid">
+            <div class="gallery-item" onclick="openLightbox(this)">
+                <img src="https://placekitten.com/300/300?image=1" alt="Sleepy kitten">
+                <div class="caption">Sleepy kitty</div>
+            </div>
+            <div class="gallery-item" onclick="openLightbox(this)">
+                <img src="https://placekitten.com/300/300?image=2" alt="Playful kitten">
+                <div class="caption">Play time!</div>
+            </div>
+            <div class="gallery-item" onclick="openLightbox(this)">
+                <img src="https://placekitten.com/300/300?image=3" alt="Curious kitten">
+                <div class="caption">So curious</div>
+            </div>
+            <div class="gallery-item" onclick="openLightbox(this)">
+                <img src="https://placekitten.com/300/300?image=4" alt="Fluffy kitten">
+                <div class="caption">Maximum fluff</div>
+            </div>
+            <div class="gallery-item" onclick="openLightbox(this)">
+                <img src="https://placekitten.com/300/300?image=5" alt="Tiny kitten">
+                <div class="caption">Tiny beans</div>
+            </div>
+            <div class="gallery-item" onclick="openLightbox(this)">
+                <img src="https://placekitten.com/300/300?image=6" alt="Cuddly kitten">
+                <div class="caption">Cuddle bug</div>
+            </div>
+            <div class="gallery-item" onclick="openLightbox(this)">
+                <img src="https://placekitten.com/300/300?image=7" alt="Surprised kitten">
+                <div class="caption">Surprise!</div>
+            </div>
+            <div class="gallery-item" onclick="openLightbox(this)">
+                <img src="https://placekitten.com/300/300?image=8" alt="Happy kitten">
+                <div class="caption">Happy kitty</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="facts" class="facts-section">
+        <h2>📚 Fun Kitten Facts</h2>
+        <div class="facts-container">
+            <div class="fact-card active" data-index="0">
+                <div class="fact-emoji">👶</div>
+                <h3>Baby Teeth</h3>
+                <p>Kittens are born with 26 baby teeth that fall out by 6 months, making room for 30 adult teeth!</p>
+            </div>
+            <div class="fact-card" data-index="1">
+                <div class="fact-emoji">👁️</div>
+                <h3>Blue Eyes</h3>
+                <p>All kittens are born with blue eyes! Their permanent eye color develops around 6-7 weeks old.</p>
+            </div>
+            <div class="fact-card" data-index="2">
+                <div class="fact-emoji">😴</div>
+                <h3>Sleepyheads</h3>
+                <p>Kittens sleep 16-20 hours a day because growing is exhausting work!</p>
+            </div>
+            <div class="fact-card" data-index="3">
+                <div class="fact-emoji">🍼</div>
+                <h3>Purring Motor</h3>
+                <p>Kittens can purr from just 2 days old! It's how they communicate with their mom.</p>
+            </div>
+            <div class="fact-card" data-index="4">
+                <div class="fact-emoji">🎯</div>
+                <h3>Whisker Spots</h3>
+                <p>The little dots on a kitten's face where whiskers grow are called "whisker pads."</p>
+            </div>
+        </div>
+        <div class="fact-nav">
+            <button class="fact-btn" onclick="showFact(0)">1</button>
+            <button class="fact-btn" onclick="showFact(1)">2</button>
+            <button class="fact-btn" onclick="showFact(2)">3</button>
+            <button class="fact-btn" onclick="showFact(3)">4</button>
+            <button class="fact-btn" onclick="showFact(4)">5</button>
+        </div>
+    </section>
+
+    <section id="about" class="about-section">
+        <div class="about-content">
+            <h2>Why Kittens? 🤔</h2>
+            <p>Kittens have been delighting humans for thousands of years. These tiny balls of fur bring joy, reduce stress, and make our lives infinitely better with their antics.</p>
+            <p>Whether they're chasing invisible bugs, attacking their own tails, or falling asleep in impossibly small boxes, kittens remind us to find wonder in the simple things.</p>
+            <div class="about-stats">
+                <div class="stat">
+                    <span class="stat-number">10,000</span>
+                    <span class="stat-label">Toe Beans Per Kitten</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">∞</span>
+                    <span class="stat-label">Cuteness Level</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">100%</span>
+                    <span class="stat-label">Worth It</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p>Made with 💖 and 😸 by someone who loves kittens</p>
+        <p class="footer-small">Kitten images courtesy of PlaceKitten.com</p>
+    </footer>
+
+    <!-- Lightbox -->
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+        <span class="close-btn">&times;</span>
+        <img id="lightbox-img" src="" alt="Full size kitten">
+        <div id="lightbox-caption" class="lightbox-caption"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

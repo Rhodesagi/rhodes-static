@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🖼️ Kitten Gallery - Adorable Photos</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav>
+    <div class="nav-container">
+      <a href="index.html" class="logo">
+        <span>🐱</span> Kitten World
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="gallery.html" class="active">Gallery</a></li>
+        <li><a href="facts.html">Fun Facts</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <section class="gallery-container">
+      <h1 class="section-title">📸 Kitten Gallery 📸</h1>
+      <p style="text-align: center; color: var(--text-light); margin-bottom: 2rem;">
+        Click on any kitten to see them in full glory!
+      </p>
+
+      <div class="gallery-grid">
+        <div class="gallery-item" data-emoji="🐱" data-name="Mittens the Tabby" onclick="openLightbox('🐱', 'Mittens the Tabby')">
+          🐱
+        </div>
+        <div class="gallery-item" data-emoji="😺" data-name="Snowball the Fluffy" onclick="openLightbox('😺', 'Snowball the Fluffy')">
+          😺
+        </div>
+        <div class="gallery-item" data-emoji="😸" data-name="Oliver the Orange" onclick="openLightbox('😸', 'Oliver the Orange')">
+          😸
+        </div>
+        <div class="gallery-item" data-emoji="😻" data-name="Luna the Midnight" onclick="openLightbox('😻', 'Luna the Midnight')">
+          😻
+        </div>
+        <div class="gallery-item" data-emoji="🙀" data-name="Whiskers the Curious" onclick="openLightbox('🙀', 'Whiskers the Curious')">
+          🙀
+        </div>
+        <div class="gallery-item" data-emoji="😽" data-name="Bella the Royal" onclick="openLightbox('😽', 'Bella the Royal')">
+          😽
+        </div>
+        <div class="gallery-item" data-emoji="😼" data-name="Shadow the Cool" onclick="openLightbox('😼', 'Shadow the Cool')">
+          😼
+        </div>
+        <div class="gallery-item" data-emoji="😹" data-name="Giggles the Funny" onclick="openLightbox('😹', 'Giggles the Funny')">
+          😹
+        </div>
+        <div class="gallery-item" data-emoji="🐈" data-name="Paws the Classic" onclick="openLightbox('🐈', 'Paws the Classic')">
+          🐈
+        </div>
+        <div class="gallery-item" data-emoji="🐈‍⬛" data-name="Void the Black" onclick="openLightbox('🐈‍⬛', 'Void the Black')">
+          🐈‍⬛
+        </div>
+        <div class="gallery-item" data-emoji="🧶" data-name="Yarn Enthusiast" onclick="openLightbox('🧶', 'Yarn Enthusiast')">
+          🧶
+        </div>
+        <div class="gallery-item" data-emoji="🐾" data-name="Little Pawprints" onclick="openLightbox('🐾', 'Little Pawprints')">
+          🐾
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox">
+    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+    <div class="lightbox-content" id="lightbox-content"></div>
+    <p id="lightbox-caption" style="color: white; font-size: 1.5rem; margin-top: 1rem;"></p>
+  </div>
+
+  <footer>
+    <p>Made with <span class="heart">❤️</span> for kittens everywhere</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

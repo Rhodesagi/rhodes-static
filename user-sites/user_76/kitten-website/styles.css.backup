@@ -1,0 +1,442 @@
+/* Kitten World Styles - Cute, warm, and playful */
+
+:root {
+    --primary-pink: #FFB6C1;
+    --dark-pink: #FF69B4;
+    --cream: #FFF5EE;
+    --soft-orange: #FFDAB9;
+    --warm-white: #FFFAF0;
+    --text-dark: #4A4A4A;
+    --text-light: #6B6B6B;
+    --accent-coral: #FF7F7F;
+    --shadow-soft: rgba(0, 0, 0, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(135deg, var(--cream) 0%, var(--warm-white) 100%);
+    color: var(--text-dark);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+/* Navigation */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 5%;
+    background: white;
+    box-shadow: 0 2px 20px var(--shadow-soft);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--dark-pink);
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: 2rem;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: var(--text-dark);
+    font-weight: 600;
+    transition: color 0.3s ease;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+}
+
+.nav-links a:hover {
+    color: var(--dark-pink);
+    background: var(--cream);
+}
+
+/* Hero Section */
+.hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5rem 10%;
+    min-height: 80vh;
+    background: linear-gradient(135deg, var(--primary-pink) 0%, var(--soft-orange) 100%);
+}
+
+.hero-content {
+    flex: 1;
+    max-width: 600px;
+}
+
+.hero h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.tagline {
+    font-size: 1.4rem;
+    color: white;
+    margin-bottom: 2rem;
+    opacity: 0.95;
+}
+
+.cta-button {
+    background: white;
+    color: var(--dark-pink);
+    border: none;
+    padding: 1rem 2.5rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.cta-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.hero-image {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.kitten-emoji {
+    font-size: 12rem;
+    animation: bounce 2s ease infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+/* Gallery Section */
+.gallery-section {
+    padding: 5rem 10%;
+    text-align: center;
+}
+
+.gallery-section h2 {
+    font-size: 2.5rem;
+    color: var(--dark-pink);
+    margin-bottom: 0.5rem;
+}
+
+.section-desc {
+    color: var(--text-light);
+    margin-bottom: 3rem;
+    font-size: 1.1rem;
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.gallery-item {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px var(--shadow-soft);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background: white;
+    aspect-ratio: 4/3;
+}
+
+.gallery-item:hover {
+    transform: scale(1.05) rotate(2deg);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.gallery-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, var(--primary-pink), var(--soft-orange));
+    color: white;
+    font-size: 1.2rem;
+}
+
+.placeholder-emoji {
+    font-size: 4rem;
+    margin-bottom: 0.5rem;
+}
+
+.load-more-btn {
+    background: var(--dark-pink);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.load-more-btn:hover {
+    background: var(--accent-coral);
+    transform: translateY(-2px);
+}
+
+/* Facts Section */
+.facts-section {
+    padding: 5rem 10%;
+    background: white;
+    text-align: center;
+}
+
+.facts-section h2 {
+    font-size: 2.5rem;
+    color: var(--dark-pink);
+    margin-bottom: 3rem;
+}
+
+.facts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.fact-card {
+    background: linear-gradient(135deg, var(--cream), var(--warm-white));
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: 0 5px 20px var(--shadow-soft);
+    transition: all 0.3s ease;
+}
+
+.fact-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.fact-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.fact-card h3 {
+    color: var(--dark-pink);
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
+}
+
+.fact-card p {
+    color: var(--text-light);
+}
+
+/* Adopt Section */
+.adopt-section {
+    padding: 5rem 10%;
+    background: linear-gradient(135deg, var(--soft-orange) 0%, var(--primary-pink) 100%);
+    text-align: center;
+}
+
+.adopt-content {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.adopt-section h2 {
+    font-size: 2.5rem;
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.adopt-section p {
+    color: white;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    opacity: 0.95;
+}
+
+.adopt-buttons {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.adopt-btn {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.adopt-btn.primary {
+    background: white;
+    color: var(--dark-pink);
+}
+
+.adopt-btn.secondary {
+    background: transparent;
+    color: white;
+    border: 2px solid white;
+}
+
+.adopt-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+
+/* Footer */
+.footer {
+    background: var(--text-dark);
+    color: white;
+    text-align: center;
+    padding: 2rem;
+}
+
+.footer p {
+    margin-bottom: 0.5rem;
+}
+
+.footer-note {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    display: block;
+    max-width: 90%;
+    max-height: 80%;
+    margin: 5% auto;
+    border-radius: 10px;
+    animation: zoomIn 0.3s ease;
+}
+
+@keyframes zoomIn {
+    from { transform: scale(0.8); }
+    to { transform: scale(1); }
+}
+
+.modal-close {
+    position: absolute;
+    top: 20px;
+    right: 40px;
+    color: white;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.modal-close:hover {
+    color: var(--primary-pink);
+}
+
+.modal-caption {
+    text-align: center;
+    color: white;
+    padding: 10px;
+    font-size: 1.2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .nav-links {
+        gap: 1rem;
+    }
+    
+    .hero {
+        flex-direction: column;
+        text-align: center;
+        padding: 3rem 5%;
+    }
+    
+    .hero h1 {
+        font-size: 2.5rem;
+    }
+    
+    .kitten-emoji {
+        font-size: 8rem;
+        margin-top: 2rem;
+    }
+    
+    .gallery-section,
+    .facts-section,
+    .adopt-section {
+        padding: 3rem 5%;
+    }
+}
+
+/* Loading animation */
+.loading {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    border: 5px solid var(--cream);
+    border-top: 5px solid var(--dark-pink);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

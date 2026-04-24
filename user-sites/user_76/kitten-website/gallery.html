@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kitten Gallery - Kitten World</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="logo">🐱 Kitten World</a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="gallery.html" class="active">Gallery</a></li>
+        <li><a href="facts.html">Fun Facts</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Gallery Header -->
+  <section class="hero">
+    <h1>Kitten Gallery 📸</h1>
+    <p>Get ready for cuteness overload! Click on any photo to see it larger.</p>
+  </section>
+
+  <!-- Gallery Grid -->
+  <main class="container">
+    <div class="gallery-grid">
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1574158622682-e40e69881006?w=600&h=600&fit=crop" alt="Orange kitten with big eyes">
+        <div class="gallery-overlay">Orange Tabby</div>
+      </div>
+      
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop" alt="Gray kitten looking at camera">
+        <div class="gallery-overlay">Gray Beauty</div>
+      </div>
+      
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1519052537078-e6302a4968d4?w=600&h=600&fit=crop" alt="Tabby kitten playing">
+        <div class="gallery-overlay">Playful Tabby</div>
+      </div>
+      
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1543852786-1cf6624b9987?w=600&h=600&fit=crop" alt="White and gray kitten">
+        <div class="gallery-overlay">Sweetheart</div>
+      </div>
+      
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=600&h=600&fit=crop" alt="Sleeping kitten">
+        <div class="gallery-overlay">Nap Time</div>
+      </div>
+      
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?w=600&h=600&fit=crop" alt="Kitten in blanket">
+        <div class="gallery-overlay">Cozy Kitty</div>
+      </div>
+      
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=600&h=600&fit=crop" alt="Calico kitten">
+        <div class="gallery-overlay">Calico Cutie</div>
+      </div>
+      
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1495360019602-e001922271fe?w=600&h=600&fit=crop" alt="Siamese kitten">
+        <div class="gallery-overlay">Siamese Sweetie</div>
+      </div>
+      
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1513245543132-31f507417b26?w=600&h=600&fit=crop" alt="Black kitten">
+        <div class="gallery-overlay">Midnight</div>
+      </div>
+      
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1555685812-4b943f1cb0eb?w=600&h=600&fit=crop" alt="Two kittens together">
+        <div class="gallery-overlay">Best Friends</div>
+      </div>
+      
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1561948925-a2756f66aa24?w=600&h=600&fit=crop" alt="Kitten with toy">
+        <div class="gallery-overlay">Playtime!</div>
+      </div>
+      
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=600&h=600&fit=crop" alt="Curious kitten">
+        <div class="gallery-overlay">Curious Cat</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Lightbox -->
+  <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+    <span class="lightbox-close">&times;</span>
+    <img id="lightbox-img" src="" alt="Full size kitten photo">
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>Made with <span class="heart">❤️</span> for kitten lovers everywhere | &copy; 2026 Kitten World</p>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

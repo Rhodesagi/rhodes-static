@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purrfect Rescue - Kitten Rescue Organization</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            padding: 2rem;
+        }
+        
+        .hero-content h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .hero-content p {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #ff5252;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255,107,107,0.3);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+        }
+        
+        .btn-secondary:hover {
+            background: #f8f9fa;
+            transform: translateY(-3px);
+        }
+        
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        nav ul {
+            display: flex;
+            justify-content: center;
+            list-style: none;
+            gap: 2rem;
+        }
+        
+        nav a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+        
+        nav a:hover {
+            color: #667eea;
+        }
+        
+        /* Sections */
+        section {
+            padding: 5rem 2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h2 {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: #333;
+        }
+        
+        /* About Section */
+        .about {
+            background: #f8f9fa;
+        }
+        
+        .about-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-10px);
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        /* Adopt Section */
+        .adopt {
+            background: white;
+        }
+        
+        .kittens-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+        
+        .kitten-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .kitten-card:hover {
+            transform: translateY(-10px);
+        }
+        
+        .kitten-image {
+            height: 250px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+        }
+        
+        .kitten-info {
+            padding: 1.5rem;
+        }
+        
+        .kitten-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .kitten-details {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        
+        /* How to Help */
+        .help {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .help h2 {
+            color: white;
+        }
+        
+        .help-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .help-card {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+        
+        .help-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .help-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* Contact */
+        .contact {
+            background: #f8f9fa;
+        }
+        
+        .contact-form {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        
+        /* Footer */
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        footer p {
+            margin-bottom: 1rem;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .social-links a {
+            color: white;
+            font-size: 1.5rem;
+            text-decoration: none;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero-content p {
+                font-size: 1.2rem;
+            }
+            
+            nav ul {
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="#home">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#adopt">Adopt</a></li>
+            <li><a href="#help">Help</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+    </nav>
+
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <h1>🐱 Purrfect Rescue</h1>
+            <p>Every kitten deserves a loving home. We're dedicated to rescuing, rehabilitating, and rehoming kittens in need.</p>
+            <div class="cta-buttons">
+                <a href="#adopt" class="btn btn-primary">Adopt a Kitten</a>
+                <a href="#help" class="btn btn-secondary">Donate Now</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="about" id="about">
+        <div class="container">
+            <h2>Our Mission</h2>
+            <p style="text-align: center; font-size: 1.2rem; max-width: 800px; margin: 0 auto 2rem; color: #666;">
+                We rescue abandoned and stray kittens, provide them with medical care, love, and socialization, 
+                and find them their forever homes. Since our founding, we've helped hundreds of kittens find happiness.
+            </p>
+            <div class="about-grid">
+                <div class="stat-card">
+                    <div class="stat-number">500+</div>
+                    <div class="stat-label">Kittens Rescued</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">450+</div>
+                    <div class="stat-label">Forever Homes Found</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">50+</div>
+                    <div class="stat-label">Volunteers</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Love Given</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="adopt" id="adopt">
+        <div class="container">
+            <h2>Kittens Available for Adoption</h2>
+            <div class="kittens-grid">
+                <div class="kitten-card">
+                    <div class="kitten-image">🐱</div>
+                    <div class="kitten-info">
+                        <div class="kitten-name">Whiskers</div>
+                        <div class="kitten-details">3 months • Male • Playful & Affectionate</div>
+                        <a href="#contact" class="btn btn-primary" style="display: block; text-align: center;">Meet Whiskers</a>
+                    </div>
+                </div>
+                <div class="kitten-card">
+                    <div class="kitten-image">😺</div>
+                    <div class="kitten-info">
+                        <div class="kitten-name">Luna</div>
+                        <div class="kitten-details">2 months • Female • Gentle & Sweet</div>
+                        <a href="#contact" class="btn btn-primary" style="display: block; text-align: center;">Meet Luna</a>
+                    </div>
+                </div>
+                <div class="kitten-card">
+                    <div class="kitten-image">😸</div>
+                    <div class="kitten-info">
+                        <div class="kitten-name">Oliver</div>
+                        <div class="kitten-details">4 months • Male • Curious & Friendly</div>
+                        <a href="#contact" class="btn btn-primary" style="display: block; text-align: center;">Meet Oliver</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="help" id="help">
+        <div class="container">
+            <h2>How You Can Help</h2>
+            <div class="help-grid">
+                <div class="help-card">
+                    <div class="help-icon">🏠</div>
+                    <h3>Adopt</h3>
+                    <p>Give a loving home to a kitten in need. Adoption saves lives and brings joy to your family.</p>
+                    <a href="#adopt" class="btn btn-secondary" style="margin-top: 1rem; display: inline-block;">View Kittens</a>
+                </div>
+                <div class="help-card">
+                    <div class="help-icon">💝</div>
+                    <h3>Donate</h3>
+                    <p>Your donations help us provide food, medical care, and supplies for rescued kittens.</p>
+                    <a href="#contact" class="btn btn-secondary" style="margin-top: 1rem; display: inline-block;">Donate Now</a>
+                </div>
+                <div class="help-card">
+                    <div class="help-icon">🤝</div>
+                    <h3>Volunteer</h3>
+                    <p>Join our team of dedicated volunteers. Help with care, events, or foster programs.</p>
+                    <a href="#contact" class="btn btn-secondary" style="margin-top: 1rem; display: inline-block;">Get Involved</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="contact" id="contact">
+        <div class="container">
+            <h2>Get In Touch</h2>
+            <div class="contact-form">
+                <form>
+                    <div class="form-group">
+                        <label for="name">Your Name</label>
+                        <input type="text" id="name" name="name" placeholder="Enter your name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="subject">Subject</label>
+                        <input type="text" id="subject" name="subject" placeholder="Adoption / Donation / Volunteering">
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea id="message" name="message" placeholder="Tell us how we can help..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; border: none; cursor: pointer;">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>🐾 Purrfect Rescue - Every Kitten Deserves a Home 🐾</p>
+        <p>Making the world better, one kitten at a time.</p>
+        <div class="social-links">
+            <a href="#">📘</a>
+            <a href="#">📸</a>
+            <a href="#">🐦</a>
+        </div>
+        <p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">&copy; 2024 Purrfect Rescue. All rights reserved.</p>
+    </footer>
+</body>
+</html>

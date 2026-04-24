@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitten World - Pure Joy & Fluff</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">🐱 Kitten World</div>
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#gallery">Gallery</a></li>
+            <li><a href="#facts">Fun Facts</a></li>
+            <li><a href="#adopt">Adopt</a></li>
+        </ul>
+    </nav>
+
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1>Welcome to Kitten World</h1>
+            <p class="tagline">Where every day is filled with purrs, whiskers, and endless cuteness!</p>
+            <button class="cta-button" onclick="scrollToGallery()">See the Kittens 🐾</button>
+        </div>
+        <div class="hero-image">
+            <div class="kitten-emoji">🐱</div>
+        </div>
+    </section>
+
+    <section id="gallery" class="gallery-section">
+        <h2>Adorable Kitten Gallery</h2>
+        <p class="section-desc">Click any kitten to see them full size!</p>
+        
+        <div class="gallery-grid" id="gallery-grid">
+            <!-- Images loaded by JavaScript -->
+        </div>
+        
+        <button class="load-more-btn" id="load-more">Load More Kittens 🐾</button>
+    </section>
+
+    <section id="facts" class="facts-section">
+        <h2>Fun Kitten Facts</h2>
+        <div class="facts-grid">
+            <div class="fact-card">
+                <div class="fact-icon">👶</div>
+                <h3>Baby Eyes</h3>
+                <p>Kittens are born with blue eyes! They can change color as they grow older.</p>
+            </div>
+            <div class="fact-card">
+                <div class="fact-icon">😴</div>
+                <h3>Sleepyheads</h3>
+                <p>Kittens sleep 18-20 hours a day. All that growing takes lots of energy!</p>
+            </div>
+            <div class="fact-card">
+                <div class="fact-icon">🍼</div>
+                <h3>Milk Teeth</h3>
+                <p>Kittens have 26 baby teeth that start falling out at about 3 months old.</p>
+            </div>
+            <div class="fact-card">
+                <div class="fact-icon">🎵</div>
+                <h3>Purr Power</h3>
+                <p>Kittens start purring as early as 2 days old! It's how they communicate with mom.</p>
+            </div>
+            <div class="fact-card">
+                <div class="fact-icon">🐾</div>
+                <h3>Tiny Beans</h3>
+                <p>Each kitten's nose print is unique, just like human fingerprints!</p>
+            </div>
+            <div class="fact-card">
+                <div class="fact-icon">🌟</div>
+                <h3>Super Senses</h3>
+                <p>Kittens can smell, hear, and feel before they can even see!</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="adopt" class="adopt-section">
+        <div class="adopt-content">
+            <h2>Give a Kitten a Home 💕</h2>
+            <p>There are thousands of kittens waiting for their forever homes at shelters near you.</p>
+            <p>Adopting saves lives and brings endless joy to your home!</p>
+            <div class="adopt-buttons">
+                <button class="adopt-btn primary">Find a Shelter Near You</button>
+                <button class="adopt-btn secondary">Learn About Kitten Care</button>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p>Made with 🐱 and 💕 | Kitten World 2024</p>
+        <p class="footer-note">All kittens deserve love, treats, and cozy napping spots.</p>
+    </footer>
+
+    <div id="image-modal" class="modal">
+        <span class="modal-close">&times;</span>
+        <img class="modal-content" id="modal-img">
+        <div class="modal-caption" id="modal-caption"></div>
+    </div>
+
+    <script src="kittens.js"></script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐱 Kitten World - Home</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav>
+    <div class="nav-container">
+      <a href="index.html" class="logo">🐱 Kitten World</a>
+      <ul class="nav-links">
+        <li><a href="index.html" class="active">Home</a></li>
+        <li><a href="about.html">About Kittens</a></li>
+        <li><a href="gallery.html">Gallery</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <h1>Welcome to Kitten World! 🐾</h1>
+    <p>Your ultimate destination for everything adorable about kittens. Learn, explore, and fall in love with these tiny bundles of joy.</p>
+  </section>
+
+  <main class="container">
+    <div class="section-header">
+      <h2>Why We Love Kittens</h2>
+      <p>Discover what makes these little furballs so special</p>
+    </div>
+
+    <div class="card-grid">
+      <div class="card">
+        <h3>💤 They Sleep a LOT</h3>
+        <p>Kittens can sleep up to 20 hours a day! This is because growing takes a lot of energy, and sleep helps their bodies develop properly.</p>
+      </div>
+      <div class="card">
+        <h3>👀 Blue Eyes at Birth</h3>
+        <p>All kittens are born with blue eyes! Their true eye color develops over the first few months of life. What color will yours be?</p>
+      </div>
+      <div class="card">
+        <h3>🍼 Rapid Growth</h3>
+        <p>Kittens grow incredibly fast - they double their weight in the first week! By 6 months, they're about half their adult size.</p>
+      </div>
+    </div>
+
+    <div style="margin-top: 3rem;">
+      <div class="section-header">
+        <h2>Quick Facts</h2>
+        <p>Impress your friends with kitten knowledge!</p>
+      </div>
+      <ul class="facts-list">
+        <li>🐾 Kittens start walking at around 3 weeks old</li>
+        <li>🥛 They begin eating solid food at 4-5 weeks</li>
+        <li>🎵 They can purr from just a few days old</li>
+        <li>🧶 The word "kitten" comes from Middle English "kitoun"</li>
+        <li>🏠 A group of kittens is called a "kindle"</li>
+      </ul>
+    </div>
+
+    <div style="text-align: center; margin-top: 3rem;">
+      <a href="gallery.html" class="btn" style="background: var(--primary); color: white; padding: 1rem 2rem; border-radius: 30px; text-decoration: none; display: inline-block;">See Cute Kittens →</a>
+    </div>
+  </main>
+
+  <footer>
+    <p>Made with ❤️ for kitten lovers everywhere</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

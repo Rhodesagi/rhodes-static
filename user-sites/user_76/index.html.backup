@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purrfect Kittens</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="https://cdn-icons-png.flaticon.com/512/1998/1998676.png">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-paw"></i> Purrfect Kittens
+            </a>
+            <ul class="nav-links">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="about.html">About Kittens</a></li>
+                <li><a href="gallery.html">Gallery</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+            <button class="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Welcome to the World of Kittens!</h1>
+            <p>Discover the cutest, fluffiest, most adorable kittens on the internet. Learn about their care, see amazing photos, and fall in love with feline friends.</p>
+            <div class="hero-buttons">
+                <a href="gallery.html" class="btn btn-primary">View Gallery</a>
+                <a href="about.html" class="btn btn-secondary">Learn More</a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <div class="kitten-slider">
+                <div class="slide active">
+                    <img src="https://images.unsplash.com/photo-1514888286974-6d03bde4ba4f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Cute kitten">
+                </div>
+                <div class="slide">
+                    <img src="https://images.unsplash.com/photo-1543852786-1cf6624b9987?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Playful kitten">
+                </div>
+                <div class="slide">
+                    <img src="https://images.unsplash.com/photo-1511044568932-338cba0ad803?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Sleepy kitten">
+                </div>
+            </div>
+            <div class="slider-controls">
+                <button class="slider-btn prev"><i class="fas fa-chevron-left"></i></button>
+                <button class="slider-btn next"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Featured Kittens -->
+    <section class="featured">
+        <div class="container">
+            <h2>Today's Featured Kittens</h2>
+            <div class="kitten-grid">
+                <div class="kitten-card">
+                    <img src="https://images.unsplash.com/photo-1533738363-b7f9aaf8fc70?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Orange kitten">
+                    <h3>Sunny</h3>
+                    <p>This playful orange tabby loves chasing butterflies and cuddling in warm spots.</p>
+                </div>
+                <div class="kitten-card">
+                    <img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Gray kitten">
+                    <h3>Smokey</h3>
+                    <p>A gentle gray kitten with mesmerizing green eyes who enjoys quiet afternoons.</p>
+                </div>
+                <div class="kitten-card">
+                    <img src="https://images.unsplash.com/photo-1574158628622-64d9f7f16c16?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Calico kitten">
+                    <h3>Patches</h3>
+                    <p>This colorful calico has a sweet personality and loves exploring new places.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Fun Facts -->
+    <section class="facts">
+        <div class="container">
+            <h2>Fun Kitten Facts</h2>
+            <div class="facts-grid">
+                <div class="fact-card">
+                    <i class="fas fa-heartbeat"></i>
+                    <h3>Fast Heart Rate</h3>
+                    <p>Kittens have a heart rate of 200-300 beats per minute - almost twice as fast as humans!</p>
+                </div>
+                <div class="fact-card">
+                    <i class="fas fa-moon"></i>
+                    <h3>Sleepy Babies</h3>
+                    <p>Newborn kittens sleep about 90% of the day, which helps them grow strong and healthy.</p>
+                </div>
+                <div class="fact-card">
+                    <i class="fas fa-eye"></i>
+                    <h3>Blue Eyes</h3>
+                    <p>All kittens are born with blue eyes, which may change color as they grow older.</p>
+                </div>
+                <div class="fact-card">
+                    <i class="fas fa-paw"></i>
+                    <h3>Tiny Paws</h3>
+                    <p>A kitten's paws are disproportionately large compared to their body - they'll grow into them!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3><i class="fas fa-paw"></i> Purrfect Kittens</h3>
+                    <p>Dedicated to sharing the joy and wonder of kittens with the world.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="about.html">About Kittens</a></li>
+                        <li><a href="gallery.html">Gallery</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Follow Us</h3>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-pinterest"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Purrfect Kittens. All rights reserved. | Images from Unsplash</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

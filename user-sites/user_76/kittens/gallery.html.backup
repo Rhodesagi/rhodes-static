@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐱 Kitten Gallery - Kitten World</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav>
+    <div class="nav-container">
+      <a href="index.html" class="logo">🐱 Kitten World</a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About Kittens</a></li>
+        <li><a href="gallery.html" class="active">Gallery</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <h1>Kitten Gallery 🐾</h1>
+    <p>Adorable photos to brighten your day. Click any image to enlarge!</p>
+  </section>
+
+  <main class="container">
+    <div class="gallery-grid">
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400" alt="Orange tabby kitten" loading="lazy">
+        <p>Orange Tabby Kitten</p>
+      </div>
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400" alt="Curious gray kitten" loading="lazy">
+        <p>Curious Gray Kitten</p>
+      </div>
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1519052537078-e6302a4968ef?w=400" alt="Sleeping kitten" loading="lazy">
+        <p>Sleepy Kitty</p>
+      </div>
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1543852786-1cf6624b9987?w=400" alt="White kitten" loading="lazy">
+        <p>Snow White Kitten</p>
+      </div>
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1513245543132-31f507417b26?w=400" alt="Playful kitten" loading="lazy">
+        <p>Playtime!</p>
+      </div>
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1533738363-b7f9aef128ce?w=400" alt="Cool cat" loading="lazy">
+        <p>Looking Cool</p>
+      </div>
+    </div>
+
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+      <span class="lightbox-close">&times;</span>
+      <img id="lightbox-img" src="" alt="">
+    </div>
+  </main>
+
+  <footer>
+    <p>Made with ❤️ for kitten lovers everywhere</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

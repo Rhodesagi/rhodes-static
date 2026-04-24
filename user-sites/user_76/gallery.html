@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitten Gallery | Purrfect Kittens</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="https://cdn-icons-png.flaticon.com/512/1998/1998676.png">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-paw"></i> Purrfect Kittens
+            </a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About Kittens</a></li>
+                <li><a href="gallery.html" class="active">Gallery</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+            <button class="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="page-header">
+        <div class="container">
+            <h1>Kitten Gallery</h1>
+            <p>Browse our collection of adorable kitten photos. Click any image to view it larger!</p>
+            <div class="filter-controls">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="playful">Playful</button>
+                <button class="filter-btn" data-filter="sleepy">Sleepy</button>
+                <button class="filter-btn" data-filter="cuddly">Cuddly</button>
+                <button class="filter-btn" data-filter="funny">Funny</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Gallery -->
+    <main class="container gallery-container">
+        <div class="gallery-grid">
+            <!-- Kitten images with categories -->
+            <div class="gallery-item" data-category="playful">
+                <img src="https://images.unsplash.com/photo-1514888286974-6d03bde4ba4f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Playful kitten">
+                <div class="gallery-overlay">
+                    <h3>Playful Paws</h3>
+                    <p>This energetic kitten loves chasing toys!</p>
+                </div>
+            </div>
+            <div class="gallery-item" data-category="sleepy">
+                <img src="https://images.unsplash.com/photo-1511044568932-338cba0ad803?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Sleepy kitten">
+                <div class="gallery-overlay">
+                    <h3>Sweet Dreams</h3>
+                    <p>Taking a cozy nap in a warm blanket.</p>
+                </div>
+            </div>
+            <div class="gallery-item" data-category="cuddly">
+                <img src="https://images.unsplash.com/photo-1543852786-1cf6624b9987?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Cuddly kitten">
+                <div class="gallery-overlay">
+                    <h3>Cuddle Time</h3>
+                    <p>Nothing better than a warm cuddle.</p>
+                </div>
+            </div>
+            <div class="gallery-item" data-category="funny">
+                <img src="https://images.unsplash.com/photo-1533738363-b7f9aaf8fc70?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Funny kitten">
+                <div class="gallery-overlay">
+                    <h3>Orange Adventure</h3>
+                    <p>Exploring the great outdoors!</p>
+                </div>
+            </div>
+            <div class="gallery-item" data-category="playful">
+                <img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Gray kitten">
+                <div class="gallery-overlay">
+                    <h3>Curious Gray</h3>
+                    <p>What's hiding behind that curtain?</p>
+                </div>
+            </div>
+            <div class="gallery-item" data-category="cuddly">
+                <img src="https://images.unsplash.com/photo-1574158628622-64d9f7f16c16?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Calico kitten">
+                <div class="gallery-overlay">
+                    <h3>Colorful Friend</h3>
+                    <p>This calico has the most beautiful markings.</p>
+                </div>
+            </div>
+            <div class="gallery-item" data-category="sleepy">
+                <img src="https://images.unsplash.com/photo-1570824104455-8f816057b614?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Sleeping kitten">
+                <div class="gallery-overlay">
+                    <h3>Dreaming</h3>
+                    <p>Catching some Z's in a sunbeam.</p>
+                </div>
+            </div>
+            <div class="gallery-item" data-category="funny">
+                <img src="https://images.unsplash.com/photo-1513360371669-4adf3dd7dff8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Kitten family">
+                <div class="gallery-overlay">
+                    <h3>Family Time</h3>
+                    <p>Mom and kittens enjoying a moment together.</p>
+                </div>
+            </div>
+            <div class="gallery-item" data-category="playful">
+                <img src="https://images.unsplash.com/photo-1513364776144-60967b0f800f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Playing kitten">
+                <div class="gallery-overlay">
+                    <h3>Ball of Fun</h3>
+                    <p>This kitten can play for hours!</p>
+                </div>
+            </div>
+            <div class="gallery-item" data-category="cuddly">
+                <img src="https://images.unsplash.com/photo-1548247411-19bfd3d5c4d3?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Bengal kitten">
+                <div class="gallery-overlay">
+                    <h3>Spotted Beauty</h3>
+                    <p>A beautiful Bengal kitten showing off its spots.</p>
+                </div>
+            </div>
+            <div class="gallery-item" data-category="sleepy">
+                <img src="https://images.unsplash.com/photo-1560114928-40f1f1eb26a0?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Yawning kitten">
+                <div class="gallery-overlay">
+                    <h3>Morning Yawn</h3>
+                    <p>Just waking up from a long nap.</p>
+                </div>
+            </div>
+            <div class="gallery-item" data-category="funny">
+                <img src="https://images.unsplash.com/photo-1561948955-570b270e7c36?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Kitten in box">
+                <div class="gallery-overlay">
+                    <h3>If I Fits, I Sits</h3>
+                    <p>The classic kitten-in-a-box pose.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lightbox Modal -->
+        <div id="lightbox" class="lightbox">
+            <div class="lightbox-content">
+                <button class="lightbox-close">&times;</button>
+                <img id="lightbox-img" src="" alt="Lightbox image">
+                <div class="lightbox-caption">
+                    <h3 id="lightbox-title"></h3>
+                    <p id="lightbox-desc"></p>
+                </div>
+                <div class="lightbox-nav">
+                    <button class="lightbox-prev"><i class="fas fa-chevron-left"></i></button>
+                    <button class="lightbox-next"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3><i class="fas fa-paw"></i> Purrfect Kittens</h3>
+                    <p>Dedicated to sharing the joy and wonder of kittens with the world.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="about.html">About Kittens</a></li>
+                        <li><a href="gallery.html">Gallery</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Follow Us</h3>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-pinterest"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Purrfect Kittens. All rights reserved. | Images from Unsplash</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
