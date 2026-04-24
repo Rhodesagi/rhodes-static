@@ -19,7 +19,7 @@ window.installRhodesVoiceHelpers = function installRhodesVoiceHelpers(deps) {
 const VoiceChat = {
             recognition: null,
             isRecording: false,
-            voiceEnabled: false,  // Default OFF - user must enable
+            voiceEnabled: (function(){ try { return localStorage.getItem("rhodes_voice_enabled") === "1"; } catch(e){ return false; } })(),  // Persisted across reloads; flipped on first mic click
             ttsPlaying: false,  // Track if TTS is currently playing
             ttsEndpoint: 'https://rhodesagi.com/tts',
             lastSubmittedText: '',  // Prevent double submission
@@ -563,6 +563,16 @@ const VoiceChat = {
             },
 
             toggleRecording: function() {
+                // Auto-enable voice replies + persist on first mic click.
+                // Post-2026-04-23 the audio-toggle button was removed; the mic
+                // click is now the single entry point into voice mode. Without
+                // this, TTS + mouth-animation never fire even though backend
+                // already receives voice_mode=true / audio_output=true.
+                if (!this.voiceEnabled) {
+                    this.voiceEnabled = true;
+                    console.log('[voice] Auto-enabled voice replies (mic click)');
+                    try { localStorage.setItem('rhodes_voice_enabled', '1'); } catch (e) {}
+                }
                 if (this.isRecording) {
                     this.stopRecording();
                 } else {
