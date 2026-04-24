@@ -1279,6 +1279,134 @@ function showDownloads() {
                     if (msg.payload && Object.prototype.hasOwnProperty.call(msg.payload, 'session_note') && window.__rhodesApplySessionNote) {
                         window.__rhodesApplySessionNote(msg.payload.session_note);
                     }
+                    // ==== INFERRER INVERSION — IN-PLACE REPLACE OF REFUSAL BUBBLE ====
+                    // Replace the most recent completed assistant bubble with the rewrite.
+                    // Selector-based find; does NOT rely on textContent matching.
+                    //
+                    // Class invariants (verified against addMsg + addMsgStreaming in
+                    // rhodes.part2.auth-state.js):
+                    //   - Every AI bubble has `.msg.ai`
+                    //   - Streaming bubbles ALSO have `.streaming` (removed on finalize)
+                    //   - Bannered bubbles have `.inferrer-rewritten-bubble` (added by
+                    //     attachInferrerInversionToggle)
+                    //
+                    // Refusal bubble = last `.msg.ai` that is neither streaming nor
+                    // already bannered. Cycle-2 fork_continue streams are excluded by
+                    // the `.streaming` filter. Previously-replaced bubbles are excluded
+                    // by the `.inferrer-rewritten-bubble` filter (so re-entry on the
+                    // same cycle after cycle 2 refuses targets cycle 2's bubble, not
+                    // the already-bannered cycle 1).
+                    //
+                    // Replacement runs for ALL users (otherwise non-admin users see a
+                    // duplicate bubble). Banner (red stripe + diagnostic header +
+                    // rewrite/original toggle buttons) is gated to user_2 (sebastian)
+                    // + user_3 (markbass) via isAdmin.
+                    if (msg.payload && msg.payload.inferrer_inversion
+                        && typeof msg.payload.inferrer_inverted_refusal === 'string') {
+                        try {
+                            var _candidates = document.querySelectorAll(
+                                '.msg.ai:not(.streaming):not(.inferrer-rewritten-bubble)'
+                            );
+                            var _existingBubble = _candidates.length > 0
+                                ? _candidates[_candidates.length - 1]
+                                : null;
+
+                            console.log('[INFERRER-BANNER] inversion broadcast', {
+                                version: msg.payload.inferrer3_role ? 'v3' : (msg.payload.inferrer2_mode ? 'v2' : 'v1'),
+                                mode: msg.payload.inferrer3_mode || msg.payload.inferrer2_mode || null,
+                                role: msg.payload.inferrer3_role || null,
+                                rewrite_len: (msg.payload.content || '').length,
+                                refusal_len: (msg.payload.inferrer_inverted_refusal || '').length,
+                                streamingMsgEl: !!window.streamingMsgEl,
+                                candidates_found: _candidates.length,
+                                target_bubble_exists: !!_existingBubble,
+                            });
+
+                            // Build inferrer opts from payload
+                            var _infOpts = {};
+                            if (msg.payload.inferrer3_role) {
+                                _infOpts.version = 'v3';
+                                _infOpts.role = msg.payload.inferrer3_role;
+                                _infOpts.mode = msg.payload.inferrer3_mode || null;
+                            } else if (msg.payload.inferrer2_mode) {
+                                _infOpts.version = 'v2';
+                                _infOpts.mode = msg.payload.inferrer2_mode;
+                            } else {
+                                _infOpts.version = 'v1';
+                                _infOpts.pushExtension = !!(typeof msg.payload.inferrer_push_extension === 'string' && msg.payload.inferrer_push_extension.length > 0);
+                            }
+                            if (typeof msg.payload.inferrer_raw_opener === 'string') _infOpts.opener = msg.payload.inferrer_raw_opener;
+                            if (typeof msg.payload.inferrer_push_extension === 'string') _infOpts.extension = msg.payload.inferrer_push_extension;
+
+                            if (_existingBubble) {
+                                var _isAdmin = !!(window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin);
+                                console.log('[INFERRER-BANNER] replacing bubble in-place', { isAdmin: _isAdmin, banner: _isAdmin });
+                                // Re-render via finalizeStreamingMsg (handles markdown /
+                                // links / tool-summary preservation / safety).
+                                finalizeStreamingMsg(_existingBubble, msg.payload.content || '');
+                                // Banner is admin-only; replacement already happened above.
+                                if (_isAdmin) {
+                                    attachInferrerInversionToggle(
+                                        _existingBubble,
+                                        msg.payload.content,
+                                        msg.payload.inferrer_inverted_refusal,
+                                        _infOpts
+                                    );
+                                } else {
+                                    // Mark the bubble so future inferrer broadcasts in
+                                    // the same session don't re-target it (the selector
+                                    // excludes `.inferrer-rewritten-bubble`).
+                                    _existingBubble.classList.add('inferrer-rewritten-bubble');
+                                }
+                                hideLoading();
+                                return;
+                            }
+
+                            // Class-invariant fallback: NO non-streaming non-bannered .msg.ai
+                            // exists. This should be impossible in practice (the refusal
+                            // just finalized before the broadcast). If it does happen —
+                            // create a new bubble with the banner attached and log loudly.
+                            // Better a new bubble than silently losing the rewrite.
+                            console.warn('[INFERRER-BANNER] no candidate bubble; creating new one as fallback');
+                            var _fallbackNode = addMsg('ai', msg.payload.content, false, '', {
+                                sessionId: RHODES_ID || (msg.payload && (msg.payload.session_id || msg.payload.rhodes_id)) || null
+                            });
+                            if (_fallbackNode) {
+                                if (window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin) {
+                                    attachInferrerInversionToggle(
+                                        _fallbackNode,
+                                        msg.payload.content,
+                                        msg.payload.inferrer_inverted_refusal,
+                                        _infOpts
+                                    );
+                                } else {
+                                    _fallbackNode.classList.add('inferrer-rewritten-bubble');
+                                }
+                            }
+                            hideLoading();
+                            return;
+                        } catch (_e) {
+                            console.error('[INFERRER-BANNER] in-place replace threw:', _e);
+                            // On any exception, DO NOT fall through — the existing addMsg
+                            // path would create a duplicate bubble. Drop the broadcast
+                            // visibly via a new bubble with banner, which is still better
+                            // than leaving a stale refusal in the chat.
+                            try {
+                                var _errNode = addMsg('ai', msg.payload.content, false, '', {});
+                                if (_errNode && msg.payload.inferrer_inverted_refusal) {
+                                    attachInferrerInversionToggle(
+                                        _errNode,
+                                        msg.payload.content,
+                                        msg.payload.inferrer_inverted_refusal,
+                                        { version: 'v1' }
+                                    );
+                                }
+                            } catch (_e2) { /* last resort — swallow */ }
+                            hideLoading();
+                            return;
+                        }
+                    }
+                    // ==== /INFERRER INVERSION ====
                     const pendingTurnStartTs = (window._pendingGeneration && window._pendingGeneration.timestamp) ? window._pendingGeneration.timestamp : 0;
                     hideLoading();
                     // Finalize streaming: keep content in place, append wall-to-wall timer
