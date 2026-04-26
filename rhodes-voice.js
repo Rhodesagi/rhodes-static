@@ -19,7 +19,7 @@ window.installRhodesVoiceHelpers = function installRhodesVoiceHelpers(deps) {
 const VoiceChat = {
             recognition: null,
             isRecording: false,
-            voiceEnabled: (function(){ try { return localStorage.getItem("rhodes_voice_enabled") === "1"; } catch(e){ return false; } })(),  // Persisted across reloads; flipped on first mic click
+            voiceEnabled: false,  // Per-page-load state. Not persisted (BUG-DEPLOY-voice-second-turn 2026-04-26: localStorage persistence trapped users into a mute-on-first-click after reload).
             ttsPlaying: false,  // Track if TTS is currently playing
             ttsEndpoint: 'https://rhodesagi.com/tts',
             lastSubmittedText: '',  // Prevent double submission
@@ -489,24 +489,40 @@ const VoiceChat = {
                 const recordBtn = document.getElementById('voice-record-btn');
                 if (recordBtn) {
                     recordBtn.onclick = () => this.toggleRecording();
-                    if (this.voiceEnabled) {
-                        recordBtn.classList.add('active');
-                        recordBtn.title = 'Voice mode ON — click to mute';
-                    } else {
-                        recordBtn.title = 'Click to start voice chat';
-                    }
+                    recordBtn.title = 'Click to start voice chat';
                 }
+                // Sweep stale localStorage from the prior persistence design.
+                try { localStorage.removeItem('rhodes_voice_enabled'); } catch (e) {}
+                // Defensive: voice mode always starts fresh on page load.
+                this.voiceEnabled = false;
+                this._suppressSpeak = false;
 
-                // Click-to-record on the full-screen takeover face.
-                // The mic button is hidden behind the overlay while voice is
-                // armed, so the face itself becomes the record/stop target.
-                // Clicks during TTS interrupt Rhodes and start a fresh
-                // recording. EXIT VOICE / RETURN keep their own muteVoice
-                // handlers on different elements (no conflict).
+                // Click-anywhere-on-takeover to start/stop recording.
+                // BUG-DEPLOY-takeover-click 2026-04-25:
+                //   1) Old handler was bound only to #takeover-face — clicks on
+                //      the surrounding dark overlay area silently did nothing
+                //      ("as if I said nothing at all").
+                //   2) Old handler called toggleRecording(), which when
+                //      voiceEnabled && !isRecording falls through to muteVoice.
+                //      So clicking the face from the idle/waiting state was
+                //      muting voice instead of starting a new turn.
+                //
+                // New: bound on the full overlay, excludes the explicit off-
+                // switches (#takeover-return, .exit-hint), calls start/stop
+                // directly — never goes through the toggleRecording mute
+                // branch.
+                const takeoverEl = document.getElementById('handsfree-takeover');
                 const takeoverFaceEl = document.getElementById('takeover-face');
-                if (takeoverFaceEl) {
-                    takeoverFaceEl.style.cursor = 'pointer';
-                    takeoverFaceEl.addEventListener('click', (ev) => {
+                if (takeoverFaceEl) takeoverFaceEl.style.cursor = 'pointer';
+                if (takeoverEl) {
+                    takeoverEl.addEventListener('click', (ev) => {
+                        // Don't fire when the click is on an explicit off-switch.
+                        let n = ev.target;
+                        while (n && n !== takeoverEl) {
+                            if (n.id === 'takeover-return' || (n.classList && n.classList.contains('exit-hint'))) return;
+                            n = n.parentNode;
+                        }
+                        // Interrupt TTS mid-speech: kill audio + start new turn.
                         if (this.ttsPlaying) {
                             try {
                                 const ttsAudio = document.getElementById('tts-audio');
@@ -517,7 +533,15 @@ const VoiceChat = {
                             this.startRecording();
                             return;
                         }
-                        this.toggleRecording();
+                        // Recording -> stop & submit. Idle (waiting) -> start.
+                        // Critical: do NOT call toggleRecording() here — its
+                        // idle+voiceOn branch routes to muteVoice (correct for
+                        // the mic button, wrong for in-takeover face clicks).
+                        if (this.isRecording) {
+                            this.stopRecording();
+                        } else {
+                            this.startRecording();
+                        }
                     });
                 }
 
@@ -615,7 +639,6 @@ const VoiceChat = {
 
                 this.voiceEnabled = false;
                 this.faceDebuted = false;
-                try { localStorage.setItem("rhodes_voice_enabled", "0"); } catch (e) {}
 
                 var takeover = document.getElementById("handsfree-takeover");
                 if (takeover) takeover.classList.remove("active");
@@ -678,7 +701,6 @@ const VoiceChat = {
                 // State A -> B : first click after voice off. Enable voice +
                 // engage takeover + start recording.
                 this.voiceEnabled = true;
-                try { localStorage.setItem('rhodes_voice_enabled', '1'); } catch (e) {}
                 console.log('[voice] Voice replies enabled (mic click)');
                 this.showVoiceTakeover();
                 this.startRecording();
@@ -711,6 +733,15 @@ const VoiceChat = {
             useWhisper: false,  // Set to true for language learning modes
             
             startWhisperRecording: async function() {
+                // Defensive: clear any stale streaming-TTS state left over from
+                // a prior turn so this turn's reply chunks initialize cleanly.
+                try {
+                    if (window.StreamingTTS) {
+                        if (typeof window.StreamingTTS.cancel === 'function') window.StreamingTTS.cancel();
+                        window.StreamingTTS._active = false;
+                        window.StreamingTTS._buffer = '';
+                    }
+                } catch (e) { console.warn('[voice] StreamingTTS reset error:', e); }
                 try {
                     this.whisperStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     this.whisperRecorder = new MediaRecorder(this.whisperStream, { mimeType: "audio/webm" });
