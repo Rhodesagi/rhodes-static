@@ -488,16 +488,37 @@ const VoiceChat = {
                 // Bind record button (push-to-talk style)
                 const recordBtn = document.getElementById('voice-record-btn');
                 if (recordBtn) {
-                    // Simple click toggle - Whisper handles silence detection + auto-stop
                     recordBtn.onclick = () => this.toggleRecording();
-                    // Restore armed visual if voice was left enabled from a
-                    // prior session (localStorage rhodes_voice_enabled=1).
                     if (this.voiceEnabled) {
                         recordBtn.classList.add('active');
                         recordBtn.title = 'Voice mode ON — click to mute';
                     } else {
                         recordBtn.title = 'Click to start voice chat';
                     }
+                }
+
+                // Click-to-record on the full-screen takeover face.
+                // The mic button is hidden behind the overlay while voice is
+                // armed, so the face itself becomes the record/stop target.
+                // Clicks during TTS interrupt Rhodes and start a fresh
+                // recording. EXIT VOICE / RETURN keep their own muteVoice
+                // handlers on different elements (no conflict).
+                const takeoverFaceEl = document.getElementById('takeover-face');
+                if (takeoverFaceEl) {
+                    takeoverFaceEl.style.cursor = 'pointer';
+                    takeoverFaceEl.addEventListener('click', (ev) => {
+                        if (this.ttsPlaying) {
+                            try {
+                                const ttsAudio = document.getElementById('tts-audio');
+                                if (ttsAudio && !ttsAudio.paused) { ttsAudio.pause(); ttsAudio.src = ''; }
+                            } catch (e) {}
+                            this.ttsPlaying = false;
+                            this.stopSpeakingAnimation();
+                            this.startRecording();
+                            return;
+                        }
+                        this.toggleRecording();
+                    });
                 }
 
                 // Mode toggle button
@@ -570,7 +591,66 @@ const VoiceChat = {
                 }
             },
 
-            toggleRecording: function() {
+            // muteVoice (2026-04-24): the single "turn voice off" path used by
+            // the mic button (state C->A) and by the takeover EXIT / RETURN
+            // clickables. Aborts in-flight recording, kills in-flight TTS,
+            // hides the takeover, persists rhodes_voice_enabled=0, restores
+            // the mic button visual.
+            muteVoice: function() {
+                try {
+                    if (this.whisperRecorder && this.whisperRecorder.state === "recording") {
+                        this._abortWhisper = true;
+                        this.whisperRecorder.stop();
+                    }
+                } catch (e) {}
+                this.isRecording = false;
+                this._suppressSpeak = true;
+                try {
+                    var ttsAudio = document.getElementById("tts-audio");
+                    if (ttsAudio && !ttsAudio.paused) { ttsAudio.pause(); ttsAudio.src = ""; }
+                } catch (e) {}
+                this.ttsPlaying = false;
+                this.stopSpeakingAnimation();
+                setTimeout(function(){ try { window.VoiceChat._suppressSpeak = false; } catch(e){} }, 200);
+
+                this.voiceEnabled = false;
+                this.faceDebuted = false;
+                try { localStorage.setItem("rhodes_voice_enabled", "0"); } catch (e) {}
+
+                var takeover = document.getElementById("handsfree-takeover");
+                if (takeover) takeover.classList.remove("active");
+                var btn = document.getElementById("voice-record-btn");
+                if (btn) {
+                    btn.classList.remove("active");
+                    btn.classList.remove("recording");
+                    btn.title = "Click to start voice chat";
+                }
+                var indicator = document.getElementById("voice-indicator");
+                if (indicator) indicator.classList.remove("active");
+                if (typeof showToast === "function") showToast("VOICE OFF");
+                console.log("[voice] muteVoice complete");
+            },
+
+            // showVoiceTakeover (2026-04-24): engage the full-screen face overlay
+            // whenever voice mode is armed. Idempotent. The face HTML is
+            // populated by showListeningFace / showWaitingFace / startSpeakingAnimation
+            // depending on current state.
+            showVoiceTakeover: function() {
+                if (!this.voiceEnabled) return;
+                var takeover = document.getElementById("handsfree-takeover");
+                if (takeover) takeover.classList.add("active");
+                if (this.isRecording) {
+                    this.showListeningFace();
+                    this.setStatus("listening");
+                } else if (this.ttsPlaying) {
+                    this.setStatus("speaking");
+                } else {
+                    this.showWaitingFace();
+                    this.setStatus("waiting");
+                }
+            },
+
+                        toggleRecording: function() {
                 // 3-state mic toggle (2026-04-24):
                 //   A. idle + voice OFF -> enable voice + start recording
                 //   B. recording         -> stop recording (reply still plays;
@@ -592,32 +672,15 @@ const VoiceChat = {
                 }
                 if (this.voiceEnabled) {
                     // State C -> A : user explicitly turning voice OFF.
-                    this.voiceEnabled = false;
-                    try { localStorage.setItem('rhodes_voice_enabled', '0'); } catch (e) {}
-                    console.log('[voice] Voice replies disabled (mic click while armed)');
-                    // Cancel any in-flight TTS so the mute is immediate.
-                    try {
-                        this._suppressSpeak = true;
-                        var ttsAudio = document.getElementById('tts-audio');
-                        if (ttsAudio && !ttsAudio.paused) { ttsAudio.pause(); ttsAudio.src = ''; }
-                        this.ttsPlaying = false;
-                        this.stopSpeakingAnimation();
-                        // Re-allow speaking if the user re-enables voice later.
-                        setTimeout(() => { this._suppressSpeak = false; }, 100);
-                    } catch (e) { console.warn('[voice] TTS mute cleanup error:', e); }
-                    if (btn) {
-                        btn.classList.remove('active');
-                        btn.title = 'Click to start voice chat';
-                    }
-                    if (typeof showToast === 'function') showToast('VOICE OFF');
+                    this.muteVoice();
                     return;
                 }
                 // State A -> B : first click after voice off. Enable voice +
-                // start recording. Button picks up .recording class from
-                // startWhisperRecording.
+                // engage takeover + start recording.
                 this.voiceEnabled = true;
                 try { localStorage.setItem('rhodes_voice_enabled', '1'); } catch (e) {}
                 console.log('[voice] Voice replies enabled (mic click)');
+                this.showVoiceTakeover();
                 this.startRecording();
             },
 
@@ -747,8 +810,10 @@ const VoiceChat = {
                     this.setStatus("listening");
                     document.getElementById("voice-record-btn")?.classList.add("recording");
                     document.getElementById("voice-indicator")?.classList.add("active");
-                    // Show takeover and listening face in hands-free mode
-                    if (!this.pushToTalk) {
+                    // Show takeover + listening face whenever voice mode is armed.
+                    // Decoupled from pushToTalk on 2026-04-24 so the face stays
+                    // primary throughout the voice session, not just in handsfree.
+                    if (this.voiceEnabled) {
                         const takeoverEl = document.getElementById('handsfree-takeover');
                         if (takeoverEl) takeoverEl.classList.add('active');
                         this.showListeningFace();
@@ -931,18 +996,20 @@ const noSpeechProb = data.no_speech_prob || 0;                        // If high
                 const stillMouth = '════════';
                 let face = this.faceTemplate.replace('{{MOUTH}}', `<span class="mouth-waiting">${stillMouth}</span>`);
 
-                // Hands-free mode uses takeover-face
-                if (!this.pushToTalk) {
+                // Voice-mode (armed) uses the full-screen takeover-face;
+                // legacy push-to-talk-without-voice falls through to the small
+                // inline speaking-face element. Decoupled from pushToTalk
+                // 2026-04-24 so the face stays primary across the whole
+                // voice session.
+                if (this.voiceEnabled) {
                     const faceEl = document.getElementById('takeover-face');
                     if (faceEl) {
                         faceEl.innerHTML = face;
                         faceEl.style.display = 'block';
                     }
-                    // Show takeover if not already visible
                     const takeover = document.getElementById('handsfree-takeover');
                     if (takeover) takeover.classList.add('active');
                 } else {
-                    // Normal mode uses speaking-face
                     const faceEl = document.getElementById('speaking-face');
                     if (faceEl) {
                         faceEl.innerHTML = face;
@@ -958,10 +1025,12 @@ const noSpeechProb = data.no_speech_prob || 0;                        // If high
                     this.speakingAnimationInterval = null;
                 }
 
-                // Determine target element based on mode
-                const inHandsfree = !this.pushToTalk;
-                console.log('startSpeakingAnimation: inHandsfree=', inHandsfree, 'pushToTalk=', this.pushToTalk, 'debuted=', this.faceDebuted);
-                const faceEl = inHandsfree
+                // Voice-mode armed -> use full-screen takeover face.
+                // Legacy fallback (voice off) -> small inline speaking-face.
+                // Decoupled from pushToTalk 2026-04-24.
+                const useTakeover = this.voiceEnabled;
+                console.log('startSpeakingAnimation: useTakeover=', useTakeover, 'voiceEnabled=', this.voiceEnabled, 'debuted=', this.faceDebuted);
+                const faceEl = useTakeover
                     ? document.getElementById('takeover-face')
                     : document.getElementById('speaking-face');
                 console.log('faceEl:', faceEl);
@@ -970,19 +1039,17 @@ const noSpeechProb = data.no_speech_prob || 0;                        // If high
                     return;
                 }
 
-                // Only show face on FIRST appearance, then just animate mouth
                 if (!this.faceDebuted) {
                     this.faceDebuted = true;
                     console.log('Face making debut!');
 
-                    if (inHandsfree) {
+                    if (useTakeover) {
                         const takeover = document.getElementById('handsfree-takeover');
                         if (takeover) takeover.classList.add('active');
                         const status = document.getElementById('takeover-status');
                         if (status) status.classList.add('hidden');
                         faceEl.style.display = 'block';
                     } else {
-                        // Only on first appearance, hide message and show face
                         this.hiddenMessage = document.querySelector('#chat .msg.ai:last-child');
                         if (this.hiddenMessage) {
                             this.hiddenMessage.style.opacity = '0';
@@ -1012,33 +1079,35 @@ const noSpeechProb = data.no_speech_prob || 0;                        // If high
             },
 
             revealText: function() {
-                // Show the hidden message
+                // No-op in voice mode (chat is hidden by takeover).
+                if (this.voiceEnabled) return;
                 if (this.hiddenMessage) {
                     this.hiddenMessage.style.opacity = '1';
                     this.hiddenMessage = null;
                 }
-                // Stop the speaking face but keep audio playing
                 this.stopSpeakingAnimation();
             },
 
             stopSpeakingAnimation: function() {
-                // Stop animation interval
+                // Stop the mouth-cycle interval
                 if (this.speakingAnimationInterval) {
                     clearInterval(this.speakingAnimationInterval);
                     this.speakingAnimationInterval = null;
                 }
 
-                // Stop normal mode face
+                // Hide the legacy small speaking-face (used only when voice is OFF)
                 const speakingFace = document.getElementById('speaking-face');
                 if (speakingFace) speakingFace.classList.remove('active');
 
-                // In hands-free mode, switch back to listening face
-                if (!this.pushToTalk) {
-                    this.showListeningFace();
-                    this.setStatus('listening');
+                // Voice-mode armed: keep the takeover up and transition to a
+                // waiting face. Push-to-talk semantics — do NOT auto-restart
+                // recording; the user clicks the face / mic to record again.
+                if (this.voiceEnabled) {
+                    this.showWaitingFace();
+                    this.setStatus('waiting');
                 }
 
-                // Reveal hidden message (normal mode)
+                // Reveal hidden message (legacy in-chat speaking-face path)
                 if (this.hiddenMessage) {
                     this.hiddenMessage.style.opacity = '1';
                     this.hiddenMessage = null;

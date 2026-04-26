@@ -811,11 +811,11 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
     <div id="voice-indicator">LISTENING...</div>
     <div id="speaking-face"></div>
     <div id="handsfree-takeover" style="display:none;">
-        <div id="takeover-return" onclick="VoiceChat.toggleMode()">‹ Return to text mode</div>
+        <div id="takeover-return" onclick="VoiceChat.muteVoice()">‹ Return to text mode</div>
         <div id="takeover-status">LISTENING</div>
         <div id="takeover-face"></div>
         <div class="takeover-transcript" id="takeover-transcript"></div>
-        <div class="exit-hint" onclick="VoiceChat.toggleMode()">EXIT VOICE</div>
+        <div class="exit-hint" onclick="VoiceChat.muteVoice()">EXIT VOICE</div>
     </div>
     <audio id="tts-audio" style="display:none;"></audio>
     <!-- ASCII Face Flash -->
@@ -1039,7 +1039,7 @@ body.mobile-menu-open #mobile-menu-dropdown.active {
     <script src="/rhodes-share.js?v=1776042574"></script>
     <script src="/rhodes-ws.js?v=1776042574"></script>
     <script src="/rhodes-media.js?v=1776042574"></script>
-        <script src="/rhodes-voice.js?v=1777069090"></script>
+        <script src="/rhodes-voice.js?v=1777229898"></script>
     <script src="/face-api.min.js?v=1776042574"></script>
     <script src="/rhodes-valence.js?v=1776042574"></script>
 <script src="/rhodes-send.js?v=1776995630"></script>
