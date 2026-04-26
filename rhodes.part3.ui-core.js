@@ -92,6 +92,44 @@ window.__rhodesApplySessionNote = function(note) {
             "  white-space: nowrap;",
             "  transition: color 0.3s ease-out;",
             "}",
+            ".rhodes-live-indicator.anchored {",
+            "  position: static; bottom: auto; left: auto;",
+            "  display: inline-block;",
+            "  pointer-events: auto;",
+            "  cursor: pointer;",
+            "  color: rgba(255,255,255,0.55);",
+            "  border: 1px solid rgba(255,255,255,0.15);",
+            "}",
+            ".rhodes-live-indicator.anchored:hover {",
+            "  color: rgba(255,255,255,0.9);",
+            "  border-color: rgba(255,255,255,0.4);",
+            "}",
+            "#rhodes-prompt-modal-backdrop {",
+            "  position: fixed; inset: 0; background: rgba(0,0,0,0.78);",
+            "  z-index: 10000; display: flex; align-items: center; justify-content: center;",
+            "}",
+            "#rhodes-prompt-modal {",
+            "  background: var(--bg, #0a0a0a); color: var(--text, #d0d0d0);",
+            "  border: 1px solid var(--cyan, #5cf);",
+            "  width: min(900px, 92vw); max-height: 85vh; display: flex; flex-direction: column;",
+            "  border-radius: 4px; overflow: hidden;",
+            "}",
+            "#rhodes-prompt-modal .rpm-head {",
+            "  display: flex; align-items: center; justify-content: space-between;",
+            "  padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.15);",
+            "  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;",
+            "  font-size: 12px; color: var(--cyan, #5cf);",
+            "}",
+            "#rhodes-prompt-modal .rpm-close {",
+            "  background: transparent; border: 1px solid var(--cyan, #5cf);",
+            "  color: var(--cyan, #5cf); padding: 2px 8px; cursor: pointer; font-size: 12px;",
+            "  border-radius: 3px;",
+            "}",
+            "#rhodes-prompt-modal .rpm-body {",
+            "  padding: 10px 12px; overflow: auto; flex: 1;",
+            "  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;",
+            "  font-size: 12px; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word;",
+            "}",
             ".rhodes-live-indicator.flash-fallback {",
             "  color: rgba(255,255,255,1);",
             "  animation: rhodes-fallback-flash 1.5s ease-out;",
@@ -108,9 +146,12 @@ window.__rhodesApplySessionNote = function(note) {
         if (!isAllowed()) {
             var existing = document.getElementById("rhodes-live-indicator");
             if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+            var anchor0 = document.getElementById("rhodes-indicator-anchor");
+            if (anchor0) anchor0.style.display = "none";
             return null;
         }
         ensureStyle();
+        var anchor = document.getElementById("rhodes-indicator-anchor");
         var el = document.getElementById("rhodes-live-indicator");
         if (!el) {
             el = document.createElement("div");
@@ -118,10 +159,129 @@ window.__rhodesApplySessionNote = function(note) {
             el.className = "rhodes-live-indicator";
             el.dataset.model = "";
             el.dataset.provider = "";
-            (document.body || document.documentElement).appendChild(el);
+            if (anchor) {
+                el.classList.add("anchored");
+                el.setAttribute("role", "button");
+                el.setAttribute("tabindex", "0");
+                el.setAttribute("title", "Click to view system prompt for this model");
+                el.addEventListener("click", onIndicatorClick);
+                el.addEventListener("keydown", function (ev) {
+                    if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); onIndicatorClick(); }
+                });
+                anchor.style.display = "block";
+                anchor.appendChild(el);
+            } else {
+                (document.body || document.documentElement).appendChild(el);
+            }
             render(el);
+        } else if (anchor && el.parentNode !== anchor) {
+            // Re-parent if anchor became available after first render (login flow)
+            el.classList.add("anchored");
+            el.setAttribute("role", "button");
+            el.setAttribute("tabindex", "0");
+            el.setAttribute("title", "Click to view system prompt for this model");
+            if (!el.__rhodesClickWired) {
+                el.addEventListener("click", onIndicatorClick);
+                el.addEventListener("keydown", function (ev) {
+                    if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); onIndicatorClick(); }
+                });
+                el.__rhodesClickWired = true;
+            }
+            anchor.style.display = "block";
+            anchor.appendChild(el);
         }
         return el;
+    }
+
+    // ----- Admin-only popup: fetch + render system prompt for current model -----
+    function adminAuthHeaders() {
+        var headers = {};
+        try {
+            var userTok = localStorage.getItem("rhodes_user_token") || "";
+            var adminTok = localStorage.getItem("rhodes_admin_token") || "";
+            if (userTok) headers["Authorization"] = "Bearer " + userTok;
+            else if (adminTok) headers["X-Rhodes-Admin-Token"] = adminTok;
+        } catch (e) {}
+        return headers;
+    }
+
+    function closePromptModal() {
+        var bd = document.getElementById("rhodes-prompt-modal-backdrop");
+        if (bd && bd.parentNode) bd.parentNode.removeChild(bd);
+        document.removeEventListener("keydown", onPromptModalKey, true);
+    }
+    function onPromptModalKey(ev) {
+        if (ev.key === "Escape") { ev.preventDefault(); closePromptModal(); }
+    }
+
+    function openPromptModal(title, bodyText) {
+        closePromptModal();
+        var bd = document.createElement("div");
+        bd.id = "rhodes-prompt-modal-backdrop";
+        bd.addEventListener("click", function (ev) {
+            if (ev.target === bd) closePromptModal();
+        });
+
+        var modal = document.createElement("div");
+        modal.id = "rhodes-prompt-modal";
+
+        var head = document.createElement("div");
+        head.className = "rpm-head";
+        var titleEl = document.createElement("div");
+        titleEl.textContent = title;
+        var closeBtn = document.createElement("button");
+        closeBtn.className = "rpm-close";
+        closeBtn.type = "button";
+        closeBtn.textContent = "close";
+        closeBtn.addEventListener("click", closePromptModal);
+        head.appendChild(titleEl);
+        head.appendChild(closeBtn);
+
+        var body = document.createElement("div");
+        body.className = "rpm-body";
+        body.textContent = bodyText;
+
+        modal.appendChild(head);
+        modal.appendChild(body);
+        bd.appendChild(modal);
+        document.body.appendChild(bd);
+        document.addEventListener("keydown", onPromptModalKey, true);
+    }
+
+    async function fetchPromptForModel(alias) {
+        // Server walks prompt_file -> base_model chain -> prompt_source so the
+        // shared base prompt is found regardless of variant suffix (-j/-l/-h/etc.).
+        var url = "/api/admin/prompt/for-model?alias=" + encodeURIComponent(alias) +
+                  "&max_chars=500000&_ts=" + Date.now();
+        var r = await fetch(url, { headers: adminAuthHeaders(), cache: "no-store" });
+        if (r.status === 401) throw new Error("Admin auth required (log in first).");
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+    }
+
+    async function onIndicatorClick() {
+        var el = document.getElementById("rhodes-live-indicator");
+        if (!el) return;
+        var alias = (el.dataset.model || "").trim();
+        if (!alias || alias === "-") {
+            openPromptModal("system prompt", "(no model alias yet — send a message first)");
+            return;
+        }
+        openPromptModal("system prompt — " + alias, "loading…");
+        try {
+            var data = await fetchPromptForModel(alias);
+            if (data && data.exists && data.text) {
+                var headBits = ["system prompt — " + alias];
+                if (data.source) headBits.push("source=" + data.source);
+                if (data.path) headBits.push(data.path);
+                openPromptModal(headBits.join("  "), data.text);
+                return;
+            }
+            var note = (data && data.note) ? data.note : "no prompt resolved for this alias";
+            openPromptModal("system prompt — " + alias, "(" + note + ")");
+        } catch (err) {
+            openPromptModal("system prompt — " + alias, "Error: " + (err && err.message ? err.message : String(err)));
+        }
     }
 
     function render(el) {
