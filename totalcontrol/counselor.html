@@ -73,7 +73,7 @@ button{-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:trans
 
 <script>
 const TOKEN = window.__TC_TOKEN__ || '';
-const API_KEY = window.__TC_API_KEY__ || '';
+function getChatAPIKey() { return window.__TC_API_KEY__ || ''; }
 const USERNAME = window.__TC_USERNAME__ || '';
 const API = 'https://rhodesagi.com';
 
@@ -208,9 +208,11 @@ async function callAPI() {
   }
 
   try {
+    var chatKey = getChatAPIKey();
+    if (!chatKey) throw new Error('Chat session is still starting. Try again in a moment.');
     var res = await fetch(API + '/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + API_KEY },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + chatKey },
       body: JSON.stringify({
         model: 'tc-counselor',
         messages: apiMsgs,
