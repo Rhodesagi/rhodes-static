@@ -72,10 +72,43 @@ button{-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:trans
 </div>
 
 <script>
-const TOKEN = window.__TC_TOKEN__ || '';
+const TOKEN = window.__TC_TOKEN__ || localStorage.getItem('rhodes_user_token') || '';
 function getChatAPIKey() { return window.__TC_API_KEY__ || ''; }
-const USERNAME = window.__TC_USERNAME__ || '';
+const USERNAME = window.__TC_USERNAME__ || localStorage.getItem('rhodes_username') || '';
 const API = 'https://rhodesagi.com';
+
+// ── Bootstrap chat session key (mobile Safari path) ──
+// iOS WebView injects __TC_API_KEY__ directly. Mobile Safari has no injector,
+// so exchange the user's stored rhodes_user_token JWT for a 1-hour chat key.
+async function bootstrapChatKey() {
+  if (window.__TC_API_KEY__) return;
+  if (!TOKEN) {
+    var st = document.getElementById('status');
+    if (st) { st.textContent = 'NOT LOGGED IN'; st.style.color = 'var(--red)'; }
+    return;
+  }
+  try {
+    var res = await fetch(API + '/api/tc/chat-session', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + TOKEN }
+    });
+    if (!res.ok) {
+      var st = document.getElementById('status');
+      if (st) { st.textContent = 'AUTH FAILED (' + res.status + ')'; st.style.color = 'var(--red)'; }
+      return;
+    }
+    var data = await res.json();
+    if (data && data.api_key) {
+      window.__TC_API_KEY__ = data.api_key;
+      // Refresh ~5 min before 1-hour expiry.
+      setTimeout(bootstrapChatKey, 55 * 60 * 1000);
+    }
+  } catch (e) {
+    var st = document.getElementById('status');
+    if (st) { st.textContent = 'BOOTSTRAP ERROR'; st.style.color = 'var(--red)'; }
+  }
+}
+bootstrapChatKey();
 
 document.getElementById('username').textContent = USERNAME;
 document.getElementById('input').addEventListener('keydown', function(e) {

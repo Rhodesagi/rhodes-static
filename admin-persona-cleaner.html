@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Persona Cleaner — Tagged Highlighter</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    margin: 0;
+    padding: 16px;
+    background: #1a1a1a;
+    color: #e0e0e0;
+    min-height: 100vh;
+  }
+  h1 { margin: 0; font-size: 16px; font-weight: 600; }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #333;
+  }
+  .progress { font-size: 13px; color: #aaa; }
+  .progress strong { color: #fff; }
+  .meta-row {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #aaa;
+  }
+  .name {
+    font-family: ui-monospace, Menlo, monospace;
+    color: #4a9eff;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .alias { font-family: ui-monospace, monospace; color: #888; }
+  .bytes { color: #777; font-size: 12px; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 12px;
+  }
+  .panel {
+    background: #232323;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 10px;
+  }
+  .panel-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #888;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .body-display {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.55;
+    color: #ccc;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 65vh;
+    overflow-y: auto;
+    background: #1a1a1a;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #2a2a2a;
+    user-select: text;
+    cursor: text;
+  }
+  .body-display::selection { background: #b45309; color: #fff; }
+
+  .selection-info {
+    background: #2a2a2a;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 8px;
+    font-size: 12px;
+    border: 1px solid #444;
+    display: none;
+  }
+  .selection-info.active { display: block; border-color: #b45309; }
+  .selection-preview {
+    font-family: ui-monospace, monospace;
+    background: #1a1a1a;
+    padding: 6px 8px;
+    margin: 6px 0;
+    border-radius: 3px;
+    color: #ddd;
+    max-height: 80px;
+    overflow-y: auto;
+    font-size: 11px;
+    border: 1px solid #2a2a2a;
+    white-space: pre-wrap;
+  }
+  .tag-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .tag-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+    border-radius: 3px;
+    border: 1px solid;
+    cursor: pointer;
+    font-family: inherit;
+    background: #1a1a1a;
+    color: #ddd;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tag-btn:hover { background: #2a2a2a; }
+  .tag-btn .key {
+    background: #333;
+    color: #aaa;
+    padding: 0 5px;
+    border-radius: 2px;
+    font-size: 10px;
+    font-family: ui-monospace, monospace;
+  }
+  .tag-tool_name      { border-color: #ef4444; }
+  .tag-tool_instruction { border-color: #f59e0b; }
+  .tag-contract_block { border-color: #8b5cf6; }
+  .tag-output_routing { border-color: #06b6d4; }
+  .tag-system_wrapper { border-color: #84cc16; }
+  .tag-other          { border-color: #6b7280; }
+
+  .stage-row {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 4px;
+    padding: 6px 8px;
+    margin-bottom: 5px;
+    font-size: 11px;
+    font-family: ui-monospace, monospace;
+    color: #bbb;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .stage-row.tag-tool_name      { border-left: 3px solid #ef4444; }
+  .stage-row.tag-tool_instruction { border-left: 3px solid #f59e0b; }
+  .stage-row.tag-contract_block { border-left: 3px solid #8b5cf6; }
+  .stage-row.tag-output_routing { border-left: 3px solid #06b6d4; }
+  .stage-row.tag-system_wrapper { border-left: 3px solid #84cc16; }
+  .stage-row.tag-other          { border-left: 3px solid #6b7280; }
+  .stage-row .preview { flex: 1; max-height: 40px; overflow: hidden; line-height: 1.4; }
+  .stage-row .meta { color: #777; font-size: 10px; flex-shrink: 0; min-width: 90px; line-height: 1.3; }
+  .stage-row .meta .tag-pill {
+    display: inline-block;
+    padding: 1px 5px;
+    border-radius: 2px;
+    background: #2a2a2a;
+    margin-bottom: 2px;
+    font-size: 9px;
+  }
+  .stage-row button {
+    background: transparent;
+    border: 1px solid #444;
+    color: #888;
+    font-size: 11px;
+    padding: 2px 6px;
+    cursor: pointer;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .stage-row button:hover { color: #f87171; border-color: #553; }
+
+  button {
+    padding: 7px 14px;
+    background: #2a2a2a;
+    color: #e0e0e0;
+    border: 1px solid #444;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  button:hover { background: #333; border-color: #555; }
+  button.primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+  button.primary:hover { background: #1d4ed8; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .actions { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+  .status {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #888;
+    min-height: 16px;
+  }
+  .status.error { color: #f87171; }
+  .status.success { color: #4ade80; }
+  .status.warn { color: #fbbf24; }
+  .empty-stage { color: #555; font-size: 11px; font-style: italic; padding: 10px; }
+  kbd {
+    background: #2a2a2a;
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid #444;
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+  }
+  .legend {
+    margin-top: 6px;
+    font-size: 10px;
+    color: #666;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Persona Cleaner — Tagged Highlighter</h1>
+  <div class="progress" id="progress">Loading…</div>
+</div>
+
+<div class="meta-row">
+  <span class="name" id="persona-name">—</span>
+  <span class="alias" id="persona-alias">—</span>
+  <span class="bytes" id="persona-bytes">—</span>
+  <button onclick="saveAsIs()" style="margin-left: auto; padding: 4px 10px; font-size: 12px; background:#065f46; border-color:#10b981;">Save As-Is</button>
+  <button onclick="skipCurrent()" style="padding: 4px 10px; font-size: 12px;">Skip & Next</button>
+</div>
+
+<div class="layout">
+  <div class="panel">
+    <div class="panel-label">
+      <span>Persona body — highlight any block, then tag</span>
+      <span style="color:#666; font-weight: normal;" id="byte-counter">0 bytes</span>
+    </div>
+    <div class="body-display" id="body-display" onmouseup="checkSelection()" onkeyup="checkSelection()">—</div>
+    <div class="selection-info" id="selection-info">
+      <div style="display:flex; justify-content: space-between; margin-bottom: 4px;">
+        <strong style="color:#fbbf24;">Selection</strong>
+        <span style="color:#aaa;" id="selection-stats">—</span>
+      </div>
+      <div class="selection-preview" id="selection-preview">—</div>
+      <div class="tag-buttons">
+        <button class="tag-btn tag-tool_name"        onclick="stageWithTag('tool_name')">      <span class="key">1</span> Tool name</button>
+        <button class="tag-btn tag-tool_instruction" onclick="stageWithTag('tool_instruction')"><span class="key">2</span> Tool instruction</button>
+        <button class="tag-btn tag-contract_block"   onclick="stageWithTag('contract_block')">  <span class="key">3</span> Contract block</button>
+        <button class="tag-btn tag-output_routing"   onclick="stageWithTag('output_routing')">  <span class="key">4</span> Output routing</button>
+        <button class="tag-btn tag-system_wrapper"   onclick="stageWithTag('system_wrapper')">  <span class="key">5</span> System wrapper</button>
+        <button class="tag-btn tag-other"            onclick="stageWithTag('other')">           <span class="key">6</span> Other</button>
+      </div>
+      <div class="legend">Press a number key while text is selected to tag & stage. <kbd>Esc</kbd> clears selection.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-label">
+      <span>Staged removals</span>
+      <span style="color:#666; font-weight: normal;" id="staged-count">0</span>
+    </div>
+    <div id="staged-list"><div class="empty-stage">Highlight a block in the body to stage a tagged removal.</div></div>
+    <div class="actions" style="margin-top: 12px;">
+      <button class="primary" id="apply-btn" onclick="applyStaged()" disabled>Apply All Staged →</button>
+      <button onclick="clearAllStaged()" id="clear-staged-btn" disabled style="padding: 6px 12px;">Clear</button>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+</div>
+
+<script>
+
+function _adminToken() {
+  return localStorage.getItem('rhodes_user_token') || localStorage.getItem('rhodes_admin_token') || '';
+}
+function _authHeaders(extra) {
+  const h = Object.assign({}, extra || {});
+  const t = _adminToken();
+  if (t) {
+    if (localStorage.getItem('rhodes_user_token')) h['Authorization'] = 'Bearer ' + t;
+    else h['X-Rhodes-Admin-Token'] = t;
+  }
+  return h;
+}
+async function _authedFetch(url, opts) {
+  opts = opts || {};
+  const r = await fetch(url, opts);
+  if (r.status === 401 || r.status === 403) {
+    setStatus("Auth expired or missing — log in on rhodesagi.com main site, then reload this page.", "error");
+    throw new Error("auth_required");
+  }
+  return r;
+}
+
+let currentName = null;
+let currentBody = "";
+let stagedRemovals = [];  // [{text, tag, matchCount, bytes}]
+let currentSelection = "";
+const TAG_KEYS = { "1": "tool_name", "2": "tool_instruction", "3": "contract_block", "4": "output_routing", "5": "system_wrapper", "6": "other" };
+
+async function loadNext() {
+  setStatus("Loading next persona…");
+  try {
+    const r = await _authedFetch("/api/admin/persona-cleaner/next", { headers: _authHeaders(), cache: "no-store" });
+    const data = await r.json();
+    if (data.done) {
+      document.getElementById("persona-name").textContent = "All personas reviewed.";
+      document.getElementById("persona-alias").textContent = "";
+      document.getElementById("persona-bytes").textContent = "";
+      document.getElementById("body-display").textContent = "";
+      currentName = null;
+      currentBody = "";
+      updateProgress(data);
+      setStatus("Done.", "success");
+      return;
+    }
+    currentName = data.name;
+    currentBody = data.body;
+    document.getElementById("persona-name").textContent = data.name;
+    document.getElementById("persona-alias").textContent = "alias: " + data.alias;
+    document.getElementById("persona-bytes").textContent = data.body_bytes + " bytes";
+    document.getElementById("body-display").textContent = data.body;
+    document.getElementById("byte-counter").textContent = data.body_bytes + " bytes";
+    updateProgress(data);
+    clearSelection();
+    setStatus("");
+  } catch (e) {
+    setStatus("Error loading: " + e.message, "error");
+  }
+}
+
+async function skipCurrent() {
+  if (!currentName) { loadNext(); return; }
+  try {
+    await _authedFetch("/api/admin/persona-cleaner/skip", {
+      method: "POST",
+      headers: _authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ name: currentName, reason: "manual_skip" }),
+    });
+  } catch (e) { /* ignore */ }
+  loadNext();
+}
+
+async function saveAsIs() {
+  if (!currentName || !currentBody) { setStatus("Nothing loaded.", "warn"); return; }
+  try {
+    const r = await _authedFetch("/api/admin/persona-cleaner/save", {
+      method: "POST",
+      headers: _authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ name: currentName, clean_body: currentBody, notes: "saved as-is, no removals" }),
+    });
+    const data = await r.json();
+    if (data.error) { setStatus("Save failed: " + data.error, "error"); return; }
+    setStatus("Saved as-is · " + data.bytes + " bytes" + (data.duplicates_collapsed ? " · +" + data.duplicates_collapsed + " duplicates" : ""), "success");
+    setTimeout(loadNext, 600);
+  } catch (e) {
+    if (e.message !== "auth_required") setStatus("Save error: " + e.message, "error");
+  }
+}
+
+
+
+function updateProgress(data) {
+  if (data.total != null && data.remaining != null) {
+    const done = data.total - data.remaining;
+    document.getElementById("progress").innerHTML =
+      "<strong>" + done + "</strong> / " + data.total + " · " + data.remaining + " pending";
+  }
+}
+
+async function checkSelection() {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed) return;
+  const text = sel.toString();
+  if (text.length < 5) return;
+  const display = document.getElementById("body-display");
+  if (!display.contains(sel.anchorNode)) return;
+
+  currentSelection = text;
+  document.getElementById("selection-preview").textContent = text;
+  document.getElementById("selection-stats").textContent = text.length + " chars · finding matches…";
+  document.getElementById("selection-info").classList.add("active");
+
+  try {
+    const r = await _authedFetch("/api/admin/persona-cleaner/find-matches", {
+      method: "POST",
+      headers: _authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ selection: text }),
+    });
+    const data = await r.json();
+    if (data.error) {
+      document.getElementById("selection-stats").textContent = "Error: " + data.error;
+      return;
+    }
+    document.getElementById("selection-stats").textContent =
+      data.match_count + " matches · " + data.selection_bytes + " bytes each";
+  } catch (e) {
+    document.getElementById("selection-stats").textContent = "Lookup error";
+  }
+}
+
+function clearSelection() {
+  document.getElementById("selection-info").classList.remove("active");
+  document.getElementById("selection-preview").textContent = "—";
+  document.getElementById("selection-stats").textContent = "—";
+  currentSelection = "";
+  if (window.getSelection) window.getSelection().removeAllRanges();
+}
+
+async function stageWithTag(tag) {
+  if (!currentSelection) return;
+  if (stagedRemovals.some(s => s.text === currentSelection)) {
+    setStatus("Already staged.", "warn");
+    clearSelection();
+    return;
+  }
+  try {
+    const r = await _authedFetch("/api/admin/persona-cleaner/find-matches", {
+      method: "POST",
+      headers: _authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ selection: currentSelection }),
+    });
+    const data = await r.json();
+    stagedRemovals.push({
+      text: currentSelection,
+      tag: tag,
+      bytes: data.selection_bytes,
+      matchCount: data.match_count,
+    });
+    renderStaged();
+    clearSelection();
+    setStatus("Staged as " + tag + " · " + data.match_count + " matches.", "success");
+  } catch (e) {
+    setStatus("Stage error: " + e.message, "error");
+  }
+}
+
+function renderStaged() {
+  const el = document.getElementById("staged-list");
+  if (stagedRemovals.length === 0) {
+    el.innerHTML = '<div class="empty-stage">Highlight a block in the body to stage a tagged removal.</div>';
+    document.getElementById("apply-btn").disabled = true;
+    document.getElementById("clear-staged-btn").disabled = true;
+    document.getElementById("staged-count").textContent = "0";
+    return;
+  }
+  el.innerHTML = stagedRemovals.map((s, i) => {
+    const preview = s.text.length > 200 ? s.text.slice(0, 200) + "…" : s.text;
+    const safe = preview.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return `<div class="stage-row tag-${s.tag}">
+      <div class="meta">
+        <span class="tag-pill">${s.tag}</span><br>
+        ${s.matchCount} models<br>
+        <span style="color:#555">${s.bytes} bytes</span>
+      </div>
+      <div class="preview">${safe}</div>
+      <button onclick="unstage(${i})">×</button>
+    </div>`;
+  }).join("");
+  document.getElementById("apply-btn").disabled = false;
+  document.getElementById("clear-staged-btn").disabled = false;
+  document.getElementById("staged-count").textContent = stagedRemovals.length;
+}
+
+function unstage(i) {
+  stagedRemovals.splice(i, 1);
+  renderStaged();
+}
+
+function clearAllStaged() {
+  stagedRemovals = [];
+  renderStaged();
+}
+
+async function applyStaged() {
+  if (stagedRemovals.length === 0) return;
+  const totalAffected = Math.max(...stagedRemovals.map(s => s.matchCount));
+  setStatus("Applying…");
+  document.getElementById("apply-btn").disabled = true;
+  try {
+    const r = await _authedFetch("/api/admin/persona-cleaner/apply-removals", {
+      method: "POST",
+      headers: _authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ removals: stagedRemovals.map(s => ({ text: s.text, tag: s.tag })) }),
+    });
+    const data = await r.json();
+    if (data.error) {
+      setStatus("Apply failed: " + data.error, "error");
+      document.getElementById("apply-btn").disabled = false;
+      return;
+    }
+    const tagSummary = data.by_tag ? " · " + Object.entries(data.by_tag).map(([k,v]) => k+":"+v).join(", ") : "";
+    setStatus("Cleaned " + data.personas_cleaned + " personas with " + data.removals_applied + " block(s)" + tagSummary, "success");
+    stagedRemovals = [];
+    renderStaged();
+    setTimeout(loadNext, 700);
+  } catch (e) {
+    setStatus("Apply error: " + e.message, "error");
+    document.getElementById("apply-btn").disabled = false;
+  }
+}
+
+function setStatus(msg, cls) {
+  const el = document.getElementById("status");
+  el.textContent = msg;
+  el.className = "status" + (cls ? " " + cls : "");
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { clearSelection(); return; }
+  // Tag shortcuts: 1-6 with active selection
+  if (TAG_KEYS[e.key] && currentSelection) {
+    e.preventDefault();
+    stageWithTag(TAG_KEYS[e.key]);
+  }
+});
+
+loadNext();
+</script>
+
+</body>
+</html>
