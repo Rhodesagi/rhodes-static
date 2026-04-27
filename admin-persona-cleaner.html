@@ -136,7 +136,7 @@
   .tag-tool_instruction { border-color: #f59e0b; }
   .tag-contract_block { border-color: #8b5cf6; }
   .tag-output_routing { border-color: #06b6d4; }
-  .tag-system_wrapper { border-color: #84cc16; }
+  .tag-tool_schema   { border-color: #ec4899; }
   .tag-other          { border-color: #6b7280; }
 
   .stage-row {
@@ -156,7 +156,7 @@
   .stage-row.tag-tool_instruction { border-left: 3px solid #f59e0b; }
   .stage-row.tag-contract_block { border-left: 3px solid #8b5cf6; }
   .stage-row.tag-output_routing { border-left: 3px solid #06b6d4; }
-  .stage-row.tag-system_wrapper { border-left: 3px solid #84cc16; }
+  .stage-row.tag-tool_schema   { border-left: 3px solid #ec4899; }
   .stage-row.tag-other          { border-left: 3px solid #6b7280; }
   .stage-row .preview { flex: 1; max-height: 40px; overflow: hidden; line-height: 1.4; }
   .stage-row .meta { color: #777; font-size: 10px; flex-shrink: 0; min-width: 90px; line-height: 1.3; }
@@ -232,7 +232,8 @@
   <span class="name" id="persona-name">—</span>
   <span class="alias" id="persona-alias">—</span>
   <span class="bytes" id="persona-bytes">—</span>
-  <button onclick="saveAsIs()" style="margin-left: auto; padding: 4px 10px; font-size: 12px; background:#065f46; border-color:#10b981;">Save As-Is</button>
+  <label style="margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #ddd; cursor: pointer;"><input type="checkbox" id="tag-only-toggle" checked onchange="renderStaged()"> Tag-only mode</label>
+  <button onclick="saveAsIs()" style="padding: 4px 10px; font-size: 12px; background:#065f46; border-color:#10b981;">Save As-Is</button>
   <button onclick="skipCurrent()" style="padding: 4px 10px; font-size: 12px;">Skip & Next</button>
 </div>
 
@@ -254,7 +255,7 @@
         <button class="tag-btn tag-tool_instruction" onclick="stageWithTag('tool_instruction')"><span class="key">2</span> Tool instruction</button>
         <button class="tag-btn tag-contract_block"   onclick="stageWithTag('contract_block')">  <span class="key">3</span> Contract block</button>
         <button class="tag-btn tag-output_routing"   onclick="stageWithTag('output_routing')">  <span class="key">4</span> Output routing</button>
-        <button class="tag-btn tag-system_wrapper"   onclick="stageWithTag('system_wrapper')">  <span class="key">5</span> System wrapper</button>
+        <button class="tag-btn tag-tool_schema"     onclick="stageWithTag('tool_schema')">    <span class="key">5</span> Tool schema</button>
         <button class="tag-btn tag-other"            onclick="stageWithTag('other')">           <span class="key">6</span> Other</button>
       </div>
       <div class="legend">Press a number key while text is selected to tag & stage. <kbd>Esc</kbd> clears selection.</div>
@@ -303,7 +304,7 @@ let currentName = null;
 let currentBody = "";
 let stagedRemovals = [];  // [{text, tag, matchCount, bytes}]
 let currentSelection = "";
-const TAG_KEYS = { "1": "tool_name", "2": "tool_instruction", "3": "contract_block", "4": "output_routing", "5": "system_wrapper", "6": "other" };
+const TAG_KEYS = { "1": "tool_name", "2": "tool_instruction", "3": "contract_block", "4": "output_routing", "5": "tool_schema", "6": "other" };
 
 async function loadNext() {
   setStatus("Loading next persona…");
@@ -414,6 +415,11 @@ function clearSelection() {
   if (window.getSelection) window.getSelection().removeAllRanges();
 }
 
+function isTagOnlyMode() {
+  const el = document.getElementById("tag-only-toggle");
+  return el ? el.checked : true;
+}
+
 async function stageWithTag(tag) {
   if (!currentSelection) return;
   if (stagedRemovals.some(s => s.text === currentSelection)) {
@@ -421,32 +427,44 @@ async function stageWithTag(tag) {
     clearSelection();
     return;
   }
+  const tagOnly = isTagOnlyMode();
+  const url = tagOnly
+    ? "/api/admin/persona-cleaner/tag-block"
+    : "/api/admin/persona-cleaner/find-matches";
+  const body = tagOnly
+    ? JSON.stringify({ name: currentName, selection: currentSelection, tag: tag })
+    : JSON.stringify({ selection: currentSelection });
   try {
-    const r = await _authedFetch("/api/admin/persona-cleaner/find-matches", {
+    const r = await _authedFetch(url, {
       method: "POST",
       headers: _authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ selection: currentSelection }),
+      body: body,
     });
     const data = await r.json();
     stagedRemovals.push({
       text: currentSelection,
       tag: tag,
-      bytes: data.selection_bytes,
+      bytes: data.block_bytes != null ? data.block_bytes : data.selection_bytes,
       matchCount: data.match_count,
+      persisted: !!data.persisted,
     });
     renderStaged();
     clearSelection();
-    setStatus("Staged as " + tag + " · " + data.match_count + " matches.", "success");
+    const verb = tagOnly ? "Tagged" : "Staged";
+    setStatus(verb + " as " + tag + " · " + data.match_count + " matches.", "success");
   } catch (e) {
-    setStatus("Stage error: " + e.message, "error");
+    setStatus((isTagOnlyMode() ? "Tag" : "Stage") + " error: " + e.message, "error");
   }
 }
 
 function renderStaged() {
   const el = document.getElementById("staged-list");
   if (stagedRemovals.length === 0) {
-    el.innerHTML = '<div class="empty-stage">Highlight a block in the body to stage a tagged removal.</div>';
-    document.getElementById("apply-btn").disabled = true;
+    const tagOnly = isTagOnlyMode();
+    el.innerHTML = '<div class="empty-stage">' + (tagOnly ? 'Highlight a block, then press 1-6 to tag (no removal).' : 'Highlight a block in the body to stage a tagged removal.') + '</div>';
+    const applyBtn = document.getElementById("apply-btn");
+    applyBtn.disabled = true;
+    applyBtn.textContent = tagOnly ? "Tags already persisted" : "Apply All Staged →";
     document.getElementById("clear-staged-btn").disabled = true;
     document.getElementById("staged-count").textContent = "0";
     return;
@@ -464,7 +482,16 @@ function renderStaged() {
       <button onclick="unstage(${i})">×</button>
     </div>`;
   }).join("");
-  document.getElementById("apply-btn").disabled = false;
+  const applyBtn = document.getElementById("apply-btn");
+  if (isTagOnlyMode()) {
+    applyBtn.disabled = true;
+    applyBtn.textContent = "Tags already persisted";
+    applyBtn.title = "In tag-only mode, each tag is saved on click. Use the bulk-removal review tool for pass 2.";
+  } else {
+    applyBtn.disabled = false;
+    applyBtn.textContent = "Apply All Staged →";
+    applyBtn.title = "";
+  }
   document.getElementById("clear-staged-btn").disabled = false;
   document.getElementById("staged-count").textContent = stagedRemovals.length;
 }
