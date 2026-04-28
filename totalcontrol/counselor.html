@@ -475,11 +475,7 @@ function speak(msgIdx) {
 // ── Init ──
 loadHistory();
 // Always ensure Rhodes greeting is the first message
-var greeting = "Hi, I'm Rhodes — your Total Control Advisor.
-
-I can help you block distracting apps and sites, set up schedules, and earn access through exercise.
-
-Tell me what sites tend to distract you.";
+var greeting = "Hi, I'm Rhodes — your Total Control Advisor.\n\nI can help you block distracting apps and sites, set up schedules, and earn access through exercise.\n\nTell me what sites tend to distract you.";
 if (messages.length === 0 || (messages[0].role !== 'assistant' || !messages[0].content.includes('Total Control Advisor'))) {
   messages.unshift({ role: 'assistant', content: greeting });
   saveHistory();
