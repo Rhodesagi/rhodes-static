@@ -292,6 +292,8 @@ async function callAPI() {
         body: JSON.stringify({
           model: 'tc-counselor',
           messages: apiMsgs.concat([assistantToolMsg]).concat(toolMessages),
+          tools: TC_TOOLS,
+          tool_choice: 'none',
           stream: false,
           max_tokens: 2048
         })
