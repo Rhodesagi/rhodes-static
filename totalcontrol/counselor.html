@@ -261,9 +261,10 @@ async function callAPI() {
     var choice = (data.choices || [])[0] || {};
     var msg = choice.message || {};
 
-    // Handle tool calls
+    // Handle tool calls, then send tool results back for a real final answer.
     if (msg.tool_calls && msg.tool_calls.length > 0) {
-      var results = [];
+      var toolMessages = [];
+      var fallbackResults = [];
       for (var t = 0; t < msg.tool_calls.length; t++) {
         var tc = msg.tool_calls[t];
         var fn = tc.function || {};
@@ -271,12 +272,39 @@ async function callAPI() {
         var args = {};
         try { args = JSON.parse(fn.arguments || '{}'); } catch(e) {}
         var result = await executeToolCall(name, args);
-        results.push(name + ': ' + result);
+        fallbackResults.push(name + ': ' + result);
+        toolMessages.push({
+          role: 'tool',
+          tool_call_id: tc.id || ('tc_' + t),
+          name: name,
+          content: String(result || '')
+        });
       }
-      var content = (msg.content || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-      var toolSummary = results.join('\n');
-      var display = content ? content + '\n\n' + toolSummary : toolSummary;
-      messages.push({ role: 'assistant', content: display });
+
+      var assistantToolMsg = {
+        role: 'assistant',
+        content: msg.content || '',
+        tool_calls: msg.tool_calls
+      };
+      var finalRes = await fetch(API + '/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + chatKey },
+        body: JSON.stringify({
+          model: 'tc-counselor',
+          messages: apiMsgs.concat([assistantToolMsg]).concat(toolMessages),
+          stream: false,
+          max_tokens: 2048
+        })
+      });
+
+      var finalContent = '';
+      if (finalRes.ok) {
+        var finalData = await finalRes.json();
+        var finalChoice = (finalData.choices || [])[0] || {};
+        var finalMsg = finalChoice.message || {};
+        finalContent = (finalMsg.content || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      }
+      messages.push({ role: 'assistant', content: finalContent || fallbackResults.join('\n') || 'Done.' });
     } else {
       var content = (msg.content || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim();
       messages.push({ role: 'assistant', content: content || 'No response.' });
