@@ -236,6 +236,19 @@
 </style>
 </head>
 <body>
+<div id="login-view" style="display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center; min-height: 100vh; background: #1a1a1a;">
+  <div style="background: #232323; border: 1px solid #333; border-radius: 8px; padding: 32px; width: 100%; max-width: 400px;">
+    <h2 style="margin: 0 0 24px 0; color: #fff; font-size: 18px;">Admin Login</h2>
+    <div style="margin-bottom: 16px;">
+      <input type="password" id="admin-password" placeholder="Admin password" style="width: 100%; padding: 8px 12px; background: #1a1a1a; border: 1px solid #444; border-radius: 4px; color: #e0e0e0; font-size: 14px;">
+    </div>
+    <button onclick="adminLogin()" style="width: 100%; padding: 10px; background: #2563eb; border: 1px solid #2563eb; border-radius: 4px; color: #fff; cursor: pointer; font-size: 14px; font-weight: 600;">Login</button>
+    <div id="login-error" style="margin-top: 12px; color: #f87171; font-size: 12px; text-align: center; display: none;"></div>
+  </div>
+</div>
+
+<div id="main-view" style="display: none;">
+
 
 <div class="header">
   <h1>Persona Cleaner — Tagged Highlighter</h1>
@@ -296,6 +309,9 @@
 <script>
 
 function _adminToken() {
+  // Use user session token if available (unified auth)
+  const userToken = localStorage.getItem("rhodes_user_token");
+  if (userToken) return userToken;
   return localStorage.getItem('rhodes_user_token') || localStorage.getItem('rhodes_admin_token') || '';
 }
 function _authHeaders(extra) {
@@ -480,7 +496,8 @@ function renderStaged() {
       </div>
       <div class="preview">${safe}</div>
       <button onclick="unstage(${i})">×</button>
-    </div>`;
+    </div>
+</div>`;
   }).join("");
   document.getElementById("apply-btn").disabled = false;
   document.getElementById("clear-staged-btn").disabled = false;
@@ -565,6 +582,51 @@ document.addEventListener("keydown", (e) => {
 });
 
 loadNext();
+
+function adminLogin() {
+  const pwd = document.getElementById("admin-password").value;
+  fetch("/api/admin/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password: pwd })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.token) {
+      localStorage.setItem("rhodes_admin_token", data.token);
+      document.getElementById("login-view").style.display = "none";
+      document.getElementById("main-view").style.display = "block";
+      loadNext();
+    } else {
+      document.getElementById("login-error").textContent = data.error || "Login failed";
+      document.getElementById("login-error").style.display = "block";
+    }
+  })
+  .catch(e => {
+    document.getElementById("login-error").textContent = "Network error";
+    document.getElementById("login-error").style.display = "block";
+  });
+}
+
+// On load, check if we have a token
+window.addEventListener("DOMContentLoaded", () => {
+  const token = localStorage.getItem("rhodes_admin_token");
+  if (token) {
+    document.getElementById("login-view").style.display = "none";
+    document.getElementById("main-view").style.display = "block";
+    loadNext();
+  } else {
+    document.getElementById("login-view").style.display = "flex";
+  }
+});
+
+// Allow enter key to submit password
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("admin-password").addEventListener("keypress", e => {
+    if (e.key === "Enter") adminLogin();
+  });
+});
+
 </script>
 
 </body>
