@@ -312,7 +312,7 @@ function _adminToken() {
   // Use user session token if available (unified auth)
   const userToken = localStorage.getItem("rhodes_user_token");
   if (userToken) return userToken;
-  return localStorage.getItem('rhodes_user_token') || localStorage.getItem('rhodes_admin_token') || '';
+  return localStorage.getItem('rhodes_admin_token') || '';
 }
 function _authHeaders(extra) {
   const h = Object.assign({}, extra || {});
@@ -496,8 +496,7 @@ function renderStaged() {
       </div>
       <div class="preview">${safe}</div>
       <button onclick="unstage(${i})">×</button>
-    </div>
-</div>`;
+    </div>`;
   }).join("");
   document.getElementById("apply-btn").disabled = false;
   document.getElementById("clear-staged-btn").disabled = false;
@@ -541,11 +540,7 @@ async function applyStaged() {
     for (const s of stagedRemovals) {
       while (cleanBody.indexOf(s.text) !== -1) cleanBody = cleanBody.replace(s.text, "");
     }
-    cleanBody = cleanBody.replace(/
-{3,}/g, "
-
-").trim() + "
-";
+    cleanBody = cleanBody.replace(/\n{3,}/g, "\n\n").trim() + "\n";
     if (currentName && cleanBody && cleanBody !== currentBody) {
       try {
         await _authedFetch("/api/admin/persona-cleaner/save", {
@@ -580,8 +575,6 @@ document.addEventListener("keydown", (e) => {
     stageWithTag(TAG_KEYS[e.key]);
   }
 });
-
-loadNext();
 
 function adminLogin() {
   const pwd = document.getElementById("admin-password").value;
