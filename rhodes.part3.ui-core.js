@@ -954,10 +954,12 @@ function showDownloads() {
                             if (!reasoningText || !chatEl) return;
                             var _isAdmin = window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin;
                             var _rapiraOn = window.RHODES_RAPIRA_ENABLED === true;
+                            console.log('[RESUME-REASONING] called, isAdmin=' + _isAdmin + ' len=' + reasoningText.length);
                             if (!_isAdmin && !_rapiraOn) return;
                             var div = document.createElement('div');
                             div.className = 'msg ai reasoning-stream reasoning-resumed';
                             var details = document.createElement('details');
+                            details.open = true;  // open by default so the panel is visible on resume
                             var summary = document.createElement('summary');
                             summary.style.cssText = "cursor:pointer;color:var(--cyan);font-family:'Orbitron',monospace;font-size:12px;user-select:none;margin-bottom:6px;";
                             var tokEst = Math.round(reasoningText.length / 4);
@@ -2346,6 +2348,19 @@ function showDownloads() {
                     const tool = msg.payload;
                     // Track active tool loop — suppress SHARE/REPORT on intermediate messages
                     if (tool.status === 'starting') window._rhodesToolLoopActive = true;
+                    // Stash per-tool thinking on a window map so the live badge
+                    // renderer (the one that creates the dot/expand UI) can
+                    // splice them into the badge details when it builds them.
+                    // Indexed by req_id+round+name for the active turn.
+                    try {
+                        var _tk = (tool.req_id || '') + ':' + (tool.round || 0) + ':' + (tool.name || '');
+                        window._rhodesLiveToolThink = window._rhodesLiveToolThink || {};
+                        var _e = window._rhodesLiveToolThink[_tk] || {};
+                        if (tool._rhodes_think) _e._rhodes_think = tool._rhodes_think;
+                        if (tool._rhodes_think_public) _e._rhodes_think_public = tool._rhodes_think_public;
+                        if (tool.thinking) _e.thinking = tool.thinking;
+                        window._rhodesLiveToolThink[_tk] = _e;
+                    } catch (_e_stash) {}
 
             // ── Handoff viewer auto-detect ──
             if (tool.status === 'complete' && tool.result) {
@@ -2529,6 +2544,23 @@ function showDownloads() {
                         // Linkify URLs in the escaped result text
                         resultHtml = resultHtml.replace(/(https?:\/\/[^\s<>&`]+(?:&amp;[^\s<>&`]+)*)/g, '<a href="$1" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:underline;">$1</a>');
                         detailsContent += '<div style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.1);padding-top:6px;"><span style="color:var(--green);">Result:</span>' + resultEmbeds + '<pre style="white-space:pre-wrap;color:var(--text);max-height:150px;overflow:auto;">' + resultHtml + '</pre></div>';
+                    }
+
+                    // Per-tool reasoning surfacing in live badge:
+                    // - Admin: tool._rhodes_think (private) in cyan box
+                    // - Anyone: tool._rhodes_think_public OR tool.thinking (public) in green box
+                    var _liveThinkPriv = tool._rhodes_think || '';
+                    var _liveThinkPub = tool._rhodes_think_public || tool.thinking || '';
+                    var _liveIsAdmin = window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin;
+                    var _liveThinkBlocks = '';
+                    if (_liveIsAdmin && _liveThinkPriv) {
+                        _liveThinkBlocks += '<div style="color:var(--cyan);opacity:0.85;font-size:11px;margin-bottom:6px;border-left:2px solid var(--cyan);padding:4px 8px;background:rgba(0,200,255,0.08);"><strong>Reasoning:</strong> ' + escapeHtml(_liveThinkPriv) + '</div>';
+                    }
+                    if (_liveThinkPub) {
+                        _liveThinkBlocks += '<div style="color:var(--green);opacity:0.9;font-size:11px;margin-bottom:6px;border-left:2px solid var(--green);padding:4px 8px;background:rgba(0,255,150,0.08);"><strong>Note:</strong> ' + escapeHtml(_liveThinkPub) + '</div>';
+                    }
+                    if (_liveThinkBlocks) {
+                        detailsContent = _liveThinkBlocks + detailsContent;
                     }
 
                     // Idempotent: key on toolName|round only (preview may differ between start/complete)
