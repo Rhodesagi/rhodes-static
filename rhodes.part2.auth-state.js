@@ -301,11 +301,13 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
                     // Show shared Q&A
                     const qDiv = document.createElement('div');
                     qDiv.className = 'msg user';
-                    qDiv.innerHTML = decoded.q.replace(/\n/g, '<br>');
+                    // F14 XSS fix (2026-04-30): escape <> BEFORE markdown like the
+                    // share-fetch path below. ?qa=<base64> is attacker-controlled.
+                    qDiv.innerHTML = decoded.q.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
                     chat.appendChild(qDiv);
                     const aDiv = document.createElement('div');
                     aDiv.className = 'msg ai';
-                    aDiv.innerHTML = decoded.a.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre>$2</pre>').replace(/`([^`]+)`/g, '<code>$1</code>')
+                    aDiv.innerHTML = decoded.a.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/```(\w*)\n([\s\S]*?)```/g, '<pre>$2</pre>').replace(/`([^`]+)`/g, '<code>$1</code>')
                 .replace(/\*\*(https?:\/\/[^\s*]+)\*\*/g, '$1')
                 .replace(/'(https?:\/\/[^\s']+)'/g, '$1')
                 .replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>')
@@ -342,12 +344,15 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
                     if (data.share_type || data.share_metadata) {
                         const badge = document.createElement('div');
                         badge.style.cssText = 'position:fixed;top:60px;right:20px;background:rgba(0,255,255,0.15);border:1px solid var(--cyan);border-radius:6px;padding:8px 14px;font-size:11px;z-index:100;max-width:300px;';
-                        let badgeText = data.share_type || '';
+                        const badgeText = (data.share_type || '');
                         const meta = data.share_metadata || {};
+                        // F13 XSS fix (2026-04-30): use textContent for user-supplied share_note,
+                        // then assemble. share_type is server-set so safe to inject.
+                        badge.innerHTML = '<span style="color:var(--cyan);font-weight:bold;">SHARED:</span> <span class="share-type"></span><span class="share-note"></span>';
+                        badge.querySelector('.share-type').textContent = ' ' + badgeText;
                         if (meta.share_note) {
-                            badgeText += (badgeText ? ' • ' : '') + meta.share_note;
+                            badge.querySelector('.share-note').textContent = (badgeText ? ' \u2022 ' : ' ') + meta.share_note;
                         }
-                        badge.innerHTML = '<span style="color:var(--cyan);font-weight:bold;">SHARED:</span> ' + badgeText;
                         document.body.appendChild(badge);
                     }
 
