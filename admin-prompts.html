@@ -706,7 +706,8 @@ body .tab:hover {
       <div class="builder-container">
         <div class="builder-grid">
           <div class="model-list">
-            <input type="text" id="modelSearchBox" placeholder="Search models..." oninput="filterModelList(this.value)" style="width:calc(100% - 20px);margin:6px 10px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);color:var(--fg);border-radius:4px;font-size:12px;font-family:var(--mono)">
+            <input type="text" id="modelSearchBox" placeholder="Filter pinned..." oninput="filterModelList(this.value)" style="width:calc(100% - 20px);margin:6px 10px 2px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);color:var(--fg);border-radius:4px;font-size:12px;font-family:var(--mono)">
+            <input type="text" id="modelOpenBox" placeholder="Open any alias (e.g. cli1-rhodes, clib1-foo)..." onkeydown="if(event.key==='Enter'){openAnyAlias(this);}" style="width:calc(100% - 20px);margin:2px 10px 6px;padding:5px 8px;background:var(--bg);border:1px solid var(--cyan);color:var(--fg);border-radius:4px;font-size:12px;font-family:var(--mono)">
             <div class="model-list-header">
               <span>Models</span>
               <button class="primary" onclick="newModel()" style="padding:4px 10px;font-size:11px">+ New</button>
@@ -2076,9 +2077,22 @@ function buildFromBaseModel(baseModel, opts) {
   onBuilderChange();
 }
 
+// Always-pinned defaults shown when localStorage has no pins.
+const MODEL_DEFAULT_PINS = ['rhodes', 'p1.12e', 'bap-ea-d', 'cli1-rhodes', 'clib1-rhodes'];
+function _pinnedAliasesForLoad() {
+  let pins = [];
+  try {
+    const raw = JSON.parse(localStorage.getItem(MODEL_TOP_STORAGE_KEY) || '[]');
+    pins = Array.isArray(raw) ? raw.map(x => String(x||'').trim().toLowerCase()).filter(Boolean) : [];
+  } catch(e) { pins = []; }
+  if (!pins.length) pins = MODEL_DEFAULT_PINS.slice();
+  return Array.from(new Set(pins));
+}
 async function loadModelModelConfigs() {
   try {
-    const data = await api('/api/admin/model-configs');
+    const aliases = _pinnedAliasesForLoad();
+    const url = '/api/admin/model-configs?aliases=' + encodeURIComponent(aliases.join(','));
+    const data = await api(url);
     MODEL_CONFIGS = data.configs || [];
     BASE_MODELS = data.base_models || [];
     DEFAULT_MODEL = data.default_model || "p1.12e";
@@ -2095,10 +2109,36 @@ async function loadModelModelConfigs() {
 async function loadFreshModelModelConfig(alias) {
   const normalized = String(alias || '').trim().toLowerCase();
   if (!normalized) return null;
-  await loadModelModelConfigs();
-  return MODEL_CONFIGS.find(function(c) {
-    return String((c && c.alias) || '').trim().toLowerCase() === normalized;
-  }) || null;
+  // Single-alias endpoint — resolves dynamic CLI families (cli1-/clib1-/clir1-/clipr1-)
+  // and avoids re-fetching the full catalog on every click.
+  try {
+    const data = await api('/api/admin/model-config/' + encodeURIComponent(normalized));
+    const cfg = data && data.config;
+    if (!cfg) return null;
+    if (data.base_models) BASE_MODELS = data.base_models;
+    if (data.default_model) DEFAULT_MODEL = data.default_model;
+    // Splice/add into MODEL_CONFIGS so the sidebar can render it.
+    const idx = (MODEL_CONFIGS || []).findIndex(function(c) {
+      return String((c && c.alias) || '').trim().toLowerCase() === normalized;
+    });
+    if (idx >= 0) { MODEL_CONFIGS[idx] = cfg; }
+    else { MODEL_CONFIGS.push(cfg); }
+    return cfg;
+  } catch(e) {
+    console.warn('loadFreshModelModelConfig failed for', normalized, e);
+    return null;
+  }
+}
+
+// Open any alias by name — pinned or not, static or dynamic CLI-family synthesized.
+async function openAnyAlias(input) {
+  const alias = String((input && input.value) || input || '').trim().toLowerCase();
+  if (!alias) return;
+  if (input && input.value !== undefined) input.value = '';
+  switchTab('builder');
+  await loadModelIntoBuilder(alias);
+  // After load, show in sidebar if not already there.
+  renderModelList();
 }
 
 // ---- Unified Search ----
