@@ -2546,21 +2546,18 @@ function showDownloads() {
                         detailsContent += '<div style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.1);padding-top:6px;"><span style="color:var(--green);">Result:</span>' + resultEmbeds + '<pre style="white-space:pre-wrap;color:var(--text);max-height:150px;overflow:auto;">' + resultHtml + '</pre></div>';
                     }
 
-                    // Per-tool reasoning surfacing in live badge:
-                    // - Admin: tool._rhodes_think (private) in cyan box
-                    // - Anyone: tool._rhodes_think_public OR tool.thinking (public) in green box
-                    var _liveThinkPriv = tool._rhodes_think || '';
-                    var _liveThinkPub = tool._rhodes_think_public || tool.thinking || '';
+                    // Per-tool reasoning rendering:
+                    // - Admin: nothing inline (private + public both flow into the
+                    //   standard reasoning panel via reasoning_chunk events server-side)
+                    // - Non-admin: public 'thinking' (renamed from _rhodes_think_public
+                    //   on the wire) gets a small inline box, since the standard
+                    //   reasoning panel is suppressed for them.
                     var _liveIsAdmin = window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin;
-                    var _liveThinkBlocks = '';
-                    if (_liveIsAdmin && _liveThinkPriv) {
-                        _liveThinkBlocks += '<div style="color:var(--cyan);opacity:0.85;font-size:11px;margin-bottom:6px;border-left:2px solid var(--cyan);padding:4px 8px;background:rgba(0,200,255,0.08);"><strong>Reasoning:</strong> ' + escapeHtml(_liveThinkPriv) + '</div>';
-                    }
-                    if (_liveThinkPub) {
-                        _liveThinkBlocks += '<div style="color:var(--green);opacity:0.9;font-size:11px;margin-bottom:6px;border-left:2px solid var(--green);padding:4px 8px;background:rgba(0,255,150,0.08);"><strong>Note:</strong> ' + escapeHtml(_liveThinkPub) + '</div>';
-                    }
-                    if (_liveThinkBlocks) {
-                        detailsContent = _liveThinkBlocks + detailsContent;
+                    if (!_liveIsAdmin) {
+                        var _liveThinkPub = tool.thinking || '';
+                        if (_liveThinkPub) {
+                            detailsContent = '<div style="color:var(--green);opacity:0.9;font-size:11px;margin-bottom:6px;border-left:2px solid var(--green);padding:4px 8px;background:rgba(0,255,150,0.08);"><strong>Note:</strong> ' + escapeHtml(_liveThinkPub) + '</div>' + detailsContent;
+                        }
                     }
 
                     // Idempotent: key on toolName|round only (preview may differ between start/complete)
