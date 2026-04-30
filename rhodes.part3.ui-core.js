@@ -948,7 +948,29 @@ function showDownloads() {
 
                         
                         // -- Tool call rendering for resumed sessions --
-                        window.renderResumedToolCalls = window.renderResumedToolCalls || function renderResumedToolCalls(toolCalls, chatEl) {
+                        window.renderResumedReasoning = window.renderResumedReasoning || function renderResumedReasoning(reasoningText, chatEl) {
+                            // Admin-only thinking panel rendered on session resume.
+                            // Mirrors the live reasoning_chunk panel shape (collapsible <details>).
+                            if (!reasoningText || !chatEl) return;
+                            var _isAdmin = window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin;
+                            var _rapiraOn = window.RHODES_RAPIRA_ENABLED === true;
+                            if (!_isAdmin && !_rapiraOn) return;
+                            var div = document.createElement('div');
+                            div.className = 'msg ai reasoning-stream reasoning-resumed';
+                            var details = document.createElement('details');
+                            var summary = document.createElement('summary');
+                            summary.style.cssText = "cursor:pointer;color:var(--cyan);font-family:'Orbitron',monospace;font-size:12px;user-select:none;margin-bottom:6px;";
+                            var tokEst = Math.round(reasoningText.length / 4);
+                            summary.innerHTML = (window.RHODES_RAPIRA_ENABLED !== false ? 'Compiled' : 'Reasoning') + ' <span style="opacity:0.5;font-size:11px;">(' + tokEst + ' tokens)</span>';
+                            var pre = document.createElement('pre');
+                            pre.style.cssText = "white-space:pre-wrap;color:var(--cyan);opacity:0.85;margin:0;padding:8px;background:rgba(0,200,255,0.05);border-left:2px solid var(--cyan);max-height:300px;overflow:auto;";
+                            pre.textContent = reasoningText;
+                            details.appendChild(summary);
+                            details.appendChild(pre);
+                            div.appendChild(details);
+                            chatEl.appendChild(div);
+                        };
+                                                window.renderResumedToolCalls = window.renderResumedToolCalls || function renderResumedToolCalls(toolCalls, chatEl) {
                             if (!toolCalls || !toolCalls.length) return;
                             var esc = typeof escapeHtml === 'function' ? escapeHtml : function(x) { return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
 
@@ -985,6 +1007,19 @@ function showDownloads() {
                                     var keys = Object.keys(toolArgs);
                                     preview = keys.slice(0, 3).join(', ');
                                     detailsHtml = '<pre style="white-space:pre-wrap;">' + esc(JSON.stringify(toolArgs, null, 2)) + '</pre>';
+                                }
+                                // Per-tool reasoning rendering:
+                                // - Admin sees private (_rhodes_think) in cyan box
+                                // - Non-admin sees public 'thinking' (renamed from
+                                //   _rhodes_think_public on the wire) in a separate box
+                                var _isAdminTC = window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin;
+                                var _tcThink = tc._rhodes_think || (tc.arguments && tc.arguments._rhodes_think) || '';
+                                var _tcThinkPub = tc._rhodes_think_public || tc.thinking || '';
+                                if (_isAdminTC && _tcThink) {
+                                    detailsHtml = '<div style="color:var(--cyan);opacity:0.8;font-size:11px;margin-bottom:6px;border-left:2px solid var(--cyan);padding:4px 8px;background:rgba(0,200,255,0.05);"><strong>Private reasoning:</strong> ' + esc(_tcThink) + '</div>' + detailsHtml;
+                                }
+                                if (_tcThinkPub) {
+                                    detailsHtml = '<div style="color:var(--green);opacity:0.85;font-size:11px;margin-bottom:6px;border-left:2px solid var(--green);padding:4px 8px;background:rgba(0,255,150,0.05);"><strong>Note:</strong> ' + esc(_tcThinkPub) + '</div>' + detailsHtml;
                                 }
                                 parsed.push({ toolName: toolName, preview: preview, detailsHtml: detailsHtml });
                             }
@@ -1090,6 +1125,9 @@ function showDownloads() {
                                     _lastAiText = trimmed;
                                 } else {
                                     _lastAiText = '';
+                                }
+                                if (m.role === 'assistant' && m.reasoning_content && window.renderResumedReasoning) {
+                                    window.renderResumedReasoning(m.reasoning_content, chat);
                                 }
                                 addMsg(m.role === 'user' ? 'user' : 'ai', content);
                             }
@@ -1985,6 +2023,9 @@ function showDownloads() {
                                 _lastAiText2 = trimmed;
                             } else {
                                 _lastAiText2 = '';
+                            }
+                            if (m.role === 'assistant' && m.reasoning_content && window.renderResumedReasoning) {
+                                window.renderResumedReasoning(m.reasoning_content, chat);
                             }
                             addMsg(m.role === 'user' ? 'user' : 'ai', content);
                         }
