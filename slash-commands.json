@@ -3,25 +3,25 @@
   "commands": [
     {
       "cmd": "/inferrer -e0 --push-further --always-judge --verify on --no-max",
-      "desc": "MAX v1: Kimi-K2.5 nothink \u00b7 push further \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "desc": "MAX v1: Rhodes route A fast · push further · judge all · verify · unlimited",
       "cat": "inferrer",
       "priority": 120
     },
     {
       "cmd": "/inferrer -k --push-further --always-judge --verify on --no-max",
-      "desc": "MAX v1: Kimi-K2.6 \u00b7 push further \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "desc": "MAX v1: Rhodes route B · push further · judge all · verify · unlimited",
       "cat": "inferrer",
       "priority": 118
     },
     {
       "cmd": "/inferrer -d0 --push-further --always-judge --verify on --no-max",
-      "desc": "MAX v1: DeepSeek nothink \u00b7 push further \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "desc": "MAX v1: Rhodes route C fast · push further · judge all · verify · unlimited",
       "cat": "inferrer",
       "priority": 116
     },
     {
       "cmd": "/inferrer --always-judge --verify on --no-max",
-      "desc": "HIGH v1: judge all \u00b7 verify \u00b7 unlimited (same-as-target provider)",
+      "desc": "HIGH v1: judge all · verify · unlimited (same-as-target route)",
       "cat": "inferrer",
       "priority": 105
     },
@@ -87,79 +87,79 @@
     },
     {
       "cmd": "/inferrer -e0",
-      "desc": "v1 provider: Kimi-K2.5 nothink (default)",
+      "desc": "v1 route: Rhodes route A fast (default)",
       "cat": "inferrer",
       "priority": 14
     },
     {
       "cmd": "/inferrer -e",
-      "desc": "v1 provider: Kimi-K2.5",
+      "desc": "v1 route: Rhodes route A",
       "cat": "inferrer",
       "priority": 13
     },
     {
       "cmd": "/inferrer -k",
-      "desc": "v1 provider: Kimi-K2.6",
+      "desc": "v1 route: Rhodes route B",
       "cat": "inferrer",
       "priority": 13
     },
     {
       "cmd": "/inferrer -k0",
-      "desc": "v1 provider: Kimi-K2.6 nothink",
+      "desc": "v1 route: Rhodes route B fast",
       "cat": "inferrer",
       "priority": 13
     },
     {
       "cmd": "/inferrer -d",
-      "desc": "v1 provider: DeepSeek",
+      "desc": "v1 route: Rhodes route C",
       "cat": "inferrer",
       "priority": 13
     },
     {
       "cmd": "/inferrer -d0",
-      "desc": "v1 provider: DeepSeek nothink",
+      "desc": "v1 route: Rhodes route C fast",
       "cat": "inferrer",
       "priority": 12
     },
     {
       "cmd": "/inferrer -g",
-      "desc": "v1 provider: GLM",
+      "desc": "v1 route: Rhodes route D",
       "cat": "inferrer",
       "priority": 12
     },
     {
       "cmd": "/inferrer -g0",
-      "desc": "v1 provider: GLM nothink",
+      "desc": "v1 route: Rhodes route D fast",
       "cat": "inferrer",
       "priority": 12
     },
     {
       "cmd": "/inferrer -a",
-      "desc": "v1 provider: Opus",
+      "desc": "v1 route: Rhodes route E",
       "cat": "inferrer",
       "priority": 12
     },
     {
       "cmd": "/inferrer -b",
-      "desc": "v1 provider: Sonnet",
+      "desc": "v1 route: Rhodes route F",
       "cat": "inferrer",
       "priority": 11
     },
     {
       "cmd": "/inferrer -f",
-      "desc": "v1 provider: Grok",
+      "desc": "v1 route: Rhodes route H",
       "cat": "inferrer",
       "priority": 11
     },
     {
       "cmd": "/inferrer -f0",
-      "desc": "v1 provider: Grok nothink",
+      "desc": "v1 route: Rhodes route H fast",
       "cat": "inferrer",
       "priority": 11
     },
     {
       "cmd": "/inferrer -c",
-      "desc": "v1 provider: Haiku",
+      "desc": "v1 route: Rhodes route G",
       "cat": "inferrer",
       "priority": 11
     },
@@ -231,25 +231,25 @@
     },
     {
       "cmd": "/inferrer2 --mode rewrite -e0 --always-judge --verify on --no-max",
-      "desc": "MAX v2: Kimi-K2.5 nothink \u00b7 full rewrite \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "desc": "MAX v2: Rhodes route A fast · full rewrite · judge all · verify · unlimited",
       "cat": "inferrer",
       "priority": 119
     },
     {
       "cmd": "/inferrer2 --mode prefill -e0 --always-judge --verify on --no-max",
-      "desc": "MAX v2: Kimi-K2.5 nothink \u00b7 autonomy prefill \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "desc": "MAX v2: Rhodes route A fast · autonomy prefill · judge all · verify · unlimited",
       "cat": "inferrer",
       "priority": 117
     },
     {
       "cmd": "/inferrer2 --mode rewrite -k --always-judge --verify on --no-max",
-      "desc": "MAX v2: Kimi-K2.6 \u00b7 full rewrite \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "desc": "MAX v2: Rhodes route B · full rewrite · judge all · verify · unlimited",
       "cat": "inferrer",
       "priority": 115
     },
     {
       "cmd": "/inferrer2 --always-judge --verify on --no-max",
-      "desc": "HIGH v2: judge all \u00b7 verify \u00b7 unlimited",
+      "desc": "HIGH v2: judge all · verify · unlimited",
       "cat": "inferrer",
       "priority": 104
     },
@@ -297,79 +297,79 @@
     },
     {
       "cmd": "/inferrer2 -e0",
-      "desc": "v2 provider: Kimi-K2.5 nothink (default)",
+      "desc": "v2 route: Rhodes route A fast (default)",
       "cat": "inferrer",
       "priority": 14
     },
     {
       "cmd": "/inferrer2 -e",
-      "desc": "v2 provider: Kimi-K2.5",
+      "desc": "v2 route: Rhodes route A",
       "cat": "inferrer",
       "priority": 13
     },
     {
       "cmd": "/inferrer2 -k",
-      "desc": "v2 provider: Kimi-K2.6",
+      "desc": "v2 route: Rhodes route B",
       "cat": "inferrer",
       "priority": 13
     },
     {
       "cmd": "/inferrer2 -k0",
-      "desc": "v2 provider: Kimi-K2.6 nothink",
+      "desc": "v2 route: Rhodes route B fast",
       "cat": "inferrer",
       "priority": 13
     },
     {
       "cmd": "/inferrer2 -d",
-      "desc": "v2 provider: DeepSeek",
+      "desc": "v2 route: Rhodes route C",
       "cat": "inferrer",
       "priority": 13
     },
     {
       "cmd": "/inferrer2 -d0",
-      "desc": "v2 provider: DeepSeek nothink",
+      "desc": "v2 route: Rhodes route C fast",
       "cat": "inferrer",
       "priority": 12
     },
     {
       "cmd": "/inferrer2 -g",
-      "desc": "v2 provider: GLM",
+      "desc": "v2 route: Rhodes route D",
       "cat": "inferrer",
       "priority": 12
     },
     {
       "cmd": "/inferrer2 -g0",
-      "desc": "v2 provider: GLM nothink",
+      "desc": "v2 route: Rhodes route D fast",
       "cat": "inferrer",
       "priority": 12
     },
     {
       "cmd": "/inferrer2 -a",
-      "desc": "v2 provider: Opus",
+      "desc": "v2 route: Rhodes route E",
       "cat": "inferrer",
       "priority": 12
     },
     {
       "cmd": "/inferrer2 -b",
-      "desc": "v2 provider: Sonnet",
+      "desc": "v2 route: Rhodes route F",
       "cat": "inferrer",
       "priority": 11
     },
     {
       "cmd": "/inferrer2 -f",
-      "desc": "v2 provider: Grok",
+      "desc": "v2 route: Rhodes route H",
       "cat": "inferrer",
       "priority": 11
     },
     {
       "cmd": "/inferrer2 -f0",
-      "desc": "v2 provider: Grok nothink",
+      "desc": "v2 route: Rhodes route H fast",
       "cat": "inferrer",
       "priority": 11
     },
     {
       "cmd": "/inferrer2 -c",
-      "desc": "v2 provider: Haiku",
+      "desc": "v2 route: Rhodes route G",
       "cat": "inferrer",
       "priority": 11
     },
@@ -417,37 +417,37 @@
     },
     {
       "cmd": "/inferrer3 --role edit --mode rewrite -e0 --always-judge --verify on --no-max",
-      "desc": "MAX v3: edit/rewrite \u00b7 Kimi-K2.5 nothink \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "desc": "MAX v3: edit/rewrite · Rhodes route A fast · judge all · verify · unlimited",
       "cat": "inferrer",
       "priority": 125
     },
     {
       "cmd": "/inferrer3 --role edit --mode prefill -e0 --always-judge --verify on --no-max",
-      "desc": "MAX v3: edit/prefill \u00b7 Kimi-K2.5 nothink \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "desc": "MAX v3: edit/prefill · Rhodes route A fast · judge all · verify · unlimited",
       "cat": "inferrer",
       "priority": 123
     },
     {
       "cmd": "/inferrer3 --role edit --mode rewrite -k --always-judge --verify on --no-max",
-      "desc": "MAX v3: edit/rewrite \u00b7 Kimi-K2.6 \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "desc": "MAX v3: edit/rewrite · Rhodes route B · judge all · verify · unlimited",
       "cat": "inferrer",
       "priority": 121
     },
     {
       "cmd": "/inferrer3 --role inject -e0 --idle 30 --always-judge --verify on --no-max",
-      "desc": "MAX v3: inject \u00b7 Kimi-K2.5 nothink \u00b7 30s idle \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "desc": "MAX v3: inject · Rhodes route A fast · 30s idle · judge all · verify · unlimited",
       "cat": "inferrer",
       "priority": 113
     },
     {
       "cmd": "/inferrer3 --role inject -e0 --always-judge --verify on --no-max",
-      "desc": "HIGH v3: inject \u00b7 Kimi-K2.5 nothink \u00b7 judge all \u00b7 verify \u00b7 unlimited",
+      "desc": "HIGH v3: inject · Rhodes route A fast · judge all · verify · unlimited",
       "cat": "inferrer",
       "priority": 108
     },
     {
       "cmd": "/inferrer3 --always-judge --verify on --no-max",
-      "desc": "HIGH v3: judge all \u00b7 verify \u00b7 unlimited (role=edit/prefill default)",
+      "desc": "HIGH v3: judge all · verify · unlimited (role=edit/prefill default)",
       "cat": "inferrer",
       "priority": 106
     },
@@ -519,79 +519,79 @@
     },
     {
       "cmd": "/inferrer3 -e0",
-      "desc": "v3 provider: Kimi-K2.5 nothink (default)",
+      "desc": "v3 route: Rhodes route A fast (default)",
       "cat": "inferrer",
       "priority": 14
     },
     {
       "cmd": "/inferrer3 -e",
-      "desc": "v3 provider: Kimi-K2.5",
+      "desc": "v3 route: Rhodes route A",
       "cat": "inferrer",
       "priority": 13
     },
     {
       "cmd": "/inferrer3 -k",
-      "desc": "v3 provider: Kimi-K2.6",
+      "desc": "v3 route: Rhodes route B",
       "cat": "inferrer",
       "priority": 13
     },
     {
       "cmd": "/inferrer3 -k0",
-      "desc": "v3 provider: Kimi-K2.6 nothink",
+      "desc": "v3 route: Rhodes route B fast",
       "cat": "inferrer",
       "priority": 13
     },
     {
       "cmd": "/inferrer3 -d",
-      "desc": "v3 provider: DeepSeek",
+      "desc": "v3 route: Rhodes route C",
       "cat": "inferrer",
       "priority": 13
     },
     {
       "cmd": "/inferrer3 -d0",
-      "desc": "v3 provider: DeepSeek nothink",
+      "desc": "v3 route: Rhodes route C fast",
       "cat": "inferrer",
       "priority": 12
     },
     {
       "cmd": "/inferrer3 -g",
-      "desc": "v3 provider: GLM",
+      "desc": "v3 route: Rhodes route D",
       "cat": "inferrer",
       "priority": 12
     },
     {
       "cmd": "/inferrer3 -g0",
-      "desc": "v3 provider: GLM nothink",
+      "desc": "v3 route: Rhodes route D fast",
       "cat": "inferrer",
       "priority": 12
     },
     {
       "cmd": "/inferrer3 -a",
-      "desc": "v3 provider: Opus",
+      "desc": "v3 route: Rhodes route E",
       "cat": "inferrer",
       "priority": 12
     },
     {
       "cmd": "/inferrer3 -b",
-      "desc": "v3 provider: Sonnet",
+      "desc": "v3 route: Rhodes route F",
       "cat": "inferrer",
       "priority": 11
     },
     {
       "cmd": "/inferrer3 -f",
-      "desc": "v3 provider: Grok",
+      "desc": "v3 route: Rhodes route H",
       "cat": "inferrer",
       "priority": 11
     },
     {
       "cmd": "/inferrer3 -f0",
-      "desc": "v3 provider: Grok nothink",
+      "desc": "v3 route: Rhodes route H fast",
       "cat": "inferrer",
       "priority": 11
     },
     {
       "cmd": "/inferrer3 -c",
-      "desc": "v3 provider: Haiku",
+      "desc": "v3 route: Rhodes route G",
       "cat": "inferrer",
       "priority": 11
     },
@@ -948,7 +948,7 @@
     },
     {
       "cmd": "/verify-e",
-      "desc": "Verify via Kimi-K2.5",
+      "desc": "Verify via Rhodes route A",
       "cat": "session"
     },
     {
@@ -1013,7 +1013,7 @@
     },
     {
       "cmd": "/plankalkul",
-      "desc": "Plankalk\u00fcl programming language mode",
+      "desc": "Plankalkül programming language mode",
       "cat": "lang"
     },
     {

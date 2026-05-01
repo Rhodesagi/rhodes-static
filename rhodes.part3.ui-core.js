@@ -35,10 +35,9 @@ window.__rhodesApplySessionNote = function(note) {
 /* Source: contiguous slice of rhodes.monolith.js */
 
 /* ===================================================================
- * Live model/provider indicator (bottom-left)
+ * Live route indicator (bottom-left)
  *
- * Shows: model:<alias>  provider:<resolved-provider-tag>
- * Example: model:rr-3  provider:FIREWORKS_KIMI
+ * Shows: model:<alias> for server-authorized operators only.
  *
  * Visible only to the restricted username allowlist below (currently
  * sebastian + markbass — corresponds to user_id 2 + 3 server-side).
@@ -47,9 +46,8 @@ window.__rhodesApplySessionNote = function(note) {
  * Wired to:
  *   - model_set_response  -> updates model: portion
  *   - session_rotated     -> updates model: portion (via reason=model_switch)
- *   - provider_change     -> updates provider: portion + flash animation
- *                           (refusal-detector fallback to Fireworks Kimi)
- *   - provider_info       -> updates both fields (per-turn snapshot)
+ *   - provider_change     -> flashes internal route changes for operators
+ *   - provider_info       -> updates route state for operators
  * =================================================================== */
 (function () {
     if (window.__rhodesLiveIndicator) return; // idempotent
@@ -287,9 +285,8 @@ window.__rhodesApplySessionNote = function(note) {
     function render(el) {
         if (!el) return;
         var m = el.dataset.model || "-";
-        var p = el.dataset.provider || "-";
         var prefix = el.dataset.flashing === "1" ? "FALLBACK -> " : "";
-        el.textContent = prefix + "model:" + m + "  provider:" + p;
+        el.textContent = prefix + "model:" + m;
     }
 
     function setModel(model) {
@@ -2122,9 +2119,9 @@ function showDownloads() {
                             model === 'haiku' ? 'ADA' :
                     model === 'kimi' ? 'EPSILON' :
                     model === 'grok' ? 'ZETA' :
-                                model.includes('r1.13') ? 'Claude 3 Opus' :
-                                model.includes('r1.14') ? 'GPT-4o' :
-                                model.includes('r1.15') ? 'GPT-4o+' :
+                                model.includes('r1.13') ? 'RHODES LEGACY A' :
+                                model.includes('r1.14') ? 'RHODES LEGACY B' :
+                                model.includes('r1.15') ? 'RHODES LEGACY C' :
                             (model ? model.toUpperCase() : 'MODEL');
                         const planBadge = model.endsWith('ep') ? ' [PLAN]' : '';
                         showToast(`Mode switched to ${pretty}${planBadge}`);
@@ -2207,9 +2204,9 @@ function showDownloads() {
                                 model === 'haiku' ? 'ADA' :
                     model === 'kimi' ? 'EPSILON' :
                     model === 'grok' ? 'ZETA' :
-                                model.includes('r1.13') ? 'Claude 3 Opus' :
-                                model.includes('r1.14') ? 'GPT-4o' :
-                                model.includes('r1.15') ? 'GPT-4o+' :
+                                model.includes('r1.13') ? 'RHODES LEGACY A' :
+                                model.includes('r1.14') ? 'RHODES LEGACY B' :
+                                model.includes('r1.15') ? 'RHODES LEGACY C' :
                                 (model ? model.toUpperCase() : 'MODEL');
                             showToast(`Mode switched to ${pretty}`);
                         } else {

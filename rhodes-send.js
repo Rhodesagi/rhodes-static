@@ -220,15 +220,14 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
         if (lowerCmd === '/model' || lowerCmd === '/models') {
             clearInputAndResize(input);
             addMsg('ai', '**Available models:**\n' +
-                '`/alpha` or `/r1.0a` \u2014 Claude Opus\n' +
-                '`/beta` or `/r1.0b` \u2014 Claude Sonnet\n' +
-                '`/ada` or `/r1.0c` \u2014 Claude Haiku\n' +
-                '`/delta` or `/r1.12d` \u2014 DeepSeek R1\n' +
-                '`/epsilon` or `/r1.12e` \u2014 Kimi K2.5\n' +
-                '`/grok` or `/r1.12f` \u2014 Grok 4.1 Fast\n' +
-                '`/r1.13d` \u2014 Claude 3 Opus (resurrected)\n' +
-                '`/r1.14d` \u2014 GPT-4o (resurrected)\n' +
-                '`/r1.15d` \u2014 GPT-4o+ (few-shot)');
+                '`/rhodes` \u2014 Rhodes\n' +
+                '`/rhodes-fast` \u2014 Rhodes Fast\n' +
+                '`/alpha` \u2014 Rhodes Alpha\n' +
+                '`/beta` \u2014 Rhodes Beta\n' +
+                '`/ada` \u2014 Rhodes Ada\n' +
+                '`/delta` \u2014 Rhodes Delta\n' +
+                '`/epsilon` \u2014 Rhodes Epsilon\n' +
+                '`/grok` \u2014 Rhodes Zeta');
             return;
         }
 
