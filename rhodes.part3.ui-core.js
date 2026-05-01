@@ -145,6 +145,9 @@ window.__rhodesApplySessionNote = function(note) {
             "  padding: 5px 12px; cursor: pointer; font-weight: 700; font-size: 12px;",
             "}",
             "#rhodes-prompt-modal .rpm-status { color: var(--dim, #8b949e); font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }",
+            "#rhodes-prompt-modal .rpm-clone-box { margin: 0 0 12px; padding: 10px; border: 1px solid rgba(85,204,255,0.25); border-radius: 4px; background: rgba(85,204,255,0.05); }",
+            "#rhodes-prompt-modal .rpm-clone-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; white-space: normal; }",
+            "#rhodes-prompt-modal .rpm-clone-input { flex: 1; min-width: 180px; background: rgba(0,0,0,0.35); color: var(--text, #d0d0d0); border: 1px solid rgba(255,255,255,0.18); border-radius: 4px; padding: 6px 8px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; outline: none; }",
             "#rhodes-prompt-modal .rpm-seed-edit { min-height: 22vh; margin-top: 6px; }",
             ".rhodes-live-indicator.flash-fallback {",
             "  color: rgba(255,255,255,1);",
@@ -216,7 +219,7 @@ window.__rhodesApplySessionNote = function(note) {
             var userTok = localStorage.getItem("rhodes_user_token") || "";
             var adminTok = localStorage.getItem("rhodes_admin_token") || "";
             if (userTok) headers["Authorization"] = "Bearer " + userTok;
-            else if (adminTok) headers["X-Rhodes-Admin-Token"] = adminTok;
+            if (adminTok) headers["X-Rhodes-Admin-Token"] = adminTok;
         } catch (e) {}
         return headers;
     }
@@ -261,6 +264,47 @@ window.__rhodesApplySessionNote = function(note) {
         var status = null;
         var seedStatus = null;
         if (opts.editable && opts.alias) {
+            var cloneBox = document.createElement("div");
+            cloneBox.className = "rpm-clone-box";
+            var cloneLabel = document.createElement("label");
+            cloneLabel.className = "rpm-section-title";
+            cloneLabel.textContent = "clone as new model";
+            var cloneRow = document.createElement("div");
+            cloneRow.className = "rpm-clone-row";
+            var cloneInput = document.createElement("input");
+            cloneInput.type = "text";
+            cloneInput.className = "rpm-clone-input";
+            cloneInput.placeholder = "new-alias";
+            cloneInput.autocapitalize = "none";
+            cloneInput.spellcheck = false;
+            var cloneBtn = document.createElement("button");
+            cloneBtn.type = "button";
+            cloneBtn.className = "rpm-save";
+            cloneBtn.textContent = "clone + save";
+            var cloneStatus = document.createElement("div");
+            cloneStatus.className = "rpm-status";
+            cloneStatus.textContent = "creates the normal variant family";
+            cloneRow.appendChild(cloneInput);
+            cloneRow.appendChild(cloneBtn);
+            cloneBox.appendChild(cloneLabel);
+            cloneBox.appendChild(cloneRow);
+            cloneBox.appendChild(cloneStatus);
+            body.appendChild(cloneBox);
+            cloneBtn.addEventListener("click", async function () {
+                cloneBtn.disabled = true;
+                cloneStatus.textContent = "cloning...";
+                try {
+                    var result = await cloneModelFromPromptModal(opts.alias, cloneInput.value, editor ? editor.value : bodyText, seedEditor ? seedEditor.value : null, opts.seed || null);
+                    var verifiedSlash = (result.config && result.config.slash_command) || ("/" + result.alias);
+                    cloneStatus.textContent = "verified " + verifiedSlash + " plus variants";
+                    try { showToast("Model cloned: " + verifiedSlash); } catch (e) {}
+                } catch (err) {
+                    cloneStatus.textContent = "clone failed: " + (err && err.message ? err.message : String(err));
+                } finally {
+                    cloneBtn.disabled = false;
+                }
+            });
+
             var promptTitle = document.createElement("div");
             promptTitle.className = "rpm-section-title";
             promptTitle.textContent = "system prompt";
@@ -380,6 +424,67 @@ window.__rhodesApplySessionNote = function(note) {
             throw new Error((data && (data.error || data.message)) || ("HTTP " + r.status));
         }
         return data || {};
+    }
+
+    function normalizeModelAliasInput(raw) {
+        return String(raw || "").trim().toLowerCase().replace(/_/g, "-").replace(/[^a-z0-9.-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 64);
+    }
+
+    async function fetchModelConfigForAdmin(alias) {
+        var r = await fetch("/api/admin/model-config/" + encodeURIComponent(alias), { headers: adminAuthHeaders(), cache: "no-store" });
+        var data = null;
+        try { data = await r.json(); } catch (e) {}
+        if (r.status === 401) throw new Error("Admin auth required (log in first).");
+        if (!r.ok || (data && data.success === false)) throw new Error((data && (data.error || data.message)) || ("HTTP " + r.status));
+        return (data && data.config) || {};
+    }
+
+    async function postAdminJson(url, payload) {
+        var headers = adminAuthHeaders();
+        headers["Content-Type"] = "application/json";
+        var r = await fetch(url, { method: "POST", headers: headers, cache: "no-store", body: JSON.stringify(payload) });
+        var data = null;
+        try { data = await r.json(); } catch (e) {}
+        if (r.status === 401) throw new Error("Admin auth required (log in first).");
+        if (!r.ok || (data && data.success === false)) throw new Error((data && (data.error || data.message)) || ("HTTP " + r.status));
+        return data || {};
+    }
+
+    async function cloneModelFromPromptModal(sourceAlias, rawNewAlias, promptText, seedRawContent, seedMeta) {
+        var newAlias = normalizeModelAliasInput(rawNewAlias);
+        if (!newAlias) throw new Error("enter a new alias");
+        if (newAlias === normalizeModelAliasInput(sourceAlias)) throw new Error("new alias must differ from source alias");
+        var sourceCfg = await fetchModelConfigForAdmin(sourceAlias);
+        var rootAlias = (sourceCfg._auto_variant_of || sourceAlias || "").trim().toLowerCase();
+        if (rootAlias && rootAlias !== sourceAlias) sourceCfg = await fetchModelConfigForAdmin(rootAlias);
+        var payload = {};
+        Object.keys(sourceCfg || {}).forEach(function (key) {
+            if ({alias:1, resolved_base_model:1, inherits_chain:1, prompt_exists:1, prompt_chars:1, fine_tune_exists:1, fine_tune_chars:1, _dynamic:1, _auto_generated:1, _auto_variant_of:1, _overrides:1, created_at:1, updated_at:1}[key]) return;
+            payload[key] = sourceCfg[key];
+        });
+        payload.alias = newAlias;
+        payload.base_model = payload.base_model_input || payload.base_model || sourceCfg.base_model || sourceCfg.resolved_base_model || "";
+        payload.slash_command = "/" + newAlias;
+        payload.prompt_text = String(promptText || "");
+        payload.prompt_source = "config_" + newAlias;
+        payload.enabled = payload.enabled !== false;
+        payload.notes = payload.notes || ("Cloned from " + rootAlias);
+        if (seedRawContent !== null && seedMeta && seedMeta.exists) {
+            JSON.parse(String(seedRawContent || "[]"));
+            var seedId = normalizeModelAliasInput(newAlias).replace(/[._]/g, "-") + "-seed";
+            await postAdminJson("/api/admin/seed", { id: seedId, raw_content: seedRawContent, description: "Cloned from " + ((seedMeta && seedMeta.seed_id) || rootAlias) });
+            payload.seed_id = seedId;
+        }
+        var result = await postAdminJson("/api/admin/model-configs", payload);
+        var savedCfg = await fetchModelConfigForAdmin(newAlias);
+        if (!savedCfg || normalizeModelAliasInput(savedCfg.alias || "") !== newAlias) {
+            throw new Error("clone save did not round-trip for " + newAlias);
+        }
+        var resolvedSlash = String(savedCfg.slash_command || "").trim().toLowerCase();
+        if (resolvedSlash !== "/" + newAlias) {
+            throw new Error("clone saved with unexpected slash command: " + (resolvedSlash || "(empty)"));
+        }
+        return { alias: newAlias, result: result, config: savedCfg };
     }
 
 

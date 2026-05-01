@@ -3895,7 +3895,7 @@ async function deleteExpandedPosition(topic) {
 }
 
 async function renameExpandedPosition(oldTopic, newTopic) {
-  newTopic = newTopic.trim().toLowerCase().replace(/\s+/g, '_');
+  newTopic = normalizeExpandedPositionTopic(newTopic);
   if (!newTopic || newTopic === oldTopic) return;
   if (EXPANDED_POSITIONS[newTopic]) { alert('Topic "' + newTopic + '" already exists.'); await loadExpandedPositions(); return; }
   var text = EXPANDED_POSITIONS[oldTopic] || '';
@@ -3907,15 +3907,22 @@ async function renameExpandedPosition(oldTopic, newTopic) {
   } catch(e) { setStatus('Error: ' + (e.message||e), 'error'); }
 }
 
+function normalizeExpandedPositionTopic(raw) {
+  return String(raw || '').trim().toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 64);
+}
+
 async function addExpandedPosition() {
-  var topic = prompt('New topic name (lowercase, no spaces):');
+  var topic = prompt('New variable/topic name:');
   if (!topic) return;
-  topic = topic.trim();
-  if (EXPANDED_POSITIONS[topic] !== undefined) { setStatus('Topic already exists', 'error'); return; }
+  topic = normalizeExpandedPositionTopic(topic);
+  if (!topic) { setStatus('Variable name is empty after normalization', 'error'); return; }
+  if (EXPANDED_POSITIONS[topic] !== undefined) { setStatus('Topic already exists: ' + topic, 'error'); return; }
   try {
     await api('/api/admin/expanded-positions', {method:'POST', body:JSON.stringify({action:'upsert', topic:topic, text:''})});
     await loadExpandedPositions();
-    setStatus('Added ' + topic);
+    var el = document.getElementById('expandPos_' + topic);
+    if (el) el.focus();
+    setStatus('Added variable/topic: ' + topic);
   } catch(e) { setStatus('Error: ' + (e.message||e), 'error'); }
 }
 
