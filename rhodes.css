@@ -34,42 +34,47 @@
             --text: #e0e0e0;
         }
 
-        /* Light cypherpunk mode - high contrast terminal aesthetic */
+        /* Light mode keeps the terminal structure with calmer paper/ink contrast. */
         body.light-mode {
-            --bg: #e8ebe8;
-            --panel: #d8dbd8;
-            --border: #a0a8a0;
-            --cyan: #0099aa;
-            --magenta: #bb00bb;
-            --green: #009933;
-            --dim: #606860;
-            --user: #c0e8c8;
-            --ai: transparent;
-            --text: #101810;
+            --bg: #f4f1ea;
+            --panel: #fffdf8;
+            --border: #d6cec0;
+            --cyan: #126d7a;
+            --magenta: #9b3f75;
+            --green: #1f7a4d;
+            --dim: #746f66;
+            --user: #e7f2ec;
+            --ai: #fffaf0;
+            --text: #211f1a;
         }
 
-        body.light-mode { color: var(--text); }
-        /* Subtle scanlines for light mode */
-        body.light-mode::before { background: repeating-linear-gradient(0deg, rgba(0,0,0,0.02) 0px, rgba(0,0,0,0.02) 1px, transparent 1px, transparent 2px); }
-        /* Grid overlay - darker for light mode */
-        body.light-mode::after { background-image: linear-gradient(rgba(0,102,136,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,102,136,0.04) 1px, transparent 1px); }
+        body.light-mode {
+            color: var(--text);
+            background:
+                linear-gradient(180deg, rgba(255,253,248,0.92), rgba(244,241,234,0.92)),
+                var(--bg);
+        }
+        body.light-mode::before { opacity: 0; }
+        body.light-mode::after {
+            background-image: linear-gradient(rgba(18,109,122,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(18,109,122,0.035) 1px, transparent 1px);
+        }
 
         /* Light mode input field - override dark mode #000 */
         body.light-mode #input {
-            background: #f0f2f0 !important;
-            border-color: rgba(0,102,136,0.5);
-            color: #1a3a5c;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1), 0 0 5px rgba(0,102,136,0.15);
+            background: #fffdf8 !important;
+            border-color: rgba(18,109,122,0.45);
+            color: var(--text);
+            box-shadow: inset 0 1px 2px rgba(46,36,21,0.08), 0 8px 24px rgba(46,36,21,0.08);
         }
         body.light-mode #input:focus {
             border-color: var(--cyan);
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1), 0 0 12px rgba(0,102,136,0.35);
+            box-shadow: inset 0 1px 2px rgba(46,36,21,0.08), 0 0 0 3px rgba(18,109,122,0.12), 0 10px 30px rgba(46,36,21,0.12);
         }
         body.light-mode #input:not(:placeholder-shown) {
             border-color: var(--green);
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1), 0 0 10px rgba(0,119,34,0.25);
+            box-shadow: inset 0 1px 2px rgba(46,36,21,0.08), 0 0 0 3px rgba(31,122,77,0.10), 0 10px 30px rgba(46,36,21,0.10);
         }
-        body.light-mode #input::placeholder { color: #507090; opacity: 0.85; }
+        body.light-mode #input::placeholder { color: #8a8276; opacity: 1; }
 
         /* Light mode code blocks */
         body.light-mode .msg pre {
@@ -88,8 +93,8 @@
         }
         body.light-mode #send:hover {
             background: var(--green);
-            color: #fff;
-            box-shadow: 0 0 15px rgba(0,119,34,0.4);
+            color: #fffdf8;
+            box-shadow: 0 8px 22px rgba(31,122,77,0.20);
         }
         body.light-mode #voice-bar button,
         body.light-mode #image-btn {
@@ -104,8 +109,8 @@
             max-width: 100%;
             overflow: hidden;
             text-overflow: ellipsis;
-            color: #008899;
-            text-shadow: 0 0 8px rgba(0,153,170,0.5), 0 0 20px rgba(0,153,170,0.3);
+            color: var(--cyan);
+            text-shadow: 0 1px 0 #fff, 0 8px 24px rgba(18,109,122,0.16);
         }
 
         /* Light mode modal */
@@ -1826,6 +1831,95 @@
             text-shadow: 0 0 8px var(--bg), 0 0 15px var(--bg);
         }
 
+        body.light-mode header {
+            background: rgba(255,253,248,0.82) !important;
+            border-bottom: 1px solid rgba(214,206,192,0.70) !important;
+            box-shadow: 0 8px 32px rgba(46,36,21,0.08);
+            backdrop-filter: blur(16px);
+        }
+        body.light-mode header .logo {
+            color: var(--cyan) !important;
+            text-shadow: 0 1px 0 #fff, 0 10px 28px rgba(18,109,122,0.18) !important;
+        }
+        body.light-mode header .nav a {
+            color: #5f766f !important;
+            text-shadow: none !important;
+        }
+        body.light-mode header .nav a:hover {
+            color: var(--cyan) !important;
+            text-shadow: none !important;
+        }
+        body.light-mode header .nav a.active,
+        body.light-mode .logo-subtitle {
+            color: var(--green) !important;
+        }
+        body.light-mode .msg {
+            color: var(--text);
+            box-shadow: 0 10px 28px rgba(46,36,21,0.08);
+        }
+        body.light-mode .msg.ai {
+            background: rgba(255,250,240,0.88);
+            border-color: rgba(18,109,122,0.28);
+        }
+        body.light-mode .msg.user {
+            background: #e7f2ec;
+            border-color: rgba(31,122,77,0.26);
+        }
+        body.light-mode .msg.ai::before,
+        body.light-mode .msg.ai.with-avatar .msg-content::before {
+            color: var(--cyan);
+            text-shadow: none;
+        }
+        body.light-mode #input-area {
+            background: rgba(255,253,248,0.90);
+            border-color: rgba(214,206,192,0.80);
+            box-shadow: 0 -8px 30px rgba(46,36,21,0.07);
+            backdrop-filter: blur(14px);
+        }
+        body.light-mode .session-controls button,
+        body.light-mode #new-rhodes-btn,
+        body.light-mode #sessions-btn,
+        body.light-mode #search-sessions-btn {
+            background: rgba(255,253,248,0.86) !important;
+            border-color: rgba(18,109,122,0.42) !important;
+            color: var(--cyan) !important;
+            box-shadow: 0 6px 18px rgba(46,36,21,0.08);
+        }
+        body.light-mode .session-controls button:hover,
+        body.light-mode #new-rhodes-btn:hover,
+        body.light-mode #sessions-btn:hover,
+        body.light-mode #search-sessions-btn:hover {
+            background: #f0faf7 !important;
+            border-color: var(--cyan) !important;
+        }
+        body.light-mode .sessions-dropdown-content,
+        body.light-mode .lang-dropdown-content,
+        body.light-mode .account-dropdown-content {
+            background: rgba(255,253,248,0.98) !important;
+            border-color: rgba(18,109,122,0.36) !important;
+            box-shadow: 0 18px 45px rgba(46,36,21,0.16);
+        }
+        body.light-mode .lang-dropdown-content a,
+        body.light-mode .account-dropdown-content a {
+            color: var(--text) !important;
+        }
+        body.light-mode .lang-dropdown-content a:hover,
+        body.light-mode .account-dropdown-content a:hover {
+            background: rgba(18,109,122,0.08) !important;
+            color: var(--cyan) !important;
+        }
+        body.light-mode #downloads-link {
+            border-color: rgba(31,122,77,0.55) !important;
+            background: #1f7a4d !important;
+            color: #fffdf8 !important;
+            box-shadow: 0 8px 22px rgba(31,122,77,0.20) !important;
+            text-shadow: none !important;
+        }
+        body.light-mode #downloads-link:hover {
+            background: #17613d !important;
+            box-shadow: 0 10px 28px rgba(31,122,77,0.26) !important;
+        }
+
         /* ============================================
            MID-SIZE: hide language courses
            ============================================ */
@@ -3134,14 +3228,14 @@ a[href="#"] {
 
 /* Light mode split pane styles */
 body.light-mode .split-instance {
-    background: #ffffff;
-    border: 2px solid #ccc;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background: #fffdf8;
+    border: 1px solid rgba(214,206,192,0.9);
+    box-shadow: 0 12px 30px rgba(46,36,21,0.10);
 }
 
 body.light-mode .instance-header {
-    background: #f5f5f5;
-    border-bottom: 1px solid #ddd;
+    background: #f7f3ea;
+    border-bottom: 1px solid #d6cec0;
 }
 
 body.light-mode .instance-label {
@@ -3149,25 +3243,25 @@ body.light-mode .instance-label {
 }
 
 body.light-mode .instance-chat {
-    background: #ffffff;
-    color: #222;
+    background: #fffdf8;
+    color: var(--text);
 }
 
 body.light-mode .instance-chat .msg.user {
-    background: rgba(0, 136, 170, 0.1);
-    border-left: 3px solid #0088aa;
-    color: #333;
+    background: #e7f2ec;
+    border-left: 3px solid var(--green);
+    color: var(--text);
 }
 
 body.light-mode .instance-chat .msg.ai {
-    background: #f8f8f8;
-    border-left: 3px solid #888;
-    color: #222;
+    background: #fffaf0;
+    border-left: 3px solid var(--cyan);
+    color: var(--text);
 }
 
 body.light-mode .instance-input {
-    background: #f0f0f0;
-    border-top: 1px solid #ddd;
+    background: #f7f3ea;
+    border-top: 1px solid #d6cec0;
 }
 
 body.light-mode .instance-input input {
@@ -3177,11 +3271,11 @@ body.light-mode .instance-input input {
 }
 
 body.light-mode #split-view {
-    background: #e8e8e8;
+    background: #f4f1ea;
 }
 
 body.light-mode .split-container {
-    background: #e0e0e0;
+    background: #efe9de;
 }
 
 /* Light mode - Make Try Rhodes Code more visible */

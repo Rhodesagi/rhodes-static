@@ -128,6 +128,22 @@ window.__rhodesApplySessionNote = function(note) {
             "  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;",
             "  font-size: 12px; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word;",
             "}",
+            "#rhodes-prompt-modal .rpm-edit {",
+            "  width: 100%; min-height: 58vh; resize: vertical; box-sizing: border-box;",
+            "  background: rgba(0,0,0,0.35); color: var(--text, #d0d0d0);",
+            "  border: 1px solid rgba(255,255,255,0.18); border-radius: 4px; padding: 10px;",
+            "  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;",
+            "  font-size: 12px; line-height: 1.4; outline: none;",
+            "}",
+            "#rhodes-prompt-modal .rpm-foot {",
+            "  display: flex; align-items: center; gap: 8px; padding: 8px 12px;",
+            "  border-top: 1px solid rgba(255,255,255,0.15);",
+            "}",
+            "#rhodes-prompt-modal .rpm-save {",
+            "  background: var(--green, #00ff41); color: #000; border: 0; border-radius: 3px;",
+            "  padding: 5px 12px; cursor: pointer; font-weight: 700; font-size: 12px;",
+            "}",
+            "#rhodes-prompt-modal .rpm-status { color: var(--dim, #8b949e); font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }",
             ".rhodes-live-indicator.flash-fallback {",
             "  color: rgba(255,255,255,1);",
             "  animation: rhodes-fallback-flash 1.5s ease-out;",
@@ -212,7 +228,8 @@ window.__rhodesApplySessionNote = function(note) {
         if (ev.key === "Escape") { ev.preventDefault(); closePromptModal(); }
     }
 
-    function openPromptModal(title, bodyText) {
+    function openPromptModal(title, bodyText, opts) {
+        opts = opts || {};
         closePromptModal();
         var bd = document.createElement("div");
         bd.id = "rhodes-prompt-modal-backdrop";
@@ -237,10 +254,49 @@ window.__rhodesApplySessionNote = function(note) {
 
         var body = document.createElement("div");
         body.className = "rpm-body";
-        body.textContent = bodyText;
+        var editor = null;
+        var status = null;
+        if (opts.editable && opts.alias) {
+            editor = document.createElement("textarea");
+            editor.className = "rpm-edit";
+            editor.spellcheck = false;
+            editor.value = bodyText || "";
+            body.appendChild(editor);
+        } else {
+            body.textContent = bodyText;
+        }
 
         modal.appendChild(head);
         modal.appendChild(body);
+        if (editor) {
+            var foot = document.createElement("div");
+            foot.className = "rpm-foot";
+            var saveBtn = document.createElement("button");
+            saveBtn.type = "button";
+            saveBtn.className = "rpm-save";
+            saveBtn.textContent = "save prompt";
+            status = document.createElement("div");
+            status.className = "rpm-status";
+            status.textContent = "saves to this variant family";
+            saveBtn.addEventListener("click", async function () {
+                saveBtn.disabled = true;
+                status.textContent = "saving...";
+                try {
+                    var result = await savePromptForModel(opts.alias, editor.value, opts.sha256 || "");
+                    opts.sha256 = result.sha256 || "";
+                    status.textContent = "saved " + (result.updated_count || 0) + " file" + ((result.updated_count || 0) === 1 ? "" : "s") + " across " + ((result.family_aliases || []).length || 1) + " variant" + (((result.family_aliases || []).length || 1) === 1 ? "" : "s");
+                    try { showToast("System prompt saved"); } catch (e) {}
+                } catch (err) {
+                    status.textContent = "save failed: " + (err && err.message ? err.message : String(err));
+                } finally {
+                    saveBtn.disabled = false;
+                }
+            });
+            foot.appendChild(saveBtn);
+            foot.appendChild(status);
+            modal.appendChild(foot);
+            setTimeout(function () { try { editor.focus(); } catch (e) {} }, 0);
+        }
         bd.appendChild(modal);
         document.body.appendChild(bd);
         document.addEventListener("keydown", onPromptModalKey, true);
@@ -255,6 +311,24 @@ window.__rhodesApplySessionNote = function(note) {
         if (r.status === 401) throw new Error("Admin auth required (log in first).");
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
+    }
+
+    async function savePromptForModel(alias, text, expectedSha) {
+        var headers = adminAuthHeaders();
+        headers["Content-Type"] = "application/json";
+        var r = await fetch("/api/admin/prompt/for-model", {
+            method: "POST",
+            headers: headers,
+            cache: "no-store",
+            body: JSON.stringify({ alias: alias, text: text, expected_sha256: expectedSha || "" })
+        });
+        var data = null;
+        try { data = await r.json(); } catch (e) {}
+        if (r.status === 401) throw new Error("Admin auth required (log in first).");
+        if (!r.ok || (data && data.success === false)) {
+            throw new Error((data && (data.error || data.message)) || ("HTTP " + r.status));
+        }
+        return data || {};
     }
 
     async function onIndicatorClick() {
@@ -272,7 +346,7 @@ window.__rhodesApplySessionNote = function(note) {
                 var headBits = ["system prompt — " + alias];
                 if (data.source) headBits.push("source=" + data.source);
                 if (data.path) headBits.push(data.path);
-                openPromptModal(headBits.join("  "), data.text);
+                openPromptModal(headBits.join("  "), data.text, { editable: true, alias: alias, sha256: data.sha256 || "" });
                 return;
             }
             var note = (data && data.note) ? data.note : "no prompt resolved for this alias";

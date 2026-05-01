@@ -67,7 +67,8 @@
             <h2>Profile</h2>
             <div class="form-group">
                 <label>Display Name (Alias)</label>
-                <input type="text" id="alias" placeholder="Optional display name">
+                <input type="text" id="alias" maxlength="40" placeholder="Optional display name">
+                <div class="readonly-info">Shown in site account UI; username remains your login identity</div>
             </div>
             <div class="form-group">
                 <label>Phone</label>
@@ -146,7 +147,16 @@
                         phone: document.getElementById('phone').value
                     })
                 });
-                if (!resp.ok) throw new Error('Failed to save profile');
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok) throw new Error(data.error || 'Failed to save profile');
+                if (data.alias) {
+                    localStorage.setItem('rhodes_user_alias', data.alias);
+                } else {
+                    localStorage.removeItem('rhodes_user_alias');
+                }
+                if (window.opener && window.opener.refreshUserAlias) {
+                    try { window.opener.refreshUserAlias(); } catch (e) {}
+                }
                 showMessage('success', 'Profile updated successfully');
             } catch (e) {
                 showMessage('error', 'Failed to save: ' + e.message);

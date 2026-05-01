@@ -26,9 +26,38 @@ window.installRhodesAuthUi = function installRhodesAuthUi(deps) {
         if (tabEl) tabEl.click();
     }
 
-    function updateHeaderAuth() {
+    function getCachedAlias() {
+        return (rhodesStorage.getItem('rhodes_user_alias') || '').trim();
+    }
+
+    function displayNameFor(currentUsername) {
+        return getCachedAlias() || currentUsername || '';
+    }
+
+    async function refreshUserAlias() {
+        const userToken = getUserToken();
+        if (!userToken || isGuest()) return;
+        try {
+            const resp = await fetch('/api/user/profile', {
+                headers: { 'Authorization': 'Bearer ' + userToken }
+            });
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const alias = (data && data.alias ? String(data.alias) : '').trim();
+            const prior = getCachedAlias();
+            if (alias) {
+                rhodesStorage.setItem('rhodes_user_alias', alias);
+            } else {
+                rhodesStorage.removeItem('rhodes_user_alias');
+            }
+            if (alias !== prior) updateHeaderAuth(false);
+        } catch (e) {}
+    }
+
+    function updateHeaderAuth(refreshAlias = true) {
         const currentUsername = getCurrentUsername();
         const guest = isGuest() || !currentUsername;
+        const currentDisplayName = displayNameFor(currentUsername);
         console.log('[AUTH-DEBUG] updateHeaderAuth called, IS_GUEST:', guest, 'CURRENT_USERNAME:', currentUsername);
 
         const loginBtn = document.getElementById('header-login-btn');
@@ -78,7 +107,7 @@ window.installRhodesAuthUi = function installRhodesAuthUi(deps) {
             accountDropdown.insertBefore(loginBtn, accountDropdown.firstChild);
         }
         if (loginBtn) {
-            loginBtn.textContent = String(currentUsername).toUpperCase();
+            loginBtn.textContent = String(currentDisplayName).toUpperCase();
             loginBtn.style.display = '';
             loginBtn.style.cssText = 'color:var(--cyan);font-size:15px;font-weight:700;text-decoration:none;cursor:pointer;';
             loginBtn.onclick = function(e) { e.preventDefault(); };
@@ -91,7 +120,8 @@ window.installRhodesAuthUi = function installRhodesAuthUi(deps) {
         if (mobileSessionsList) mobileSessionsList.style.display = '';
         if (mobileLoginLink) mobileLoginLink.style.display = 'none';
         if (mobileAccountMenu) mobileAccountMenu.style.display = '';
-        if (mobileAccountUsername) mobileAccountUsername.textContent = String(currentUsername).toUpperCase();
+        if (mobileAccountUsername) mobileAccountUsername.textContent = String(currentDisplayName).toUpperCase();
+        if (refreshAlias) refreshUserAlias();
         checkAdminStatus();
         // Hide Projects link unless user has at least one project.
         updateProjectsNavVisibility();
@@ -149,6 +179,7 @@ window.installRhodesAuthUi = function installRhodesAuthUi(deps) {
         rhodesStorage.removeItem('rhodes_user_token');
         rhodesStorage.removeItem('rhodes_token');
         rhodesStorage.removeItem('rhodes_username');
+        rhodesStorage.removeItem('rhodes_user_alias');
         if (window.rhodesSessionState && window.rhodesSessionState.clearLegacySessionPointer) {
             window.rhodesSessionState.clearLegacySessionPointer();
         } else {
@@ -174,6 +205,7 @@ window.installRhodesAuthUi = function installRhodesAuthUi(deps) {
 
     window.showAuthTab = showAuthTab;
     window.updateHeaderAuth = updateHeaderAuth;
+    window.refreshUserAlias = refreshUserAlias;
     window.checkAdminStatus = checkAdminStatus;
     window.logout = logout;
 
