@@ -128,8 +128,9 @@ window.__rhodesApplySessionNote = function(note) {
             "  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;",
             "  font-size: 12px; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word;",
             "}",
+            "#rhodes-prompt-modal .rpm-section-title { color: var(--cyan, #5cf); font-size: 11px; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 1px; }",
             "#rhodes-prompt-modal .rpm-edit {",
-            "  width: 100%; min-height: 58vh; resize: vertical; box-sizing: border-box;",
+            "  width: 100%; min-height: 34vh; resize: vertical; box-sizing: border-box;",
             "  background: rgba(0,0,0,0.35); color: var(--text, #d0d0d0);",
             "  border: 1px solid rgba(255,255,255,0.18); border-radius: 4px; padding: 10px;",
             "  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;",
@@ -144,6 +145,7 @@ window.__rhodesApplySessionNote = function(note) {
             "  padding: 5px 12px; cursor: pointer; font-weight: 700; font-size: 12px;",
             "}",
             "#rhodes-prompt-modal .rpm-status { color: var(--dim, #8b949e); font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }",
+            "#rhodes-prompt-modal .rpm-seed-edit { min-height: 22vh; margin-top: 6px; }",
             ".rhodes-live-indicator.flash-fallback {",
             "  color: rgba(255,255,255,1);",
             "  animation: rhodes-fallback-flash 1.5s ease-out;",
@@ -255,13 +257,37 @@ window.__rhodesApplySessionNote = function(note) {
         var body = document.createElement("div");
         body.className = "rpm-body";
         var editor = null;
+        var seedEditor = null;
         var status = null;
+        var seedStatus = null;
         if (opts.editable && opts.alias) {
+            var promptTitle = document.createElement("div");
+            promptTitle.className = "rpm-section-title";
+            promptTitle.textContent = "system prompt";
+            body.appendChild(promptTitle);
             editor = document.createElement("textarea");
             editor.className = "rpm-edit";
             editor.spellcheck = false;
             editor.value = bodyText || "";
             body.appendChild(editor);
+            if (opts.seed && opts.seed.exists) {
+                var seedTitle = document.createElement("div");
+                seedTitle.className = "rpm-section-title";
+                seedTitle.style.marginTop = "12px";
+                seedTitle.textContent = "seed — " + (opts.seed.seed_id || "resolved seed");
+                body.appendChild(seedTitle);
+                seedEditor = document.createElement("textarea");
+                seedEditor.className = "rpm-edit rpm-seed-edit";
+                seedEditor.spellcheck = false;
+                seedEditor.value = opts.seed.raw_content || "";
+                body.appendChild(seedEditor);
+            } else if (opts.seed && opts.seed.note) {
+                var seedNote = document.createElement("div");
+                seedNote.className = "rpm-status";
+                seedNote.style.marginTop = "12px";
+                seedNote.textContent = "seed: " + opts.seed.note;
+                body.appendChild(seedNote);
+            }
         } else {
             body.textContent = bodyText;
         }
@@ -277,23 +303,48 @@ window.__rhodesApplySessionNote = function(note) {
             saveBtn.textContent = "save prompt";
             status = document.createElement("div");
             status.className = "rpm-status";
-            status.textContent = "saves to this variant family";
+            status.textContent = "saves prompt to this variant family";
             saveBtn.addEventListener("click", async function () {
                 saveBtn.disabled = true;
-                status.textContent = "saving...";
+                status.textContent = "saving prompt...";
                 try {
                     var result = await savePromptForModel(opts.alias, editor.value, opts.sha256 || "");
                     opts.sha256 = result.sha256 || "";
-                    status.textContent = "saved " + (result.updated_count || 0) + " file" + ((result.updated_count || 0) === 1 ? "" : "s") + " across " + ((result.family_aliases || []).length || 1) + " variant" + (((result.family_aliases || []).length || 1) === 1 ? "" : "s");
+                    status.textContent = "saved prompt: " + (result.updated_count || 0) + " file" + ((result.updated_count || 0) === 1 ? "" : "s") + " across " + ((result.family_aliases || []).length || 1) + " variant" + (((result.family_aliases || []).length || 1) === 1 ? "" : "s");
                     try { showToast("System prompt saved"); } catch (e) {}
                 } catch (err) {
-                    status.textContent = "save failed: " + (err && err.message ? err.message : String(err));
+                    status.textContent = "prompt save failed: " + (err && err.message ? err.message : String(err));
                 } finally {
                     saveBtn.disabled = false;
                 }
             });
             foot.appendChild(saveBtn);
             foot.appendChild(status);
+            if (seedEditor) {
+                var seedSaveBtn = document.createElement("button");
+                seedSaveBtn.type = "button";
+                seedSaveBtn.className = "rpm-save";
+                seedSaveBtn.textContent = "save seed";
+                seedStatus = document.createElement("div");
+                seedStatus.className = "rpm-status";
+                seedStatus.textContent = "seed JSON must stay a message list";
+                seedSaveBtn.addEventListener("click", async function () {
+                    seedSaveBtn.disabled = true;
+                    seedStatus.textContent = "saving seed...";
+                    try {
+                        var result = await saveSeedForModel(opts.alias, seedEditor.value, (opts.seed && opts.seed.sha256) || "");
+                        opts.seed.sha256 = result.sha256 || "";
+                        seedStatus.textContent = "saved seed " + (result.seed_id || "") + ": " + (result.message_count || 0) + " messages";
+                        try { showToast("Seed saved"); } catch (e) {}
+                    } catch (err) {
+                        seedStatus.textContent = "seed save failed: " + (err && err.message ? err.message : String(err));
+                    } finally {
+                        seedSaveBtn.disabled = false;
+                    }
+                });
+                foot.appendChild(seedSaveBtn);
+                foot.appendChild(seedStatus);
+            }
             modal.appendChild(foot);
             setTimeout(function () { try { editor.focus(); } catch (e) {} }, 0);
         }
@@ -331,6 +382,33 @@ window.__rhodesApplySessionNote = function(note) {
         return data || {};
     }
 
+
+    async function fetchSeedForModel(alias) {
+        var url = "/api/admin/seed/for-model?alias=" + encodeURIComponent(alias) + "&_ts=" + Date.now();
+        var r = await fetch(url, { headers: adminAuthHeaders(), cache: "no-store" });
+        if (r.status === 401) throw new Error("Admin auth required (log in first).");
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+    }
+
+    async function saveSeedForModel(alias, rawContent, expectedSha) {
+        var headers = adminAuthHeaders();
+        headers["Content-Type"] = "application/json";
+        var r = await fetch("/api/admin/seed/for-model", {
+            method: "POST",
+            headers: headers,
+            cache: "no-store",
+            body: JSON.stringify({ alias: alias, raw_content: rawContent, expected_sha256: expectedSha || "" })
+        });
+        var data = null;
+        try { data = await r.json(); } catch (e) {}
+        if (r.status === 401) throw new Error("Admin auth required (log in first).");
+        if (!r.ok || (data && data.success === false)) {
+            throw new Error((data && (data.error || data.message)) || ("HTTP " + r.status));
+        }
+        return data || {};
+    }
+
     async function onIndicatorClick() {
         var el = document.getElementById("rhodes-live-indicator");
         if (!el) return;
@@ -342,11 +420,13 @@ window.__rhodesApplySessionNote = function(note) {
         openPromptModal("system prompt — " + alias, "loading…");
         try {
             var data = await fetchPromptForModel(alias);
+            var seedData = null;
+            try { seedData = await fetchSeedForModel(alias); } catch (seedErr) { seedData = { exists: false, note: (seedErr && seedErr.message) || String(seedErr) }; }
             if (data && data.exists && data.text) {
                 var headBits = ["system prompt — " + alias];
                 if (data.source) headBits.push("source=" + data.source);
                 if (data.path) headBits.push(data.path);
-                openPromptModal(headBits.join("  "), data.text, { editable: true, alias: alias, sha256: data.sha256 || "" });
+                openPromptModal(headBits.join("  "), data.text, { editable: true, alias: alias, sha256: data.sha256 || "", seed: seedData });
                 return;
             }
             var note = (data && data.note) ? data.note : "no prompt resolved for this alias";
