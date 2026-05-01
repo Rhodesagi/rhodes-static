@@ -2304,6 +2304,7 @@ function showDownloads() {
                         showToast('Failed to create session: ' + (msg.payload.error || 'Unknown error'));
                     }
                 } else if (msg.msg_type === 'model_set_response') {
+                    try { if (typeof hideLoading === 'function') hideLoading(); } catch (e) {}
                     if (msg.payload && msg.payload.success) {
                         const model = (msg.payload.model || '').toString().toLowerCase();
                         try { if (window.__rhodesLiveIndicator) window.__rhodesLiveIndicator.setModel(model || (msg.payload.alias || '')); } catch (e) {}

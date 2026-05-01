@@ -94,6 +94,12 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
                 console.log('[parseModelSwitchPrefix] generic slash match:', { flag: genericFlag, model: genericFlag, rest: genericRest });
                 return { flag: genericFlag, model: genericFlag, rest: genericRest };
             }
+            const bareCli = s.match(/^((?:cli|clir|clipr|clib)\d*-[a-z0-9._-]{1,120})(?:\s*)$/);
+            if (bareCli) {
+                const bareModel = bareCli[1].toLowerCase();
+                console.log('[parseModelSwitchPrefix] bare CLI alias match:', { flag: bareModel, model: bareModel, rest: '' });
+                return { flag: bareModel, model: bareModel, rest: '' };
+            }
             console.log('[parseModelSwitchPrefix] no flag match');
             return null;
         }
