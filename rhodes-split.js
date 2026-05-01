@@ -1669,6 +1669,20 @@ function handlePaneErrorMessage(paneNum, msg) {
     addInstanceMessage(paneNum, 'error', msg.payload?.message || 'Error occurred');
 }
 
+function handlePaneGenerationAbortMessage(paneNum, msg, chatEl) {
+    if (!(window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin)) return;
+    const p = msg.payload || {};
+    const firstToken = (p.first_token || '').toString();
+    const retry = p.retry ? (' ' + p.retry + '/' + (p.max_retries || '?')) : '';
+    const line = '[Stream abort] ' + (p.message || 'Retried after required-format failure') + retry + (firstToken ? (' first=' + JSON.stringify(firstToken.slice(0, 80))) : '');
+    const div = document.createElement('div');
+    div.style.cssText = 'color:var(--orange);margin:6px 0;padding:6px 8px;border-left:2px solid var(--orange);background:rgba(255,170,0,0.08);font-size:11px;font-family:monospace;';
+    div.textContent = line;
+    chatEl.appendChild(div);
+    if (typeof showToast === 'function') showToast('Pane ' + paneNum + ': stream aborted; retrying format');
+    _autoScrollPane(chatEl);
+}
+
 function handlePaneReasoningChunkMessage(paneNum, msg, chatEl) {
     // Reasoning chunks from content gate - display in collapsible block
     var chunk = (msg.payload && (msg.payload.content || msg.payload.text)) || '';
@@ -1701,6 +1715,7 @@ const paneMessageHandlers = {
     reasoning_chunk: handlePaneReasoningChunkMessage,
     interrupt_ack: handlePaneInterruptAckMessage,
     ai_message: handlePaneAiMessage,
+    generation_abort: handlePaneGenerationAbortMessage,
     tool_call: handlePaneToolEvent,
     tool_result: handlePaneToolEvent,
     thinking: handlePaneThinkingMessage,

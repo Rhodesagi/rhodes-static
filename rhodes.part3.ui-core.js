@@ -1018,7 +1018,7 @@ function showDownloads() {
                                     detailsHtml = '<div style="color:var(--cyan);opacity:0.8;font-size:11px;margin-bottom:6px;border-left:2px solid var(--cyan);padding:4px 8px;background:rgba(0,200,255,0.05);"><strong>Private reasoning:</strong> ' + esc(_tcThink) + '</div>' + detailsHtml;
                                 }
                                 if (_tcThinkPub) {
-                                    detailsHtml = '<div style="color:var(--green);opacity:0.85;font-size:11px;margin-bottom:6px;border-left:2px solid var(--green);padding:4px 8px;background:rgba(0,255,150,0.05);"><strong>Note:</strong> ' + esc(_tcThinkPub) + '</div>' + detailsHtml;
+                                    detailsHtml = '<div style="color:var(--green);opacity:0.85;font-size:11px;margin-bottom:6px;border-left:2px solid var(--green);padding:4px 8px;background:rgba(0,255,150,0.05);">' + esc(_tcThinkPub) + '</div>' + detailsHtml;
                                 }
                                 parsed.push({ toolName: toolName, preview: preview, detailsHtml: detailsHtml });
                             }
@@ -1384,6 +1384,35 @@ function showDownloads() {
                         const chatEl = document.getElementById('chat');
                         if (chatEl) _autoScrollChat(chatEl);
                     }
+                } else if (msg.msg_type === 'thinking') {
+                    if (activeReqId && msg.payload && msg.payload.req_id && msg.payload.req_id !== activeReqId) return;
+                    const pChunk = (msg.payload && msg.payload.content) || '';
+                    if (!pChunk) return;
+                    hideLoading();
+                    if (!window._visibleThinkingEl) {
+                        window._visibleThinkingContent = '';
+                        const div = document.createElement('div');
+                        div.className = 'msg ai reasoning-stream visible-thinking-stream';
+                        const details = document.createElement('details');
+                        details.open = true;
+                        const summary = document.createElement('summary');
+                        summary.style.cssText = "cursor:pointer;color:var(--green);font-family:'Orbitron',monospace;font-size:12px;user-select:none;margin-bottom:6px;";
+                        summary.textContent = 'Thinking';
+                        const pre = document.createElement('pre');
+                        pre.style.cssText = 'white-space:pre-wrap;word-break:break-word;margin:0;padding:10px;background:rgba(0,255,150,0.06);border:1px solid rgba(0,255,150,0.18);border-radius:6px;color:var(--text);opacity:0.78;font-size:12.5px;line-height:1.5;max-height:300px;overflow-y:auto;';
+                        details.appendChild(summary);
+                        details.appendChild(pre);
+                        div.appendChild(details);
+                        const chatEl = document.getElementById('chat');
+                        if (chatEl) { chatEl.appendChild(div); _autoScrollChat(chatEl); }
+                        window._visibleThinkingEl = div;
+                        window._visibleThinkingPre = pre;
+                    }
+                    window._visibleThinkingContent += pChunk;
+                    window._visibleThinkingPre.textContent = window._visibleThinkingContent;
+                    window._visibleThinkingPre.scrollTop = window._visibleThinkingPre.scrollHeight;
+                    const chatEl = document.getElementById('chat');
+                    if (chatEl) _autoScrollChat(chatEl);
                 } else if (msg.msg_type === 'rapira_full') {
                     // [EXPERIMENTAL] Rapira rewriter: expandable full reasoning in Rapira notation
                     // Kill switch: set window.RHODES_RAPIRA_ENABLED = false to disable
@@ -1429,6 +1458,12 @@ function showDownloads() {
                         window._reasoningEl = null;
                         window._reasoningPre = null;
                         window._reasoningSummary = null;
+                    }
+                    if (window._visibleThinkingEl) {
+                        const _pDet = window._visibleThinkingEl.querySelector('details');
+                        if (_pDet) _pDet.open = false;
+                        window._visibleThinkingEl = null;
+                        window._visibleThinkingPre = null;
                     }
                     if (activeReqId && msg.payload && msg.payload.req_id && msg.payload.req_id !== activeReqId) return;
                     const chunkReqId = _normalizeReqId(msg.payload && msg.payload.req_id, activeReqId);
@@ -1679,6 +1714,12 @@ function showDownloads() {
                         window._reasoningEl = null;
                         window._reasoningPre = null;
                         window._reasoningSummary = null;
+                    }
+                    if (window._visibleThinkingEl) {
+                        const _pDet2 = window._visibleThinkingEl.querySelector('details');
+                        if (_pDet2) _pDet2.open = false;
+                        window._visibleThinkingEl = null;
+                        window._visibleThinkingPre = null;
                     }
                     // Room-aware: AI_MESSAGE can also be room AI or personal AI.
                     if (msg.payload && msg.payload.room_id) {
@@ -2235,6 +2276,17 @@ function showDownloads() {
                             );
                         }
                     } catch (e) {}
+                } else if (msg.msg_type === 'generation_abort') {
+                    if (!(window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin)) return;
+                    const p = msg.payload || {};
+                    const abortType = (p.abort_type || 'generation_abort').toString();
+                    const reason = (p.reason || '').toString();
+                    const retry = p.retry ? (' ' + p.retry + '/' + (p.max_retries || '?')) : '';
+                    const firstToken = (p.first_token || '').toString();
+                    const detail = firstToken ? (' first=' + JSON.stringify(firstToken.slice(0, 80))) : '';
+                    const line = '[Stream abort] ' + (p.message || ('Retried after ' + abortType + (reason ? (': ' + reason) : ''))) + retry + detail;
+                    try { showToast('Stream aborted; retrying format'); } catch (e) {}
+                    addMsg('ai', '<span style="color:var(--orange);font-family:var(--mono);font-size:12px;">' + escapeHtml(line) + '</span>', true);
                 } else if (msg.msg_type === 'error') {
                     const errText = (msg.payload && msg.payload.error) || 'An error occurred';
                     addMsg('ai', '[System] ' + errText);
@@ -2553,7 +2605,7 @@ function showDownloads() {
                     if (!_liveIsAdmin) {
                         var _liveThinkPub = tool.thinking || '';
                         if (_liveThinkPub) {
-                            detailsContent = '<div style="color:var(--green);opacity:0.9;font-size:11px;margin-bottom:6px;border-left:2px solid var(--green);padding:4px 8px;background:rgba(0,255,150,0.08);"><strong>Note:</strong> ' + escapeHtml(_liveThinkPub) + '</div>' + detailsContent;
+                            detailsContent = '<div style="color:var(--green);opacity:0.9;font-size:11px;margin-bottom:6px;border-left:2px solid var(--green);padding:4px 8px;background:rgba(0,255,150,0.08);">' + escapeHtml(_liveThinkPub) + '</div>' + detailsContent;
                         }
                     }
 
