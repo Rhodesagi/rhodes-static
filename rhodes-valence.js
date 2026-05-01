@@ -818,7 +818,12 @@
         formData.append('duration_ms', (Date.now() - _recordingStartMs).toString());
 
         try {
-            const resp = await fetch(RECORDING_UPLOAD_URL, { method: 'POST', body: formData });
+            const headers = {};
+            try {
+                const token = (window.rhodesStorage && window.rhodesStorage.getItem('rhodes_user_token')) || localStorage.getItem('rhodes_user_token') || '';
+                if (token) headers.Authorization = 'Bearer ' + token;
+            } catch (e) {}
+            const resp = await fetch(RECORDING_UPLOAD_URL, { method: 'POST', headers, body: formData });
             if (resp.ok) {
                 console.log(`[VALENCE] Recording uploaded (${(blob.size / 1024).toFixed(0)} KB)`);
             }

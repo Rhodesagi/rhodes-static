@@ -48,9 +48,15 @@ RC._speakElevenLabs = function(text, settings, callback) {
     var url = '/tts/stream';
     var body = JSON.stringify({ text: text.substring(0, 500), source: 'rhodescards' });
 
+    var headers = { 'Content-Type': 'application/json' };
+    try {
+        var token = (window.rhodesStorage && window.rhodesStorage.getItem('rhodes_user_token')) || localStorage.getItem('rhodes_user_token') || '';
+        if (token) headers.Authorization = 'Bearer ' + token;
+    } catch (e) {}
+
     fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: body,
     }).then(function(res) {
         if (!res.ok) throw new Error('TTS error');
