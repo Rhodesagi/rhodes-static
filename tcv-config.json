@@ -3,14 +3,14 @@
   "classifier": {
     "provider": "gemini-vision",
     "model": "gemini-2.0-flash",
-    "api_key": "AIzaSyCRitFDDOQx3k5tevsfHUi6mcDl8sDlQF4",
-    "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+    "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+    "requires_server_proxy": true
   },
   "fallback": {
     "provider": "deepseek",
     "model": "deepseek-chat",
-    "api_key": "sk-8e2ecb03cf0341ddac08e398485bc01c",
-    "endpoint": "https://api.deepseek.com/chat/completions"
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "requires_server_proxy": true
   },
   "settings": {
     "grace_period_ms": 8000,
