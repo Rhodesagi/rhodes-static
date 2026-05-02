@@ -1670,7 +1670,8 @@ function handlePaneErrorMessage(paneNum, msg) {
 }
 
 function handlePaneGenerationAbortMessage(paneNum, msg, chatEl) {
-    if (!(window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin)) return;
+    const canViewAbortAlerts = window.RHODES_CONFIG && (window.RHODES_CONFIG.canViewAbortAlerts || window.RHODES_CONFIG.isAdmin);
+    if (!canViewAbortAlerts) return;
     const p = msg.payload || {};
     const firstToken = (p.first_token || '').toString();
     const retry = p.retry ? (' ' + p.retry + '/' + (p.max_retries || '?')) : '';

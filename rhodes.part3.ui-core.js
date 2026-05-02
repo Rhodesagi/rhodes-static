@@ -39,8 +39,7 @@ window.__rhodesApplySessionNote = function(note) {
  *
  * Shows: model:<alias> for server-authorized operators only.
  *
- * Visible only to the restricted username allowlist below (currently
- * sebastian + markbass — corresponds to user_id 2 + 3 server-side).
+ * Visible only to the server-side operator allowlist.
  * Other users get no DOM element and no behavior.
  *
  * Wired to:
@@ -1152,6 +1151,7 @@ function showDownloads() {
                         if (window.RHODES_CONFIG) {
                             window.RHODES_CONFIG.isAdmin = msg.payload.is_admin || false;
                             window.RHODES_CONFIG.canViewReasoning = !!(msg.payload.can_view_reasoning || msg.payload.is_admin);
+                            window.RHODES_CONFIG.canViewAbortAlerts = !!(msg.payload.can_view_abort_alerts || msg.payload.is_admin);
                         }
                         const instanceLabel = wantsNewRhodes ? ' [NEW]' : '';
 
@@ -2300,6 +2300,7 @@ function showDownloads() {
                     if (msg.payload.success) {
                         if (window.RHODES_CONFIG) {
                             window.RHODES_CONFIG.canViewReasoning = !!(msg.payload.can_view_reasoning || window.RHODES_CONFIG.isAdmin);
+                            window.RHODES_CONFIG.canViewAbortAlerts = !!(msg.payload.can_view_abort_alerts || window.RHODES_CONFIG.isAdmin);
                         }
                         // Load conversation history into chat (switch session)
                         const conversation = msg.payload.conversation || [];
@@ -2521,7 +2522,7 @@ function showDownloads() {
                 } else if (msg.msg_type === 'provider_change') {
                     // Refusal-detector reroute / failover. Update provider
                     // half of the indicator + flash. Visible only to the
-                    // restricted username allowlist (sebastian + markbass).
+                    // restricted server-side operator allowlist.
                     try {
                         if (window.__rhodesLiveIndicator && msg.payload) {
                             if (msg.payload.new_provider) {
@@ -2541,7 +2542,8 @@ function showDownloads() {
                         }
                     } catch (e) {}
                 } else if (msg.msg_type === 'generation_abort') {
-                    if (!(window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin)) return;
+                    const _canViewAbortAlerts = window.RHODES_CONFIG && (window.RHODES_CONFIG.canViewAbortAlerts || window.RHODES_CONFIG.isAdmin);
+                    if (!_canViewAbortAlerts) return;
                     const p = msg.payload || {};
                     const abortType = (p.abort_type || 'generation_abort').toString();
                     const reason = (p.reason || '').toString();

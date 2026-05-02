@@ -45,6 +45,7 @@ window.RHODES_CONFIG = {
     // Admin/reasoning status (set by auth response)
     isAdmin: false,
     canViewReasoning: false,
+    canViewAbortAlerts: false,
     
     // Check if tool should be hidden (admin sees all)
     isHiddenTool: function(toolName) {
