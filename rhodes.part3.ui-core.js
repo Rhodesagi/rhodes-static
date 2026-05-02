@@ -1148,9 +1148,10 @@ function showDownloads() {
 
                         IS_GUEST = msg.payload.is_guest || false;
                         RHODES_ID = msg.payload.rhodes_id || null;
-                        // Set admin status in config
+                        // Set admin/reasoning status in config
                         if (window.RHODES_CONFIG) {
                             window.RHODES_CONFIG.isAdmin = msg.payload.is_admin || false;
+                            window.RHODES_CONFIG.canViewReasoning = !!(msg.payload.can_view_reasoning || msg.payload.is_admin);
                         }
                         const instanceLabel = wantsNewRhodes ? ' [NEW]' : '';
 
@@ -1208,10 +1209,10 @@ function showDownloads() {
                             // Admin-only thinking panel rendered on session resume.
                             // Mirrors the live reasoning_chunk panel shape (collapsible <details>).
                             if (!reasoningText || !chatEl) return;
-                            var _isAdmin = window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin;
+                            var _canViewReasoning = window.RHODES_CONFIG && (window.RHODES_CONFIG.canViewReasoning || window.RHODES_CONFIG.isAdmin);
                             var _rapiraOn = window.RHODES_RAPIRA_ENABLED === true;
-                            console.log('[RESUME-REASONING] called, isAdmin=' + _isAdmin + ' len=' + reasoningText.length);
-                            if (!_isAdmin && !_rapiraOn) return;
+                            console.log('[RESUME-REASONING] called, canViewReasoning=' + _canViewReasoning + ' len=' + reasoningText.length);
+                            if (!_canViewReasoning && !_rapiraOn) return;
                             var div = document.createElement('div');
                             div.className = 'msg ai reasoning-stream reasoning-resumed';
                             var details = document.createElement('details');
@@ -1270,10 +1271,10 @@ function showDownloads() {
                                 // - Admin sees private (_rhodes_think) in cyan box
                                 // - Non-admin sees public 'thinking' (renamed from
                                 //   _rhodes_think_public on the wire) in a separate box
-                                var _isAdminTC = window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin;
-                                var _tcThink = tc._rhodes_think || (tc.arguments && tc.arguments._rhodes_think) || '';
+                                var _canViewReasoningTC = window.RHODES_CONFIG && (window.RHODES_CONFIG.canViewReasoning || window.RHODES_CONFIG.isAdmin);
+                                var _tcThink = tc._rhodes_think || tc.thinkingPrivate || (tc.arguments && (tc.arguments._rhodes_think || tc.arguments.thinkingPrivate)) || '';
                                 var _tcThinkPub = tc._rhodes_think_public || tc.thinking || '';
-                                if (_isAdminTC && _tcThink) {
+                                if (_canViewReasoningTC && _tcThink) {
                                     detailsHtml = '<div style="color:var(--cyan);opacity:0.8;font-size:11px;margin-bottom:6px;border-left:2px solid var(--cyan);padding:4px 8px;background:rgba(0,200,255,0.05);"><strong>Private reasoning:</strong> ' + esc(_tcThink) + '</div>' + detailsHtml;
                                 }
                                 if (_tcThinkPub) {
@@ -1607,10 +1608,10 @@ function showDownloads() {
                         }
                     }
                 } else if (msg.msg_type === 'reasoning_chunk') {
-                    // Live reasoning/thinking stream — admin only, OR rapira mode active
-                    const _isAdmin = window.RHODES_CONFIG && window.RHODES_CONFIG.isAdmin;
+                    // Live reasoning/thinking stream — approved reasoning viewers, OR rapira mode active
+                    const _canViewReasoning = window.RHODES_CONFIG && (window.RHODES_CONFIG.canViewReasoning || window.RHODES_CONFIG.isAdmin);
                     const _rapiraOn = window.RHODES_RAPIRA_ENABLED === true;
-                    if (!_isAdmin && !_rapiraOn) return;
+                    if (!_canViewReasoning && !_rapiraOn) return;
                     if (activeReqId && msg.payload && msg.payload.req_id && msg.payload.req_id !== activeReqId) return;
                     const rChunk = msg.payload.content || '';
                     if (rChunk) {
@@ -2297,6 +2298,9 @@ function showDownloads() {
                     }
                 } else if (msg.msg_type === 'session_resume_response') {
                     if (msg.payload.success) {
+                        if (window.RHODES_CONFIG) {
+                            window.RHODES_CONFIG.canViewReasoning = !!(msg.payload.can_view_reasoning || window.RHODES_CONFIG.isAdmin);
+                        }
                         // Load conversation history into chat (switch session)
                         const conversation = msg.payload.conversation || [];
                         console.log('[RESUME] Received conversation:', conversation.length, 'messages');

@@ -42,8 +42,9 @@ window.RHODES_CONFIG = {
     claude3opus: ['r1.13d']
     },
     
-    // Admin status (set by auth response)
+    // Admin/reasoning status (set by auth response)
     isAdmin: false,
+    canViewReasoning: false,
     
     // Check if tool should be hidden (admin sees all)
     isHiddenTool: function(toolName) {
