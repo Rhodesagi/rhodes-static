@@ -295,7 +295,7 @@ window.__rhodesApplySessionNote = function(note) {
                 try {
                     var result = await cloneModelFromPromptModal(opts.alias, cloneInput.value, editor ? editor.value : bodyText, seedEditor ? seedEditor.value : null, opts.seed || null);
                     var verifiedSlash = (result.config && result.config.slash_command) || ("/" + result.alias);
-                    cloneStatus.textContent = "verified " + verifiedSlash + " plus variants";
+                    cloneStatus.textContent = "verified " + verifiedSlash + " plus " + ((result.family_aliases || []).length || 0) + " variants";
                     try { showToast("Model cloned: " + verifiedSlash); } catch (e) {}
                 } catch (err) {
                     cloneStatus.textContent = "clone failed: " + (err && err.message ? err.message : String(err));
@@ -449,13 +449,72 @@ window.__rhodesApplySessionNote = function(note) {
         return data || {};
     }
 
+    async function fetchCanonicalCloneSourceConfig(sourceAlias) {
+        var startAlias = normalizeModelAliasInput(sourceAlias);
+        var alias = startAlias;
+        var cfg = await fetchModelConfigForAdmin(alias);
+        var seen = {};
+        for (var i = 0; i < 16; i += 1) {
+            var parent = normalizeModelAliasInput((cfg && cfg._auto_variant_of) || "");
+            if (!parent || parent === alias) break;
+            if (seen[parent]) throw new Error("clone source variant cycle: " + alias + " -> " + parent);
+            seen[parent] = true;
+            alias = parent;
+            cfg = await fetchModelConfigForAdmin(alias);
+        }
+        return { alias: alias || startAlias, config: cfg || {} };
+    }
+
+    function expectedCloneVariantAliases(newAlias, sourceCfg) {
+        var aliases = [newAlias];
+        var letters = ["a", "b", "c", "d", "e", "f", "g", "j", "k", "v", "w"];
+        var effortLetters = {d:1, e:1, g:1, j:1, k:1, v:1, w:1};
+        var base = String((sourceCfg && (sourceCfg.base_model || sourceCfg.base_model_input)) || "").toLowerCase();
+        var rootSupportsEffort = /[degjkvw]\d*$/.test(base);
+        aliases.push(newAlias + "-0");
+        if (rootSupportsEffort) {
+            ["l", "m", "h"].forEach(function (eff) {
+                aliases.push(newAlias + "-" + eff);
+                aliases.push(newAlias + "-" + eff + "-0");
+            });
+        }
+        letters.forEach(function (letter) {
+            aliases.push(newAlias + "-" + letter);
+            aliases.push(newAlias + "-" + letter + "-0");
+            if (effortLetters[letter]) {
+                ["l", "m", "h"].forEach(function (eff) {
+                    aliases.push(newAlias + "-" + letter + "-" + eff);
+                    aliases.push(newAlias + "-" + letter + "-" + eff + "-0");
+                });
+            }
+        });
+        return aliases.filter(function (value, idx, arr) { return value && arr.indexOf(value) === idx; });
+    }
+
+    async function verifyCloneVariantFamily(newAlias, sourceCfg) {
+        var aliases = expectedCloneVariantAliases(newAlias, sourceCfg);
+        var url = "/api/admin/model-configs?aliases=" + encodeURIComponent(aliases.join(",")) + "&_ts=" + Date.now();
+        var r = await fetch(url, { headers: adminAuthHeaders(), cache: "no-store" });
+        var data = null;
+        try { data = await r.json(); } catch (e) {}
+        if (r.status === 401) throw new Error("Admin auth required (log in first).");
+        if (!r.ok || (data && data.success === false)) throw new Error((data && (data.error || data.message)) || ("variant verification HTTP " + r.status));
+        var found = {};
+        ((data && data.configs) || []).forEach(function (row) {
+            if (row && row.alias) found[String(row.alias).toLowerCase()] = true;
+        });
+        var missing = aliases.filter(function (alias) { return !found[alias]; });
+        if (missing.length) throw new Error("clone saved but missing variants: " + missing.slice(0, 12).join(", ") + (missing.length > 12 ? " ..." : ""));
+        return aliases;
+    }
+
     async function cloneModelFromPromptModal(sourceAlias, rawNewAlias, promptText, seedRawContent, seedMeta) {
         var newAlias = normalizeModelAliasInput(rawNewAlias);
         if (!newAlias) throw new Error("enter a new alias");
         if (newAlias === normalizeModelAliasInput(sourceAlias)) throw new Error("new alias must differ from source alias");
-        var sourceCfg = await fetchModelConfigForAdmin(sourceAlias);
-        var rootAlias = (sourceCfg._auto_variant_of || sourceAlias || "").trim().toLowerCase();
-        if (rootAlias && rootAlias !== sourceAlias) sourceCfg = await fetchModelConfigForAdmin(rootAlias);
+        var root = await fetchCanonicalCloneSourceConfig(sourceAlias);
+        var rootAlias = root.alias;
+        var sourceCfg = root.config;
         var payload = {};
         Object.keys(sourceCfg || {}).forEach(function (key) {
             if ({alias:1, resolved_base_model:1, inherits_chain:1, prompt_exists:1, prompt_chars:1, fine_tune_exists:1, fine_tune_chars:1, _dynamic:1, _auto_generated:1, _auto_variant_of:1, _overrides:1, created_at:1, updated_at:1}[key]) return;
@@ -483,7 +542,8 @@ window.__rhodesApplySessionNote = function(note) {
         if (resolvedSlash !== "/" + newAlias) {
             throw new Error("clone saved with unexpected slash command: " + (resolvedSlash || "(empty)"));
         }
-        return { alias: newAlias, result: result, config: savedCfg };
+        var familyAliases = await verifyCloneVariantFamily(newAlias, sourceCfg);
+        return { alias: newAlias, result: result, config: savedCfg, family_aliases: familyAliases };
     }
 
 
