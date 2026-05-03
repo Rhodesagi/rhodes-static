@@ -1280,7 +1280,7 @@ function showDownloads() {
                             var summary = document.createElement('summary');
                             summary.style.cssText = "cursor:pointer;color:var(--cyan);font-family:'Orbitron',monospace;font-size:12px;user-select:none;margin-bottom:6px;";
                             var tokEst = Math.round(reasoningText.length / 4);
-                            summary.innerHTML = (window.RHODES_RAPIRA_ENABLED !== false ? 'Compiled' : 'Reasoning') + ' <span style="opacity:0.5;font-size:11px;">(' + tokEst + ' tokens)</span>';
+                            summary.innerHTML = (_rapiraOn ? 'Compiled' : 'Reasoning') + ' <span style="opacity:0.5;font-size:11px;">(' + tokEst + ' tokens)</span>';
                             var pre = document.createElement('pre');
                             pre.style.cssText = "white-space:pre-wrap;color:var(--cyan);opacity:0.85;margin:0;padding:8px;background:rgba(0,200,255,0.05);border-left:2px solid var(--cyan);max-height:300px;overflow:auto;";
                             pre.textContent = reasoningText;
@@ -1684,7 +1684,7 @@ function showDownloads() {
                             details.open = true;
                             const summary = document.createElement('summary');
                             summary.style.cssText = "cursor:pointer;color:var(--cyan);font-family:'Orbitron',monospace;font-size:12px;user-select:none;margin-bottom:6px;";
-                            summary.innerHTML = (window.RHODES_RAPIRA_ENABLED !== false ? 'Compiling' : 'Thinking') + ' <span style="opacity:0.6">...</span>';
+                            summary.innerHTML = (_rapiraOn ? 'Compiling' : 'Thinking') + ' <span style="opacity:0.6">...</span>';
                             const pre = document.createElement('pre');
                             pre.style.cssText = 'white-space:pre-wrap;word-break:break-word;margin:0;padding:10px;background:rgba(0,0,0,0.2);border:1px solid rgba(0,255,204,0.1);border-radius:6px;color:var(--text);opacity:0.55;font-size:12.5px;line-height:1.5;max-height:400px;overflow-y:auto;';
                             details.appendChild(summary);
@@ -1699,7 +1699,7 @@ function showDownloads() {
                         window._reasoningContent += rChunk;
                         const tokEst = Math.round(window._reasoningContent.length / 4);
                         window._reasoningPre.textContent = window._reasoningContent;
-                        window._reasoningSummary.innerHTML = (window.RHODES_RAPIRA_ENABLED !== false ? 'Compiling' : 'Thinking') + ' <span style="opacity:0.5;font-size:11px;">(' + tokEst + ' tokens)</span> <span style="opacity:0.6">...</span>';
+                        window._reasoningSummary.innerHTML = (_rapiraOn ? 'Compiling' : 'Thinking') + ' <span style="opacity:0.5;font-size:11px;">(' + tokEst + ' tokens)</span> <span style="opacity:0.6">...</span>';
                         window._reasoningPre.scrollTop = window._reasoningPre.scrollHeight;
                         const chatEl = document.getElementById('chat');
                         if (chatEl) _autoScrollChat(chatEl);
@@ -1772,7 +1772,7 @@ function showDownloads() {
                     // Close reasoning display when content starts streaming
                     if (window._reasoningEl && window._reasoningSummary) {
                         const _toks = Math.round((window._reasoningContent||'').length/4);
-                        window._reasoningSummary.innerHTML = (window.RHODES_RAPIRA_ENABLED !== false ? 'Compiled' : 'Reasoning') + ' <span style="opacity:0.5;font-size:11px;">(' + _toks + ' tokens)</span>';
+                        window._reasoningSummary.innerHTML = (window.RHODES_RAPIRA_ENABLED === true ? 'Compiled' : 'Reasoning') + ' <span style="opacity:0.5;font-size:11px;">(' + _toks + ' tokens)</span>';
                         const _det = window._reasoningEl.querySelector('details');
                         if (_det) _det.open = false;
                         window._reasoningEl = null;
