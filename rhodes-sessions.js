@@ -511,18 +511,59 @@ window.installRhodesSessionUi = function installRhodesSessionUi(deps) {
         }
     }
 
-    function getShareLink() {
+    async function getShareLink() {
         const sessionId = getRhodesId();
         if (!sessionId) return;
-        const isV2 = (window.location.pathname === '/v2' || window.location.pathname.startsWith('/v2/'));
-        const basePath = isV2 ? '/v2/' : '/';
-        const shareUrl = window.location.origin + basePath + '?resume=' + sessionId;
-        navigator.clipboard.writeText(shareUrl).then(() => {
-            showToast('Share link copied!');
-        }).catch(() => {
-            prompt('Share link:', shareUrl);
-        });
+        const username = prompt('Invite Rhodes username to this live session:');
+        if (!username || !username.trim()) return;
+        const token = (typeof USER_TOKEN !== 'undefined' && USER_TOKEN) || rhodesStorage.getItem('rhodes_user_token') || '';
+        if (!token) { showToast('Login required to invite users'); return; }
+        try {
+            const resp = await fetch('/api/user/sessions/' + encodeURIComponent(sessionId) + '/share-invite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ username: username.trim(), role: 'participant' })
+            });
+            const data = await resp.json();
+            if (!resp.ok || !data.success) throw new Error(data.error || 'Invite failed');
+            const shareUrl = window.location.origin + (data.invite_url || ('/?join=' + data.invite_token));
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                showToast('Shared-session invite copied');
+            }).catch(() => {
+                prompt('Shared-session invite:', shareUrl);
+            });
+        } catch (e) {
+            showToast(e.message || 'Could not create invite');
+        }
     }
+
+    async function acceptJoinInviteFromUrl() {
+        try {
+            const params = new URLSearchParams(window.location.search || '');
+            const joinToken = params.get('join');
+            if (!joinToken) return;
+            const token = (typeof USER_TOKEN !== 'undefined' && USER_TOKEN) || rhodesStorage.getItem('rhodes_user_token') || '';
+            if (!token) { showToast('Login required to join shared session'); return; }
+            const resp = await fetch('/api/user/session-shares/accept', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ token: joinToken })
+            });
+            const data = await resp.json();
+            if (!resp.ok || !data.success) throw new Error(data.error || 'Join failed');
+            if (window.rhodesSessionState && window.rhodesSessionState.setResumeSessionIdForCurrentIdentity) {
+                window.rhodesSessionState.setResumeSessionIdForCurrentIdentity(data.session_id);
+            } else {
+                rhodesStorage.setItem('rhodes_session_id', data.session_id);
+            }
+            if (history && history.replaceState) history.replaceState(null, '', window.location.pathname);
+            showToast('Joined shared session');
+            if (typeof loadSession === 'function') loadSession(data.session_id);
+        } catch (e) {
+            showToast(e.message || 'Could not join shared session');
+        }
+    }
+    setTimeout(acceptJoinInviteFromUrl, 1200);
 
     document.addEventListener('click', (e) => {
         const dropdown = document.getElementById('sessions-list');
