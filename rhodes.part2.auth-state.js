@@ -1607,7 +1607,7 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
                         const reportType = modal.querySelector('#rhodes-report-type').value;
                         const payload = {
                             report_type: reportType,
-                            session_id: reportModeState.sessionId || RHODES_ID || selectedMessages[0].session_id || '',
+                            session_id: RHODES_ID || reportModeState.sessionId || selectedMessages[0].session_id || '',
                             title: modal.querySelector('#rhodes-report-title').value.trim(),
                             description: modal.querySelector('#rhodes-report-description').value.trim(),
                             severity: modal.querySelector('#rhodes-report-severity').value,
@@ -1703,7 +1703,7 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
             el.dataset.reportKey = key;
             el.dataset.reportRole = role;
             el.dataset.reportRoundNum = roundNum !== null && roundNum !== undefined ? String(roundNum) : '';
-            el.dataset.reportSessionId = String((meta && meta.sessionId) || reportModeState.sessionId || RHODES_ID || '');
+            el.dataset.reportSessionId = String((meta && meta.sessionId) || RHODES_ID || reportModeState.sessionId || '');
             el.dataset.reportText = cleanText;
             el.dataset.reportExcerpt = cleanText.slice(0, 1200);
             if (!el.querySelector('.msg-report-btn')) {

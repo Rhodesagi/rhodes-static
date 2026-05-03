@@ -2559,6 +2559,9 @@ function showDownloads() {
                         if (window.__rhodesApplySessionNote) {
                             window.__rhodesApplySessionNote(msg.payload ? msg.payload.session_note : null);
                         }
+                        if (window.RhodesReportMode && window.RhodesReportMode.syncSessionId) {
+                            window.RhodesReportMode.syncSessionId(RHODES_ID);
+                        }
                         const reason = (msg.payload.reason || '').toString().toLowerCase();
                         if (reason === 'model_switch' && msg.payload.model) {
                             const model = (msg.payload.model || '').toString().toLowerCase();
