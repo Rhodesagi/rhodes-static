@@ -38,7 +38,8 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
     }
 
     function parseModelSwitchPrefix(rawText) {
-        const s = String(rawText || '').trim().toLowerCase();
+        const raw = String(rawText || '').trim();
+        const s = raw.toLowerCase();
         console.log('[parseModelSwitchPrefix] checking:', s);
 
         if (options.enableRVersionSwitch) {
@@ -87,7 +88,7 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
     else if (s === '/zeta' || s.startsWith('/zeta ')) flag = 'zeta';
 
         if (!flag) {
-            const generic = s.match(/^\/([a-z0-9][a-z0-9._-]{0,63})(?:\s+(.*))?$/);
+            const generic = raw.match(/^\/([a-z0-9][a-z0-9._-]{0,63})(?:\s+([\s\S]*))?$/i);
             if (generic) {
                 const genericFlag = generic[1].toLowerCase();
                 const genericRest = (generic[2] || '').trim();
@@ -419,22 +420,47 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
         const modelCmd = parseModelSwitchPrefix(text);
         console.log('[AFTER parseModelSwitchPrefix] modelCmd:', modelCmd);
         if (modelCmd) {
-            console.log('[MODEL SWITCH] Entering model switch path, will NOT send user_message');
+            console.log('[MODEL SWITCH] Entering model switch path, will NOT send raw slash as user_message');
+            const afterText = String(modelCmd.rest || '').trim();
+            const afterMsgId = generateUUID();
+            const modelSetPayload = { model: modelCmd.model };
+            if (afterText) {
+                modelSetPayload.content_after_switch = afterText;
+                modelSetPayload.after_switch_msg_id = afterMsgId;
+                modelSetPayload.attachments_after_switch = pendingImages.map(img => {
+                    if (img.type === 'video' || img.type === 'audio') {
+                        return { type: img.type, media_type: img.media_type, url: img.url, name: img.name };
+                    }
+                    return { type: 'image', media_type: img.media_type, data: img.data };
+                });
+                modelSetPayload.audio_output = !!(globalThis.VoiceChat && globalThis.VoiceChat.voiceEnabled);
+            }
             const modelSetObj = {
                 msg_type: 'model_set_request',
-                msg_id: generateUUID(),
+                msg_id: afterText ? afterMsgId : generateUUID(),
                 timestamp: new Date().toISOString(),
-                payload: { model: modelCmd.model }
+                payload: modelSetPayload
             };
+
+            if (afterText) {
+                addMsg('user', maskPasswords(afterText));
+                markGuestActivity();
+                if (typeof clearToolCalls === 'function') clearToolCalls();
+                setActiveReqId(afterMsgId);
+                setPendingImages([]);
+                updateImagePreview();
+            }
 
             if (!isSocketReady()) {
                 queueOutboundMessage(modelSetObj);
                 showToast(`Entering ${modelCmd.flag.toUpperCase()} mode (reconnecting)...`);
                 connect();
+                if (afterText) showLoading();
             } else {
                 const ws = getWs();
                 ws.send(JSON.stringify(modelSetObj));
                 showToast(`Entering ${modelCmd.flag.toUpperCase()} mode...`);
+                if (afterText) showLoading();
             }
 
             clearInputAndResize(input);
