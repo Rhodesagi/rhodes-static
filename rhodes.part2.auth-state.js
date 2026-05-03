@@ -1275,7 +1275,11 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
                     cursor: pointer;
                     opacity: 0;
                     transition: opacity 0.15s ease, transform 0.15s ease;
-                    z-index: 2;
+                    z-index: 3;
+                }
+                .reportable-msg.has-qa-share .msg-report-btn {
+                    top: 34px;
+                    right: 4px;
                 }
                 .reportable-msg:hover .msg-report-btn,
                 body.report-mode-active .msg-report-btn {
@@ -1386,6 +1390,10 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
                     .rhodes-report-grid { grid-template-columns: 1fr; }
                     #rhodes-report-mode-toggle, #rhodes-report-mode-compose {
                         right: 12px;
+                    }
+                    .reportable-msg.has-qa-share .msg-report-btn {
+                        top: 40px;
+                        right: 4px;
                     }
                 }
             `;
@@ -1700,6 +1708,7 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
             const messageSeq = Number.isInteger(meta && meta.messageSeq) ? meta.messageSeq : (++reportModeState.msgSerial);
             const key = `msg:${roundNum || 'na'}:${role}:${messageSeq}`;
             el.classList.add('reportable-msg');
+            el.classList.toggle('has-qa-share', !!el.querySelector('.qa-share-btn'));
             el.dataset.reportKey = key;
             el.dataset.reportRole = role;
             el.dataset.reportRoundNum = roundNum !== null && roundNum !== undefined ? String(roundNum) : '';

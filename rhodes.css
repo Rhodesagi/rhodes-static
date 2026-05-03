@@ -540,6 +540,10 @@
             position: relative;
         }
 
+        .msg.ai.reportable-msg.has-qa-share {
+            padding-right: 88px;
+        }
+
         /* Q&A Share button */
         .qa-share-btn {
             position: absolute;
@@ -3381,6 +3385,9 @@ textarea#input {
     .msg.ai {
         position: relative;
         padding-right: 40px !important;
+    }
+    .msg.ai.reportable-msg.has-qa-share {
+        padding-right: 52px !important;
     }
 }
 
