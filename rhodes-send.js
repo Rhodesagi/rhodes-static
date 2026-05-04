@@ -41,6 +41,10 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
         const raw = String(rawText || '').trim();
         const s = raw.toLowerCase();
         console.log('[parseModelSwitchPrefix] checking:', s);
+        if (/^\/?(?:quad|split4|fourway)(?:(?:\s+|-)[a-z0-9][a-z0-9._-]*)?\s*$/i.test(raw)) {
+            console.log('[parseModelSwitchPrefix] quad UI command excluded from model parsing');
+            return null;
+        }
 
         if (options.enableRVersionSwitch) {
             if (options.enableRVersionNumericSuffix) {
@@ -221,6 +225,17 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
                 return;
             }
             showToast('Not connected');
+            return;
+        }
+
+        const _quadMainMatch = text.match(/^\/?(?:quad|split4|fourway)(?:(?:\s+|-)([a-z0-9][a-z0-9._-]*))?\s*$/i);
+        if (_quadMainMatch) {
+            clearInputAndResize(input);
+            if (typeof window.startSplitQuad === 'function') {
+                window.startSplitQuad(_quadMainMatch[1] || '');
+            } else {
+                showToast('Split quad unavailable - reload required');
+            }
             return;
         }
 

@@ -2,6 +2,24 @@
   "version": "2026-04-23b",
   "commands": [
     {
+      "cmd": "/quad cli11-test",
+      "desc": "Open/apply four-pane split: -0 | k-0 | d0 | x-0 plus shared context",
+      "cat": "frontend",
+      "priority": 125
+    },
+    {
+      "cmd": "/split4 cli11-test",
+      "desc": "Alias for /quad cli11-test",
+      "cat": "frontend",
+      "priority": 124
+    },
+    {
+      "cmd": "/quad-cli7-rrbasins-0",
+      "desc": "Joined form: open/apply four-pane split for cli7-rrbasins",
+      "cat": "frontend",
+      "priority": 123
+    },
+    {
       "cmd": "/inferrer -e0 --push-further --always-judge --verify on --no-max",
       "desc": "MAX v1: Rhodes route A fast · push further · judge all · verify · unlimited",
       "cat": "inferrer",
@@ -1102,5 +1120,5 @@
       "cat": "frontend"
     }
   ],
-  "updated": "2026-04-23-inferrer-priority-manifest"
+  "updated": "2026-05-04-split-quad-hyphen"
 }

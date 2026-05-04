@@ -2001,6 +2001,113 @@ console.log('[SPLIT] Split mode functions loaded');
 
 
 // Send message to all active instances
+
+function splitQuadGenerateId() {
+    try {
+        if (typeof generateUUID === 'function') return generateUUID();
+    } catch (e) {}
+    try {
+        if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+    } catch (e) {}
+    return 'split_quad_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+}
+
+function splitQuadBaseAlias(raw) {
+    var base = String(raw || '').trim().toLowerCase();
+    if (base.charAt(0) === '/') base = base.slice(1);
+    base = base.replace(/\s+/g, '');
+    if (!base) {
+        base = String(window.currentModelAlias || window.modelAlias || window.currentModel || '').trim().toLowerCase();
+    }
+    base = base.replace(/^\//, '');
+    base = base.replace(/-(?:k|x)-0$/, '');
+    base = base.replace(/-d0$/, '');
+    base = base.replace(/-0$/, '');
+    return base || 'cli11-test';
+}
+
+function splitQuadVariants(rawBase) {
+    var base = splitQuadBaseAlias(rawBase);
+    return [base + '-0', base + '-k-0', base + '-d0', base + '-x-0'];
+}
+
+function splitQuadCommandMatch(text) {
+    return String(text || '').trim().match(/^\/?(?:quad|split4|fourway)(?:(?:\s+|-)([a-z0-9][a-z0-9._-]*))?\s*$/i);
+}
+
+function splitQuadMarkPane(paneNum, variants) {
+    var labels = ['A', 'B', 'G', 'D'];
+    if (typeof addInstanceMessage === 'function') {
+        addInstanceMessage(paneNum, 'system', 'Quad route ' + labels[paneNum - 1] + ': ' + variants[paneNum - 1]);
+        return;
+    }
+    var chatEl = document.getElementById('split-chat-' + paneNum);
+    if (chatEl) {
+        var div = document.createElement('div');
+        div.style.cssText = 'color:var(--yellow);margin:8px 0;font-style:italic;font-size:12px;';
+        div.textContent = '[Quad route ' + labels[paneNum - 1] + ': ' + variants[paneNum - 1] + ']';
+        chatEl.appendChild(div);
+        if (typeof _autoScrollPane === 'function') _autoScrollPane(chatEl);
+    }
+}
+
+function applySplitQuadVariants(rawBase, options) {
+    var variants = splitQuadVariants(rawBase);
+    var attempts = 0;
+    var maxAttempts = (options && options.maxAttempts) || 40;
+    function tryApply() {
+        attempts += 1;
+        var ready = 0;
+        for (var i = 1; i <= 4; i++) {
+            var paneWs = window.paneConnections && window.paneConnections[i];
+            if (paneWs && paneWs.readyState === WebSocket.OPEN) ready += 1;
+        }
+        if (ready < 4) {
+            if (attempts < maxAttempts) {
+                setTimeout(tryApply, 250);
+            } else if (typeof showToast === 'function') {
+                showToast('Quad setup timed out: ' + ready + '/4 panes connected');
+            }
+            return;
+        }
+        for (var pnum = 1; pnum <= 4; pnum++) {
+            var ws = window.paneConnections[pnum];
+            var model = variants[pnum - 1];
+            ws.send(JSON.stringify({
+                msg_type: 'model_set_request',
+                msg_id: splitQuadGenerateId(),
+                timestamp: new Date().toISOString(),
+                payload: {
+                    model: model
+                }
+            }));
+            splitQuadMarkPane(pnum, variants);
+        }
+        var input = document.getElementById('send-all-input');
+        if (input) input.value = '';
+        if (typeof showToast === 'function') showToast('Quad split ready: ' + variants.join(' | '));
+        console.log('[SPLIT-QUAD] Applied silent variants:', variants);
+    }
+    tryApply();
+    return variants;
+}
+
+window.applySplitQuadVariants = applySplitQuadVariants;
+window.startSplitQuad = function(rawBase) {
+    if (window.splitModeActive && window.splitPaneCount !== 4 && typeof window.exitSplitMode === 'function') {
+        window.exitSplitMode();
+    }
+    if (!window.splitModeActive || window.splitPaneCount !== 4) {
+        if (typeof window.enterSplitMode === 'function') {
+            window.enterSplitMode(4);
+        } else if (typeof showToast === 'function') {
+            showToast('Split mode unavailable');
+            return null;
+        }
+    }
+    return applySplitQuadVariants(rawBase, { maxAttempts: 60 });
+};
+
 window.sendToAllInstances = function(text) {
     if (!text || !text.trim()) return;
 
@@ -2012,6 +2119,12 @@ window.sendToAllInstances = function(text) {
         '--ada': '/rhodes-ada',
         '--delta': '/rhodes-delta-format-3'
     };
+
+    var quadMatch = splitQuadCommandMatch(processedText);
+    if (quadMatch) {
+        window.startSplitQuad(quadMatch[1] || '');
+        return;
+    }
 
     // Handle /stop and /interrupt specially - send interrupt signal, not message
     if (processedText === "/stop" || processedText === "/interrupt") {
