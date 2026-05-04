@@ -425,6 +425,24 @@ window.__rhodesApplySessionNote = function(note) {
         return data || {};
     }
 
+    function normalizeSeedMessagesInput(rawContent) {
+        var raw = String(rawContent == null ? "" : rawContent);
+        var trimmed = raw.trim();
+        if (!trimmed) return [];
+        try {
+            var parsed = JSON.parse(trimmed);
+            if (Array.isArray(parsed)) return parsed;
+            if (parsed && Array.isArray(parsed.messages)) return parsed.messages;
+            if (parsed && typeof parsed === "object" && parsed.role) return [parsed];
+            if (typeof parsed === "string") return [{ role: "system", content: parsed }];
+        } catch (e) {}
+        return [{ role: "system", content: raw }];
+    }
+
+    function normalizeSeedRawContent(rawContent) {
+        return JSON.stringify(normalizeSeedMessagesInput(rawContent), null, 2);
+    }
+
     function normalizeModelAliasInput(raw) {
         return String(raw || "").trim().toLowerCase().replace(/_/g, "-").replace(/[^a-z0-9.-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 64);
     }
@@ -528,7 +546,7 @@ window.__rhodesApplySessionNote = function(note) {
         payload.enabled = payload.enabled !== false;
         payload.notes = payload.notes || ("Cloned from " + rootAlias);
         if (seedRawContent !== null && seedMeta && seedMeta.exists) {
-            JSON.parse(String(seedRawContent || "[]"));
+            seedRawContent = normalizeSeedRawContent(seedRawContent);
             var seedId = normalizeModelAliasInput(newAlias).replace(/[._]/g, "-") + "-seed";
             await postAdminJson("/api/admin/seed", { id: seedId, raw_content: seedRawContent, description: "Cloned from " + ((seedMeta && seedMeta.seed_id) || rootAlias) });
             payload.seed_id = seedId;
@@ -556,6 +574,7 @@ window.__rhodesApplySessionNote = function(note) {
     }
 
     async function saveSeedForModel(alias, rawContent, expectedSha) {
+        rawContent = normalizeSeedRawContent(rawContent);
         var headers = adminAuthHeaders();
         headers["Content-Type"] = "application/json";
         var r = await fetch("/api/admin/seed/for-model", {
@@ -3375,4 +3394,3 @@ function escapeHtmlSafe(s) {
 if (typeof window !== 'undefined') {
     window.attachHallucinationReport = attachHallucinationReport;
 }
-
