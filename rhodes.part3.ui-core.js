@@ -467,10 +467,10 @@ window.__rhodesApplySessionNote = function(note) {
 
     function expectedCloneVariantAliases(newAlias, sourceCfg) {
         var aliases = [newAlias];
-        var letters = ["a", "b", "c", "d", "e", "f", "g", "j", "k", "v", "w"];
-        var effortLetters = {d:1, e:1, g:1, j:1, k:1, v:1, w:1};
+        var letters = ["a", "b", "c", "d", "e", "f", "g", "j", "k", "v", "w", "x"];
+        var effortLetters = {d:1, e:1, g:1, j:1, k:1, v:1, w:1, x:1};
         var base = String((sourceCfg && (sourceCfg.base_model || sourceCfg.base_model_input)) || "").toLowerCase();
-        var rootSupportsEffort = /[degjkvw]\d*$/.test(base);
+        var rootSupportsEffort = /[degjkvwx]\d*$/.test(base);
         aliases.push(newAlias + "-0");
         if (rootSupportsEffort) {
             ["l", "m", "h"].forEach(function (eff) {
