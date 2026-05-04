@@ -1883,12 +1883,11 @@ window.sendToInstance = function(paneNum, text) {
             showToast('Pane ' + paneNum + ' not connected');
             return;
         }
-        paneWs.send(JSON.stringify({ msg_type: 'user_message', payload: { content: processedText } }));
+        var paneModelTarget = splitModelSwitchTarget(processedText) || processedText.replace(/^\//, '');
+        splitSendModelSetToPane(paneNum, paneModelTarget, 'Switching model');
         const inputEl = document.getElementById('instance-' + paneNum + '-input');
         if (inputEl) inputEl.value = '';
-        // Extract friendly model name from command
-        const cmdName = lowerText.substring(1).replace('rhodes-', '').toUpperCase();
-        showToast('Pane ' + paneNum + ': ' + cmdName);
+        showToast('Pane ' + paneNum + ': ' + paneModelTarget);
         return;
     }
 
@@ -1926,9 +1925,10 @@ window.sendToInstance = function(paneNum, text) {
     // Process model flags
     for (const [flag, cmd] of Object.entries(modelFlags)) {
         if (processedText.toLowerCase().startsWith(flag)) {
-            paneWs.send(JSON.stringify({ msg_type: 'user_message', payload: { content: cmd } }));
+            var flagModelTarget = splitModelSwitchTarget(flag) || cmd.replace(/^\//, '');
+            splitSendModelSetToPane(paneNum, flagModelTarget, 'Switching model');
             processedText = processedText.substring(flag.length).trim();
-            showToast('Pane ' + paneNum + ': ' + cmd.substring(1));
+            showToast('Pane ' + paneNum + ': ' + flagModelTarget);
             if (!processedText) {
                 const inputEl = document.getElementById('instance-' + paneNum + '-input');
                 if (inputEl) inputEl.value = '';
@@ -2035,6 +2035,87 @@ function splitQuadCommandMatch(text) {
     return String(text || '').trim().match(/^\/?(?:quad|split4|fourway)(?:(?:\s+|-)([a-z0-9][a-z0-9._-]*))?\s*$/i);
 }
 
+function splitModelSwitchTarget(text) {
+    var raw = String(text || '').trim();
+    var lower = raw.toLowerCase();
+    var controlCommands = {
+        shared: true,
+        'split-init': true,
+        rounds: true,
+        round_number_disclose: true,
+        stop: true,
+        interrupt: true,
+        quad: true,
+        split4: true,
+        fourway: true
+    };
+    var legacyMap = {
+        alpha: 'rhodes-alpha-format-3',
+        opus: 'rhodes-alpha-format-3',
+        beta: 'rhodes-beta-format-3',
+        sonnet: 'rhodes-beta-format-3',
+        ada: 'rhodes-ada',
+        haiku: 'rhodes-ada',
+        delta: 'rhodes-delta-format-3',
+        deepseek: 'rhodes-delta-format-3',
+        grok: 'grok',
+        zeta: 'grok',
+        kimi: 'kimi',
+        epsilon: 'kimi'
+    };
+    var modelMatch = lower.match(/^\/model\s+([a-z0-9][a-z0-9._-]{0,127})\s*$/i);
+    if (modelMatch) {
+        return legacyMap[modelMatch[1]] || modelMatch[1];
+    }
+    var slashMatch = raw.match(/^\/([a-z0-9][a-z0-9._-]{0,127})\s*$/i);
+    if (slashMatch) {
+        var slashToken = slashMatch[1].toLowerCase();
+        if (controlCommands[slashToken]) return '';
+        return legacyMap[slashToken] || slashToken;
+    }
+    var flagMatch = lower.match(/^--(alpha|beta|ada|delta|grok|zeta|kimi|epsilon)\s*$/i);
+    if (flagMatch) {
+        return legacyMap[flagMatch[1]] || flagMatch[1];
+    }
+    return '';
+}
+
+function splitSendModelSetToPane(paneNum, model, label) {
+    var paneWs = window.paneConnections && window.paneConnections[paneNum];
+    if (!paneWs || paneWs.readyState !== WebSocket.OPEN) {
+        if (typeof showToast === 'function') showToast('Pane ' + paneNum + ' not connected');
+        return false;
+    }
+    paneWs.send(JSON.stringify({
+        msg_type: 'model_set_request',
+        msg_id: splitQuadGenerateId(),
+        timestamp: new Date().toISOString(),
+        payload: { model: model }
+    }));
+    var chatEl = document.getElementById('split-chat-' + paneNum);
+    if (chatEl) {
+        var sysDiv = document.createElement('div');
+        sysDiv.style.cssText = 'color:var(--cyan);margin:5px 0;font-style:italic;font-size:12px;';
+        sysDiv.textContent = '[' + (label || 'Switching model') + ': ' + model + ']';
+        chatEl.appendChild(sysDiv);
+        if (typeof _autoScrollPane === 'function') _autoScrollPane(chatEl);
+    }
+    console.log('[SPLIT] model_set_request to pane:', paneNum, model);
+    return true;
+}
+
+function splitSendModelSetToAll(model, label) {
+    var switched = 0;
+    for (var i = 1; i <= window.splitPaneCount; i++) {
+        if (splitSendModelSetToPane(i, model, label)) switched += 1;
+    }
+    var input = document.getElementById('send-all-input');
+    if (input) input.value = '';
+    if (typeof showToast === 'function') showToast('All panes switching to ' + model + ' (' + switched + '/' + window.splitPaneCount + ')');
+    console.log('[SPLIT] model_set_request to all:', model, 'panes=', switched);
+    return switched;
+}
+
 function splitQuadMarkPane(paneNum, variants) {
     var labels = ['A', 'B', 'G', 'D'];
     if (typeof addInstanceMessage === 'function') {
@@ -2136,52 +2217,10 @@ window.sendToAllInstances = function(text) {
         return;
     }
 
-    // Universal slash command handler - ANY slash command gets sent to all panes
-    // This ensures future commands work without code changes
-    if (processedText.startsWith('/') && !processedText.startsWith('/model ')) {
-        for (var i = 1; i <= window.splitPaneCount; i++) {
-            var paneWs = window.paneConnections[i];
-            if (paneWs && paneWs.readyState === WebSocket.OPEN) {
-                paneWs.send(JSON.stringify({ msg_type: 'user_message', payload: { content: processedText } }));
-            }
-        }
-        document.getElementById('send-all-input').value = '';
-        showToast('All panes: /' + processedText.substring(1).toUpperCase());
-        console.log('[SPLIT] Slash command to all:', processedText);
+    var modelTarget = splitModelSwitchTarget(processedText);
+    if (modelTarget) {
+        splitSendModelSetToAll(modelTarget, 'Switching model');
         return;
-    }
-
-    // Handle /model command - switch all panes to specified model
-    const modelMatch = processedText.match(/^\/model\s+(alpha|beta|ada|delta|opus|sonnet|haiku|deepseek)/i);
-    if (modelMatch) {
-        const modelName = modelMatch[1].toLowerCase();
-        const modelMap = {
-            'alpha': '/rhodes-alpha-format-3', 'opus': '/rhodes-alpha-format-3',
-            'beta': '/rhodes-beta-format-3', 'sonnet': '/rhodes-beta-format-3',
-            'ada': '/rhodes-ada', 'haiku': '/rhodes-ada',
-            'delta': '/rhodes-delta-format-3', 'deepseek': '/rhodes-delta-format-3'
-        };
-        const cmd = modelMap[modelName];
-        if (cmd) {
-            for (let i = 1; i <= window.splitPaneCount; i++) {
-                const paneWs = window.paneConnections[i];
-                if (paneWs && paneWs.readyState === WebSocket.OPEN) {
-                    paneWs.send(JSON.stringify({ msg_type: 'user_message', payload: { content: cmd } }));
-                    const chatEl = document.getElementById('split-chat-' + i);
-                    if (chatEl) {
-                        const sysDiv = document.createElement('div');
-                        sysDiv.style.cssText = 'color:var(--cyan);margin:5px 0;font-style:italic;font-size:12px;';
-                        sysDiv.textContent = '[Switching to ' + modelName.toUpperCase() + '...]';
-                        chatEl.appendChild(sysDiv);
-                        _autoScrollPane(chatEl);
-                    }
-                }
-            }
-            const input = document.getElementById('send-all-input');
-            if (input) input.value = '';
-            showToast('All panes switching to ' + modelName.toUpperCase());
-            return;
-        }
     }
 
     // Handle --system flag (sends instruction to all panes, no response expected)
@@ -2320,25 +2359,13 @@ window.sendToAllInstances = function(text) {
         return;
     }
 
-    // Check for flag and switch all panes
-    for (const [flag, cmd] of Object.entries(modelFlags)) {
-        if (processedText.toLowerCase().startsWith(flag)) {
-            // Switch all panes to this model
-            for (let i = 1; i <= window.splitPaneCount; i++) {
-                const paneWs = window.paneConnections[i];
-                if (paneWs && paneWs.readyState === WebSocket.OPEN) {
-                    paneWs.send(JSON.stringify({ msg_type: 'user_message', payload: { content: cmd } }));
-                }
-            }
-            processedText = processedText.substring(flag.length).trim();
-            showToast('All panes: ' + cmd.substring(1));
-            if (!processedText) {
-                const input = document.getElementById('send-all-input');
-                if (input) input.value = '';
-                return;
-            }
-            break;
-        }
+    // Safety: split shared input must never leak slash commands as model-visible chat.
+    if (processedText.startsWith('/')) {
+        var slashInput = document.getElementById('send-all-input');
+        if (slashInput) slashInput.value = '';
+        if (typeof showToast === 'function') showToast('Split command not recognized; not sent to model');
+        console.warn('[SPLIT] blocked unknown slash command:', processedText);
+        return;
     }
     
     let sentCount = 0;
@@ -2538,21 +2565,19 @@ window.removeInstanceAttachment = function(instanceNum, index) {
             return;
         }
 
-        // Handle model switch slash commands - don't send to AI, just switch model
-        var modelSwitchPattern = /^\/(?:rhodes-|rhodesia-)?(?:alpha|beta|ada|delta|opus|sonnet|haiku|deepseek)(?:-format-?\d+(?:\.\d+)?)?$|^\/(?:r|ds|p|q|s)\d+\.\d+[abcdefgjk](?:[012p]|21)?(?:\.c[abcdefgjk][012]?)?$|^\/[abcd]\d+(?:\.\d+)?$/;
-        if (text && modelSwitchPattern.test(text.trim().toLowerCase())) {
-            var paneWs = window.paneConnections[instanceNum];
-            if (!paneWs || paneWs.readyState !== WebSocket.OPEN) {
-                showToast("Pane " + instanceNum + " not connected");
-                return;
-            }
-            // Send as user_message - backend handles model switch
-            paneWs.send(JSON.stringify({ msg_type: "user_message", payload: { content: text.trim() } }));
+        var trimmedText = (text || '').trim();
+        var modelTarget = splitModelSwitchTarget(trimmedText);
+        if (modelTarget) {
+            splitSendModelSetToPane(instanceNum, modelTarget, 'Switching model');
             document.getElementById("instance-" + instanceNum + "-input").value = "";
-            var cmdName = text.trim().substring(1).replace("rhodes-", "").toUpperCase();
-            showToast("Pane " + instanceNum + ": " + cmdName);
-            console.log("[SPLIT] Model switch:", instanceNum, text.trim());
-            return;  // DON'T show in chat, DON'T process further
+            showToast("Pane " + instanceNum + ": " + modelTarget);
+            return;
+        }
+        if (trimmedText.startsWith('/')) {
+            document.getElementById("instance-" + instanceNum + "-input").value = "";
+            showToast("Pane " + instanceNum + ": command not recognized; not sent to model");
+            console.warn("[SPLIT] blocked unknown pane slash command:", instanceNum, trimmedText);
+            return;
         }
 
         if ((!text || !text.trim()) && attachments.length === 0) return;
