@@ -44,6 +44,13 @@ function clearPersistedSplitResumeState() {
     }
 }
 
+window.clearRhodesSplitResumeState = function() {
+    clearPersistedSplitResumeState();
+    window._splitResumeIds = null;
+    window.paneSessionIds = {};
+    if (!window.splitModeActive) window.currentSplitGroupId = null;
+};
+
 function loadPersistedSplitResumeState() {
     try {
         var raw = sessionStorage.getItem(RHODES_SPLIT_STATE_KEY);
@@ -66,6 +73,11 @@ function loadPersistedSplitResumeState() {
 
 window.restoreSplitModeIfNeeded = function() {
     if (window.splitModeActive) return false;
+    var params = new URLSearchParams(window.location.search || '');
+    if (params.get('new') === '1') {
+        window.clearRhodesSplitResumeState();
+        return false;
+    }
     var saved = loadPersistedSplitResumeState();
     if (!saved) return false;
     console.log('[SPLIT] Restoring split mode from persisted state', saved);
@@ -112,8 +124,11 @@ window.enterSplitMode = function(paneCount, resumeSessionIds, persistedGroupId) 
         window.ws = null;
     }
     window._splitResumeIds = resumeSessionIds || null;
+    if (!resumeSessionIds) {
+        window.paneSessionIds = {};
+    }
     window._multisandboxMode = true;  // All split sessions get isolated sandboxes
-    window.currentSplitGroupId = persistedGroupId || window.currentSplitGroupId || ('splitgrp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9));
+    window.currentSplitGroupId = persistedGroupId || (resumeSessionIds ? window.currentSplitGroupId : null) || ('splitgrp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9));
     
     // Hide main chat
     const mainChat = document.getElementById('chat');
@@ -292,6 +307,8 @@ window.exitSplitMode = function() {
     
     window.splitModeActive = false;
     window.splitPaneCount = 0;
+    window.paneSessionIds = {};
+    window._splitResumeIds = null;
     
     // Reconnect main WS (was closed on split entry)
     if (!window.ws || window.ws.readyState !== WebSocket.OPEN) {

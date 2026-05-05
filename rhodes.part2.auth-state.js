@@ -243,6 +243,9 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
 
         const urlParams = new URLSearchParams(window.location.search);
         let wantsNewRhodes = urlParams.get('new') === '1';
+        if (wantsNewRhodes) {
+            try { sessionStorage.removeItem('rhodes_split_resume_state'); } catch (e) {}
+        }
         const wantsLogin = urlParams.get('login') === '1';
         const returnTo = urlParams.get('returnTo');
         
@@ -488,6 +491,11 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
         // Start a new session in a NEW tab (preserves current session)
         window.startNewSession = () => {
             const newUrl = window.location.origin + window.location.pathname + '?new=1';
+            try {
+                sessionStorage.removeItem('rhodes_split_resume_state');
+                sessionStorage.removeItem('rhodes_new_session_id');
+            } catch (e) {}
+            if (typeof window.clearRhodesSplitResumeState === 'function') window.clearRhodesSplitResumeState();
             // If in split mode, exit split and start fresh in same tab
             if (window.splitModeActive) {
                 if (typeof window.exitSplitMode === 'function') window.exitSplitMode();

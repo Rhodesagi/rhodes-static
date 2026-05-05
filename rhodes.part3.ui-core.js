@@ -1276,7 +1276,7 @@ function showDownloads() {
                                 window.__rhodesApplySessionNote(msg.payload.session_note);
                             }
                         }
-                        if (window.restoreSplitModeIfNeeded && !window.splitModeActive) {
+                        if (!wantsNewRhodes && window.restoreSplitModeIfNeeded && !window.splitModeActive) {
                             setTimeout(() => {
                                 try { window.restoreSplitModeIfNeeded(); } catch (e) { console.warn('[SPLIT] restore failed', e); }
                             }, 0);
