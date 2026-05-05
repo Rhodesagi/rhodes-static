@@ -2004,40 +2004,79 @@ let CONNECTION_MSG_SHOWN = false;  // Track if connection message was shown this
             return div;
         }
 
-        // Admin-only: append DeepSeek reasoning/thinking as a collapsible block (server-gated).
+        // Admin-only: render final-only reasoning in the same lane as live reasoning,
+        // anchored before the answer it belongs to. This keeps failover/final debug
+        // reasoning from appearing under the visible response after the fact.
         function attachDebugReasoning(msgDiv, reasoningText) {
             console.log("[DEBUG] attachDebugReasoning called, msgDiv:", !!msgDiv, "reasoningText len:", reasoningText ? reasoningText.length : 0);
             try {
                 if (!msgDiv || !reasoningText) { console.log("[DEBUG] attachDebugReasoning early return - msgDiv:", !!msgDiv, "reasoningText:", !!reasoningText); return; }
+                const canViewReasoning = window.RHODES_CONFIG && (window.RHODES_CONFIG.canViewReasoning || window.RHODES_CONFIG.isAdmin);
+                if (!canViewReasoning) return;
+                const reasoning = String(reasoningText);
+                const tokenEstimate = Math.round(reasoning.length / 4);
+
+                function finishReasoningPanel(panel) {
+                    if (!panel) return null;
+                    const details = panel.querySelector('details');
+                    const summary = panel.querySelector('summary');
+                    const pre = panel.querySelector('pre');
+                    if (pre) {
+                        const current = pre.textContent || '';
+                        if (!current || reasoning.length >= current.length || reasoning.indexOf(current) === 0) {
+                            pre.textContent = reasoning;
+                        }
+                    }
+                    if (summary) summary.innerHTML = 'Reasoning <span style="opacity:0.5;font-size:11px;">(' + tokenEstimate + ' tokens)</span>';
+                    if (details) details.open = false;
+                    panel.classList.add('final-debug-reasoning');
+                    return panel;
+                }
+
+                if (window._reasoningEl) {
+                    finishReasoningPanel(window._reasoningEl);
+                    window._reasoningEl = null;
+                    window._reasoningPre = null;
+                    window._reasoningSummary = null;
+                    return;
+                }
+
+                let prior = msgDiv.previousElementSibling;
+                let hops = 0;
+                while (prior && hops < 8) {
+                    if (prior.classList && prior.classList.contains('reasoning-stream')) {
+                        finishReasoningPanel(prior);
+                        return;
+                    }
+                    prior = prior.previousElementSibling;
+                    hops += 1;
+                }
+
                 const details = document.createElement('details');
                 details.className = 'debug-reasoning';
-                details.style.marginTop = '10px';
-                details.style.borderTop = '1px solid rgba(0,255,213,0.25)';
-                details.style.paddingTop = '8px';
-
+                details.open = false;
                 const summary = document.createElement('summary');
-                summary.textContent = 'Reasoning (admin)';
-                summary.style.cursor = 'pointer';
-                summary.style.color = 'var(--cyan)';
-                summary.style.fontFamily = "'Orbitron', monospace";
-                summary.style.fontSize = '12px';
-
+                summary.innerHTML = 'Reasoning <span style="opacity:0.5;font-size:11px;">(' + tokenEstimate + ' tokens)</span>';
+                summary.style.cssText = "cursor:pointer;color:var(--cyan);font-family:'Orbitron',monospace;font-size:12px;user-select:none;margin-bottom:6px;";
                 const pre = document.createElement('pre');
-                pre.textContent = String(reasoningText);
-                pre.style.whiteSpace = 'pre-wrap';
-                pre.style.margin = '8px 0 0 0';
-                pre.style.padding = '10px';
-                pre.style.background = 'rgba(0,0,0,0.35)';
-                pre.style.border = '1px solid rgba(255,0,255,0.25)';
-                pre.style.borderRadius = '6px';
-                pre.style.color = 'var(--text)';
-                pre.style.fontSize = '12px';
-                pre.style.lineHeight = '1.4';
-
+                pre.textContent = reasoning;
+                pre.style.cssText = 'white-space:pre-wrap;word-break:break-word;margin:0;padding:10px;background:rgba(0,0,0,0.2);border:1px solid rgba(0,255,204,0.1);border-radius:6px;color:var(--text);opacity:0.55;font-size:12.5px;line-height:1.5;max-height:400px;overflow-y:auto;';
                 details.appendChild(summary);
                 details.appendChild(pre);
-                (msgDiv.querySelector(".msg-content") || msgDiv).appendChild(details);
-            } catch (e) {}
+
+                const panel = document.createElement('div');
+                panel.className = 'msg ai reasoning-stream final-debug-reasoning';
+                panel.appendChild(details);
+                if (msgDiv.dataset && msgDiv.dataset.reqId) panel.dataset.reqId = msgDiv.dataset.reqId;
+
+                const parent = msgDiv.parentNode || document.getElementById('chat') || chat;
+                if (!parent) return;
+                if (msgDiv.parentNode === parent) parent.insertBefore(panel, msgDiv);
+                else parent.appendChild(panel);
+                _autoScrollChat(parent);
+            } catch (e) {
+                console.warn('[DEBUG] attachDebugReasoning failed', e);
+            }
         }
 
         // Add screenshot to chat (from Delta's browser actions)

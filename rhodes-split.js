@@ -1395,19 +1395,57 @@ function attachPaneDebugReasoning(msgEl, reasoningText) {
         if (!msgEl || !reasoningText) return;
         const canViewReasoning = window.RHODES_CONFIG && (window.RHODES_CONFIG.canViewReasoning || window.RHODES_CONFIG.isAdmin);
         if (!canViewReasoning) return;
-        if (msgEl.querySelector('.debug-reasoning')) return;
+        const chatEl = msgEl.parentNode;
+        if (!chatEl) return;
+        const reasoning = String(reasoningText);
+        const tokenEstimate = Math.round(reasoning.length / 4);
+
+        function finishPaneReasoningPanel(panel) {
+            if (!panel) return null;
+            const details = panel.tagName && panel.tagName.toLowerCase() === 'details' ? panel : panel.querySelector('details');
+            const summary = panel.querySelector('summary');
+            const pre = panel.querySelector('pre');
+            if (pre) {
+                const current = pre.textContent || '';
+                if (!current || reasoning.length >= current.length || reasoning.indexOf(current) === 0) {
+                    pre.textContent = reasoning;
+                }
+            }
+            if (summary) summary.textContent = 'Reasoning (' + tokenEstimate + ' tokens)';
+            if (details) details.open = false;
+            panel.classList.add('final-debug-reasoning');
+            return panel;
+        }
+
+        let prior = msgEl.previousElementSibling;
+        let hops = 0;
+        while (prior && hops < 8) {
+            if (prior.classList && (
+                prior.classList.contains('final-debug-reasoning') ||
+                prior.classList.contains('debug-reasoning') ||
+                String(prior.className || '').indexOf('instance-reasoning-') >= 0
+            )) {
+                finishPaneReasoningPanel(prior);
+                return;
+            }
+            prior = prior.previousElementSibling;
+            hops += 1;
+        }
+
         const details = document.createElement('details');
-        details.className = 'debug-reasoning';
-        details.style.cssText = 'margin-top:10px;border-top:1px solid rgba(0,255,213,0.25);padding-top:8px;color:var(--dim);';
+        details.className = 'debug-reasoning final-debug-reasoning';
+        details.open = false;
+        details.style.cssText = 'color:var(--dim);margin:4px 0;font-size:0.85em;';
         const summary = document.createElement('summary');
-        summary.textContent = 'Reasoning';
-        summary.style.cssText = 'cursor:pointer;opacity:0.75;font-size:12px;';
+        summary.textContent = 'Reasoning (' + tokenEstimate + ' tokens)';
+        summary.style.cssText = 'cursor:pointer;opacity:0.6;';
         const pre = document.createElement('pre');
-        pre.textContent = reasoningText;
-        pre.style.cssText = 'white-space:pre-wrap;max-height:260px;overflow:auto;margin:8px 0 0;font-size:11px;color:var(--dim);';
+        pre.textContent = reasoning;
+        pre.style.cssText = 'white-space:pre-wrap;color:var(--dim);font-size:0.8em;max-height:200px;overflow-y:auto;';
         details.appendChild(summary);
         details.appendChild(pre);
-        msgEl.appendChild(details);
+        chatEl.insertBefore(details, msgEl);
+        _autoScrollPane(chatEl);
     } catch (e) {
         console.warn('[SPLIT] Failed to attach debug reasoning', e);
     }
@@ -1740,6 +1778,7 @@ function handlePaneReasoningChunkMessage(paneNum, msg, chatEl) {
     if (!reasonEl) {
         reasonEl = document.createElement('details');
         reasonEl.className = 'instance-reasoning-' + paneNum;
+        reasonEl.open = true;
         reasonEl.style.cssText = 'color:var(--dim);margin:4px 0;font-size:0.85em;';
         var summary = document.createElement('summary');
         summary.style.cssText = 'cursor:pointer;opacity:0.6;';
