@@ -1390,6 +1390,29 @@ function handlePaneInterruptAckMessage(paneNum, msg, chatEl) {
     console.log('[SPLIT] Instance', paneNum, 'interrupted');
 }
 
+function attachPaneDebugReasoning(msgEl, reasoningText) {
+    try {
+        if (!msgEl || !reasoningText) return;
+        const canViewReasoning = window.RHODES_CONFIG && (window.RHODES_CONFIG.canViewReasoning || window.RHODES_CONFIG.isAdmin);
+        if (!canViewReasoning) return;
+        if (msgEl.querySelector('.debug-reasoning')) return;
+        const details = document.createElement('details');
+        details.className = 'debug-reasoning';
+        details.style.cssText = 'margin-top:10px;border-top:1px solid rgba(0,255,213,0.25);padding-top:8px;color:var(--dim);';
+        const summary = document.createElement('summary');
+        summary.textContent = 'Reasoning';
+        summary.style.cssText = 'cursor:pointer;opacity:0.75;font-size:12px;';
+        const pre = document.createElement('pre');
+        pre.textContent = reasoningText;
+        pre.style.cssText = 'white-space:pre-wrap;max-height:260px;overflow:auto;margin:8px 0 0;font-size:11px;color:var(--dim);';
+        details.appendChild(summary);
+        details.appendChild(pre);
+        msgEl.appendChild(details);
+    } catch (e) {
+        console.warn('[SPLIT] Failed to attach debug reasoning', e);
+    }
+}
+
 function handlePaneAiMessage(paneNum, msg, chatEl) {
     if (window.hideInstanceLoading) window.hideInstanceLoading(paneNum);
 
@@ -1531,6 +1554,7 @@ function handlePaneAiMessage(paneNum, msg, chatEl) {
     }
     content = content.replace(/\[PRIVATE_TO:(Alpha|Beta|Gamma|Delta|1|2|3|4)\]:\s*.+?(?=\n\n|\[PRIVATE_TO:|\[SHARE_TO_ALL\]|$)/gis, '[Private message sent]');
 
+    const debugReasoning = msg.payload && msg.payload.debug_reasoning;
     if (streamEl) {
         streamEl.classList.remove('instance-streaming-' + paneNum);
         // If final ai_message has content, use IT instead of stale streaming text
@@ -1544,8 +1568,10 @@ function handlePaneAiMessage(paneNum, msg, chatEl) {
             streamEl.innerHTML = window.marked.parse(streamEl.textContent);
         }
         appendInstanceResponseTime(streamEl, responseTimeLabel);
+        attachPaneDebugReasoning(streamEl, debugReasoning);
     } else if (content && content.trim()) {
-        addInstanceMessage(paneNum, 'ai', content, responseTimeLabel);
+        const msgEl = addInstanceMessage(paneNum, 'ai', content, responseTimeLabel);
+        attachPaneDebugReasoning(msgEl, debugReasoning);
     }
 }
 
@@ -1838,6 +1864,7 @@ function addInstanceMessage(paneNum, type, content, responseTimeLabel = '') {
 
     chatEl.appendChild(msgEl);
     _autoScrollPane(chatEl);
+    return msgEl;
 }
 
 function addInstanceToolMessage(paneNum, header, args, result) {
@@ -2042,21 +2069,15 @@ function splitQuadBaseAlias(raw) {
         base = String(window.currentModelAlias || window.modelAlias || window.currentModel || '').trim().toLowerCase();
     }
     base = base.replace(/^\//, '');
-    base = base.replace(/-(?:k|x)-0$/, '');
+    base = base.replace(/-(?:k|d|x)-0$/, '');
     base = base.replace(/-d0$/, '');
     base = base.replace(/-0$/, '');
+    base = base.replace(/-(?:k|d|x)$/, '');
     return base || 'cli11-test';
-}
-
-function splitQuadPreserveExactAlias(base) {
-    return /^(?:cli|clir|clipr|clib)[a-z0-9_-]*\.\d+(?:\.\d+)+$/i.test(String(base || ''));
 }
 
 function splitQuadVariants(rawBase) {
     var base = splitQuadBaseAlias(rawBase);
-    if (splitQuadPreserveExactAlias(base)) {
-        return [base, base + '-k', base + '-d', base + '-x'];
-    }
     return [base + '-0', base + '-k-0', base + '-d0', base + '-x-0'];
 }
 

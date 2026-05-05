@@ -45,27 +45,39 @@ window.installRhodesSendHelpers = function installRhodesSendHelpers(deps) {
             console.log('[parseModelSwitchPrefix] quad UI command excluded from model parsing');
             return null;
         }
+        if (/^\/models?\s*$/i.test(raw)) {
+            return null;
+        }
+        const modelWrapper = raw.match(/^\/model\s+([a-z0-9][a-z0-9._-]{0,127})(?:\s+([\s\S]*))?$/i);
+        if (modelWrapper) {
+            const model = modelWrapper[1].toLowerCase();
+            const rest = (modelWrapper[2] || '').trim();
+            console.log('[parseModelSwitchPrefix] /model wrapper match:', { flag: model, model, rest });
+            return { flag: model, model, rest };
+        }
 
         if (options.enableRVersionSwitch) {
             if (options.enableRVersionNumericSuffix) {
-                const rMatch = s.match(/^\/(?:r|ds|p)(\d+\.\d+)g?([abcdefgjk])(\d{0,2})(\.c[abcdefgjk][012]?)?(\s+.*)?$/);
+                const rMatch = raw.match(/^\/(?:r|ds|p)(\d+\.\d+)g?([abcdefgjk])(\d{0,2})(\.c[abcdefgjk][012]?)?(\s+[\s\S]*)?$/i);
                 if (rMatch) {
-                    const version = rMatch[1];
-                    const variant = rMatch[2];
+                    const version = rMatch[1].toLowerCase();
+                    const variant = rMatch[2].toLowerCase();
                     const suffix = rMatch[3] || '';
-                    const rest = (rMatch[4] || '').trim();
-                    const model = (s.startsWith('/ds') ? 'ds' : s.startsWith('/p') ? 'p' : 'r') + version + variant + suffix + (rMatch[4] || '');
+                    const control = (rMatch[4] || '').toLowerCase();
+                    const rest = (rMatch[5] || '').trim();
+                    const model = (s.startsWith('/ds') ? 'ds' : s.startsWith('/p') ? 'p' : 'r') + version + variant + suffix + control;
                     const flag = model;
                     console.log('[parseModelSwitchPrefix] matched rX.Y format:', { flag, model, rest });
                     return { flag, model, rest };
                 }
             } else {
-                const rMatch = s.match(/^\/(?:r|ds|p)(\d+\.\d+)g?([abcdefgjk])(\.c[abcdefgjk][012]?)?(\s+.*)?$/);
+                const rMatch = raw.match(/^\/(?:r|ds|p)(\d+\.\d+)g?([abcdefgjk])(\.c[abcdefgjk][012]?)?(\s+[\s\S]*)?$/i);
                 if (rMatch) {
-                    const version = rMatch[1];
-                    const variant = rMatch[2];
-                    const rest = (rMatch[3] || '').trim();
-                    const model = (s.startsWith('/ds') ? 'ds' : s.startsWith('/p') ? 'p' : 'r') + version + variant + (rMatch[3] || '');
+                    const version = rMatch[1].toLowerCase();
+                    const variant = rMatch[2].toLowerCase();
+                    const control = (rMatch[3] || '').toLowerCase();
+                    const rest = (rMatch[4] || '').trim();
+                    const model = (s.startsWith('/ds') ? 'ds' : s.startsWith('/p') ? 'p' : 'r') + version + variant + control;
                     const flag = model;
                     console.log('[parseModelSwitchPrefix] matched rX.Y format:', { flag, model, rest });
                     return { flag, model, rest };
