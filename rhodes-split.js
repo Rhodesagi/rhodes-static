@@ -1253,6 +1253,7 @@ function connectPane(paneNum) {
                 tab_id: tabId,
                 user_token: userToken,
                 resume_session: resumeId || false,
+                force_new: !resumeId,
                 multisandbox: true,
                 multisandbox_pane: paneNum,
                 split_group_id: window.currentSplitGroupId || undefined
@@ -1318,6 +1319,7 @@ function handlePaneAutoLoginTokenMessage(paneNum, msg) {
             tab_id: tabId,
             user_token: msg.token,
             resume_session: resumeId || false,
+            force_new: !resumeId,
             multisandbox: window._multisandboxMode || false,
             multisandbox_pane: window._multisandboxMode ? paneNum : undefined,
             split_group_id: window.currentSplitGroupId || undefined
@@ -2046,8 +2048,15 @@ function splitQuadBaseAlias(raw) {
     return base || 'cli11-test';
 }
 
+function splitQuadPreserveExactAlias(base) {
+    return /^(?:cli|clir|clipr|clib)[a-z0-9_-]*\.\d+(?:\.\d+)+$/i.test(String(base || ''));
+}
+
 function splitQuadVariants(rawBase) {
     var base = splitQuadBaseAlias(rawBase);
+    if (splitQuadPreserveExactAlias(base)) {
+        return [base, base + '-k', base + '-d', base + '-x'];
+    }
     return [base + '-0', base + '-k-0', base + '-d0', base + '-x-0'];
 }
 
@@ -2700,8 +2709,8 @@ window.toggleSplitHeader = function() {
 // Add collapse button to split mode UI
 (function() {
     var origEnter = window.enterSplitMode;
-    window.enterSplitMode = function(paneCount, resumeSessionIds) {
-        origEnter(paneCount, resumeSessionIds);
+    window.enterSplitMode = function(paneCount, resumeSessionIds, persistedGroupId) {
+        origEnter(paneCount, resumeSessionIds, persistedGroupId);
         
         // Add collapse header button if not exists
         var exitBtn = document.getElementById("exit-split-btn");
