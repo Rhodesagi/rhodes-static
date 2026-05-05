@@ -2628,12 +2628,13 @@ function showDownloads() {
                     if (!_canViewAbortAlerts) return;
                     const p = msg.payload || {};
                     const abortType = (p.abort_type || 'generation_abort').toString();
+                    if (abortType === 'cli_format_guard') return;
                     const reason = (p.reason || '').toString();
                     const retry = p.retry ? (' ' + p.retry + '/' + (p.max_retries || '?')) : '';
                     const firstToken = (p.first_token || '').toString();
                     const detail = firstToken ? (' first=' + JSON.stringify(firstToken.slice(0, 80))) : '';
-                    const line = '[Stream abort] ' + (p.message || ('Retried after ' + abortType + (reason ? (': ' + reason) : ''))) + retry + detail;
-                    try { showToast('Stream aborted; retrying format'); } catch (e) {}
+                    const line = '[Stream abort] ' + (p.message || (abortType + (reason ? (': ' + reason) : ''))) + retry + detail;
+                    try { showToast('Stream aborted'); } catch (e) {}
                     addMsg('ai', '<span style="color:var(--orange);font-family:var(--mono);font-size:12px;">' + escapeHtml(line) + '</span>', true);
                 } else if (msg.msg_type === 'error') {
                     const errText = (msg.payload && msg.payload.error) || 'An error occurred';
