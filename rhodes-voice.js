@@ -730,7 +730,36 @@ const VoiceChat = {
             whisperRecorder: null,
             whisperStream: null,
             whisperChunks: [],
+            whisperMimeType: '',
+            whisperFilename: 'recording.webm',
             useWhisper: false,  // Set to true for language learning modes
+
+            pickRecordingMimeType: function() {
+                if (typeof MediaRecorder === 'undefined') return '';
+                const choices = [
+                    'audio/webm;codecs=opus',
+                    'audio/webm',
+                    'audio/mp4;codecs=mp4a.40.2',
+                    'audio/mp4',
+                    'audio/aac',
+                    'audio/ogg;codecs=opus',
+                    'audio/ogg'
+                ];
+                if (typeof MediaRecorder.isTypeSupported !== 'function') return '';
+                for (const type of choices) {
+                    if (MediaRecorder.isTypeSupported(type)) return type;
+                }
+                return '';
+            },
+
+            filenameForMimeType: function(mimeType) {
+                const type = (mimeType || '').toLowerCase();
+                if (type.includes('mp4') || type.includes('aac')) return 'recording.m4a';
+                if (type.includes('ogg')) return 'recording.ogg';
+                if (type.includes('mpeg')) return 'recording.mp3';
+                if (type.includes('wav')) return 'recording.wav';
+                return 'recording.webm';
+            },
             
             startWhisperRecording: async function() {
                 // Defensive: clear any stale streaming-TTS state left over from
@@ -743,8 +772,18 @@ const VoiceChat = {
                     }
                 } catch (e) { console.warn('[voice] StreamingTTS reset error:', e); }
                 try {
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                        throw new Error('Browser microphone capture is unavailable');
+                    }
+                    if (typeof MediaRecorder === 'undefined') {
+                        throw new Error('Browser audio recorder is unavailable');
+                    }
                     this.whisperStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    this.whisperRecorder = new MediaRecorder(this.whisperStream, { mimeType: "audio/webm" });
+                    const preferredMimeType = this.pickRecordingMimeType();
+                    const recorderOptions = preferredMimeType ? { mimeType: preferredMimeType } : undefined;
+                    this.whisperRecorder = new MediaRecorder(this.whisperStream, recorderOptions);
+                    this.whisperMimeType = this.whisperRecorder.mimeType || preferredMimeType || 'audio/webm';
+                    this.whisperFilename = this.filenameForMimeType(this.whisperMimeType);
                     this.whisperChunks = [];
                     
                     // Set up silence detection using RMS of time-domain waveform
@@ -817,8 +856,9 @@ const VoiceChat = {
                         
                         self.setStatus("processing");
                         self.showWaitingFace();
-                        const audioBlob = new Blob(self.whisperChunks, { type: "audio/webm" });
-                        await self.sendToWhisper(audioBlob);
+                        const blobType = self.whisperMimeType || (self.whisperChunks[0] && self.whisperChunks[0].type) || 'audio/webm';
+                        const audioBlob = new Blob(self.whisperChunks, { type: blobType });
+                        await self.sendToWhisper(audioBlob, self.whisperFilename);
                         // Clean up stream
                         if (self.whisperStream) {
                             self.whisperStream.getTracks().forEach(t => t.stop());
@@ -849,7 +889,7 @@ const VoiceChat = {
                         if (takeoverEl) takeoverEl.classList.add('active');
                         this.showListeningFace();
                     }
-                    console.log("Whisper recording started with silence detection");
+                    console.log("Whisper recording started with silence detection", this.whisperMimeType, this.whisperFilename);
 
                     // Safety timeout - stop after 20s max to prevent infinite recording
                     this.whisperSafetyTimeout = setTimeout(() => {
@@ -894,10 +934,10 @@ const VoiceChat = {
                 }
             },
             
-            sendToWhisper: async function(audioBlob) {
+            sendToWhisper: async function(audioBlob, filename) {
                 try {
                     const formData = new FormData();
-                    formData.append('audio', audioBlob, 'recording.webm');
+                    formData.append('audio', audioBlob, filename || this.filenameForMimeType(audioBlob && audioBlob.type));
                     // Add language hint if in tutor mode
                     const tutorLang = window.rhodesActiveTutorLang;
                     if (tutorLang) {
@@ -914,7 +954,10 @@ const VoiceChat = {
                     if (data.success && data.transcript) {
                         let transcript = data.transcript.trim();
                         console.log('Whisper transcript:', transcript);
-const noSpeechProb = data.no_speech_prob || 0;                        // If high probability of no speech (noise), restart listening                        if (noSpeechProb > 0.5) {                            console.log('Likely noise, not speech - restarting listening');                            this.setStatus('listening');                            this.startRecording();                            return;                        }
+                        const noSpeechProb = data.no_speech_prob || 0;
+                        if (noSpeechProb > 0.5) {
+                            console.log('Speech service reported high no_speech_prob despite transcript; trusting transcript:', noSpeechProb);
+                        }
                         
                         // Apply corrections
                         transcript = this.correctSpeech(transcript);
@@ -1090,7 +1133,7 @@ const noSpeechProb = data.no_speech_prob || 0;                        // If high
                 }
 
                 // Clear transcript when speaking (handsfree)
-                if (inHandsfree) {
+                if (!this.pushToTalk) {
                     const transcript = document.getElementById('takeover-transcript');
                     if (transcript) transcript.textContent = '';
                 }
