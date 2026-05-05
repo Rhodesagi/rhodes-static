@@ -2628,7 +2628,7 @@ function showDownloads() {
                     if (!_canViewAbortAlerts) return;
                     const p = msg.payload || {};
                     const abortType = (p.abort_type || 'generation_abort').toString();
-                    if (abortType === 'cli_format_guard') return;
+                    if (abortType === 'cli_format_guard' || abortType === 'kimi_visible_content_guard') return;
                     const reason = (p.reason || '').toString();
                     const retry = p.retry ? (' ' + p.retry + '/' + (p.max_retries || '?')) : '';
                     const firstToken = (p.first_token || '').toString();
